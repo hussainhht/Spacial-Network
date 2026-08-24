@@ -51,7 +51,7 @@ backend/
 ├── cmd/
 │     └── main.go
 │
-├── internal/
+├── 
 │   │
 │   ├── auth/
 │   │   ├── handler.go
