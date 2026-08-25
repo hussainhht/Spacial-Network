@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"time"
 
+	"social/internal/users"
 	"social/pkg/errs"
-	"social/users"
 
 	"github.com/google/uuid"
 )

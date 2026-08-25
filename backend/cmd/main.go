@@ -10,8 +10,8 @@ import (
 	"syscall"
 	"time"
 
-	"social/auth"
-	"social/middleware"
+	"social/internal/auth"
+	"social/internal/middleware"
 	"social/pkg/db/sqlite"
 )
 

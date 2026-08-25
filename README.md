@@ -1,7 +1,6 @@
 ## best social-network
 
-Next.js
-=======
+# Next.js
 
 UI
 Routing
@@ -10,8 +9,7 @@ Frontend state
 API calls
 WebSocket client
 
-Go
-==
+# Go
 
 Authentication
 Sessions
@@ -25,23 +23,23 @@ Uploads
 Social Network
 │
 ├── Frontend
-│   ├── Next.js
-│   ├── React
-│   ├── TypeScript
-│   ├── HTML / JSX / TSX
-│   └── CSS
+│ ├── Next.js
+│ ├── React
+│ ├── TypeScript
+│ ├── HTML / JSX / TSX
+│ └── CSS
 │
 ├── Backend
-│   └── Go
+│ └── Go
 │
 ├── Database
-│   └── SQLite
+│ └── SQLite
 │
 ├── Real-time
-│   └── WebSockets
+│ └── WebSockets
 │
 └── Infrastructure
-    └── Docker
+└── Docker
 
 ```
 backend/
@@ -49,7 +47,7 @@ backend/
 ├── cmd/
 │     └── main.go
 │
-├── 
+├── internal
 │   │
 │   ├── auth/
 │   │   ├── handler.go

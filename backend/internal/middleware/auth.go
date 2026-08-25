@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"social/auth"
+	"social/internal/auth"
 )
 
 func SessionMiddleware() func(http.Handler) http.Handler {

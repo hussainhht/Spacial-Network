@@ -4,9 +4,9 @@ import (
 	"errors"
 	"strings"
 
+	"social/internal/users"
 	"social/pkg/session"
 	"social/pkg/validation"
-	"social/users"
 )
 
 // Login verifies credentials and issues a new session token for the user.
