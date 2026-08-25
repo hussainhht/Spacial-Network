@@ -22,9 +22,9 @@ REST API
 WebSocket server
 Uploads
 
-
-
 Social Network
+
+```
 │
 ├── Frontend
 │   ├── Next.js
@@ -44,6 +44,7 @@ Social Network
 │
 └── Infrastructure
     └── Docker
+```
 
 ```
 backend/

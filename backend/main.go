@@ -1,27 +1,35 @@
 package main
 
 import (
-	"log"
+    "log"
+    "net/http"
 
-	dbsqlite "social/pkg/db/sqlite"
+    dbsqlite "social/pkg/db/sqlite"
 )
 
 func main() {
-	const dbPath = "./social_network.db"
+    const dbPath = "./data/social-network.db"
 
-	// 1. Apply migrations
-	if err := dbsqlite.RunMigrations(dbPath); err != nil {
-		log.Fatal(err)
-	}
+    if err := dbsqlite.RunMigrations(dbPath); err != nil {
+        log.Fatal(err)
+    }
 
-	// 2. Open database
-	db, err := dbsqlite.Open(dbPath)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer db.Close()
+    db, err := dbsqlite.Open(dbPath)
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer db.Close()
 
-	log.Println("database connected and migrations applied")
+    mux := http.NewServeMux()
 
-	// Start HTTP server later...
+    mux.HandleFunc("/api/health", func(w http.ResponseWriter, r *http.Request) {
+        w.Header().Set("Content-Type", "application/json")
+        w.Write([]byte(`{"status":"ok"}`))
+    })
+
+    log.Println("server running on http://localhost:8080")
+
+    if err := http.ListenAndServe(":8080", mux); err != nil {
+        log.Fatal(err)
+    }
 }
