@@ -22,8 +22,6 @@ REST API
 WebSocket server
 Uploads
 
-
-
 Social Network
 │
 ├── Frontend
