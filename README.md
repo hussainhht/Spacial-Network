@@ -21,6 +21,8 @@ WebSocket server
 Uploads
 
 Social Network
+
+```
 │
 ├── Frontend
 │ ├── Next.js
@@ -39,7 +41,8 @@ Social Network
 │ └── WebSockets
 │
 └── Infrastructure
-└── Docker
+    └── Docker
+```
 
 ```
 backend/
