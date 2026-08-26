@@ -9,7 +9,9 @@ import (
 
 // NewRouter builds the application's HTTP routes. The Go backend only
 // exposes its JSON API under /api/; the frontend is served separately.
-func NewRouter(authHandler *auth.Handler, authService *auth.Service, sessionCookieName string) http.Handler {
+// Uploaded files (e.g. profile photos) are served under /uploads/ directly
+// from uploadsDir so the frontend can reference them with a plain HTTP URL.
+func NewRouter(authHandler *auth.Handler, authService *auth.Service, sessionCookieName, uploadsDir string) http.Handler {
 	apiMux := http.NewServeMux()
 
 	// Public API routes
@@ -22,6 +24,7 @@ func NewRouter(authHandler *auth.Handler, authService *auth.Service, sessionCook
 
 	mux := http.NewServeMux()
 	mux.Handle("/api/", http.StripPrefix("/api", apiMux))
+	mux.Handle("/uploads/", http.StripPrefix("/uploads/", http.FileServer(http.Dir(uploadsDir))))
 
 	return mux
 }

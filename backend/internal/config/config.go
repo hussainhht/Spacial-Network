@@ -11,6 +11,9 @@ type Config struct {
 	SessionCookieName string
 	SessionLifetime   time.Duration
 	CookieSecure      bool
+
+	UploadsDir    string
+	MaxAvatarSize int64
 }
 
 func Load() Config {
@@ -23,5 +26,8 @@ func Load() Config {
 		SessionCookieName: "session_token",
 		SessionLifetime:   30 * time.Minute,
 		CookieSecure:      false,
+
+		UploadsDir:    "data/uploads",
+		MaxAvatarSize: 5 << 20, // 5 MiB
 	}
 }

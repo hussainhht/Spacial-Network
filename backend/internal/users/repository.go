@@ -45,11 +45,15 @@ func (r *Repository) EmailExists(email string) (bool, error) {
 	return err == nil, err
 }
 
-func (r *Repository) InsertUser(uuid, username string, age int, gender, firstName, lastName, email, passwordHash string) error {
+func (r *Repository) InsertUser(uuid, username string, age int, gender, firstName, lastName, email, passwordHash, profilePhoto string) error {
 	query := `
-		INSERT INTO users (uuid, username, age, gender, first_name, last_name, email, password_hash)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+		INSERT INTO users (uuid, username, age, gender, first_name, last_name, email, password_hash, profile_photo)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`
+	var photo sql.NullString
+	if profilePhoto != "" {
+		photo = sql.NullString{String: profilePhoto, Valid: true}
+	}
 	_, err := r.db.Exec(
 		query,
 		uuid,
@@ -60,6 +64,7 @@ func (r *Repository) InsertUser(uuid, username string, age int, gender, firstNam
 		lastName,
 		email,
 		passwordHash,
+		photo,
 	)
 	return err
 }

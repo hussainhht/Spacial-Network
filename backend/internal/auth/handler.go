@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strconv"
 	"time"
 
+	"social/internal/upload"
 	"social/internal/users"
 
 	"github.com/google/uuid"
@@ -21,6 +23,9 @@ type LoginRequest struct {
 	Password string `json:"password"`
 }
 
+// RegisterRequest represents the sanitized fields of a registration
+// submission. The handler populates it from a multipart/form-data request
+// so an optional profile photo file can be attached alongside these fields.
 type RegisterRequest struct {
 	Username  string `json:"username"`
 	FirstName string `json:"firstName"`
@@ -37,23 +42,30 @@ type Response struct {
 }
 
 type RegisterResponse struct {
-	Success bool   `json:"success"`
-	Message string `json:"message"`
-	UserID  string `json:"user_id,omitempty"`
+	Success         bool   `json:"success"`
+	Message         string `json:"message"`
+	UserID          string `json:"user_id,omitempty"`
+	ProfilePhotoURL string `json:"profile_photo_url,omitempty"`
 }
+
+// maxRegisterRequestSize bounds the total size of a registration request
+// body (form fields plus one profile photo) accepted before it is rejected.
+const maxRegisterRequestSize = 8 << 20 // 8 MiB
 
 type Handler struct {
 	service         *Service
 	usersService    *users.Service
+	avatarStorage   *upload.AvatarStorage
 	cookieName      string
 	cookieSecure    bool
 	sessionLifetime time.Duration
 }
 
-func NewHandler(service *Service, usersService *users.Service, cookieName string, cookieSecure bool, sessionLifetime time.Duration) *Handler {
+func NewHandler(service *Service, usersService *users.Service, avatarStorage *upload.AvatarStorage, cookieName string, cookieSecure bool, sessionLifetime time.Duration) *Handler {
 	return &Handler{
 		service:         service,
 		usersService:    usersService,
+		avatarStorage:   avatarStorage,
 		cookieName:      cookieName,
 		cookieSecure:    cookieSecure,
 		sessionLifetime: sessionLifetime,
@@ -164,6 +176,7 @@ func (h *Handler) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(Response{Message: "Logged out"})
 }
 
+
 func (h *Handler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -175,9 +188,9 @@ func (h *Handler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-	var payload RegisterRequest
 
-	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+	r.Body = http.MaxBytesReader(w, r.Body, maxRegisterRequestSize)
+	if err := r.ParseMultipartForm(maxRegisterRequestSize); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(RegisterResponse{
 			Success: false,
@@ -185,6 +198,27 @@ func (h *Handler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
+
+	age, err := strconv.Atoi(r.FormValue("age"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(RegisterResponse{
+			Success: false,
+			Message: "age must be a number",
+		})
+		return
+	}
+
+	payload := RegisterRequest{
+		Username:  r.FormValue("username"),
+		FirstName: r.FormValue("firstName"),
+		LastName:  r.FormValue("lastName"),
+		Email:     r.FormValue("email"),
+		Password:  r.FormValue("password"),
+		Gender:    r.FormValue("gender"),
+		Age:       age,
+	}
+
 	if err := ValidateRegisterRequest(&payload); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(RegisterResponse{
@@ -232,6 +266,34 @@ func (h *Handler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Handle the optional profile photo upload.
+	var profilePhotoPath string
+	file, header, err := r.FormFile("profilePhoto")
+	if err != nil && !errors.Is(err, http.ErrMissingFile) {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(RegisterResponse{
+			Success: false,
+			Message: "Invalid profile photo upload",
+		})
+		return
+	}
+	if err == nil {
+		profilePhotoPath, err = h.avatarStorage.Save(file, header)
+		file.Close()
+		if err != nil {
+			status := http.StatusBadRequest
+			if !errors.Is(err, upload.ErrInvalidFileType) && !errors.Is(err, upload.ErrFileTooLarge) {
+				status = http.StatusInternalServerError
+			}
+			w.WriteHeader(status)
+			json.NewEncoder(w).Encode(RegisterResponse{
+				Success: false,
+				Message: err.Error(),
+			})
+			return
+		}
+	}
+
 	// Generate UUID for the user
 	userUUID := uuid.New().String()
 
@@ -245,9 +307,11 @@ func (h *Handler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		payload.LastName,
 		payload.Email,
 		payload.Password,
+		profilePhotoPath,
 	)
 
 	if err != nil {
+		h.avatarStorage.Remove(profilePhotoPath)
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(RegisterResponse{
 			Success: false,
@@ -257,10 +321,15 @@ func (h *Handler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Success response
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(RegisterResponse{
+	resp := RegisterResponse{
 		Success: true,
 		Message: "User registered successfully",
 		UserID:  userUUID,
-	})
+	}
+	if profilePhotoPath != "" {
+		resp.ProfilePhotoURL = "/uploads/" + profilePhotoPath
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(resp)
 }
