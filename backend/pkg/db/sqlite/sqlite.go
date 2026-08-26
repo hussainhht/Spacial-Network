@@ -2,46 +2,29 @@ package sqlite
 
 import (
 	"database/sql"
-	"errors"
-	"fmt"
+	"os"
+	"path/filepath"
 
-	"github.com/golang-migrate/migrate/v4"
-	_ "github.com/golang-migrate/migrate/v4/database/sqlite3"
-	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/mattn/go-sqlite3"
 )
 
-func RunMigrations(dbPath string) error {
-	migrator, err := migrate.New(
-		"file://pkg/db/migrations/sqlite",
-		"sqlite3://"+dbPath,
-	)
+func Open(dirPath, fileName string) (*sql.DB, error) {
+	if err := os.MkdirAll(dirPath, 0o755); err != nil {
+		return nil, err
+	}
 
+	dsn := filepath.Join(dirPath, fileName) + "?_foreign_keys=on"
+	db, err := sql.Open("sqlite3", dsn)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	defer migrator.Close()
-
-	err = migrator.Up()
-
-	if err != nil && !errors.Is(err, migrate.ErrNoChange) {
-		return fmt.Errorf("failed to run migrations: %w", err)
-	}
-
-	return nil
-
-}
-
-func Open(dbPath string) (*sql.DB, error) {
-	db, err := sql.Open("sqlite3", dbPath+"?_foreign_keys=on")
-	if err != nil {
-		return nil, fmt.Errorf("open database: %w", err)
-	}
+	db.SetMaxOpenConns(1)
+	db.SetMaxIdleConns(1)
 
 	if err := db.Ping(); err != nil {
 		db.Close()
-		return nil, fmt.Errorf("ping database: %w", err)
+		return nil, err
 	}
 
 	return db, nil
