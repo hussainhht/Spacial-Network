@@ -2,21 +2,14 @@ package validation
 
 import (
 	"errors"
-	"regexp"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 )
 
 const (
 	MaxGenericInputLength = 500
-	MaxTitleLength        = 50
-	MinUsernameLength     = 3
-	MaxUsernameLength     = 20
-	MinPasswordLength     = 8
-	MaxPasswordLength     = 20
 )
-
-var EmailPattern = regexp.MustCompile(`^[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}$`)
 
 type TextRules struct {
 	Field          string
@@ -27,6 +20,10 @@ type TextRules struct {
 	ToLower        bool
 }
 
+// SanitizeText trims, optionally lowercases, and validates raw text against
+// rules. Min/Max are measured in runes (not bytes) so multi-byte Unicode
+// text - names, posts, comments, profile fields - isn't penalized for its
+// UTF-8 encoding.
 func SanitizeText(raw string, rules TextRules) (string, error) {
 	value := strings.TrimSpace(raw)
 	if rules.ToLower {
@@ -39,29 +36,19 @@ func SanitizeText(raw string, rules TextRules) (string, error) {
 	if value == "" {
 		return value, nil
 	}
-	if !isASCII(value) {
-		return "", errors.New(rules.Field + " must contain ASCII characters only")
-	}
 	if containsUnsafeControlChars(value, rules.AllowMultiline) {
 		return "", errors.New(rules.Field + " contains invalid control characters")
 	}
-	if rules.Min > 0 && len(value) < rules.Min {
+
+	length := utf8.RuneCountInString(value)
+	if rules.Min > 0 && length < rules.Min {
 		return "", errors.New(rules.Field + " must be at least " + strconv.Itoa(rules.Min) + " characters")
 	}
-	if rules.Max > 0 && len(value) > rules.Max {
+	if rules.Max > 0 && length > rules.Max {
 		return "", errors.New(rules.Field + " must be at most " + strconv.Itoa(rules.Max) + " characters")
 	}
 
 	return value, nil
-}
-
-func isASCII(value string) bool {
-	for _, r := range value {
-		if r > 127 {
-			return false
-		}
-	}
-	return true
 }
 
 func containsUnsafeControlChars(value string, allowMultiline bool) bool {
