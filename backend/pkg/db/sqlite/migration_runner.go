@@ -37,7 +37,6 @@ func appliedVersions(db *sql.DB) (map[int]bool, error) {
 	return applied, rows.Err()
 }
 
-
 func latestApplied(db *sql.DB) (migration, bool, error) {
 	var m migration
 	err := db.QueryRow(`

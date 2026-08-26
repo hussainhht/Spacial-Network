@@ -5,7 +5,6 @@ import (
 	"fmt"
 )
 
-
 func MigrateUp(db *sql.DB) error {
 	if err := ensureSchemaMigrationsTable(db); err != nil {
 		return fmt.Errorf("ensure schema_migrations table: %w", err)
@@ -33,7 +32,6 @@ func MigrateUp(db *sql.DB) error {
 
 	return nil
 }
-
 
 func MigrateDown(db *sql.DB) error {
 	if err := ensureSchemaMigrationsTable(db); err != nil {
@@ -74,7 +72,6 @@ func MigrateDownAll(db *sql.DB) error {
 		}
 	}
 }
-
 
 func MigrationVersion(db *sql.DB) (int, error) {
 	if err := ensureSchemaMigrationsTable(db); err != nil {
