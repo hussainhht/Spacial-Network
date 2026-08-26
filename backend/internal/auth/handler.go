@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"social/internal/users"
-	"social/pkg/errs"
 
 	"github.com/google/uuid"
 )
@@ -94,7 +93,7 @@ func (h *Handler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 	_, token, err := h.service.Login(req.Username, req.Password)
 	if err != nil {
-		if errors.Is(err, errs.ErrInvalidCredentials) {
+		if errors.Is(err, ErrInvalidCredentials) {
 			w.WriteHeader(http.StatusUnauthorized)
 			json.NewEncoder(w).Encode(Response{Error: "Invalid username/email or password"})
 			return

@@ -1,8 +1,6 @@
 package users
 
 import (
-	"social/pkg/errs"
-
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -41,7 +39,7 @@ func (s *Service) CheckCredentials(identifier, password string) (int, error) {
 	}
 
 	if !comparePasswords(hashedPassword, password) {
-		return 0, errs.ErrInvalidCredentials
+		return 0, ErrInvalidCredentials
 	}
 
 	return id, nil

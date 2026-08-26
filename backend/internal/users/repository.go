@@ -2,8 +2,6 @@ package users
 
 import (
 	"database/sql"
-
-	"social/pkg/errs"
 )
 
 type Repository struct {
@@ -80,7 +78,7 @@ func (r *Repository) GetCredentials(identifier string) (int, string, error) {
 	).Scan(&id, &hashedPassword)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return 0, "", errs.ErrInvalidCredentials
+			return 0, "", ErrInvalidCredentials
 		}
 		return 0, "", err
 	}

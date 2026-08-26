@@ -25,6 +25,9 @@ func NewService(repo *Repository, usersService *users.Service) *Service {
 func (s *Service) Login(identifier, password string) (int, string, error) {
 	userID, err := s.usersService.CheckCredentials(identifier, password)
 	if err != nil {
+		if errors.Is(err, users.ErrInvalidCredentials) {
+			return 0, "", ErrInvalidCredentials
+		}
 		return 0, "", err
 	}
 
