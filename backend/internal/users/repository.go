@@ -3,14 +3,23 @@ package users
 import (
 	"database/sql"
 
-	"social/pkg/db/sqlite"
 	"social/pkg/errs"
 )
 
-func UsernameExists(username string) (bool, error) {
+type Repository struct {
+	db *sql.DB
+}
+
+func NewRepository(db *sql.DB) *Repository {
+	return &Repository{
+		db: db,
+	}
+}
+
+func (r *Repository) UsernameExists(username string) (bool, error) {
 	var exists int
 
-	err := sqlite.DB.QueryRow(
+	err := r.db.QueryRow(
 		`SELECT 1 FROM users WHERE username = ? LIMIT 1`,
 		username,
 	).Scan(&exists)
@@ -26,9 +35,9 @@ func UsernameExists(username string) (bool, error) {
 }
 
 // EmailExists checks if an email already exists
-func EmailExists(email string) (bool, error) {
+func (r *Repository) EmailExists(email string) (bool, error) {
 	var exists int
-	err := sqlite.DB.QueryRow(
+	err := r.db.QueryRow(
 		`SELECT 1 FROM users WHERE email = ? LIMIT 1`,
 		email,
 	).Scan(&exists)
@@ -38,12 +47,12 @@ func EmailExists(email string) (bool, error) {
 	return err == nil, err
 }
 
-func InsertUser(uuid, username string, age int, gender, firstName, lastName, email, passwordHash string) error {
+func (r *Repository) InsertUser(uuid, username string, age int, gender, firstName, lastName, email, passwordHash string) error {
 	query := `
 		INSERT INTO users (uuid, username, age, gender, first_name, last_name, email, password_hash)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 	`
-	_, err := sqlite.DB.Exec(
+	_, err := r.db.Exec(
 		query,
 		uuid,
 		username,
@@ -58,11 +67,11 @@ func InsertUser(uuid, username string, age int, gender, firstName, lastName, ema
 }
 
 // GetCredentials retrieves the user id and stored password hash for a username or email.
-func GetCredentials(identifier string) (int, string, error) {
+func (r *Repository) GetCredentials(identifier string) (int, string, error) {
 	var id int
 	var hashedPassword string
 
-	err := sqlite.DB.QueryRow(`
+	err := r.db.QueryRow(`
 		SELECT id, password_hash
 		FROM users
 		WHERE username = ? OR email = ?`,
@@ -79,10 +88,10 @@ func GetCredentials(identifier string) (int, string, error) {
 	return id, hashedPassword, nil
 }
 
-func GetUsernameByID(userID int) (string, error) {
+func (r *Repository) GetUsernameByID(userID int) (string, error) {
 	var username string
 
-	err := sqlite.DB.QueryRow(`
+	err := r.db.QueryRow(`
 		SELECT username
 		FROM users
 		WHERE id = ?
@@ -94,10 +103,10 @@ func GetUsernameByID(userID int) (string, error) {
 	return username, nil
 }
 
-func GetUserIDByUsername(username string) (int, error) {
+func (r *Repository) GetUserIDByUsername(username string) (int, error) {
 	var userID int
 
-	err := sqlite.DB.QueryRow(`
+	err := r.db.QueryRow(`
 		SELECT id
 		FROM users
 		WHERE username = ?

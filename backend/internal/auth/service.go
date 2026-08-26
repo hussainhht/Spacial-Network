@@ -9,9 +9,21 @@ import (
 	"social/pkg/validation"
 )
 
+type Service struct {
+	repo         *Repository
+	usersService *users.Service
+}
+
+func NewService(repo *Repository, usersService *users.Service) *Service {
+	return &Service{
+		repo:         repo,
+		usersService: usersService,
+	}
+}
+
 // Login verifies credentials and issues a new session token for the user.
-func Login(identifier, password string) (int, string, error) {
-	userID, err := users.CheckCredentials(identifier, password)
+func (s *Service) Login(identifier, password string) (int, string, error) {
+	userID, err := s.usersService.CheckCredentials(identifier, password)
 	if err != nil {
 		return 0, "", err
 	}
@@ -21,7 +33,7 @@ func Login(identifier, password string) (int, string, error) {
 		return 0, "", err
 	}
 
-	if err := CreateSession(userID, token); err != nil {
+	if err := s.repo.CreateSession(userID, token); err != nil {
 		return 0, "", err
 	}
 
@@ -29,8 +41,23 @@ func Login(identifier, password string) (int, string, error) {
 }
 
 // Logout revokes the given session token.
-func Logout(token string) error {
-	return RevokeSession(token)
+func (s *Service) Logout(token string) error {
+	return s.repo.RevokeSession(token)
+}
+
+// ValidateSession checks if session is valid and returns userID.
+func (s *Service) ValidateSession(token string) (int, error) {
+	return s.repo.ValidateSession(token)
+}
+
+// UpdateSessionExpiry extends the expiry of a still-valid session.
+func (s *Service) UpdateSessionExpiry(token string) error {
+	return s.repo.UpdateSessionExpiry(token)
+}
+
+// CleanupSessions deletes expired sessions and old revoked sessions.
+func (s *Service) CleanupSessions() (int64, error) {
+	return s.repo.CleanupSessions()
 }
 
 func ValidateLoginRequest(login *LoginRequest) error {

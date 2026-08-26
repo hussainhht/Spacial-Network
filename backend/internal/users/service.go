@@ -6,18 +6,36 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func CreateUser(uuid, username string, age int, gender, firstName, lastName, email, password string) error {
+type Service struct {
+	repo *Repository
+}
+
+func NewService(repo *Repository) *Service {
+	return &Service{
+		repo: repo,
+	}
+}
+
+func (s *Service) UsernameExists(username string) (bool, error) {
+	return s.repo.UsernameExists(username)
+}
+
+func (s *Service) EmailExists(email string) (bool, error) {
+	return s.repo.EmailExists(email)
+}
+
+func (s *Service) CreateUser(uuid, username string, age int, gender, firstName, lastName, email, password string) error {
 	hashedPassword, err := hashPassword(password)
 	if err != nil {
 		return err
 	}
 
-	return InsertUser(uuid, username, age, gender, firstName, lastName, email, hashedPassword)
+	return s.repo.InsertUser(uuid, username, age, gender, firstName, lastName, email, hashedPassword)
 }
 
 // CheckCredentials verifies a username/email and password against the stored hash.
-func CheckCredentials(identifier, password string) (int, error) {
-	id, hashedPassword, err := GetCredentials(identifier)
+func (s *Service) CheckCredentials(identifier, password string) (int, error) {
+	id, hashedPassword, err := s.repo.GetCredentials(identifier)
 	if err != nil {
 		return 0, err
 	}
@@ -27,6 +45,14 @@ func CheckCredentials(identifier, password string) (int, error) {
 	}
 
 	return id, nil
+}
+
+func (s *Service) GetUsernameByID(userID int) (string, error) {
+	return s.repo.GetUsernameByID(userID)
+}
+
+func (s *Service) GetUserIDByUsername(username string) (int, error) {
+	return s.repo.GetUserIDByUsername(username)
 }
 
 func hashPassword(password string) (string, error) {

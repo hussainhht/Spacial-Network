@@ -3,16 +3,23 @@ package auth
 import (
 	"database/sql"
 	"time"
-
-	"social/pkg/db/sqlite"
 )
 
-// session timeout
-var sessionTimeout = 30 * time.Minute
+type Repository struct {
+	db              *sql.DB
+	sessionLifetime time.Duration
+}
 
-func CreateSession(userID int, token string) error {
+func NewRepository(db *sql.DB, sessionLifetime time.Duration) *Repository {
+	return &Repository{
+		db:              db,
+		sessionLifetime: sessionLifetime,
+	}
+}
+
+func (r *Repository) CreateSession(userID int, token string) error {
 	now := time.Now()
-	expiresAt := now.Add(sessionTimeout)
+	expiresAt := now.Add(r.sessionLifetime)
 
 	// Check whether this user already has a session
 	const checkQuery = `
@@ -23,7 +30,7 @@ func CreateSession(userID int, token string) error {
 	`
 
 	var exists int
-	err := sqlite.DB.QueryRow(checkQuery, userID).Scan(&exists)
+	err := r.db.QueryRow(checkQuery, userID).Scan(&exists)
 	if err != nil && err != sql.ErrNoRows {
 		return err
 	}
@@ -36,7 +43,7 @@ func CreateSession(userID int, token string) error {
 			WHERE user_id = ?
 		`
 
-		_, err = sqlite.DB.Exec(updateQuery, token, now, expiresAt, userID)
+		_, err = r.db.Exec(updateQuery, token, now, expiresAt, userID)
 		return err
 	}
 
@@ -46,15 +53,15 @@ func CreateSession(userID int, token string) error {
 		VALUES (?, ?, ?, ?, ?)
 	`
 
-	_, err = sqlite.DB.Exec(insertQuery, userID, token, now, expiresAt, nil)
+	_, err = r.db.Exec(insertQuery, userID, token, now, expiresAt, nil)
 	return err
 }
 
 // UpdateSessionExpiry checks if a session is revoked or expired, and if not,
 // extends its expiry time.
-func UpdateSessionExpiry(token string) error {
+func (r *Repository) UpdateSessionExpiry(token string) error {
 	now := time.Now()
-	expiresAt := now.Add(sessionTimeout)
+	expiresAt := now.Add(r.sessionLifetime)
 
 	query := `
 		UPDATE sessions
@@ -63,7 +70,7 @@ func UpdateSessionExpiry(token string) error {
 		AND revoked_at IS NULL
 		AND expires_at > CURRENT_TIMESTAMP
 	`
-	res, err := sqlite.DB.Exec(query, expiresAt, token)
+	res, err := r.db.Exec(query, expiresAt, token)
 	if err != nil {
 		return err
 	}
@@ -83,10 +90,10 @@ func UpdateSessionExpiry(token string) error {
 // token has already expired (or was revoked), the record is removed from
 // the database as a side-effect so that old sessions don't hang around
 // forever.
-func ValidateSession(token string) (int, error) {
+func (r *Repository) ValidateSession(token string) (int, error) {
 	var userID int
 
-	err := sqlite.DB.QueryRow(`
+	err := r.db.QueryRow(`
 		SELECT user_id
 		FROM sessions
 		WHERE session_token = ?
@@ -95,7 +102,7 @@ func ValidateSession(token string) (int, error) {
 	`, token).Scan(&userID)
 	if err == sql.ErrNoRows {
 		// token is not valid; attempt to delete the row
-		sqlite.DB.Exec(`
+		r.db.Exec(`
 			DELETE FROM sessions
 			WHERE session_token = ?
 			AND (expires_at <= CURRENT_TIMESTAMP OR revoked_at IS NOT NULL)
@@ -111,8 +118,8 @@ func ValidateSession(token string) (int, error) {
 
 // RevokeSession marks a session as revoked (user has logged out). Revoked
 // sessions are kept for 30 days before CleanupSessions deletes them.
-func RevokeSession(token string) error {
-	_, err := sqlite.DB.Exec(`
+func (r *Repository) RevokeSession(token string) error {
+	_, err := r.db.Exec(`
 		UPDATE sessions
 		SET revoked_at = CURRENT_TIMESTAMP
 		WHERE session_token = ?
@@ -123,8 +130,8 @@ func RevokeSession(token string) error {
 // CleanupSessions deletes expired sessions and revoked sessions older than
 // 30 days. The caller can choose to run this periodically to keep the table
 // small.
-func CleanupSessions() (int64, error) {
-	res, err := sqlite.DB.Exec(`
+func (r *Repository) CleanupSessions() (int64, error) {
+	res, err := r.db.Exec(`
 		DELETE FROM sessions
 		WHERE expires_at <= CURRENT_TIMESTAMP
 		   OR (revoked_at IS NOT NULL AND revoked_at <= datetime('now','-30 days'))

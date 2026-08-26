@@ -16,19 +16,19 @@ func GenerateSessionToken() (string, error) {
 	return hex.EncodeToString(byteToken), nil
 }
 
-func UpdateSessionToken(w http.ResponseWriter, duration time.Duration) error {
+func UpdateSessionToken(w http.ResponseWriter, cookieName string, duration time.Duration, secure bool) error {
 	token, err := GenerateSessionToken()
 	if err != nil {
 		return err
 	}
 
 	http.SetCookie(w, &http.Cookie{
-		Name:     "session_token",
+		Name:     cookieName,
 		Value:    token,
 		Path:     "/", // must match original Path
 		Expires:  time.Now().Add(duration),
 		HttpOnly: true,
-		Secure:   false, // set to true in production (HTTPS)
+		Secure:   secure,
 		SameSite: http.SameSiteLaxMode,
 	})
 	return nil
