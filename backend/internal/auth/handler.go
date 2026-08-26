@@ -43,12 +43,30 @@ type RegisterResponse struct {
 	UserID  string `json:"user_id,omitempty"`
 }
 
-func LoginHandler(w http.ResponseWriter, r *http.Request) {
+type Handler struct {
+	service         *Service
+	usersService    *users.Service
+	cookieName      string
+	cookieSecure    bool
+	sessionLifetime time.Duration
+}
+
+func NewHandler(service *Service, usersService *users.Service, cookieName string, cookieSecure bool, sessionLifetime time.Duration) *Handler {
+	return &Handler{
+		service:         service,
+		usersService:    usersService,
+		cookieName:      cookieName,
+		cookieSecure:    cookieSecure,
+		sessionLifetime: sessionLifetime,
+	}
+}
+
+func (h *Handler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
-		cookie, err := r.Cookie("session_token")
+		cookie, err := r.Cookie(h.cookieName)
 		if err == nil {
 			// Check if session is valid
-			_, err := ValidateSession(cookie.Value)
+			_, err := h.service.ValidateSession(cookie.Value)
 			if err == nil {
 				w.WriteHeader(http.StatusOK)
 				json.NewEncoder(w).Encode(Response{Message: "Already logged in"})
@@ -74,7 +92,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, token, err := Login(req.Username, req.Password)
+	_, token, err := h.service.Login(req.Username, req.Password)
 	if err != nil {
 		if errors.Is(err, errs.ErrInvalidCredentials) {
 			w.WriteHeader(http.StatusUnauthorized)
@@ -89,12 +107,12 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Set cookie
 	http.SetCookie(w, &http.Cookie{
-		Name:     "session_token",
+		Name:     h.cookieName,
 		Value:    token,
 		Path:     "/",
-		Expires:  time.Now().Add(30 * time.Minute),
+		Expires:  time.Now().Add(h.sessionLifetime),
 		HttpOnly: true,
-		Secure:   false, // true in production with HTTPS
+		Secure:   h.cookieSecure,
 		SameSite: http.SameSiteLaxMode,
 	})
 
@@ -103,14 +121,14 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // LogoutHandler revokes the current session and clears its cookie.
-func LogoutHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	// accept GET for simple links and POST for API calls
 	if r.Method != http.MethodGet && r.Method != http.MethodPost {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
 
-	cookie, err := r.Cookie("session_token")
+	cookie, err := r.Cookie(h.cookieName)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode(Response{Error: "Not logged in"})
@@ -118,14 +136,14 @@ func LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if _, ok := r.Context().Value(UserIDKey).(int); !ok {
-		if _, err := ValidateSession(cookie.Value); err != nil {
+		if _, err := h.service.ValidateSession(cookie.Value); err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			json.NewEncoder(w).Encode(Response{Error: "Invalid session"})
 			return
 		}
 	}
 
-	if err := Logout(cookie.Value); err != nil {
+	if err := h.service.Logout(cookie.Value); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(Response{Error: "Server error"})
 		return
@@ -133,13 +151,13 @@ func LogoutHandler(w http.ResponseWriter, r *http.Request) {
 
 	// clear the cookie on client side
 	http.SetCookie(w, &http.Cookie{
-		Name:     "session_token",
+		Name:     h.cookieName,
 		Value:    "",
 		Path:     "/",
 		Expires:  time.Unix(0, 0),
 		MaxAge:   -1,
 		HttpOnly: true,
-		Secure:   false,
+		Secure:   h.cookieSecure,
 		SameSite: http.SameSiteLaxMode,
 	})
 
@@ -147,7 +165,7 @@ func LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(Response{Message: "Logged out"})
 }
 
-func RegisterHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	if r.Method != http.MethodPost {
@@ -178,7 +196,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check if username already exists
-	usernameExists, err := users.UsernameExists(payload.Username)
+	usernameExists, err := h.usersService.UsernameExists(payload.Username)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(RegisterResponse{
@@ -197,7 +215,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check if email already exists
-	emailExists, err := users.EmailExists(payload.Email)
+	emailExists, err := h.usersService.EmailExists(payload.Email)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(RegisterResponse{
@@ -219,7 +237,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	userUUID := uuid.New().String()
 
 	// Create the user
-	err = users.CreateUser(
+	err = h.usersService.CreateUser(
 		userUUID,
 		payload.Username,
 		payload.Age,
