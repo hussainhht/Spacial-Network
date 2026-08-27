@@ -18,7 +18,8 @@ func main() {
 
 	command := os.Args[1]
 
-	if command == "create" {
+	switch command {
+	case "create":
 		if len(os.Args) < 3 {
 			fmt.Println("usage: go run ./cmd/migrate create <migration_name>")
 			return
@@ -46,39 +47,36 @@ func main() {
 
 		fmt.Printf("Created migration:\n  %s\n  %s\n", upPath, downPath)
 		return
-	}
 
-	cfg := config.Load()
-	db, err := sqlite.Open(cfg.DBDir, cfg.DBFile)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer db.Close()
+	case "up", "down", "down-all", "version":
+		cfg := config.Load()
+		db, err := sqlite.Open(cfg.DBDir, cfg.DBFile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer db.Close()
 
-	switch command {
-	case "up":
-		err = sqlite.MigrateUp(db)
+		switch command {
+		case "up":
+			err = sqlite.MigrateUp(db)
+		case "down":
+			err = sqlite.MigrateDown(db)
+		case "down-all":
+			err = sqlite.MigrateDownAll(db)
+		case "version":
+			var version int64
+			version, err = sqlite.MigrationVersion(db)
+			if err == nil {
+				fmt.Println("Migration version:", version)
+			}
+		}
 
-	case "down":
-		err = sqlite.MigrateDown(db)
-
-	case "down-all":
-		err = sqlite.MigrateDownAll(db)
-
-	case "version":
-		var version int64
-		version, err = sqlite.MigrationVersion(db)
-		if err == nil {
-			fmt.Println("Migration version:", version)
+		if err != nil {
+			log.Fatal(err)
 		}
 
 	default:
 		fmt.Println("unknown migration command:", command)
 		fmt.Println("usage: go run ./cmd/migrate [up|down|down-all|version|create <name>]")
-		return
-	}
-
-	if err != nil {
-		log.Fatal(err)
 	}
 }
