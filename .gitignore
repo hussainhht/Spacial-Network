@@ -1,0 +1,13 @@
+# Local planning files
+CHAT_WS_STEPS.md
+*_STEPS.md
+
+# OS / Editor
+.DS_Store
+.vscode/
+.idea/
+
+# Environment files
+.env
+.env.*
+!.env.example
