@@ -14,16 +14,17 @@ var migrationFiles = migrationfiles.Files
 var migrationFilePattern = regexp.MustCompile(`^(\d+)_(.+)\.up\.sql$`)
 
 type migration struct {
-	version int
-	name    string
+	version    int64
+	rawVersion string
+	name       string
 }
 
 func (m migration) upFile() string {
-	return fmt.Sprintf("%06d_%s.up.sql", m.version, m.name)
+	return fmt.Sprintf("%s_%s.up.sql", m.rawVersion, m.name)
 }
 
 func (m migration) downFile() string {
-	return fmt.Sprintf("%06d_%s.down.sql", m.version, m.name)
+	return fmt.Sprintf("%s_%s.down.sql", m.rawVersion, m.name)
 }
 
 func loadMigrations() ([]migration, error) {
@@ -33,7 +34,7 @@ func loadMigrations() ([]migration, error) {
 	}
 
 	var migrations []migration
-	seen := make(map[int]string)
+	seen := make(map[int64]string)
 
 	for _, entry := range entries {
 		if entry.IsDir() {
@@ -45,7 +46,7 @@ func loadMigrations() ([]migration, error) {
 			continue
 		}
 
-		version, err := strconv.Atoi(matches[1])
+		version, err := strconv.ParseInt(matches[1], 10, 64)
 		if err != nil {
 			return nil, fmt.Errorf("invalid migration version in %s: %w", entry.Name(), err)
 		}
@@ -55,7 +56,11 @@ func loadMigrations() ([]migration, error) {
 		}
 		seen[version] = entry.Name()
 
-		migrations = append(migrations, migration{version: version, name: matches[2]})
+		migrations = append(migrations, migration{
+			version:    version,
+			rawVersion: matches[1],
+			name:       matches[2],
+		})
 	}
 
 	sort.Slice(migrations, func(i, j int) bool {

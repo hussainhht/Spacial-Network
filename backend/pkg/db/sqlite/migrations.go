@@ -73,7 +73,7 @@ func MigrateDownAll(db *sql.DB) error {
 	}
 }
 
-func MigrationVersion(db *sql.DB) (int, error) {
+func MigrationVersion(db *sql.DB) (int64, error) {
 	if err := ensureSchemaMigrationsTable(db); err != nil {
 		return 0, fmt.Errorf("ensure schema_migrations table: %w", err)
 	}
@@ -86,5 +86,5 @@ func MigrationVersion(db *sql.DB) (int, error) {
 		return 0, nil
 	}
 
-	return int(version.Int64), nil
+	return version.Int64, nil
 }

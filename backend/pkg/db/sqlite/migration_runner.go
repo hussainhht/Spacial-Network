@@ -2,6 +2,7 @@ package sqlite
 
 import (
 	"database/sql"
+	"fmt"
 )
 
 const createSchemaMigrationsTable = `
@@ -16,16 +17,16 @@ func ensureSchemaMigrationsTable(db *sql.DB) error {
 	return err
 }
 
-func appliedVersions(db *sql.DB) (map[int]bool, error) {
+func appliedVersions(db *sql.DB) (map[int64]bool, error) {
 	rows, err := db.Query(`SELECT version FROM schema_migrations`)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	applied := make(map[int]bool)
+	applied := make(map[int64]bool)
 	for rows.Next() {
-		var version int
+		var version int64
 		if err := rows.Scan(&version); err != nil {
 			return nil, err
 		}
@@ -46,6 +47,12 @@ func latestApplied(db *sql.DB) (migration, bool, error) {
 	}
 	if err != nil {
 		return migration{}, false, err
+	}
+
+	if m.version < 1000000 {
+		m.rawVersion = fmt.Sprintf("%06d", m.version)
+	} else {
+		m.rawVersion = fmt.Sprintf("%d", m.version)
 	}
 
 	return m, true, nil
