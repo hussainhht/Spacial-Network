@@ -1,6 +1,9 @@
 package config
 
-import "time"
+import (
+	"os"
+	"time"
+)
 
 type Config struct {
 	ServerPort string
@@ -17,8 +20,13 @@ type Config struct {
 }
 
 func Load() Config {
+	serverPort := os.Getenv("SERVER_PORT")
+	if serverPort == "" {
+		serverPort = "8080"
+	}
+
 	return Config{
-		ServerPort: "8080",
+		ServerPort: serverPort,
 
 		DBDir:  "data",
 		DBFile: "social-network.db",

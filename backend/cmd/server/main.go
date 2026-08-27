@@ -23,21 +23,10 @@ func main() {
 		log.Fatal("migrations:", err)
 	}
 
-	authHandler, authService, err := setupAuth(db, cfg)
+	handler, err := router.NewRouter(db, cfg)
 	if err != nil {
-		log.Fatal("auth setup:", err)
+		log.Fatal("router:", err)
 	}
-
-	if _, err := authService.CleanupSessions(); err != nil {
-		log.Println("session cleanup:", err)
-	}
-
-	handler := router.NewRouter(
-		authHandler,
-		authService,
-		cfg.SessionCookieName,
-		cfg.UploadsDir,
-	)
 
 	server := &http.Server{
 		Addr:    ":" + cfg.ServerPort,

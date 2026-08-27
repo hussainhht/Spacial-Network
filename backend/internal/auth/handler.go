@@ -23,9 +23,6 @@ type LoginRequest struct {
 	Password string `json:"password"`
 }
 
-// RegisterRequest represents the sanitized fields of a registration
-// submission. The handler populates it from a multipart/form-data request
-// so an optional profile photo file can be attached alongside these fields.
 type RegisterRequest struct {
 	Username  string `json:"username"`
 	FirstName string `json:"firstName"`

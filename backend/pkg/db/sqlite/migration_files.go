@@ -2,13 +2,14 @@ package sqlite
 
 import (
 	"fmt"
-	"os"
 	"regexp"
 	"sort"
 	"strconv"
+
+	migrationfiles "social/pkg/db/migrations/sqlite"
 )
 
-var migrationsDir = "pkg/db/migrations/sqlite"
+var migrationFiles = migrationfiles.Files
 
 var migrationFilePattern = regexp.MustCompile(`^(\d+)_(.+)\.up\.sql$`)
 
@@ -26,7 +27,7 @@ func (m migration) downFile() string {
 }
 
 func loadMigrations() ([]migration, error) {
-	entries, err := os.ReadDir(migrationsDir)
+	entries, err := migrationFiles.ReadDir(".")
 	if err != nil {
 		return nil, err
 	}

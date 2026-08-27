@@ -2,8 +2,6 @@ package sqlite
 
 import (
 	"database/sql"
-	"os"
-	"path/filepath"
 )
 
 const createSchemaMigrationsTable = `
@@ -54,7 +52,7 @@ func latestApplied(db *sql.DB) (migration, bool, error) {
 }
 
 func runMigrationUp(db *sql.DB, m migration) error {
-	content, err := os.ReadFile(filepath.Join(migrationsDir, m.upFile()))
+	content, err := migrationFiles.ReadFile(m.upFile())
 	if err != nil {
 		return err
 	}
@@ -80,7 +78,7 @@ func runMigrationUp(db *sql.DB, m migration) error {
 }
 
 func runMigrationDown(db *sql.DB, m migration) error {
-	content, err := os.ReadFile(filepath.Join(migrationsDir, m.downFile()))
+	content, err := migrationFiles.ReadFile(m.downFile())
 	if err != nil {
 		return err
 	}
