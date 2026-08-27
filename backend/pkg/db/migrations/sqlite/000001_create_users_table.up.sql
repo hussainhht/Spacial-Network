@@ -1,21 +1,15 @@
+PRAGMA foreign_keys = ON;
+
 CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-
-    username TEXT NOT NULL UNIQUE,
-    email TEXT NOT NULL UNIQUE,
-    password_hash TEXT NOT NULL,
-
-    first_name TEXT NOT NULL,
-    last_name TEXT NOT NULL,
-    date_of_birth TEXT NOT NULL,
-
-    avatar TEXT,
-    nickname TEXT,
-    about_me TEXT,
-
-    is_private INTEGER NOT NULL DEFAULT 0
-        CHECK (is_private IN (0, 1)),
-
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    uuid          TEXT    NOT NULL UNIQUE,              -- external/public id
+    username      TEXT    NOT NULL UNIQUE,
+    age           INTEGER NOT NULL CHECK (age >= 0 AND age <= 120),
+    gender        TEXT    NOT NULL CHECK (gender IN ('male','female')),
+    first_name    TEXT    NOT NULL,
+    last_name     TEXT    NOT NULL,
+    email         TEXT    NOT NULL UNIQUE,
+    password_hash TEXT    NOT NULL,
+    created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
