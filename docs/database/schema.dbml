@@ -1,0 +1,538 @@
+//////////////////////////////////////////////////////////////
+// SOCIAL NETWORK DATABASE
+// DBML for dbdiagram.io
+//////////////////////////////////////////////////////////////
+
+
+//////////////////////////////////////////////////////////////
+// USERS / AUTH
+//////////////////////////////////////////////////////////////
+
+Table users {
+  id integer [pk, increment]
+
+  email varchar [not null, unique]
+  password_hash varchar [not null]
+
+  first_name varchar [not null]
+  last_name varchar [not null]
+  date_of_birth date [not null]
+
+  avatar_path varchar
+  nickname varchar
+  about_me text
+
+  is_private boolean [not null, default: false]
+
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+
+Table sessions {
+  id integer [pk, increment]
+
+  user_id integer [not null]
+
+  token varchar [not null, unique]
+
+  expires_at datetime [not null]
+
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+
+//////////////////////////////////////////////////////////////
+// FOLLOWERS
+//////////////////////////////////////////////////////////////
+
+Table followers {
+  id integer [pk, increment]
+
+  follower_id integer [not null]
+  following_id integer [not null]
+
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  indexes {
+    (follower_id, following_id) [unique]
+  }
+}
+
+
+Table follow_requests {
+  id integer [pk, increment]
+
+  requester_id integer [not null]
+  target_id integer [not null]
+
+  status varchar [
+    not null,
+    default: 'pending',
+    note: 'pending | accepted | declined'
+  ]
+
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  indexes {
+    (requester_id, target_id) [unique]
+  }
+}
+
+
+//////////////////////////////////////////////////////////////
+// POSTS
+//////////////////////////////////////////////////////////////
+
+Table posts {
+  id integer [pk, increment]
+
+  user_id integer [not null]
+
+  content text
+
+  privacy varchar [
+    not null,
+    default: 'public',
+    note: 'public | followers | private'
+  ]
+
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+
+// Used when privacy = private
+// Only selected followers are allowed to view the post.
+Table post_allowed_users {
+  id integer [pk, increment]
+
+  post_id integer [not null]
+  user_id integer [not null]
+
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  indexes {
+    (post_id, user_id) [unique]
+  }
+}
+
+
+Table post_media {
+  id integer [pk, increment]
+
+  post_id integer [not null]
+
+  media_type varchar [
+    not null,
+    note: 'image | gif'
+  ]
+
+  file_path varchar [not null]
+
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+
+//////////////////////////////////////////////////////////////
+// COMMENTS
+//////////////////////////////////////////////////////////////
+
+Table comments {
+  id integer [pk, increment]
+
+  post_id integer [not null]
+  user_id integer [not null]
+
+  content text
+
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+
+Table comment_media {
+  id integer [pk, increment]
+
+  comment_id integer [not null]
+
+  media_type varchar [
+    not null,
+    note: 'image | gif'
+  ]
+
+  file_path varchar [not null]
+
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+
+//////////////////////////////////////////////////////////////
+// GROUPS
+//////////////////////////////////////////////////////////////
+
+Table groups {
+  id integer [pk, increment]
+
+  creator_id integer [not null]
+
+  title varchar [not null]
+  description text [not null]
+
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+
+Table group_members {
+  id integer [pk, increment]
+
+  group_id integer [not null]
+  user_id integer [not null]
+
+  role varchar [
+    not null,
+    default: 'member',
+    note: 'creator | member'
+  ]
+
+  joined_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  indexes {
+    (group_id, user_id) [unique]
+  }
+}
+
+
+//////////////////////////////////////////////////////////////
+// GROUP INVITATIONS
+//////////////////////////////////////////////////////////////
+
+Table group_invitations {
+  id integer [pk, increment]
+
+  group_id integer [not null]
+
+  invited_by integer [not null]
+  invited_user_id integer [not null]
+
+  status varchar [
+    not null,
+    default: 'pending',
+    note: 'pending | accepted | declined'
+  ]
+
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  indexes {
+    (group_id, invited_user_id) [unique]
+  }
+}
+
+
+//////////////////////////////////////////////////////////////
+// GROUP JOIN REQUESTS
+//////////////////////////////////////////////////////////////
+
+Table group_join_requests {
+  id integer [pk, increment]
+
+  group_id integer [not null]
+  user_id integer [not null]
+
+  status varchar [
+    not null,
+    default: 'pending',
+    note: 'pending | accepted | declined'
+  ]
+
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  indexes {
+    (group_id, user_id) [unique]
+  }
+}
+
+
+//////////////////////////////////////////////////////////////
+// GROUP POSTS
+//////////////////////////////////////////////////////////////
+
+Table group_posts {
+  id integer [pk, increment]
+
+  group_id integer [not null]
+  user_id integer [not null]
+
+  content text
+
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+
+Table group_post_media {
+  id integer [pk, increment]
+
+  group_post_id integer [not null]
+
+  media_type varchar [
+    not null,
+    note: 'image | gif'
+  ]
+
+  file_path varchar [not null]
+
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+
+//////////////////////////////////////////////////////////////
+// GROUP COMMENTS
+//////////////////////////////////////////////////////////////
+
+Table group_comments {
+  id integer [pk, increment]
+
+  group_post_id integer [not null]
+  user_id integer [not null]
+
+  content text
+
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+
+Table group_comment_media {
+  id integer [pk, increment]
+
+  group_comment_id integer [not null]
+
+  media_type varchar [
+    not null,
+    note: 'image | gif'
+  ]
+
+  file_path varchar [not null]
+
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+
+//////////////////////////////////////////////////////////////
+// GROUP EVENTS
+//////////////////////////////////////////////////////////////
+
+Table events {
+  id integer [pk, increment]
+
+  group_id integer [not null]
+  created_by integer [not null]
+
+  title varchar [not null]
+  description text [not null]
+
+  event_time datetime [not null]
+
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+
+Table event_responses {
+  id integer [pk, increment]
+
+  event_id integer [not null]
+  user_id integer [not null]
+
+  response varchar [
+    not null,
+    note: 'going | not_going'
+  ]
+
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  indexes {
+    (event_id, user_id) [unique]
+  }
+}
+
+
+//////////////////////////////////////////////////////////////
+// PRIVATE CHAT
+//////////////////////////////////////////////////////////////
+
+Table private_messages {
+  id integer [pk, increment]
+
+  sender_id integer [not null]
+  receiver_id integer [not null]
+
+  content text [not null]
+
+  is_read boolean [not null, default: false]
+
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  read_at datetime
+}
+
+
+//////////////////////////////////////////////////////////////
+// GROUP CHAT
+//////////////////////////////////////////////////////////////
+
+Table group_messages {
+  id integer [pk, increment]
+
+  group_id integer [not null]
+  user_id integer [not null]
+
+  content text [not null]
+
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+
+//////////////////////////////////////////////////////////////
+// NOTIFICATIONS
+//////////////////////////////////////////////////////////////
+
+Table notifications {
+  id integer [pk, increment]
+
+  // Person receiving the notification
+  user_id integer [not null]
+
+  // Person who caused the notification
+  // Can be NULL for system notifications
+  actor_id integer
+
+  notification_type varchar [
+    not null,
+    note: 'follow_request | group_invitation | group_join_request | group_event'
+  ]
+
+  // What resource the notification belongs to
+  reference_type varchar [
+    note: 'follow_request | group_invitation | group_join_request | event'
+  ]
+
+  reference_id integer
+
+  message text
+
+  is_read boolean [not null, default: false]
+
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  read_at datetime
+}
+
+
+//////////////////////////////////////////////////////////////
+// RELATIONSHIPS
+//////////////////////////////////////////////////////////////
+
+
+// USER -> SESSIONS
+Ref: sessions.user_id > users.id
+
+
+// USER -> FOLLOWERS
+Ref: followers.follower_id > users.id
+Ref: followers.following_id > users.id
+
+
+// USER -> FOLLOW REQUESTS
+Ref: follow_requests.requester_id > users.id
+Ref: follow_requests.target_id > users.id
+
+
+// USER -> POSTS
+Ref: posts.user_id > users.id
+
+
+// PRIVATE POST ALLOWED USERS
+Ref: post_allowed_users.post_id > posts.id
+Ref: post_allowed_users.user_id > users.id
+
+
+// POST MEDIA
+Ref: post_media.post_id > posts.id
+
+
+// COMMENTS
+Ref: comments.post_id > posts.id
+Ref: comments.user_id > users.id
+
+
+// COMMENT MEDIA
+Ref: comment_media.comment_id > comments.id
+
+
+// GROUP CREATOR
+Ref: groups.creator_id > users.id
+
+
+// GROUP MEMBERS
+Ref: group_members.group_id > groups.id
+Ref: group_members.user_id > users.id
+
+
+// GROUP INVITATIONS
+Ref: group_invitations.group_id > groups.id
+Ref: group_invitations.invited_by > users.id
+Ref: group_invitations.invited_user_id > users.id
+
+
+// GROUP JOIN REQUESTS
+Ref: group_join_requests.group_id > groups.id
+Ref: group_join_requests.user_id > users.id
+
+
+// GROUP POSTS
+Ref: group_posts.group_id > groups.id
+Ref: group_posts.user_id > users.id
+
+
+// GROUP POST MEDIA
+Ref: group_post_media.group_post_id > group_posts.id
+
+
+// GROUP COMMENTS
+Ref: group_comments.group_post_id > group_posts.id
+Ref: group_comments.user_id > users.id
+
+
+// GROUP COMMENT MEDIA
+Ref: group_comment_media.group_comment_id > group_comments.id
+
+
+// EVENTS
+Ref: events.group_id > groups.id
+Ref: events.created_by > users.id
+
+
+// EVENT RESPONSES
+Ref: event_responses.event_id > events.id
+Ref: event_responses.user_id > users.id
+
+
+// PRIVATE MESSAGES
+Ref: private_messages.sender_id > users.id
+Ref: private_messages.receiver_id > users.id
+
+
+// GROUP MESSAGES
+Ref: group_messages.group_id > groups.id
+Ref: group_messages.user_id > users.id
+
+
+// NOTIFICATIONS
+Ref: notifications.user_id > users.id
+Ref: notifications.actor_id > users.id
