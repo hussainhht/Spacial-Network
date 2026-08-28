@@ -75,9 +75,10 @@ func NewRouter(db *sql.DB, cfg config.Config) (http.Handler, error) {
 	// =========================
 
 	// TODO: Register Notifications routes here once the Notifications handler is implemented.
+	handler := middleware.CORS(apiMux)
 
 	mux := http.NewServeMux()
-	mux.Handle("/api/", http.StripPrefix("/api", apiMux))
+	mux.Handle("/api/", http.StripPrefix("/api", handler))
 	mux.Handle(
 		"/uploads/",
 		http.StripPrefix("/uploads/", http.FileServer(http.Dir(cfg.UploadsDir))),
