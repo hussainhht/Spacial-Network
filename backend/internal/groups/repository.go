@@ -104,6 +104,25 @@ func (r *Repository) GetMembership(groupID, userID int) (*GroupMember, error) {
 	return &m, nil
 }
 
+// AddMember adds userID to groupID as a regular member. Returns
+// ErrAlreadyMember if userID is already a member of groupID.
+func (r *Repository) AddMember(groupID, userID int) error {
+	member, err := r.GetMembership(groupID, userID)
+	if err != nil {
+		return err
+	}
+	if member != nil {
+		return ErrAlreadyMember
+	}
+
+	_, err = r.db.Exec(
+		`INSERT INTO group_members (group_id, user_id, role) VALUES (?, ?, 'member')`,
+		groupID,
+		userID,
+	)
+	return err
+}
+
 // GetGroupByID returns the group with the given ID, or ErrGroupNotFound if
 // it doesn't exist.
 func (r *Repository) GetGroupByID(id int) (*Group, error) {

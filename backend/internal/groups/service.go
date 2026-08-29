@@ -61,3 +61,11 @@ func (s *Service) IsGroupCreator(groupID, userID int) (bool, error) {
 	}
 	return group.CreatorID == userID, nil
 }
+
+
+func (s *Service) AddMember(groupID, userID int) error {
+	if _, err := s.repo.GetGroupByID(groupID); err != nil {
+		return err
+	}
+	return s.repo.AddMember(groupID, userID)
+}
