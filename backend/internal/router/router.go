@@ -64,7 +64,7 @@ func NewRouter(db *sql.DB, cfg config.Config) (http.Handler, error) {
 
 	apiMux.Handle(
 		"/groups",
-		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.CreateGroupHandler)),
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.GroupsHandler)),
 	)
 
 	// =========================

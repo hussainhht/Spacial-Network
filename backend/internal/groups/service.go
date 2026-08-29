@@ -14,3 +14,8 @@ func NewService(repo *Repository) *Service {
 func (s *Service) CreateGroup(creatorID int, title, description string) (int64, error) {
 	return s.repo.InsertGroup(creatorID, title, description)
 }
+
+// GetAllGroups returns a page of groups, most recently created first.
+func (s *Service) GetAllGroups(limit, offset int) ([]Group, error) {
+	return s.repo.GetAllGroups(limit, offset)
+}

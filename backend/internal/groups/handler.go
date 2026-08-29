@@ -3,6 +3,7 @@ package groups
 import (
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"social/internal/auth"
 )
@@ -18,6 +19,21 @@ type CreateGroupResponse struct {
 	GroupID int64  `json:"group_id,omitempty"`
 }
 
+type GroupResponse struct {
+	ID          int    `json:"id"`
+	CreatorID   int    `json:"creator_id"`
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	CreatedAt   string `json:"created_at"`
+	UpdatedAt   string `json:"updated_at"`
+}
+
+type ListGroupsResponse struct {
+	Success bool            `json:"success"`
+	Message string          `json:"message,omitempty"`
+	Groups  []GroupResponse `json:"groups,omitempty"`
+}
+
 type Handler struct {
 	service *Service
 }
@@ -28,17 +44,25 @@ func NewHandler(service *Service) *Handler {
 	}
 }
 
-func (h *Handler) CreateGroupHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
-	if r.Method != http.MethodPost {
+// GroupsHandler dispatches requests on the /groups route by method.
+func (h *Handler) GroupsHandler(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		h.ListGroupsHandler(w, r)
+	case http.MethodPost:
+		h.CreateGroupHandler(w, r)
+	default:
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		json.NewEncoder(w).Encode(CreateGroupResponse{
 			Success: false,
 			Message: "Method not allowed",
 		})
-		return
 	}
+}
+
+func (h *Handler) CreateGroupHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 
 	userID, ok := r.Context().Value(auth.UserIDKey).(int)
 	if !ok {
@@ -95,5 +119,56 @@ func (h *Handler) CreateGroupHandler(w http.ResponseWriter, r *http.Request) {
 		Success: true,
 		Message: "Group created successfully",
 		GroupID: groupID,
+	})
+}
+
+func (h *Handler) ListGroupsHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	if _, ok := r.Context().Value(auth.UserIDKey).(int); !ok {
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(ListGroupsResponse{
+			Success: false,
+			Message: "Not logged in",
+		})
+		return
+	}
+
+	limit, offset, err := ValidatePagination(r.URL.Query().Get("limit"), r.URL.Query().Get("offset"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(ListGroupsResponse{
+			Success: false,
+			Message: err.Error(),
+		})
+		return
+	}
+
+	groupsList, err := h.service.GetAllGroups(limit, offset)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(ListGroupsResponse{
+			Success: false,
+			Message: "Failed to get groups",
+		})
+		return
+	}
+
+	resp := make([]GroupResponse, len(groupsList))
+	for i, g := range groupsList {
+		resp[i] = GroupResponse{
+			ID:          g.ID,
+			CreatorID:   g.CreatorID,
+			Title:       g.Title,
+			Description: g.Description,
+			CreatedAt:   g.CreatedAt.Format(time.RFC3339),
+			UpdatedAt:   g.UpdatedAt.Format(time.RFC3339),
+		}
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(ListGroupsResponse{
+		Success: true,
+		Groups:  resp,
 	})
 }

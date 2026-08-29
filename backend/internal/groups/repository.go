@@ -53,3 +53,30 @@ func (r *Repository) InsertGroup(creatorID int, title, description string) (int6
 
 	return groupID, nil
 }
+
+// GetAllGroups returns a page of groups, most recently created first.
+func (r *Repository) GetAllGroups(limit, offset int) ([]Group, error) {
+	rows, err := r.db.Query(
+		`SELECT id, creator_id, title, description, created_at, updated_at
+		 FROM groups
+		 ORDER BY created_at DESC
+		 LIMIT ? OFFSET ?`,
+		limit,
+		offset,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	result := make([]Group, 0)
+	for rows.Next() {
+		var g Group
+		if err := rows.Scan(&g.ID, &g.CreatorID, &g.Title, &g.Description, &g.CreatedAt, &g.UpdatedAt); err != nil {
+			return nil, err
+		}
+		result = append(result, g)
+	}
+
+	return result, rows.Err()
+}
