@@ -170,6 +170,7 @@ export default function RegisterPage() {
         <button type="submit" disabled={loading}>
           {loading ? "Creating account..." : "Register"}
         </button>
+        <a href="/login">Already have an account? Login</a>
       </form>
     </main>
   );

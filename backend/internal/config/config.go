@@ -28,7 +28,7 @@ func Load() Config {
 	return Config{
 		ServerPort: serverPort,
 
-		DBDir:  "data",
+		DBDir:  "../../data",
 		DBFile: "social-network.db",
 
 		SessionCookieName: "session_token",
