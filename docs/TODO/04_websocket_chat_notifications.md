@@ -1,9 +1,11 @@
 # Person 4 — WebSocket, Chat & Notifications
 
 ## Main Responsibility
+
 Own the real-time communication layer, Private Chat, Group Chat, and Notification infrastructure.
 
 This includes:
+
 - Database migrations
 - WebSocket backend
 - Chat APIs/history
@@ -18,6 +20,7 @@ Authentication, Docker, and final project-wide integration are not included in t
 ## 1. WebSocket Core
 
 ### Backend
+
 - [ ] Create WebSocket endpoint
 - [ ] Upgrade HTTP connection to WebSocket
 - [ ] Identify/authenticate the connected user using the existing session system
@@ -45,6 +48,7 @@ WebSocket Hub
 ```
 
 ### Frontend
+
 - [ ] Create WebSocket client connection
 - [ ] Connect after the user is authenticated
 - [ ] Handle incoming WebSocket messages
@@ -56,7 +60,8 @@ WebSocket Hub
 ## 2. Private Chat
 
 ### Database
-- [ ] Create `private_messages` table migration
+
+- [X] Create `private_messages` table migration
 - [ ] Store sender ID
 - [ ] Store receiver ID
 - [ ] Store message content
@@ -64,6 +69,7 @@ WebSocket Hub
 - [ ] Create matching `.down.sql` migration
 
 ### Backend
+
 - [ ] Send private message
 - [ ] Receive private messages in real time
 - [ ] Save messages to SQLite
@@ -78,11 +84,13 @@ WebSocket Hub
 - [ ] Keep stored messages available when a user reconnects
 
 ### Chat Permission
+
 - [ ] Implement the project's follow/profile-based messaging rules
 - [ ] Prevent unauthorized private messaging
 - [ ] Keep permission logic outside the raw WebSocket transport when possible
 
 ### Frontend
+
 - [ ] Create private Chat page or panel
 - [ ] Display conversation history
 - [ ] Display sender and receiver messages correctly
@@ -97,6 +105,7 @@ WebSocket Hub
 ## 3. Group Chat
 
 ### Database
+
 - [ ] Create `group_messages` table migration
 - [ ] Store group ID
 - [ ] Store sender/user ID
@@ -105,6 +114,7 @@ WebSocket Hub
 - [ ] Create matching `.down.sql` migration
 
 ### Backend
+
 - [ ] Send a message to a group chat
 - [ ] Save group messages to SQLite
 - [ ] Load group chat history
@@ -115,6 +125,7 @@ WebSocket Hub
 - [ ] Reuse group membership logic from Person 1
 
 ### Frontend
+
 - [ ] Add Group Chat UI
 - [ ] Display previous group messages
 - [ ] Add group message input
@@ -131,6 +142,7 @@ Person 4 owns the notification system itself.
 Other features create/trigger notifications when their own actions happen.
 
 ### Database
+
 - [ ] Create `notifications` table migration
 - [ ] Store receiver/user ID
 - [ ] Store notification type
@@ -141,6 +153,7 @@ Other features create/trigger notifications when their own actions happen.
 - [ ] Create matching `.down.sql` migration
 
 ### Backend
+
 - [ ] Create notification service
 - [ ] Create/store notification
 - [ ] Get notifications for the current user
@@ -153,12 +166,14 @@ Other features create/trigger notifications when their own actions happen.
 - [ ] Keep notification events separate from private chat messages
 
 ### Required Notification Types
+
 - [ ] Follow Request
 - [ ] Group Invitation
 - [ ] Group Join Request
 - [ ] New Group Event
 
 ### Frontend
+
 - [ ] Create global Notifications UI
 - [ ] Make notifications accessible from every page
 - [ ] Display unread count
@@ -172,6 +187,7 @@ Other features create/trigger notifications when their own actions happen.
 ## 5. Responsibility Boundary for Notifications
 
 Person 4 should NOT implement the business logic for:
+
 - Follow requests
 - Group invitations
 - Group join requests
@@ -210,13 +226,16 @@ Send Real-Time Notification
 ## 6. Dependencies on Other Team Members
 
 From Person 1:
+
 - [ ] Use shared group membership checks for Group Chat
 
 From Person 3:
+
 - [ ] Use follower relationship checks for Private Chat
 - [ ] Use profile privacy information when required by the messaging rules
 
 For Persons 1 and 3:
+
 - [ ] Provide a simple notification service/API they can call from their features
 
 ---
