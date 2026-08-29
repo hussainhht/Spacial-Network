@@ -101,3 +101,30 @@ func (r *Repository) GetGroupByID(id int) (*Group, error) {
 
 	return &g, nil
 }
+
+// GetGroupMembers returns the members of a group, earliest joined first.
+func (r *Repository) GetGroupMembers(groupID int) ([]GroupMember, error) {
+	rows, err := r.db.Query(
+		`SELECT gm.user_id, u.username, gm.role, gm.joined_at
+		 FROM group_members gm
+		 JOIN users u ON u.id = gm.user_id
+		 WHERE gm.group_id = ?
+		 ORDER BY gm.joined_at ASC`,
+		groupID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	result := make([]GroupMember, 0)
+	for rows.Next() {
+		var m GroupMember
+		if err := rows.Scan(&m.UserID, &m.Username, &m.Role, &m.JoinedAt); err != nil {
+			return nil, err
+		}
+		result = append(result, m)
+	}
+
+	return result, rows.Err()
+}

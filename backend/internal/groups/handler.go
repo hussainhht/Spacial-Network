@@ -52,6 +52,28 @@ func toGroupResponse(g *Group) GroupResponse {
 	}
 }
 
+type GroupMemberResponse struct {
+	UserID   int    `json:"user_id"`
+	Username string `json:"username"`
+	Role     string `json:"role"`
+	JoinedAt string `json:"joined_at"`
+}
+
+type GetGroupMembersResponse struct {
+	Success bool                  `json:"success"`
+	Message string                `json:"message,omitempty"`
+	Members []GroupMemberResponse `json:"members,omitempty"`
+}
+
+func toGroupMemberResponse(m GroupMember) GroupMemberResponse {
+	return GroupMemberResponse{
+		UserID:   m.UserID,
+		Username: m.Username,
+		Role:     m.Role,
+		JoinedAt: m.JoinedAt.Format(time.RFC3339),
+	}
+}
+
 type Handler struct {
 	service *Service
 }
@@ -238,5 +260,66 @@ func (h *Handler) GetGroupHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(GetGroupResponse{
 		Success: true,
 		Group:   &groupResp,
+	})
+}
+
+func (h *Handler) GetGroupMembersHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		json.NewEncoder(w).Encode(GetGroupMembersResponse{
+			Success: false,
+			Message: "Method not allowed",
+		})
+		return
+	}
+
+	if _, ok := r.Context().Value(auth.UserIDKey).(int); !ok {
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(GetGroupMembersResponse{
+			Success: false,
+			Message: "Not logged in",
+		})
+		return
+	}
+
+	groupID, err := ValidateGroupID(r.PathValue("id"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(GetGroupMembersResponse{
+			Success: false,
+			Message: err.Error(),
+		})
+		return
+	}
+
+	members, err := h.service.GetGroupMembers(groupID)
+	if err != nil {
+		if errors.Is(err, ErrGroupNotFound) {
+			w.WriteHeader(http.StatusNotFound)
+			json.NewEncoder(w).Encode(GetGroupMembersResponse{
+				Success: false,
+				Message: "Group not found",
+			})
+			return
+		}
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(GetGroupMembersResponse{
+			Success: false,
+			Message: "Failed to get group members",
+		})
+		return
+	}
+
+	resp := make([]GroupMemberResponse, len(members))
+	for i, m := range members {
+		resp[i] = toGroupMemberResponse(m)
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(GetGroupMembersResponse{
+		Success: true,
+		Members: resp,
 	})
 }

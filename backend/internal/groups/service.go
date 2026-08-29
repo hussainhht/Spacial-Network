@@ -24,3 +24,12 @@ func (s *Service) GetAllGroups(limit, offset int) ([]Group, error) {
 func (s *Service) GetGroupByID(id int) (*Group, error) {
 	return s.repo.GetGroupByID(id)
 }
+
+// GetGroupMembers returns the members of a group, or ErrGroupNotFound if the
+// group doesn't exist.
+func (s *Service) GetGroupMembers(groupID int) ([]GroupMember, error) {
+	if _, err := s.repo.GetGroupByID(groupID); err != nil {
+		return nil, err
+	}
+	return s.repo.GetGroupMembers(groupID)
+}
