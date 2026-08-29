@@ -81,6 +81,29 @@ func (r *Repository) GetAllGroups(limit, offset int) ([]Group, error) {
 	return result, rows.Err()
 }
 
+// GetMembership returns userID's membership row in groupID, or nil (with no
+// error) if they are not a member.
+func (r *Repository) GetMembership(groupID, userID int) (*GroupMember, error) {
+	var m GroupMember
+
+	err := r.db.QueryRow(
+		`SELECT gm.user_id, u.username, gm.role, gm.joined_at
+		 FROM group_members gm
+		 JOIN users u ON u.id = gm.user_id
+		 WHERE gm.group_id = ? AND gm.user_id = ?`,
+		groupID,
+		userID,
+	).Scan(&m.UserID, &m.Username, &m.Role, &m.JoinedAt)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &m, nil
+}
+
 // GetGroupByID returns the group with the given ID, or ErrGroupNotFound if
 // it doesn't exist.
 func (r *Repository) GetGroupByID(id int) (*Group, error) {

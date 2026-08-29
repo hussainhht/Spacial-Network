@@ -65,6 +65,13 @@ type GetGroupMembersResponse struct {
 	Members []GroupMemberResponse `json:"members,omitempty"`
 }
 
+type MembershipResponse struct {
+	Success  bool   `json:"success"`
+	Message  string `json:"message,omitempty"`
+	IsMember bool   `json:"is_member"`
+	Role     string `json:"role,omitempty"`
+}
+
 func toGroupMemberResponse(m GroupMember) GroupMemberResponse {
 	return GroupMemberResponse{
 		UserID:   m.UserID,
@@ -322,4 +329,63 @@ func (h *Handler) GetGroupMembersHandler(w http.ResponseWriter, r *http.Request)
 		Success: true,
 		Members: resp,
 	})
+}
+
+func (h *Handler) GetMembershipHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		json.NewEncoder(w).Encode(MembershipResponse{
+			Success: false,
+			Message: "Method not allowed",
+		})
+		return
+	}
+
+	userID, ok := r.Context().Value(auth.UserIDKey).(int)
+	if !ok {
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(MembershipResponse{
+			Success: false,
+			Message: "Not logged in",
+		})
+		return
+	}
+
+	groupID, err := ValidateGroupID(r.PathValue("id"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(MembershipResponse{
+			Success: false,
+			Message: err.Error(),
+		})
+		return
+	}
+
+	member, err := h.service.GetMembership(groupID, userID)
+	if err != nil {
+		if errors.Is(err, ErrGroupNotFound) {
+			w.WriteHeader(http.StatusNotFound)
+			json.NewEncoder(w).Encode(MembershipResponse{
+				Success: false,
+				Message: "Group not found",
+			})
+			return
+		}
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(MembershipResponse{
+			Success: false,
+			Message: "Failed to get membership status",
+		})
+		return
+	}
+
+	resp := MembershipResponse{Success: true, IsMember: member != nil}
+	if member != nil {
+		resp.Role = member.Role
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(resp)
 }
