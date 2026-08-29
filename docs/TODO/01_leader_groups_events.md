@@ -23,10 +23,10 @@ Authentication, Docker, and final project-wide integration are not included in t
 - [x] Create matching `.down.sql` migrations
 
 ### Backend
-- [ ] Create a group
-- [ ] Store group title
-- [ ] Store group description
-- [ ] Store group creator/owner
+- [x] Create a group
+- [x] Store group title
+- [x] Store group description
+- [x] Store group creator/owner
 - [ ] Automatically add the creator as a group member
 - [ ] Get all groups
 - [ ] Get a group by ID

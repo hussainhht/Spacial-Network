@@ -14,9 +14,17 @@ func NewRepository(db *sql.DB) *Repository {
 	}
 }
 
-// InsertGroup creates a new group and returns its generated ID.
+// InsertGroup creates a new group, adds the creator as a group member, and
+// returns the new group's ID. Both writes happen in a single transaction so
+// a group is never left without its creator as a member.
 func (r *Repository) InsertGroup(creatorID int, title, description string) (int64, error) {
-	result, err := r.db.Exec(
+	tx, err := r.db.Begin()
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback()
+
+	result, err := tx.Exec(
 		`INSERT INTO groups (creator_id, title, description) VALUES (?, ?, ?)`,
 		creatorID,
 		title,
@@ -26,5 +34,22 @@ func (r *Repository) InsertGroup(creatorID int, title, description string) (int6
 		return 0, err
 	}
 
-	return result.LastInsertId()
+	groupID, err := result.LastInsertId()
+	if err != nil {
+		return 0, err
+	}
+
+	if _, err := tx.Exec(
+		`INSERT INTO group_members (group_id, user_id, role) VALUES (?, ?, 'creator')`,
+		groupID,
+		creatorID,
+	); err != nil {
+		return 0, err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return 0, err
+	}
+
+	return groupID, nil
 }
