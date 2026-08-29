@@ -28,7 +28,7 @@ Authentication, Docker, and final project-wide integration are not included in t
 
 ### Backend
 
-- [ ] Create a group
+- [X] Create a group
 - [ ] Store group title
 - [ ] Store group description
 - [ ] Store group creator/owner
