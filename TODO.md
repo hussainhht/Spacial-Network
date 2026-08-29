@@ -35,8 +35,8 @@ Authentication, Docker, and final project-wide integration are not included in t
 - [X] Get all groups
 - [X] Get a group by ID
 - [X] Get group members
-- [ ] Check whether a user is a group member
-- [ ] Check whether a user is the group creator
+- [X] Check whether a user is a group member
+- [X] Check whether a user is the group creator
 - [ ] Prevent invalid or duplicate membership records
 - [X] Validate required group data
 - [X] Return proper HTTP errors

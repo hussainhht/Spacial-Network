@@ -1,5 +1,7 @@
 package groups
 
+import "errors"
+
 type Service struct {
 	repo *Repository
 }
@@ -34,7 +36,6 @@ func (s *Service) GetGroupMembers(groupID int) ([]GroupMember, error) {
 	return s.repo.GetGroupMembers(groupID)
 }
 
-
 func (s *Service) IsGroupMember(groupID, userID int) (bool, error) {
 	member, err := s.repo.GetMembership(groupID, userID)
 	if err != nil {
@@ -43,10 +44,20 @@ func (s *Service) IsGroupMember(groupID, userID int) (bool, error) {
 	return member != nil, nil
 }
 
-
 func (s *Service) GetMembership(groupID, userID int) (*GroupMember, error) {
 	if _, err := s.repo.GetGroupByID(groupID); err != nil {
 		return nil, err
 	}
 	return s.repo.GetMembership(groupID, userID)
+}
+
+func (s *Service) IsGroupCreator(groupID, userID int) (bool, error) {
+	group, err := s.repo.GetGroupByID(groupID)
+	if err != nil {
+		if errors.Is(err, ErrGroupNotFound) {
+			return false, nil
+		}
+		return false, err
+	}
+	return group.CreatorID == userID, nil
 }
