@@ -19,8 +19,8 @@ Authentication, Docker, and final project-wide integration are not included in t
 ### Database
 - [x] Create `groups` table migration
 - [x] Create `group_members` table migration
-- [ ] Add proper foreign keys and constraints
-- [ ] Create matching `.down.sql` migrations
+- [x] Add proper foreign keys and constraints
+- [x] Create matching `.down.sql` migrations
 
 ### Backend
 - [ ] Create a group
