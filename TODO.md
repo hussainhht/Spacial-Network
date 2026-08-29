@@ -20,26 +20,26 @@ Authentication, Docker, and final project-wide integration are not included in t
 
 ### Database
 
-- [x] Create `groups` table migration
-- [x] Create `group_members` table migration
-- [x] Add proper foreign keys and constraints
-- [x] Create matching `.down.sql` migrations
+- [X] Create `groups` table migration
+- [X] Create `group_members` table migration
+- [X] Add proper foreign keys and constraints
+- [X] Create matching `.down.sql` migrations
 
 ### Backend
 
-- [x] Create a group
-- [x] Store group title
-- [x] Store group description
-- [x] Store group creator/owner
-- [x] Automatically add the creator as a group member
-- [ ] Get all groups
-- [ ] Get a group by ID
+- [X] Create a group
+- [X] Store group title
+- [X] Store group description
+- [X] Store group creator/owner
+- [X] Automatically add the creator as a group member
+- [X] Get all groups
+- [X] Get a group by ID
 - [ ] Get group members
 - [ ] Check whether a user is a group member
 - [ ] Check whether a user is the group creator
 - [ ] Prevent invalid or duplicate membership records
-- [x] Validate required group data
-- [x] Return proper HTTP errors
+- [X] Validate required group data
+- [X] Return proper HTTP errors
 
 ### Frontend
 

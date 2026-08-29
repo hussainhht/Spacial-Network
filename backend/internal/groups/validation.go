@@ -58,3 +58,12 @@ func ValidatePagination(limitParam, offsetParam string) (limit int, offset int, 
 
 	return limit, offset, nil
 }
+
+// ValidateGroupID parses and validates a group ID taken from a URL path.
+func ValidateGroupID(idParam string) (int, error) {
+	id, err := strconv.Atoi(idParam)
+	if err != nil || id <= 0 {
+		return 0, errors.New("group id must be a positive integer")
+	}
+	return id, nil
+}

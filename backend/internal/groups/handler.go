@@ -2,6 +2,7 @@ package groups
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"time"
 
@@ -32,6 +33,23 @@ type ListGroupsResponse struct {
 	Success bool            `json:"success"`
 	Message string          `json:"message,omitempty"`
 	Groups  []GroupResponse `json:"groups,omitempty"`
+}
+
+type GetGroupResponse struct {
+	Success bool           `json:"success"`
+	Message string         `json:"message,omitempty"`
+	Group   *GroupResponse `json:"group,omitempty"`
+}
+
+func toGroupResponse(g *Group) GroupResponse {
+	return GroupResponse{
+		ID:          g.ID,
+		CreatorID:   g.CreatorID,
+		Title:       g.Title,
+		Description: g.Description,
+		CreatedAt:   g.CreatedAt.Format(time.RFC3339),
+		UpdatedAt:   g.UpdatedAt.Format(time.RFC3339),
+	}
 }
 
 type Handler struct {
@@ -156,19 +174,69 @@ func (h *Handler) ListGroupsHandler(w http.ResponseWriter, r *http.Request) {
 
 	resp := make([]GroupResponse, len(groupsList))
 	for i, g := range groupsList {
-		resp[i] = GroupResponse{
-			ID:          g.ID,
-			CreatorID:   g.CreatorID,
-			Title:       g.Title,
-			Description: g.Description,
-			CreatedAt:   g.CreatedAt.Format(time.RFC3339),
-			UpdatedAt:   g.UpdatedAt.Format(time.RFC3339),
-		}
+		resp[i] = toGroupResponse(&g)
 	}
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(ListGroupsResponse{
 		Success: true,
 		Groups:  resp,
+	})
+}
+
+func (h *Handler) GetGroupHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		json.NewEncoder(w).Encode(GetGroupResponse{
+			Success: false,
+			Message: "Method not allowed",
+		})
+		return
+	}
+
+	if _, ok := r.Context().Value(auth.UserIDKey).(int); !ok {
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(GetGroupResponse{
+			Success: false,
+			Message: "Not logged in",
+		})
+		return
+	}
+
+	groupID, err := ValidateGroupID(r.PathValue("id"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(GetGroupResponse{
+			Success: false,
+			Message: err.Error(),
+		})
+		return
+	}
+
+	group, err := h.service.GetGroupByID(groupID)
+	if err != nil {
+		if errors.Is(err, ErrGroupNotFound) {
+			w.WriteHeader(http.StatusNotFound)
+			json.NewEncoder(w).Encode(GetGroupResponse{
+				Success: false,
+				Message: "Group not found",
+			})
+			return
+		}
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(GetGroupResponse{
+			Success: false,
+			Message: "Failed to get group",
+		})
+		return
+	}
+
+	groupResp := toGroupResponse(group)
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(GetGroupResponse{
+		Success: true,
+		Group:   &groupResp,
 	})
 }

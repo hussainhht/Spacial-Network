@@ -80,3 +80,24 @@ func (r *Repository) GetAllGroups(limit, offset int) ([]Group, error) {
 
 	return result, rows.Err()
 }
+
+// GetGroupByID returns the group with the given ID, or ErrGroupNotFound if
+// it doesn't exist.
+func (r *Repository) GetGroupByID(id int) (*Group, error) {
+	var g Group
+
+	err := r.db.QueryRow(
+		`SELECT id, creator_id, title, description, created_at, updated_at
+		 FROM groups
+		 WHERE id = ?`,
+		id,
+	).Scan(&g.ID, &g.CreatorID, &g.Title, &g.Description, &g.CreatedAt, &g.UpdatedAt)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, ErrGroupNotFound
+		}
+		return nil, err
+	}
+
+	return &g, nil
+}

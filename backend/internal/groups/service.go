@@ -19,3 +19,8 @@ func (s *Service) CreateGroup(creatorID int, title, description string) (int64, 
 func (s *Service) GetAllGroups(limit, offset int) ([]Group, error) {
 	return s.repo.GetAllGroups(limit, offset)
 }
+
+// GetGroupByID returns the group with the given ID.
+func (s *Service) GetGroupByID(id int) (*Group, error) {
+	return s.repo.GetGroupByID(id)
+}

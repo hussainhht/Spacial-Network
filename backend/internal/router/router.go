@@ -66,6 +66,10 @@ func NewRouter(db *sql.DB, cfg config.Config) (http.Handler, error) {
 		"/groups",
 		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.GroupsHandler)),
 	)
+	apiMux.Handle(
+		"/groups/{id}",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.GetGroupHandler)),
+	)
 
 	// =========================
 	// Chat Routes - Future
