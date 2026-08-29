@@ -34,7 +34,7 @@ Authentication, Docker, and final project-wide integration are not included in t
 - [X] Automatically add the creator as a group member
 - [X] Get all groups
 - [X] Get a group by ID
-- [ ] Get group members
+- [X] Get group members
 - [ ] Check whether a user is a group member
 - [ ] Check whether a user is the group creator
 - [ ] Prevent invalid or duplicate membership records
