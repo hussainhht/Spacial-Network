@@ -6,3 +6,8 @@ export interface Group {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface CreateGroupInput {
+  title: string;
+  description: string;
+}

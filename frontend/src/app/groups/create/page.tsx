@@ -1,9 +1,11 @@
-import type { Metadata } from "next";
-
-export const metadata: Metadata = {
-  title: "Create Group | Social Network",
-};
+import CreateGroupForm from "@/features/groups/components/CreateGroupForm";
 
 export default function CreateGroupPage() {
-  // return <CreateGroupForm />;
+  return (
+    <main>
+      <h1>Create Group</h1>
+
+      <CreateGroupForm />
+    </main>
+  );
 }

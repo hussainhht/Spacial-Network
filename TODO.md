@@ -43,11 +43,11 @@ Authentication, Docker, and final project-wide integration are not included in t
 
 ### Frontend
 
-- [ ] Create Groups page
-- [ ] Display all groups
-- [ ] Create Group form
+- [X] Create Groups page
+- [X] Display all groups
+- [X] Create Group form
 - [ ] Group details page
-- [ ] Display title and description
+- [X] Display title and description
 - [ ] Display group creator
 - [ ] Display group members
 - [ ] Show correct actions depending on membership state
