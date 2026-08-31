@@ -11,3 +11,12 @@ CHAT_WS_STEPS.md
 .env
 .env.*
 !.env.example
+
+# Dependencies & Build artifacts
+node_modules/
+node_modules
+.next/
+dist/
+build/
+
+dev/
