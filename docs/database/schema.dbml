@@ -11,6 +11,8 @@
 Table users {
   id integer [pk, increment]
 
+  username varchar [not null, unique]
+  uuid varchar [not null, unique]
   email varchar [not null, unique]
   password_hash varchar [not null]
 
