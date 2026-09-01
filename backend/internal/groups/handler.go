@@ -9,38 +9,6 @@ import (
 	"social/internal/auth"
 )
 
-type CreateGroupRequest struct {
-	Title       string `json:"title"`
-	Description string `json:"description"`
-}
-
-type CreateGroupResponse struct {
-	Success bool   `json:"success"`
-	Message string `json:"message"`
-	GroupID int64  `json:"group_id,omitempty"`
-}
-
-type GroupResponse struct {
-	ID          int    `json:"id"`
-	CreatorID   int    `json:"creator_id"`
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	CreatedAt   string `json:"created_at"`
-	UpdatedAt   string `json:"updated_at"`
-}
-
-type ListGroupsResponse struct {
-	Success bool            `json:"success"`
-	Message string          `json:"message,omitempty"`
-	Groups  []GroupResponse `json:"groups,omitempty"`
-}
-
-type GetGroupResponse struct {
-	Success bool           `json:"success"`
-	Message string         `json:"message,omitempty"`
-	Group   *GroupResponse `json:"group,omitempty"`
-}
-
 func toGroupResponse(g *Group) GroupResponse {
 	return GroupResponse{
 		ID:          g.ID,
@@ -52,26 +20,6 @@ func toGroupResponse(g *Group) GroupResponse {
 	}
 }
 
-type GroupMemberResponse struct {
-	UserID   int    `json:"user_id"`
-	Username string `json:"username"`
-	Role     string `json:"role"`
-	JoinedAt string `json:"joined_at"`
-}
-
-type GetGroupMembersResponse struct {
-	Success bool                  `json:"success"`
-	Message string                `json:"message,omitempty"`
-	Members []GroupMemberResponse `json:"members,omitempty"`
-}
-
-type MembershipResponse struct {
-	Success  bool   `json:"success"`
-	Message  string `json:"message,omitempty"`
-	IsMember bool   `json:"is_member"`
-	Role     string `json:"role,omitempty"`
-}
-
 func toGroupMemberResponse(m GroupMember) GroupMemberResponse {
 	return GroupMemberResponse{
 		UserID:   m.UserID,
@@ -79,10 +27,6 @@ func toGroupMemberResponse(m GroupMember) GroupMemberResponse {
 		Role:     m.Role,
 		JoinedAt: m.JoinedAt.Format(time.RFC3339),
 	}
-}
-
-type Handler struct {
-	service *Service
 }
 
 func NewHandler(service *Service) *Handler {
