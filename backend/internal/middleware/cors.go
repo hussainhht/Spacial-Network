@@ -22,7 +22,7 @@ func CORS(next http.Handler) http.Handler {
 
 		w.Header().Set(
 			"Access-Control-Allow-Headers",
-			"Content-Type, Authorization",
+			"Content-Type, Authorization, Upgrade, Connection",
 		)
 
 		if r.Method == http.MethodOptions {
