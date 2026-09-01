@@ -49,11 +49,11 @@ WebSocket Hub
 
 ### Frontend
 
-- [ ] Create WebSocket client connection
-- [ ] Connect after the user is authenticated
-- [ ] Handle incoming WebSocket messages
-- [ ] Reconnect safely when connection is lost
-- [ ] Route incoming events to Chat or Notifications UI
+- [x] Create WebSocket client connection
+- [x] Connect after the user is authenticated
+- [x] Handle incoming WebSocket messages
+- [x] Reconnect safely when connection is lost
+- [x] Route incoming events to Chat or Notifications UI
 
 ---
 
