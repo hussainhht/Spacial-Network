@@ -1,7 +1,8 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useRef, useState } from "react";
+import React, { createContext, useEffect, useRef, useState } from "react";
 import type {
+  EventType,
   MessagePayload,
   OnlineUsersPayload,
   TypingPayload,
@@ -10,7 +11,7 @@ import type {
   ErrorPayload,
 } from "@/types/websocket";
 
-const WebSocketContext = createContext<WebSocketContextType | undefined>(undefined);
+export const WebSocketContext = createContext<WebSocketContextType | undefined>(undefined);
 
 export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   const [isConnected, setIsConnected] = useState(false);
@@ -101,27 +102,12 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  function sendMessage(recipientID: number, content: string) {
+  function sendEvent(type: EventType, payload: unknown) {
     if (!socketRef.current || socketRef.current.readyState !== WebSocket.OPEN) {
       console.warn("WebSocket is not connected");
       return;
     }
-    socketRef.current.send(
-      JSON.stringify({
-        type: "private_message",
-        payload: { recipient_id: recipientID, content: content.trim() },
-      })
-    );
-  }
-
-  function sendTyping(recipientID: number, isTyping: boolean) {
-    if (!socketRef.current || socketRef.current.readyState !== WebSocket.OPEN) return;
-    socketRef.current.send(
-      JSON.stringify({
-        type: "typing",
-        payload: { recipient_id: recipientID, is_typing: isTyping },
-      })
-    );
+    socketRef.current.send(JSON.stringify({ type, payload }));
   }
 
   return (
@@ -131,19 +117,10 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
         onlineUserIDs,
         lastMessage,
         typingStatus,
-        sendMessage,
-        sendTyping,
+        sendEvent,
       }}
     >
       {children}
     </WebSocketContext.Provider>
   );
-}
-
-export function useWebSocket() {
-  const context = useContext(WebSocketContext);
-  if (!context) {
-    throw new Error("useWebSocket must be used within a WebSocketProvider");
-  }
-  return context;
 }

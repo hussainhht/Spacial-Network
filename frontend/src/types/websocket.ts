@@ -44,6 +44,5 @@ export interface WebSocketContextType {
   onlineUserIDs: number[];
   lastMessage: MessagePayload | null;
   typingStatus: TypingPayload | null;
-  sendMessage: (recipientID: number, content: string) => void;
-  sendTyping: (recipientID: number, isTyping: boolean) => void;
+  sendEvent: (type: EventType, payload: unknown) => void;
 }
