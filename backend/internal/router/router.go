@@ -39,6 +39,7 @@ func NewRouter(db *sql.DB, cfg config.Config) (http.Handler, error) {
 		"/logout",
 		sessionMiddleware(http.HandlerFunc(deps.Handlers.Auth.LogoutHandler)),
 	)
+	apiMux.Handle("/ws", sessionMiddleware(http.HandlerFunc(deps.Handlers.Websocket.ServeWS)))
 
 	// =========================
 	// Posts Routes - Future

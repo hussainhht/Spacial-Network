@@ -4,13 +4,17 @@ import (
 	"database/sql"
 
 	"social/internal/auth"
+	"social/internal/chat"
 	"social/internal/config"
 	"social/internal/upload"
 	"social/internal/users"
+	"social/internal/websocket"
 )
 
 type Handlers struct {
-	Auth *auth.Handler
+	Auth      *auth.Handler
+	Chat      *chat.Handler
+	Websocket *websocket.Handler
 
 	// Future handlers:
 	// TODO: Add Users handler when the users feature exposes one.
@@ -41,6 +45,13 @@ type Dependencies struct {
 }
 
 func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
+	hub := websocket.NewHub()
+	go hub.Run()
+	chatRepo := chat.NewRepository(db)
+	chatService := chat.NewService(chatRepo, hub)
+	chatHandler := chat.NewHandler(chatService)
+	wsHandler := websocket.NewHandler(hub)
+	wsHandler.SetMessageHandler(chatService.HandleIncomingWSMessage)
 	// =========================
 	// Users
 	// =========================
@@ -134,13 +145,13 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 
 	return &Dependencies{
 		Handlers: Handlers{
-			Auth: authHandler,
-
+			Auth:      authHandler,
+			Chat:      chatHandler,
+			Websocket: wsHandler,
 			// Posts:         postsHandler,
 			// Comments:      commentsHandler,
 			// Followers:     followersHandler,
 			// Groups:        groupsHandler,
-			// Chat:          chatHandler,
 			// Notifications: notificationsHandler,
 		},
 		AuthService: authService,

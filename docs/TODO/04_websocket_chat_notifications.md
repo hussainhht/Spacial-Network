@@ -21,21 +21,21 @@ Authentication, Docker, and final project-wide integration are not included in t
 
 ### Backend
 
-- [ ] Create WebSocket endpoint
-- [ ] Upgrade HTTP connection to WebSocket
-- [ ] Identify/authenticate the connected user using the existing session system
-- [ ] Create WebSocket Hub
-- [ ] Register connected users
-- [ ] Unregister disconnected users
-- [ ] Track active connections
-- [ ] Implement read loop
-- [ ] Implement write loop
-- [ ] Handle connection errors
-- [ ] Handle client disconnects safely
-- [ ] Avoid concurrent map/write issues
-- [ ] Support multiple users connected at the same time
-- [ ] Create a clear real-time message/event format
-- [ ] Separate chat events from notification events
+- [x] Create WebSocket endpoint
+- [x] Upgrade HTTP connection to WebSocket
+- [x] Identify/authenticate the connected user using the existing session system
+- [x] Create WebSocket Hub
+- [x] Register connected users
+- [x] Unregister disconnected users
+- [x] Track active connections
+- [x] Implement read loop
+- [x] Implement write loop
+- [x] Handle connection errors
+- [x] Handle client disconnects safely
+- [x] Avoid concurrent map/write issues
+- [x] Support multiple users connected at the same time
+- [x] Create a clear real-time message/event format
+- [x] Separate chat events from notification events
 
 Suggested structure:
 
@@ -61,27 +61,27 @@ WebSocket Hub
 
 ### Database
 
-- [X] Create `private_messages` table migration
-- [ ] Store sender ID
-- [ ] Store receiver ID
-- [ ] Store message content
-- [ ] Store message timestamp
-- [ ] Create matching `.down.sql` migration
+- [x] Create `private_messages` table migration
+- [x] Store sender ID
+- [x] Store receiver ID
+- [x] Store message content
+- [x] Store message timestamp
+- [x] Create matching `.down.sql` migration
 
 ### Backend
 
-- [ ] Send private message
-- [ ] Receive private messages in real time
-- [ ] Save messages to SQLite
-- [ ] Load chat history between two users
-- [ ] Return messages in correct order
-- [ ] Support text messages
-- [ ] Support emojis
-- [ ] Prevent sending empty/invalid messages
+- [x] Send private message
+- [x] Receive private messages in real time
+- [x] Save messages to SQLite
+- [x] Load chat history between two users
+- [x] Return messages in correct order
+- [x] Support text messages
+- [x] Support emojis
+- [x] Prevent sending empty/invalid messages
 - [ ] Check whether messaging is allowed before sending
 - [ ] Reuse follower/profile checks from Person 3
-- [ ] Deliver to connected receiver immediately when allowed
-- [ ] Keep stored messages available when a user reconnects
+- [x] Deliver to connected receiver immediately when allowed
+- [x] Keep stored messages available when a user reconnects
 
 ### Chat Permission
 

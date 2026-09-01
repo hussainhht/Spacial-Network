@@ -6,19 +6,14 @@ import (
 	"sync"
 )
 
-// Hub maintains the set of active connected clients and coordinates message routing.
 type Hub struct {
 	mu sync.RWMutex
-
-	// clients maps a UserID to a set of active connections (supporting multiple tabs/devices)
 	clients map[int64]map[*Client]bool
 
-	// Channels for client lifecycle
 	register   chan *Client
 	unregister chan *Client
 }
 
-// NewHub creates a new initialized WebSocket Hub
 func NewHub() *Hub {
 	return &Hub{
 		clients:    make(map[int64]map[*Client]bool),
@@ -27,7 +22,6 @@ func NewHub() *Hub {
 	}
 }
 
-// Run executes the main Hub event loop in a background goroutine
 func (h *Hub) Run() {
 	for {
 		select {
@@ -38,13 +32,11 @@ func (h *Hub) Run() {
 				userClients = make(map[*Client]bool)
 				h.clients[client.UserID] = userClients
 
-				// User just came online -> notify all other users
 				go h.BroadcastStatus(client.UserID, true)
 			}
 			userClients[client] = true
 			h.mu.Unlock()
 
-			// Send current list of online users to the newly connected client
 			go h.sendInitialOnlineUsers(client)
 
 		case client := <-h.unregister:
@@ -54,7 +46,6 @@ func (h *Hub) Run() {
 					delete(userClients, client)
 					close(client.send)
 
-					// If no more open connections for this user -> mark offline
 					if len(userClients) == 0 {
 						delete(h.clients, client.UserID)
 						go h.BroadcastStatus(client.UserID, false)
@@ -66,17 +57,13 @@ func (h *Hub) Run() {
 	}
 }
 
-// RegisterClient queues a client for registration in the Hub
 func (h *Hub) RegisterClient(client *Client) {
 	h.register <- client
 }
 
-// UnregisterClient queues a client for removal from the Hub
 func (h *Hub) UnregisterClient(client *Client) {
 	h.unregister <- client
 }
-
-// SendToUser dispatches an Event to all active connection tabs of a specific user
 func (h *Hub) SendToUser(userID int64, event Event) {
 	data, err := json.Marshal(event)
 	if err != nil {
@@ -92,7 +79,6 @@ func (h *Hub) SendToUser(userID int64, event Event) {
 			select {
 			case client.send <- data:
 			default:
-				// If client buffer is blocked, close and remove to avoid memory leak
 				close(client.send)
 				delete(userClients, client)
 			}
@@ -100,7 +86,6 @@ func (h *Hub) SendToUser(userID int64, event Event) {
 	}
 }
 
-// SendToUsers sends an event to a list of specific user IDs (e.g. group members)
 func (h *Hub) SendToUsers(userIDs []int64, event Event) {
 	data, err := json.Marshal(event)
 	if err != nil {
@@ -125,7 +110,6 @@ func (h *Hub) SendToUsers(userIDs []int64, event Event) {
 	}
 }
 
-// Broadcast sends an event to every single connected client
 func (h *Hub) Broadcast(event Event) {
 	data, err := json.Marshal(event)
 	if err != nil {
@@ -148,7 +132,6 @@ func (h *Hub) Broadcast(event Event) {
 	}
 }
 
-// BroadcastStatus sends a user_online or user_offline event to all connected clients
 func (h *Hub) BroadcastStatus(userID int64, isOnline bool) {
 	eventType := EventUserOnline
 	if !isOnline {
@@ -166,7 +149,6 @@ func (h *Hub) BroadcastStatus(userID int64, isOnline bool) {
 	h.Broadcast(event)
 }
 
-// GetOnlineUserIDs returns a snapshot list of all currently active user IDs
 func (h *Hub) GetOnlineUserIDs() []int64 {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
@@ -178,7 +160,6 @@ func (h *Hub) GetOnlineUserIDs() []int64 {
 	return ids
 }
 
-// IsUserOnline checks if a user has at least one active connection
 func (h *Hub) IsUserOnline(userID int64) bool {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
@@ -187,7 +168,6 @@ func (h *Hub) IsUserOnline(userID int64) bool {
 	return exists && len(userClients) > 0
 }
 
-// sendInitialOnlineUsers sends the current list of online users directly to a newly connected client
 func (h *Hub) sendInitialOnlineUsers(client *Client) {
 	ids := h.GetOnlineUserIDs()
 
