@@ -23,6 +23,27 @@ interface CreateGroupResponse {
   group?: ApiGroup;
 }
 
+interface GetGroupResponse {
+  success: boolean;
+  message?: string;
+  group?: ApiGroup;
+}
+
+export async function getGroup(groupId: number): Promise<Group> {
+  const response = await fetch(`${API_BASE_URL}/groups/${groupId}`, {
+    method: "GET",
+    credentials: "include",
+  });
+
+  const data: GetGroupResponse = await response.json();
+
+  if (!response.ok || !data.success || !data.group) {
+    throw new Error(data.message ?? "Failed to load group");
+  }
+
+  return toGroup(data.group);
+}
+
 function toGroup(group: ApiGroup): Group {
   return {
     id: group.id,

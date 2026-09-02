@@ -1,0 +1,61 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+
+import { getGroup } from "../api/groups";
+import type { Group } from "../types/group";
+
+export default function GroupDetailsContent() {
+  const params = useParams<{ groupId: string }>();
+
+  const [group, setGroup] = useState<Group | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function loadGroup() {
+      try {
+        const groupId = Number(params.groupId);
+
+        if (Number.isNaN(groupId)) {
+          throw new Error("Invalid group ID");
+        }
+
+        const result = await getGroup(groupId);
+
+        setGroup(result);
+      } catch (error) {
+        setError(
+          error instanceof Error
+            ? error.message
+            : "Failed to load group"
+        );
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadGroup();
+  }, [params.groupId]);
+
+  if (loading) {
+    return <p>Loading group...</p>;
+  }
+
+  if (error) {
+    return <p>{error}</p>;
+  }
+
+  if (!group) {
+    return <p>Group not found.</p>;
+  }
+
+  return (
+    <section>
+      <h1>{group.title}</h1>
+
+      <p>{group.description}</p>
+    </section>
+  );
+}
