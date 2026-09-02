@@ -58,6 +58,11 @@ func (s *Service) GetProfileByID(userID int) (*Profile, error) {
 	return s.repo.GetProfileByID(userID)
 }
 
+// GetProfileByUsername retrieves a user's profile by their username.
+func (s *Service) GetProfileByUsername(username string) (*Profile, error) {
+	return s.repo.GetProfileByUsername(username)
+}
+
 func hashPassword(password string) (string, error) {
 	hashed, err := bcrypt.GenerateFromPassword(
 		[]byte(password),

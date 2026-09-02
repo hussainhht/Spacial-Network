@@ -149,3 +149,32 @@ func (r *Repository) GetProfileByID(userID int) (*Profile, error) {
 
 	return profile, nil
 }
+
+// GetProfileByUsername returns profile data for a username.
+func (r *Repository) GetProfileByUsername(username string) (*Profile, error) {
+	profile := &Profile{}
+
+	err := r.db.QueryRow(`
+		SELECT id, uuid, username, age, gender, first_name, last_name, email, profile_photo, created_at, updated_at
+		FROM users
+		WHERE username = ?
+	`, username).Scan(
+		&profile.ID,
+		&profile.UUID,
+		&profile.Username,
+		&profile.Age,
+		&profile.Gender,
+		&profile.FirstName,
+		&profile.LastName,
+		&profile.Email,
+		&profile.ProfilePhoto,
+		&profile.CreatedAt,
+		&profile.UpdatedAt,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return profile, nil
+}

@@ -45,6 +45,11 @@ func NewRouter(db *sql.DB, cfg config.Config) (http.Handler, error) {
 		sessionMiddleware(http.HandlerFunc(deps.Handlers.Users.GetMeHandler)),
 	)
 
+	apiMux.Handle(
+		"/profiles/{username}",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Users.GetProfileHandler)),
+	)
+
 	// =========================
 	// Posts Routes - Future
 	// =========================
