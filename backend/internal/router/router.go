@@ -49,6 +49,10 @@ func NewRouter(db *sql.DB, cfg config.Config) (http.Handler, error) {
 		sessionMiddleware(http.HandlerFunc(deps.Handlers.Posts.NewPostHandler)),
 	)
 	apiMux.Handle(
+		"GET /posts",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Posts.ListPostsHandler)),
+	)
+	apiMux.Handle(
 		"GET /posts/{id}",
 		sessionMiddleware(http.HandlerFunc(deps.Handlers.Posts.GetPostByIDHandler)),
 	)

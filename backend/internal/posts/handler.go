@@ -45,9 +45,12 @@ type PostResponse struct {
 	Content   string    `json:"content"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
+	// IsOwner tells the client whether the requesting user owns this post,
+	// so it knows whether to offer edit/delete actions.
+	IsOwner bool `json:"is_owner"`
 }
 
-func newPostResponse(p *post) PostResponse {
+func newPostResponse(p *post, viewerID int) PostResponse {
 	return PostResponse{
 		ID:        p.ID,
 		UserID:    p.User_ID,
@@ -56,6 +59,7 @@ func newPostResponse(p *post) PostResponse {
 		Content:   p.Content,
 		CreatedAt: p.Created_At,
 		UpdatedAt: p.Updated_At,
+		IsOwner:   p.User_ID == viewerID,
 	}
 }
 
@@ -148,7 +152,33 @@ func (h *Handler) GetPostByIDHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(newPostResponse(p))
+	json.NewEncoder(w).Encode(newPostResponse(p, userID))
+}
+
+// ListPostsHandler returns every post visible to the logged-in user: all
+// public posts plus their own private posts, newest first.
+func (h *Handler) ListPostsHandler(w http.ResponseWriter, r *http.Request) {
+	userID, ok := r.Context().Value(auth.UserIDKey).(int)
+	if !ok {
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(Response{Error: "Not logged in"})
+		return
+	}
+
+	posts, err := h.service.ListPosts(userID)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(Response{Error: "Server error"})
+		return
+	}
+
+	res := make([]PostResponse, 0, len(posts))
+	for _, p := range posts {
+		res = append(res, newPostResponse(p, userID))
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(res)
 }
 
 // EditPostHandler handles editing a single post, identified by the {id}

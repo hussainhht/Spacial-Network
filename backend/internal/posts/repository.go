@@ -55,6 +55,35 @@ func (r *Repository) GetPostByID(id int) (*post, error) {
 	return &p, nil
 }
 
+// ListPosts returns all posts visible to viewerID: every public post plus
+// the viewer's own private posts, newest first.
+func (r *Repository) ListPosts(viewerID int) ([]*post, error) {
+	rows, err := r.db.Query(`
+		SELECT id, user_id, private, title, content, created_at, updated_at
+		FROM posts
+		WHERE private = 0 OR user_id = ?
+		ORDER BY created_at DESC
+	`, viewerID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	posts := []*post{}
+	for rows.Next() {
+		var p post
+		if err := rows.Scan(&p.ID, &p.User_ID, &p.isPrivate, &p.Title, &p.Content, &p.Created_At, &p.Updated_At); err != nil {
+			return nil, err
+		}
+		posts = append(posts, &p)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return posts, nil
+}
+
 func (r *Repository) UpdatePost(post *post) error {
 	post.Updated_At = time.Now()
 

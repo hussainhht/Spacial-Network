@@ -1,6 +1,7 @@
 endpoints - method - purpose :
 
 .../posts       -> POST              -> create a new post
+.../posts       -> GET               -> list posts visible to you (public posts + your own private posts), newest first
 .../posts/{id}  -> GET               -> fetch a single post by id (private posts: 404 unless you're the owner)
 .../posts/{id}  -> PUT or PATCH      -> edit a post (owner only, otherwise 403)
 .../posts/{id}  -> DELETE            -> delete a post (owner only, otherwise 403)

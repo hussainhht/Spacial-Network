@@ -18,6 +18,11 @@ func (s *Service) GetPostByID(id int) (*post, error) {
 	return s.repo.GetPostByID(id)
 }
 
+// ListPosts returns every post visible to viewerID.
+func (s *Service) ListPosts(viewerID int) ([]*post, error) {
+	return s.repo.ListPosts(viewerID)
+}
+
 // UpdatePost updates a post's editable fields, provided userID owns it.
 func (s *Service) UpdatePost(userID, postID int, title, content string, private bool) error {
 	existing, err := s.repo.GetPostByID(postID)
