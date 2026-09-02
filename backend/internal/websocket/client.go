@@ -3,6 +3,7 @@ package websocket
 import (
 	"log"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -33,11 +34,13 @@ func GetUpgrader() websocket.Upgrader {
 type MessageHandler func(senderID int64, raw []byte)
 
 type Client struct {
-	Hub     *Hub
-	Conn    *websocket.Conn
-	UserID  int64
-	send    chan []byte
-	handler MessageHandler
+	Hub       *Hub
+	Conn      *websocket.Conn
+	UserID    int64
+	send      chan []byte
+	done      chan struct{}
+	closeOnce sync.Once
+	handler   MessageHandler
 }
 
 func NewClient(hub *Hub, conn *websocket.Conn, userID int64, handler MessageHandler) *Client {
@@ -46,14 +49,47 @@ func NewClient(hub *Hub, conn *websocket.Conn, userID int64, handler MessageHand
 		Conn:    conn,
 		UserID:  userID,
 		send:    make(chan []byte, 256),
+		done:    make(chan struct{}),
 		handler: handler,
 	}
 }
 
+func (c *Client) Send(data []byte) bool {
+	if c.done != nil {
+		select {
+		case <-c.done:
+			return false
+		default:
+		}
+	}
+
+	if c.send == nil {
+		return false
+	}
+
+	select {
+	case c.send <- data:
+		return true
+	default:
+		return false
+	}
+}
+
+func (c *Client) Close() {
+	c.closeOnce.Do(func() {
+		if c.done != nil {
+			close(c.done)
+		}
+		if c.Conn != nil {
+			c.Conn.Close()
+		}
+	})
+}
+
 func (c *Client) ReadPump() {
 	defer func() {
-		c.Hub.UnregisterClient(c)
-		c.Conn.Close()
+		c.Hub.Unregister(c)
+		c.Close()
 	}()
 
 	c.Conn.SetReadLimit(maxMessageSize)
@@ -82,18 +118,19 @@ func (c *Client) WritePump() {
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
 		ticker.Stop()
-		c.Conn.Close()
+		c.Close()
 	}()
 
 	for {
 		select {
-		case message, ok := <-c.send:
-			c.Conn.SetWriteDeadline(time.Now().Add(writeWait))
-			if !ok {
+		case <-c.done:
+			if c.Conn != nil {
 				c.Conn.WriteMessage(websocket.CloseMessage, []byte{})
-				return
 			}
+			return
 
+		case message := <-c.send:
+			c.Conn.SetWriteDeadline(time.Now().Add(writeWait))
 			w, err := c.Conn.NextWriter(websocket.TextMessage)
 			if err != nil {
 				return

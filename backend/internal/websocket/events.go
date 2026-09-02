@@ -27,7 +27,6 @@ type ErrorPayload struct {
 	Message string `json:"message"`
 }
 
-
 func NewEvent(eventType EventType, payload any) (Event, error) {
 	raw, err := json.Marshal(payload)
 	if err != nil {

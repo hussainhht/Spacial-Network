@@ -46,7 +46,6 @@ type Dependencies struct {
 
 func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 	hub := websocket.NewHub()
-	go hub.Run()
 	chatRepo := chat.NewRepository(db)
 	chatService := chat.NewService(chatRepo, hub)
 	chatHandler := chat.NewHandler(chatService)

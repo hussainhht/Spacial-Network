@@ -42,7 +42,7 @@ func (h *Handler) ServeWS(w http.ResponseWriter, r *http.Request) {
 	}
 
 	client := NewClient(h.hub, conn, int64(userID), h.messageHandler)
-	h.hub.RegisterClient(client)
+	h.hub.Register(client)
 
 	go client.WritePump()
 	go client.ReadPump()

@@ -7,63 +7,57 @@ import (
 )
 
 type Hub struct {
-	mu sync.RWMutex
+	mu      sync.RWMutex
 	clients map[int64]map[*Client]bool
-
-	register   chan *Client
-	unregister chan *Client
 }
 
 func NewHub() *Hub {
 	return &Hub{
-		clients:    make(map[int64]map[*Client]bool),
-		register:   make(chan *Client),
-		unregister: make(chan *Client),
+		clients: make(map[int64]map[*Client]bool),
 	}
 }
 
-func (h *Hub) Run() {
-	for {
-		select {
-		case client := <-h.register:
-			h.mu.Lock()
-			userClients, exists := h.clients[client.UserID]
-			if !exists {
-				userClients = make(map[*Client]bool)
-				h.clients[client.UserID] = userClients
+func (h *Hub) Register(client *Client) {
+	h.mu.Lock()
+	userClients, exists := h.clients[client.UserID]
+	if !exists {
+		userClients = make(map[*Client]bool)
+		h.clients[client.UserID] = userClients
+	}
+	userClients[client] = true
+	isFirstConnection := len(userClients) == 1
+	h.mu.Unlock()
 
-				go h.BroadcastStatus(client.UserID, true)
-			}
-			userClients[client] = true
-			h.mu.Unlock()
+	if isFirstConnection {
+		go h.BroadcastStatus(client.UserID, true)
+	}
 
-			go h.sendInitialOnlineUsers(client)
+	go h.sendInitialOnlineUsers(client)
+}
 
-		case client := <-h.unregister:
-			h.mu.Lock()
-			if userClients, exists := h.clients[client.UserID]; exists {
-				if _, ok := userClients[client]; ok {
-					delete(userClients, client)
-					close(client.send)
+func (h *Hub) Unregister(client *Client) {
+	h.mu.Lock()
+	userClients, exists := h.clients[client.UserID]
+	if !exists {
+		h.mu.Unlock()
+		client.Close()
+		return
+	}
 
-					if len(userClients) == 0 {
-						delete(h.clients, client.UserID)
-						go h.BroadcastStatus(client.UserID, false)
-					}
-				}
-			}
-			h.mu.Unlock()
-		}
+	delete(userClients, client)
+	isLastConnection := len(userClients) == 0
+	if isLastConnection {
+		delete(h.clients, client.UserID)
+	}
+	h.mu.Unlock()
+
+	client.Close()
+
+	if isLastConnection {
+		go h.BroadcastStatus(client.UserID, false)
 	}
 }
 
-func (h *Hub) RegisterClient(client *Client) {
-	h.register <- client
-}
-
-func (h *Hub) UnregisterClient(client *Client) {
-	h.unregister <- client
-}
 func (h *Hub) SendToUser(userID int64, event Event) {
 	data, err := json.Marshal(event)
 	if err != nil {
@@ -72,16 +66,18 @@ func (h *Hub) SendToUser(userID int64, event Event) {
 	}
 
 	h.mu.RLock()
-	defer h.mu.RUnlock()
-
+	var targets []*Client
 	if userClients, exists := h.clients[userID]; exists {
+		targets = make([]*Client, 0, len(userClients))
 		for client := range userClients {
-			select {
-			case client.send <- data:
-			default:
-				close(client.send)
-				delete(userClients, client)
-			}
+			targets = append(targets, client)
+		}
+	}
+	h.mu.RUnlock()
+
+	for _, client := range targets {
+		if !client.Send(data) {
+			go h.Unregister(client)
 		}
 	}
 }
@@ -94,18 +90,19 @@ func (h *Hub) SendToUsers(userIDs []int64, event Event) {
 	}
 
 	h.mu.RLock()
-	defer h.mu.RUnlock()
-
+	var targets []*Client
 	for _, userID := range userIDs {
 		if userClients, exists := h.clients[userID]; exists {
 			for client := range userClients {
-				select {
-				case client.send <- data:
-				default:
-					close(client.send)
-					delete(userClients, client)
-				}
+				targets = append(targets, client)
 			}
+		}
+	}
+	h.mu.RUnlock()
+
+	for _, client := range targets {
+		if !client.Send(data) {
+			go h.Unregister(client)
 		}
 	}
 }
@@ -118,16 +115,17 @@ func (h *Hub) Broadcast(event Event) {
 	}
 
 	h.mu.RLock()
-	defer h.mu.RUnlock()
-
+	var targets []*Client
 	for _, userClients := range h.clients {
 		for client := range userClients {
-			select {
-			case client.send <- data:
-			default:
-				close(client.send)
-				delete(userClients, client)
-			}
+			targets = append(targets, client)
+		}
+	}
+	h.mu.RUnlock()
+
+	for _, client := range targets {
+		if !client.Send(data) {
+			go h.Unregister(client)
 		}
 	}
 }
@@ -183,8 +181,5 @@ func (h *Hub) sendInitialOnlineUsers(client *Client) {
 		return
 	}
 
-	select {
-	case client.send <- data:
-	default:
-	}
+	client.Send(data)
 }
