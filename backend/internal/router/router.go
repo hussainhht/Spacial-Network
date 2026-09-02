@@ -62,10 +62,25 @@ func NewRouter(db *sql.DB, cfg config.Config) (http.Handler, error) {
 	// TODO: Register Followers routes here once the Followers handler is implemented.
 
 	// =========================
-	// Groups Routes - Future
+	// Groups Routes
 	// =========================
 
-	// TODO: Register Groups routes here once the Groups handler is implemented.
+	apiMux.Handle(
+		"/groups",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.GroupsHandler)),
+	)
+	apiMux.Handle(
+		"/groups/{id}",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.GetGroupHandler)),
+	)
+	apiMux.Handle(
+		"/groups/{id}/members",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.GetGroupMembersHandler)),
+	)
+	apiMux.Handle(
+		"/groups/{id}/membership",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.GetMembershipHandler)),
+	)
 
 	// =========================
 	// Chat Routes - Future

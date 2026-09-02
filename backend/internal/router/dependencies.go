@@ -6,15 +6,17 @@ import (
 	"social/internal/auth"
 	"social/internal/chat"
 	"social/internal/config"
+	"social/internal/groups"
 	"social/internal/upload"
 	"social/internal/users"
 	"social/internal/websocket"
 )
 
 type Handlers struct {
-	Auth      *auth.Handler
+	Auth        *auth.Handler
 	Chat      *chat.Handler
 	Websocket *websocket.Handler
+	Groups *groups.Handler
 
 	// Future handlers:
 	// TODO: Add Users handler when the users feature exposes one.
@@ -25,8 +27,6 @@ type Handlers struct {
 	// Comments *comments.Handler
 	// TODO: Add Followers handler when the followers feature is implemented.
 	// Followers *followers.Handler
-	// TODO: Add Groups handler when the groups feature is implemented.
-	// Groups *groups.Handler
 	// TODO: Add Chat handler when the chat feature is implemented.
 	// Chat *chat.Handler
 	// TODO: Add Notifications handler when the notifications feature is implemented.
@@ -36,11 +36,11 @@ type Handlers struct {
 type Dependencies struct {
 	Handlers Handlers
 
-	AuthService *auth.Service
+	AuthService   *auth.Service
+	GroupsService *groups.Service
 
 	// Future shared services:
 	// PostsService         *posts.Service
-	// GroupsService        *groups.Service
 	// NotificationsService *notifications.Service
 }
 
@@ -114,14 +114,12 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 	// followersHandler := followers.NewHandler(followersService)
 
 	// =========================
-	// Groups - Future
+	// Groups
 	// =========================
 
-	// TODO: Enable when the groups package is implemented.
-	//
-	// groupsRepo := groups.NewRepository(db)
-	// groupsService := groups.NewService(groupsRepo)
-	// groupsHandler := groups.NewHandler(groupsService)
+	groupsRepo := groups.NewRepository(db)
+	groupsService := groups.NewService(groupsRepo)
+	groupsHandler := groups.NewHandler(groupsService)
 
 	// =========================
 	// Chat - Future
@@ -145,19 +143,19 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 
 	return &Dependencies{
 		Handlers: Handlers{
-			Auth:      authHandler,
+			Auth:        authHandler,
 			Chat:      chatHandler,
-			Websocket: wsHandler,
+			Websocket: wsHandler,			Groups: groupsHandler,
+
 			// Posts:         postsHandler,
 			// Comments:      commentsHandler,
 			// Followers:     followersHandler,
-			// Groups:        groupsHandler,
 			// Notifications: notificationsHandler,
 		},
-		AuthService: authService,
+		AuthService:   authService,
+		GroupsService: groupsService,
 
 		// PostsService:         postsService,
-		// GroupsService:        groupsService,
 		// NotificationsService: notificationsService,
 	}, nil
 }
