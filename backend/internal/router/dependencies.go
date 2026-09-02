@@ -5,18 +5,19 @@ import (
 
 	"social/internal/auth"
 	"social/internal/config"
+	"social/internal/posts"
 	"social/internal/upload"
 	"social/internal/users"
 )
 
 type Handlers struct {
-	Auth *auth.Handler
+	Auth  *auth.Handler
+	Posts *posts.Handler
 
 	// Future handlers:
 	// TODO: Add Users handler when the users feature exposes one.
 	// Users *users.Handler
-	// TODO: Add Posts handler when the posts feature is implemented.
-	// Posts *posts.Handler
+
 	// TODO: Add Comments handler when the comments feature is implemented.
 	// Comments *comments.Handler
 	// TODO: Add Followers handler when the followers feature is implemented.
@@ -35,7 +36,7 @@ type Dependencies struct {
 	AuthService *auth.Service
 
 	// Future shared services:
-	// PostsService         *posts.Service
+	PostsService *posts.Service
 	// GroupsService        *groups.Service
 	// NotificationsService *notifications.Service
 }
@@ -73,14 +74,17 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 	)
 
 	// =========================
-	// Posts - Future
+	// Posts
 	// =========================
 
-	// TODO: Enable when the posts package is implemented.
-	//
-	// postsRepo := posts.NewRepository(db)
-	// postsService := posts.NewService(postsRepo)
-	// postsHandler := posts.NewHandler(postsService)
+	postsRepo := posts.NewRepository(db)
+	postsService := posts.NewService(postsRepo)
+	postsHandler := posts.NewHandler(
+		postsService,
+		cfg.SessionCookieName,
+		cfg.CookieSecure,
+		cfg.SessionLifetime,
+	)
 
 	// =========================
 	// Comments - Future
@@ -136,7 +140,7 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 		Handlers: Handlers{
 			Auth: authHandler,
 
-			// Posts:         postsHandler,
+			Posts: postsHandler,
 			// Comments:      commentsHandler,
 			// Followers:     followersHandler,
 			// Groups:        groupsHandler,

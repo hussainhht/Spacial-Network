@@ -41,10 +41,29 @@ func NewRouter(db *sql.DB, cfg config.Config) (http.Handler, error) {
 	)
 
 	// =========================
-	// Posts Routes - Future
+	// Posts Routes
 	// =========================
 
-	// TODO: Register Posts routes here once the Posts handler is implemented.
+	apiMux.Handle(
+		"POST /posts",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Posts.NewPostHandler)),
+	)
+	apiMux.Handle(
+		"GET /posts/{id}",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Posts.GetPostByIDHandler)),
+	)
+	apiMux.Handle(
+		"PUT /posts/{id}",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Posts.EditPostHandler)),
+	)
+	apiMux.Handle(
+		"PATCH /posts/{id}",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Posts.EditPostHandler)),
+	)
+	apiMux.Handle(
+		"DELETE /posts/{id}",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Posts.DeletePostHandler)),
+	)
 
 	// =========================
 	// Comments Routes - Future
