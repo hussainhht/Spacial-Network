@@ -13,10 +13,9 @@ import (
 type Handlers struct {
 	Auth   *auth.Handler
 	Groups *groups.Handler
+	Users  *users.Handler
 
 	// Future handlers:
-	// TODO: Add Users handler when the users feature exposes one.
-	// Users *users.Handler
 	// TODO: Add Posts handler when the posts feature is implemented.
 	// Posts *posts.Handler
 	// TODO: Add Comments handler when the comments feature is implemented.
@@ -47,6 +46,7 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 
 	usersRepo := users.NewRepository(db)
 	usersService := users.NewService(usersRepo)
+	usersHandler := users.NewHandler(usersService)
 
 	// =========================
 	// Uploads
@@ -134,7 +134,7 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 		Handlers: Handlers{
 			Auth:   authHandler,
 			Groups: groupsHandler,
-
+			Users:  usersHandler,
 			// Posts:         postsHandler,
 			// Comments:      commentsHandler,
 			// Followers:     followersHandler,

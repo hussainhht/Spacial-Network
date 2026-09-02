@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"social/internal/auth"
+	"social/internal/requestctx"
 )
 
 func toGroupResponse(g *Group) GroupResponse {
@@ -55,7 +55,7 @@ func (h *Handler) GroupsHandler(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) CreateGroupHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	userID, ok := r.Context().Value(auth.UserIDKey).(int)
+	userID, ok := requestctx.UserID(r.Context())
 	if !ok {
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode(CreateGroupResponse{
@@ -116,7 +116,7 @@ func (h *Handler) CreateGroupHandler(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) ListGroupsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	if _, ok := r.Context().Value(auth.UserIDKey).(int); !ok {
+	if _, ok := requestctx.UserID(r.Context()); !ok {
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode(ListGroupsResponse{
 			Success: false,
@@ -169,7 +169,7 @@ func (h *Handler) GetGroupHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, ok := r.Context().Value(auth.UserIDKey).(int); !ok {
+	if _, ok := requestctx.UserID(r.Context()); !ok {
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode(GetGroupResponse{
 			Success: false,
@@ -226,7 +226,7 @@ func (h *Handler) GetGroupMembersHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if _, ok := r.Context().Value(auth.UserIDKey).(int); !ok {
+	if _, ok := requestctx.UserID(r.Context()); !ok {
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode(GetGroupMembersResponse{
 			Success: false,
@@ -287,7 +287,7 @@ func (h *Handler) GetMembershipHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID, ok := r.Context().Value(auth.UserIDKey).(int)
+	userID, ok := requestctx.UserID(r.Context())
 	if !ok {
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode(MembershipResponse{
