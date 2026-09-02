@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useEffect, useRef, useState } from "react";
+import React, { createContext, useEffect, useRef, useState, useCallback } from "react";
 import type {
   EventType,
   MessagePayload,
@@ -18,11 +18,13 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   const [onlineUserIDs, setOnlineUserIDs] = useState<number[]>([]);
   const [lastMessage, setLastMessage] = useState<MessagePayload | null>(null);
   const [typingStatus, setTypingStatus] = useState<TypingPayload | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const socketRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isConnectingRef = useRef(false);
 
-  function connect() {
+  const connect = useCallback(() => {
     if (typeof window === "undefined") return;
 
     if (
@@ -33,12 +35,17 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
+    if (isConnectingRef.current) return;
+    isConnectingRef.current = true;
+
     try {
       const ws = new WebSocket("ws://localhost:8080/api/ws");
       socketRef.current = ws;
 
       ws.onopen = () => {
+        isConnectingRef.current = false;
         setIsConnected(true);
+        setErrorMessage(null);
         if (reconnectTimeoutRef.current) {
           clearTimeout(reconnectTimeoutRef.current);
           reconnectTimeoutRef.current = null;
@@ -46,8 +53,8 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
       };
 
       ws.onclose = () => {
+        isConnectingRef.current = false;
         setIsConnected(false);
-        socketRef.current = null;
         if (reconnectTimeoutRef.current) {
           clearTimeout(reconnectTimeoutRef.current);
         }
@@ -55,6 +62,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
       };
 
       ws.onerror = (error) => {
+        isConnectingRef.current = false;
         console.error("WebSocket error:", error);
       };
 
@@ -77,36 +85,52 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
             }
             case "private_message":
               setLastMessage(data.payload as MessagePayload);
+              setErrorMessage(null);
               break;
             case "typing":
               setTypingStatus(data.payload as TypingPayload);
               break;
-            case "error":
-              console.error("WS error:", (data.payload as ErrorPayload)?.message);
+            case "error": {
+              const errPayload = data.payload as ErrorPayload;
+              console.error("WS error:", errPayload?.message);
+              setErrorMessage(errPayload?.message || "An error occurred");
               break;
+            }
           }
         } catch (err) {
           console.error("Failed to parse WebSocket message:", err);
         }
       };
     } catch (err) {
+      isConnectingRef.current = false;
       console.warn("Could not create WebSocket connection:", err);
     }
-  }
+  }, []);
 
   useEffect(() => {
     connect();
     return () => {
       if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
-      if (socketRef.current) socketRef.current.close();
+      if (socketRef.current) {
+        socketRef.current.close();
+        socketRef.current = null;
+      }
     };
-  }, []);
+  }, [connect]);
 
   function sendEvent(type: EventType, payload: unknown) {
     if (!socketRef.current || socketRef.current.readyState !== WebSocket.OPEN) {
-      console.warn("WebSocket is not connected");
+      if (socketRef.current?.readyState === WebSocket.CONNECTING) {
+        // If connecting, retry in 500ms
+        setTimeout(() => sendEvent(type, payload), 500);
+        return;
+      }
+      console.warn("WebSocket is not connected (readyState:", socketRef.current?.readyState, ")");
+      setErrorMessage("WebSocket is not connected. Reconnecting...");
+      connect();
       return;
     }
+    setErrorMessage(null);
     socketRef.current.send(JSON.stringify({ type, payload }));
   }
 
@@ -117,6 +141,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
         onlineUserIDs,
         lastMessage,
         typingStatus,
+        errorMessage,
         sendEvent,
       }}
     >

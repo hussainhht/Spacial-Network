@@ -1,4 +1,3 @@
-// WebSocket Event Types (matching backend events)
 export type EventType =
   | "user_online"
   | "user_offline"
@@ -44,5 +43,6 @@ export interface WebSocketContextType {
   onlineUserIDs: number[];
   lastMessage: MessagePayload | null;
   typingStatus: TypingPayload | null;
+  errorMessage: string | null;
   sendEvent: (type: EventType, payload: unknown) => void;
 }
