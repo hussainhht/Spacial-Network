@@ -23,7 +23,7 @@ Authentication, Docker, and final project-wide integration are not included in t
 ### Backend
 
 - [X] Get the current user's profile
-- [ ] Get another user's profile by ID
+- [X] Get another user's profile by ID / username
 - [ ] Return email
 - [ ] Return first name
 - [ ] Return last name
