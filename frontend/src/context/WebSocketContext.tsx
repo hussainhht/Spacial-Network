@@ -58,12 +58,12 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
         if (reconnectTimeoutRef.current) {
           clearTimeout(reconnectTimeoutRef.current);
         }
-        reconnectTimeoutRef.current = setTimeout(connect, 3000);
+        reconnectTimeoutRef.current = setTimeout(connect, 300);
       };
 
       ws.onerror = (error) => {
         isConnectingRef.current = false;
-        console.error("WebSocket error:", error);
+        console.warn("WebSocket connection notice (normal if logged out or server restarted)");
       };
 
       ws.onmessage = (event) => {
