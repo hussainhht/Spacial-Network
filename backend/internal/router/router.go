@@ -89,19 +89,23 @@ func NewRouter(db *sql.DB, cfg config.Config) (http.Handler, error) {
 	// =========================
 
 	apiMux.Handle(
-		"/groups",
-		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.GroupsHandler)),
+		"GET /groups",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.ListGroupsHandler)),
 	)
 	apiMux.Handle(
-		"/groups/{id}",
+		"POST /groups",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.CreateGroupHandler)),
+	)
+	apiMux.Handle(
+		"GET /groups/{id}",
 		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.GetGroupHandler)),
 	)
 	apiMux.Handle(
-		"/groups/{id}/members",
+		"GET /groups/{id}/members",
 		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.GetGroupMembersHandler)),
 	)
 	apiMux.Handle(
-		"/groups/{id}/membership",
+		"GET /groups/{id}/membership",
 		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.GetMembershipHandler)),
 	)
 

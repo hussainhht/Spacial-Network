@@ -35,23 +35,6 @@ func NewHandler(service *Service) *Handler {
 	}
 }
 
-// GroupsHandler dispatches requests on the /groups route by method.
-func (h *Handler) GroupsHandler(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case http.MethodGet:
-		h.ListGroupsHandler(w, r)
-	case http.MethodPost:
-		h.CreateGroupHandler(w, r)
-	default:
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		json.NewEncoder(w).Encode(CreateGroupResponse{
-			Success: false,
-			Message: "Method not allowed",
-		})
-	}
-}
-
 func (h *Handler) CreateGroupHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -160,15 +143,6 @@ func (h *Handler) ListGroupsHandler(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) GetGroupHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	if r.Method != http.MethodGet {
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		json.NewEncoder(w).Encode(GetGroupResponse{
-			Success: false,
-			Message: "Method not allowed",
-		})
-		return
-	}
-
 	if _, ok := r.Context().Value(auth.UserIDKey).(int); !ok {
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode(GetGroupResponse{
@@ -216,15 +190,6 @@ func (h *Handler) GetGroupHandler(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) GetGroupMembersHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-
-	if r.Method != http.MethodGet {
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		json.NewEncoder(w).Encode(GetGroupMembersResponse{
-			Success: false,
-			Message: "Method not allowed",
-		})
-		return
-	}
 
 	if _, ok := r.Context().Value(auth.UserIDKey).(int); !ok {
 		w.WriteHeader(http.StatusUnauthorized)
@@ -277,15 +242,6 @@ func (h *Handler) GetGroupMembersHandler(w http.ResponseWriter, r *http.Request)
 
 func (h *Handler) GetMembershipHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-
-	if r.Method != http.MethodGet {
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		json.NewEncoder(w).Encode(MembershipResponse{
-			Success: false,
-			Message: "Method not allowed",
-		})
-		return
-	}
 
 	userID, ok := r.Context().Value(auth.UserIDKey).(int)
 	if !ok {
