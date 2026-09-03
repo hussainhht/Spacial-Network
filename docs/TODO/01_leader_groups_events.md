@@ -1,9 +1,11 @@
 # Person 1 — Groups & Group Events
 
 ## Main Responsibility
+
 Own the complete Groups and Group Events features.
 
 This includes:
+
 - Database migrations
 - Backend logic
 - API handlers
@@ -17,27 +19,30 @@ Authentication, Docker, and final project-wide integration are not included in t
 ## 1. Groups
 
 ### Database
-- [ ] Create `groups` table migration
-- [ ] Create `group_members` table migration
-- [ ] Add proper foreign keys and constraints
-- [ ] Create matching `.down.sql` migrations
+
+- [X] Create `groups` table migration
+- [X] Create `group_members` table migration
+- [X] Add proper foreign keys and constraints
+- [X] Create matching `.down.sql` migrations
 
 ### Backend
-- [ ] Create a group
-- [ ] Store group title
-- [ ] Store group description
-- [ ] Store group creator/owner
-- [ ] Automatically add the creator as a group member
+
+- [X] Create a group
+- [X] Store group title
+- [X] Store group description
+- [X] Store group creator/owner
+- [X] Automatically add the creator as a group member
 - [ ] Get all groups
 - [ ] Get a group by ID
 - [ ] Get group members
 - [ ] Check whether a user is a group member
 - [ ] Check whether a user is the group creator
 - [ ] Prevent invalid or duplicate membership records
-- [ ] Validate required group data
-- [ ] Return proper HTTP errors
+- [X] Validate required group data
+- [X] Return proper HTTP errors
 
 ### Frontend
+
 - [ ] Create Groups page
 - [ ] Display all groups
 - [ ] Create Group form
@@ -52,6 +57,7 @@ Authentication, Docker, and final project-wide integration are not included in t
 ## 2. Group Join Requests
 
 ### Database
+
 - [ ] Create `group_join_requests` table migration
 - [ ] Store requester ID
 - [ ] Store group ID
@@ -60,6 +66,7 @@ Authentication, Docker, and final project-wide integration are not included in t
 - [ ] Create matching `.down.sql` migration
 
 ### Backend
+
 - [ ] Allow a user to request to join a group
 - [ ] Prevent members from sending another join request
 - [ ] Prevent duplicate pending requests
@@ -71,7 +78,8 @@ Authentication, Docker, and final project-wide integration are not included in t
 - [ ] Remove or update completed requests correctly
 
 ### Frontend
-- [ ] Add Request to Join button
+
+- [ ] Add Request to JoiSep 21n button
 - [ ] Show pending state after sending request
 - [ ] Create pending join requests UI for the group creator
 - [ ] Add Accept button
@@ -83,6 +91,7 @@ Authentication, Docker, and final project-wide integration are not included in t
 ## 3. Group Invitations
 
 ### Database
+
 - [ ] Create `group_invitations` table migration
 - [ ] Store group ID
 - [ ] Store invited user ID
@@ -92,6 +101,7 @@ Authentication, Docker, and final project-wide integration are not included in t
 - [ ] Create matching `.down.sql` migration
 
 ### Backend
+
 - [ ] Allow the group creator to invite users
 - [ ] Allow existing group members to invite users
 - [ ] Prevent inviting an existing member
@@ -103,6 +113,7 @@ Authentication, Docker, and final project-wide integration are not included in t
 - [ ] Handle already completed invitations safely
 
 ### Frontend
+
 - [ ] Create Invite User UI
 - [ ] Display pending invitations
 - [ ] Add Accept Invitation button
@@ -114,6 +125,7 @@ Authentication, Docker, and final project-wide integration are not included in t
 ## 4. Group Events
 
 ### Database
+
 - [ ] Create `events` table migration
 - [ ] Store group ID
 - [ ] Store event creator ID
@@ -126,6 +138,7 @@ Authentication, Docker, and final project-wide integration are not included in t
 - [ ] Create matching `.down.sql` migrations
 
 ### Backend
+
 - [ ] Allow group members to create an event
 - [ ] Prevent non-members from creating events
 - [ ] Get events for a group
@@ -140,6 +153,7 @@ Authentication, Docker, and final project-wide integration are not included in t
 - [ ] Prevent unauthorized event access
 
 ### Frontend
+
 - [ ] Display group events
 - [ ] Create Event form
 - [ ] Add event title field

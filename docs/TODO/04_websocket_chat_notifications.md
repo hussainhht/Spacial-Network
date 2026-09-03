@@ -1,9 +1,11 @@
 # Person 4 — WebSocket, Chat & Notifications
 
 ## Main Responsibility
+
 Own the real-time communication layer, Private Chat, Group Chat, and Notification infrastructure.
 
 This includes:
+
 - Database migrations
 - WebSocket backend
 - Chat APIs/history
@@ -18,21 +20,22 @@ Authentication, Docker, and final project-wide integration are not included in t
 ## 1. WebSocket Core
 
 ### Backend
-- [ ] Create WebSocket endpoint
-- [ ] Upgrade HTTP connection to WebSocket
-- [ ] Identify/authenticate the connected user using the existing session system
-- [ ] Create WebSocket Hub
-- [ ] Register connected users
-- [ ] Unregister disconnected users
-- [ ] Track active connections
-- [ ] Implement read loop
-- [ ] Implement write loop
-- [ ] Handle connection errors
-- [ ] Handle client disconnects safely
-- [ ] Avoid concurrent map/write issues
-- [ ] Support multiple users connected at the same time
-- [ ] Create a clear real-time message/event format
-- [ ] Separate chat events from notification events
+
+- [x] Create WebSocket endpoint
+- [x] Upgrade HTTP connection to WebSocket
+- [x] Identify/authenticate the connected user using the existing session system
+- [x] Create WebSocket Hub
+- [x] Register connected users
+- [x] Unregister disconnected users
+- [x] Track active connections
+- [x] Implement read loop
+- [x] Implement write loop
+- [x] Handle connection errors
+- [x] Handle client disconnects safely
+- [x] Avoid concurrent map/write issues
+- [x] Support multiple users connected at the same time
+- [x] Create a clear real-time message/event format
+- [x] Separate chat events from notification events
 
 Suggested structure:
 
@@ -45,44 +48,49 @@ WebSocket Hub
 ```
 
 ### Frontend
-- [ ] Create WebSocket client connection
-- [ ] Connect after the user is authenticated
-- [ ] Handle incoming WebSocket messages
-- [ ] Reconnect safely when connection is lost
-- [ ] Route incoming events to Chat or Notifications UI
+
+- [x] Create WebSocket client connection
+- [x] Connect after the user is authenticated
+- [x] Handle incoming WebSocket messages
+- [x] Reconnect safely when connection is lost
+- [x] Route incoming events to Chat or Notifications UI
 
 ---
 
 ## 2. Private Chat
 
 ### Database
-- [ ] Create `private_messages` table migration
-- [ ] Store sender ID
-- [ ] Store receiver ID
-- [ ] Store message content
-- [ ] Store message timestamp
-- [ ] Create matching `.down.sql` migration
+
+- [x] Create `private_messages` table migration
+- [x] Store sender ID
+- [x] Store receiver ID
+- [x] Store message content
+- [x] Store message timestamp
+- [x] Create matching `.down.sql` migration
 
 ### Backend
-- [ ] Send private message
-- [ ] Receive private messages in real time
-- [ ] Save messages to SQLite
-- [ ] Load chat history between two users
-- [ ] Return messages in correct order
-- [ ] Support text messages
-- [ ] Support emojis
-- [ ] Prevent sending empty/invalid messages
+
+- [x] Send private message
+- [x] Receive private messages in real time
+- [x] Save messages to SQLite
+- [x] Load chat history between two users
+- [x] Return messages in correct order
+- [x] Support text messages
+- [x] Support emojis
+- [x] Prevent sending empty/invalid messages
 - [ ] Check whether messaging is allowed before sending
 - [ ] Reuse follower/profile checks from Person 3
-- [ ] Deliver to connected receiver immediately when allowed
-- [ ] Keep stored messages available when a user reconnects
+- [x] Deliver to connected receiver immediately when allowed
+- [x] Keep stored messages available when a user reconnects
 
 ### Chat Permission
+
 - [ ] Implement the project's follow/profile-based messaging rules
 - [ ] Prevent unauthorized private messaging
 - [ ] Keep permission logic outside the raw WebSocket transport when possible
 
 ### Frontend
+
 - [ ] Create private Chat page or panel
 - [ ] Display conversation history
 - [ ] Display sender and receiver messages correctly
@@ -97,6 +105,7 @@ WebSocket Hub
 ## 3. Group Chat
 
 ### Database
+
 - [ ] Create `group_messages` table migration
 - [ ] Store group ID
 - [ ] Store sender/user ID
@@ -105,6 +114,7 @@ WebSocket Hub
 - [ ] Create matching `.down.sql` migration
 
 ### Backend
+
 - [ ] Send a message to a group chat
 - [ ] Save group messages to SQLite
 - [ ] Load group chat history
@@ -115,6 +125,7 @@ WebSocket Hub
 - [ ] Reuse group membership logic from Person 1
 
 ### Frontend
+
 - [ ] Add Group Chat UI
 - [ ] Display previous group messages
 - [ ] Add group message input
@@ -131,6 +142,7 @@ Person 4 owns the notification system itself.
 Other features create/trigger notifications when their own actions happen.
 
 ### Database
+
 - [ ] Create `notifications` table migration
 - [ ] Store receiver/user ID
 - [ ] Store notification type
@@ -141,6 +153,7 @@ Other features create/trigger notifications when their own actions happen.
 - [ ] Create matching `.down.sql` migration
 
 ### Backend
+
 - [ ] Create notification service
 - [ ] Create/store notification
 - [ ] Get notifications for the current user
@@ -153,12 +166,14 @@ Other features create/trigger notifications when their own actions happen.
 - [ ] Keep notification events separate from private chat messages
 
 ### Required Notification Types
+
 - [ ] Follow Request
 - [ ] Group Invitation
 - [ ] Group Join Request
 - [ ] New Group Event
 
 ### Frontend
+
 - [ ] Create global Notifications UI
 - [ ] Make notifications accessible from every page
 - [ ] Display unread count
@@ -172,6 +187,7 @@ Other features create/trigger notifications when their own actions happen.
 ## 5. Responsibility Boundary for Notifications
 
 Person 4 should NOT implement the business logic for:
+
 - Follow requests
 - Group invitations
 - Group join requests
@@ -210,13 +226,16 @@ Send Real-Time Notification
 ## 6. Dependencies on Other Team Members
 
 From Person 1:
+
 - [ ] Use shared group membership checks for Group Chat
 
 From Person 3:
+
 - [ ] Use follower relationship checks for Private Chat
 - [ ] Use profile privacy information when required by the messaging rules
 
 For Persons 1 and 3:
+
 - [ ] Provide a simple notification service/API they can call from their features
 
 ---
