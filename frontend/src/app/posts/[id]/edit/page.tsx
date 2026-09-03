@@ -1,0 +1,94 @@
+"use client";
+
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { getPost, PostsApiError, updatePost, type Post } from "@/lib/posts-api";
+import PostForm from "../../components/PostForm";
+
+export default function EditPostPage() {
+  const router = useRouter();
+  const params = useParams<{ id: string }>();
+  const postId = Number(params.id);
+
+  const validId = Number.isFinite(postId);
+
+  const [post, setPost] = useState<Post | null>(null);
+  const [loading, setLoading] = useState(validId);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!validId) return;
+
+    let cancelled = false;
+
+    async function load() {
+      try {
+        const data = await getPost(postId);
+        if (cancelled) return;
+
+        if (!data.is_owner) {
+          router.push(`/posts/${postId}`);
+          return;
+        }
+
+        setPost(data);
+      } catch (err) {
+        if (cancelled) return;
+
+        if (err instanceof PostsApiError && err.status === 401) {
+          router.push("/login");
+          return;
+        }
+
+        setError(err instanceof Error ? err.message : "Failed to load post");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [postId, validId, router]);
+
+  async function handleSubmit(input: {
+    title: string;
+    content: string;
+    private: boolean;
+  }) {
+    await updatePost(postId, input);
+    router.push(`/posts/${postId}`);
+  }
+
+  return (
+    <main className="new-post-page">
+      <div className="new-post-container">
+        <Link href={`/posts/${postId}`} className="back-link">
+          &larr; Back to post
+        </Link>
+
+        <h1>Edit post</h1>
+
+        {!validId && <p className="form-error">Invalid post id</p>}
+        {loading && <p>Loading post...</p>}
+        {error && <p className="form-error">{error}</p>}
+
+        {post && (
+          <PostForm
+            initialValues={{
+              title: post.title,
+              content: post.content,
+              private: post.private,
+            }}
+            submitLabel="Save changes"
+            pendingLabel="Saving..."
+            onSubmit={handleSubmit}
+          />
+        )}
+      </div>
+    </main>
+  );
+}

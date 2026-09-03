@@ -1,8 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
+  const router = useRouter();
+
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
@@ -38,10 +41,7 @@ export default function LoginPage() {
         return;
       }
 
-      console.log("Login successful");
-
-      // Later:
-      // router.push("/");
+      router.push("/posts");
     } catch {
       setError("Could not connect to server");
     } finally {
