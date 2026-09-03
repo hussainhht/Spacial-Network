@@ -1,6 +1,7 @@
 "use client";
+import { useRouter } from "next/navigation";
 
-import { useState } from "react";
+import { useState} from "react";
 import type { SyntheticEvent } from "react";
 
 export default function RegisterPage() {
@@ -12,6 +13,8 @@ export default function RegisterPage() {
   const [gender, setGender] = useState("male");
   const [age, setAge] = useState("");
   const [profilePhoto, setProfilePhoto] = useState<File | null>(null);
+
+  const router = useRouter();
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -55,6 +58,7 @@ export default function RegisterPage() {
         return;
       }
 
+      router.push("/login");
       console.log("Registered:", data);
     } catch {
       setError("Could not connect to the server");

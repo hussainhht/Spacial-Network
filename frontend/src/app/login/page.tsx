@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -41,7 +41,9 @@ export default function LoginPage() {
         return;
       }
 
-      router.push("/posts");
+      console.log("Login successful");
+
+      router.push("/");
     } catch {
       setError("Could not connect to server");
     } finally {

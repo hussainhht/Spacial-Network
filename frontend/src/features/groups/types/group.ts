@@ -11,3 +11,11 @@ export interface CreateGroupInput {
   title: string;
   description: string;
 }
+
+export interface GroupMember {
+  userId: number;
+  username: string;
+  role: string;
+  joinedAt: string;
+}
+
