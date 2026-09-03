@@ -25,5 +25,5 @@ CREATE TABLE IF NOT EXISTS notifications (
         ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_notifications_receiver_created ON notifications(receiver_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_notifications_receiver_created ON notifications(receiver_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_notifications_receiver_read ON notifications(receiver_id, read_at);

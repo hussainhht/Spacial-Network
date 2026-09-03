@@ -7,6 +7,7 @@ import (
 	"social/internal/chat"
 	"social/internal/config"
 	"social/internal/groups"
+	"social/internal/notifications"
 	"social/internal/posts"
 	"social/internal/upload"
 	"social/internal/users"
@@ -14,11 +15,12 @@ import (
 )
 
 type Handlers struct {
-	Auth      *auth.Handler
-	Posts     *posts.Handler
-	Chat      *chat.Handler
-	Websocket *websocket.Handler
-	Groups    *groups.Handler
+	Auth          *auth.Handler
+	Posts         *posts.Handler
+	Chat          *chat.Handler
+	Websocket     *websocket.Handler
+	Groups        *groups.Handler
+	Notifications *notifications.Handler
 
 	// Future handlers:
 	// TODO: Add Users handler when the users feature exposes one.
@@ -30,21 +32,19 @@ type Handlers struct {
 	// Followers *followers.Handler
 	// TODO: Add Chat handler when the chat feature is implemented.
 	// Chat *chat.Handler
-	// TODO: Add Notifications handler when the notifications feature is implemented.
-	// Notifications *notifications.Handler
 }
 
 type Dependencies struct {
 	Handlers Handlers
 
-	AuthService   *auth.Service
-	GroupsService *groups.Service
+	AuthService          *auth.Service
+	GroupsService        *groups.Service
+	NotificationsService *notifications.Service
 
 	// Future shared services:
 	PostsService *posts.Service
 	// GroupsService        *groups.Service
 	// PostsService         *posts.Service
-	// NotificationsService *notifications.Service
 }
 
 func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
@@ -137,14 +137,17 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 	// chatHandler := chat.NewHandler(chatService)
 
 	// =========================
-	// Notifications - Future
+	// Notifications
 	// =========================
+	// Persists notifications to SQLite and pushes them over the existing
+	// websocket hub. Other features (Groups, and Followers once it exists)
+	// depend only on notificationsService.Create(...) - never on this
+	// package's repository or SQL.
 
-	// TODO: Enable when the notifications package is implemented.
-	//
-	// notificationsRepo := notifications.NewRepository(db)
-	// notificationsService := notifications.NewService(notificationsRepo)
-	// notificationsHandler := notifications.NewHandler(notificationsService)
+	notificationsRepo := notifications.NewRepository(db)
+	notificationsSender := notifications.NewHubSender(hub)
+	notificationsService := notifications.NewService(notificationsRepo, notificationsSender)
+	notificationsHandler := notifications.NewHandler(notificationsService)
 
 	return &Dependencies{
 		Handlers: Handlers{
@@ -152,15 +155,15 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 			Chat:      chatHandler,
 			Websocket: wsHandler, Groups: groupsHandler,
 
-			Posts: postsHandler,
+			Posts:         postsHandler,
+			Notifications: notificationsHandler,
 			// Comments:      commentsHandler,
 			// Followers:     followersHandler,
-			// Notifications: notificationsHandler,
 		},
-		AuthService:   authService,
-		GroupsService: groupsService,
+		AuthService:          authService,
+		GroupsService:        groupsService,
+		NotificationsService: notificationsService,
 
-		// PostsService:         postsService,
-		// NotificationsService: notificationsService,
+		// PostsService: postsService,
 	}, nil
 }
