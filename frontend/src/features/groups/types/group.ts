@@ -19,7 +19,3 @@ export interface GroupMember {
   joinedAt: string;
 }
 
-export type MembershipState =
-  | "not_member"
-  | "member"
-  | "creator";

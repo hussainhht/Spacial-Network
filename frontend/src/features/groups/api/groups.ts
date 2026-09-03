@@ -1,4 +1,4 @@
-import type { Group , CreateGroupInput, GroupMember ,MembershipState} from "../types/group";
+import type { Group , CreateGroupInput, GroupMember } from "../types/group";
 
 const API_BASE_URL = "http://localhost:8080/api";
 

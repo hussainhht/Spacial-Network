@@ -50,7 +50,7 @@ Authentication, Docker, and final project-wide integration are not included in t
 - [X] Display title and description
 - [X] Display group creator
 - [X] Display group members
-- [ ] Show correct actions depending on membership state
+- [X] Show correct actions depending on membership state
 
 ---
 
