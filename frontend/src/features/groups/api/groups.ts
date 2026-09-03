@@ -1,4 +1,4 @@
-import type { Group , CreateGroupInput } from "../types/group";
+import type { Group , CreateGroupInput, GroupMember ,MembershipState} from "../types/group";
 
 const API_BASE_URL = "http://localhost:8080/api";
 
@@ -9,6 +9,21 @@ interface ApiGroup {
   description: string;
   created_at: string;
   updated_at: string;
+}
+
+
+
+interface ApiGroupMember {
+  user_id: number;
+  username: string;
+  role: string;
+  joined_at: string;
+}
+
+interface GroupMembersResponse {
+  success: boolean;
+  message?: string;
+  members?: ApiGroupMember[];
 }
 
 interface GroupsResponse {
@@ -44,6 +59,15 @@ export async function getGroup(groupId: number): Promise<Group> {
   return toGroup(data.group);
 }
 
+function toGroupMember(member: ApiGroupMember): GroupMember {
+  return {
+    userId: member.user_id,
+    username: member.username,
+    role: member.role,
+    joinedAt: member.joined_at,
+  };
+}
+
 function toGroup(group: ApiGroup): Group {
   return {
     id: group.id,
@@ -70,6 +94,7 @@ export async function getGroups(): Promise<Group[]> {
   return (data.groups ?? []).map(toGroup);
 }
 
+
 export async function createGroup(
   input: CreateGroupInput
 ): Promise<Group> {
@@ -92,4 +117,25 @@ export async function createGroup(
   }
 
   return toGroup(data.group);
+}
+
+
+export async function getGroupMembers(
+  groupId: number
+): Promise<GroupMember[]> {
+  const response = await fetch(
+    `${API_BASE_URL}/groups/${groupId}/members`,
+    {
+      method: "GET",
+      credentials: "include",
+    }
+  );
+
+  const data: GroupMembersResponse = await response.json();
+
+  if (!response.ok || !data.success) {
+    throw new Error(data.message ?? "Failed to load group members");
+  }
+
+  return (data.members ?? []).map(toGroupMember);
 }
