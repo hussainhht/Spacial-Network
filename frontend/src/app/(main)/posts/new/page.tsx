@@ -1,5 +1,5 @@
 import Link from "next/link";
-import NewPostForm from "./componants/newPostForm";
+import NewPostForm from "@/features/posts/components/NewPostForm";
 
 export default function NewPostPage() {
   return (

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { WebSocketProvider } from "@/context/WebSocketContext";
+import { WebSocketProvider } from "@/providers/WebSocketProvider";
 
 export const metadata: Metadata = {
   title: "Social Network",

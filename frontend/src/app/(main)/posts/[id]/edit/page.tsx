@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { getPost, PostsApiError, updatePost, type Post } from "@/lib/posts-api";
-import PostForm from "../../components/PostForm";
+import { getPost, updatePost } from "@/features/posts/api/posts";
+import { ApiError } from "@/lib/api/errors";
+import type { Post } from "@/features/posts/types/post";
+import PostForm from "@/features/posts/components/PostForm";
 
 export default function EditPostPage() {
   const router = useRouter();
@@ -36,7 +38,7 @@ export default function EditPostPage() {
       } catch (err) {
         if (cancelled) return;
 
-        if (err instanceof PostsApiError && err.status === 401) {
+        if (err instanceof ApiError && err.status === 401) {
           router.push("/login");
           return;
         }

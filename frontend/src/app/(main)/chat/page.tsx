@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useWebSocket } from "@/hooks/useWebSocket";
+import { useWebSocket } from "@/providers/WebSocketProvider";
 
 export default function ChatPage() {
   const {
