@@ -1,7 +1,7 @@
 "use client";
 
-import { useWebSocket } from "@/hooks/useWebSocket";
-import type { MessagePayload } from "@/types/websocket";
+import { useWebSocket } from "@/providers/WebSocketProvider";
+import type { MessagePayload } from "@/lib/websocket/types";
 
 export function useChat(recipientID: number) {
   const { sendEvent, onlineUserIDs, lastMessage, typingStatus } = useWebSocket();

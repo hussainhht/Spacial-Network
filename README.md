@@ -1,3 +1,7 @@
+
+
+
+
 ## best social-network
 
 # Next.js
@@ -141,4 +145,170 @@ backend/
 ├── go.mod
 ├── go.sum
 └── .env
+```
+
+
+
+
+
+```
+frontend/
+│
+├── public/
+│   ├── images/
+│   ├── icons/
+│   └── ...
+│
+├── src/
+│   │
+│   ├── app/
+│   │   │
+│   │   ├── layout.tsx
+│   │   ├── globals.css
+│   │   │
+│   │   ├── (auth)/
+│   │   │   ├── login/
+│   │   │   │   └── page.tsx
+│   │   │   │
+│   │   │   └── register/
+│   │   │       └── page.tsx
+│   │   │
+│   │   └── (main)/
+│   │       ├── layout.tsx
+│   │       │
+│   │       ├── page.tsx
+│   │       │
+│   │       ├── profile/
+│   │       │   └── [userId]/
+│   │       │       └── page.tsx
+│   │       │
+│   │       ├── groups/
+│   │       │   ├── page.tsx
+│   │       │   │
+│   │       │   └── [groupId]/
+│   │       │       └── page.tsx
+│   │       │
+│   │       └── chat/
+│   │           ├── page.tsx
+│   │           └── [userId]/
+│   │               └── page.tsx
+│   │
+│   ├── features/
+│   │   │
+│   │   ├── auth/
+│   │   │   ├── api/
+│   │   │   │   ├── login.ts
+│   │   │   │   ├── register.ts
+│   │   │   │   ├── logout.ts
+│   │   │   │   └── getCurrentUser.ts
+│   │   │   │
+│   │   │   ├── components/
+│   │   │   │   ├── LoginForm.tsx
+│   │   │   │   └── RegisterForm.tsx
+│   │   │   │
+│   │   │   ├── hooks/
+│   │   │   │   └── useAuth.ts
+│   │   │   │
+│   │   │   └── types/
+│   │   │       └── auth.ts
+│   │   │
+│   │   ├── posts/
+│   │   │   ├── api/
+│   │   │   │   ├── createPost.ts
+│   │   │   │   ├── getPosts.ts
+│   │   │   │   ├── getPost.ts
+│   │   │   │   └── createComment.ts
+│   │   │   │
+│   │   │   ├── components/
+│   │   │   │   ├── Feed.tsx
+│   │   │   │   ├── PostCard.tsx
+│   │   │   │   ├── CreatePostForm.tsx
+│   │   │   │   ├── PostPrivacySelector.tsx
+│   │   │   │   ├── CommentsList.tsx
+│   │   │   │   └── CommentForm.tsx
+│   │   │   │
+│   │   │   ├── hooks/
+│   │   │   │   ├── usePosts.ts
+│   │   │   │   └── useComments.ts
+│   │   │   │
+│   │   │   └── types/
+│   │   │       ├── post.ts
+│   │   │       └── comment.ts
+│   │   │
+│   │   ├── profile/
+│   │   │   ├── api/
+│   │   │   ├── components/
+│   │   │   ├── hooks/
+│   │   │   └── types/
+│   │   │
+│   │   ├── followers/
+│   │   │   ├── api/
+│   │   │   ├── components/
+│   │   │   ├── hooks/
+│   │   │   └── types/
+│   │   │
+│   │   ├── groups/
+│   │   │   ├── api/
+│   │   │   ├── components/
+│   │   │   ├── hooks/
+│   │   │   ├── types/
+│   │   │   └── utils/
+│   │   │
+│   │   ├── events/
+│   │   │   ├── api/
+│   │   │   ├── components/
+│   │   │   ├── hooks/
+│   │   │   └── types/
+│   │   │
+│   │   ├── chat/
+│   │   │   ├── api/
+│   │   │   ├── components/
+│   │   │   ├── hooks/
+│   │   │   └── types/
+│   │   │
+│   │   └── notifications/
+│   │       ├── api/
+│   │       ├── components/
+│   │       ├── hooks/
+│   │       └── types/
+│   │
+│   ├── components/
+│   │   ├── ui/
+│   │   │   ├── Button.tsx
+│   │   │   ├── Input.tsx
+│   │   │   ├── Modal.tsx
+│   │   │   ├── Avatar.tsx
+│   │   │   ├── Spinner.tsx
+│   │   │   └── EmptyState.tsx
+│   │   │
+│   │   └── layout/
+│   │       ├── Navbar.tsx
+│   │       ├── Sidebar.tsx
+│   │       ├── MobileNav.tsx
+│   │       └── AppShell.tsx
+│   │
+│   ├── lib/
+│   │   ├── api/
+│   │   │   ├── client.ts
+│   │   │   └── errors.ts
+│   │   │
+│   │   ├── websocket/
+│   │   │   └── client.ts
+│   │   │
+│   │   └── utils/
+│   │       ├── date.ts
+│   │       └── file.ts
+│   │
+│   ├── providers/
+│   │   ├── AuthProvider.tsx
+│   │   ├── WebSocketProvider.tsx
+│   │   └── NotificationProvider.tsx
+│   │
+│   └── types/
+│       └── api.ts
+│
+├── .env.local
+├── next.config.ts
+├── package.json
+└── tsconfig.json
 ```

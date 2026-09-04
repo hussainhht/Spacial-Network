@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { listPosts, PostsApiError, type Post } from "@/lib/posts-api";
-import PostCard from "./components/PostCard";
+import { listPosts } from "@/features/posts/api/posts";
+import { ApiError } from "@/lib/api/errors";
+import type { Post } from "@/features/posts/types/post";
+import PostCard from "@/features/posts/components/PostCard";
 
 export default function PostsPage() {
   const router = useRouter();
@@ -23,7 +25,7 @@ export default function PostsPage() {
       } catch (err) {
         if (cancelled) return;
 
-        if (err instanceof PostsApiError && err.status === 401) {
+        if (err instanceof ApiError && err.status === 401) {
           router.push("/login");
           return;
         }

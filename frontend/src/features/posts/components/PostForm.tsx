@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { PostInput } from "@/lib/posts-api";
+import type { PostInput } from "@/features/posts/types/post";
 
 interface PostFormProps {
   initialValues?: PostInput;
