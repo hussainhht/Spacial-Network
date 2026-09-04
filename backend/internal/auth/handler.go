@@ -35,6 +35,7 @@ type RegisterRequest struct {
 
 type Response struct {
 	Message string `json:"message,omitempty"`
+	UserID  int    `json:"user_id,omitempty"`
 	Error   string `json:"error,omitempty"`
 }
 
@@ -74,10 +75,10 @@ func (h *Handler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		cookie, err := r.Cookie(h.cookieName)
 		if err == nil {
 			// Check if session is valid
-			_, err := h.service.ValidateSession(cookie.Value)
+			userID, err := h.service.ValidateSession(cookie.Value)
 			if err == nil {
 				w.WriteHeader(http.StatusOK)
-				json.NewEncoder(w).Encode(Response{Message: "Already logged in"})
+				json.NewEncoder(w).Encode(Response{Message: "Already logged in", UserID: userID})
 				return
 			}
 		}
@@ -100,7 +101,7 @@ func (h *Handler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, token, err := h.service.Login(req.Username, req.Password)
+	userID, token, err := h.service.Login(req.Username, req.Password)
 	if err != nil {
 		if errors.Is(err, ErrInvalidCredentials) {
 			w.WriteHeader(http.StatusUnauthorized)
@@ -125,7 +126,7 @@ func (h *Handler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	})
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(Response{Message: "Login successful"})
+	json.NewEncoder(w).Encode(Response{Message: "Login successful", UserID: userID})
 }
 
 // LogoutHandler revokes the current session and clears its cookie.

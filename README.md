@@ -1,7 +1,3 @@
-
-
-
-
 ## best social-network
 
 # Next.js
@@ -146,10 +142,6 @@ backend/
 ├── go.sum
 └── .env
 ```
-
-
-
-
 
 ```
 frontend/
