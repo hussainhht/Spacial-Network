@@ -18,6 +18,13 @@ type GroupMember struct {
 	JoinedAt time.Time `db:"joined_at"`
 }
 
+// Status values shared by group_invitations and group_join_requests.
+const (
+	StatusPending  = "pending"
+	StatusAccepted = "accepted"
+	StatusDeclined = "declined"
+)
+
 type GroupInvitation struct {
 	ID            int       `db:"id"`
 	GroupID       int       `db:"group_id"`

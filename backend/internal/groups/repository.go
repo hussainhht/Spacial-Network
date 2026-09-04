@@ -14,9 +14,7 @@ func NewRepository(db *sql.DB) *Repository {
 	}
 }
 
-// InsertGroup creates a new group, adds the creator as a group member, and
-// returns the new group's ID. Both writes happen in a single transaction so
-// a group is never left without its creator as a member.
+
 func (r *Repository) InsertGroup(creatorID int, title, description string) (int64, error) {
 	tx, err := r.db.Begin()
 	if err != nil {
@@ -54,7 +52,6 @@ func (r *Repository) InsertGroup(creatorID int, title, description string) (int6
 	return groupID, nil
 }
 
-// GetAllGroups returns a page of groups, most recently created first.
 func (r *Repository) GetAllGroups(limit, offset int) ([]Group, error) {
 	rows, err := r.db.Query(
 		`SELECT id, creator_id, title, description, created_at, updated_at
@@ -81,8 +78,7 @@ func (r *Repository) GetAllGroups(limit, offset int) ([]Group, error) {
 	return result, rows.Err()
 }
 
-// GetMembership returns userID's membership row in groupID, or nil (with no
-// error) if they are not a member.
+
 func (r *Repository) GetMembership(groupID, userID int) (*GroupMember, error) {
 	var m GroupMember
 
@@ -104,8 +100,7 @@ func (r *Repository) GetMembership(groupID, userID int) (*GroupMember, error) {
 	return &m, nil
 }
 
-// AddMember adds userID to groupID as a regular member. Returns
-// ErrAlreadyMember if userID is already a member of groupID.
+
 func (r *Repository) AddMember(groupID, userID int) error {
 	member, err := r.GetMembership(groupID, userID)
 	if err != nil {
@@ -123,8 +118,7 @@ func (r *Repository) AddMember(groupID, userID int) error {
 	return err
 }
 
-// GetGroupByID returns the group with the given ID, or ErrGroupNotFound if
-// it doesn't exist.
+
 func (r *Repository) GetGroupByID(id int) (*Group, error) {
 	var g Group
 
@@ -144,7 +138,6 @@ func (r *Repository) GetGroupByID(id int) (*Group, error) {
 	return &g, nil
 }
 
-// GetGroupMembers returns the members of a group, earliest joined first.
 func (r *Repository) GetGroupMembers(groupID int) ([]GroupMember, error) {
 	rows, err := r.db.Query(
 		`SELECT gm.user_id, u.username, gm.role, gm.joined_at
@@ -171,7 +164,6 @@ func (r *Repository) GetGroupMembers(groupID int) ([]GroupMember, error) {
 	return result, rows.Err()
 }
 
-
 func (r *Repository) CreateGroupInvitation(groupID, invitedBy, invitedUserID int) (int64, error) {
 	result, err := r.db.Exec(
 		`INSERT INTO group_invitations (group_id, invited_by, invited_user_id) VALUES (?, ?, ?)`,
@@ -185,7 +177,6 @@ func (r *Repository) CreateGroupInvitation(groupID, invitedBy, invitedUserID int
 
 	return result.LastInsertId()
 }
-
 
 func (r *Repository) GetGroupInvitationByID(invitationID int) (*GroupInvitation, error) {
 	var inv GroupInvitation
@@ -205,7 +196,6 @@ func (r *Repository) GetGroupInvitationByID(invitationID int) (*GroupInvitation,
 
 	return &inv, nil
 }
-
 
 func (r *Repository) GetPendingInvitationsByUser(userID int) ([]GroupInvitation, error) {
 	rows, err := r.db.Query(
@@ -232,7 +222,6 @@ func (r *Repository) GetPendingInvitationsByUser(userID int) ([]GroupInvitation,
 	return result, rows.Err()
 }
 
-
 func (r *Repository) HasPendingInvitation(groupID, invitedUserID int) (bool, error) {
 	var one int
 
@@ -251,7 +240,6 @@ func (r *Repository) HasPendingInvitation(groupID, invitedUserID int) (bool, err
 
 	return true, nil
 }
-
 
 func (r *Repository) UpdateInvitationStatus(invitationID int, status string) error {
 	result, err := r.db.Exec(
@@ -274,7 +262,6 @@ func (r *Repository) UpdateInvitationStatus(invitationID int, status string) err
 	return nil
 }
 
-
 func (r *Repository) CreateGroupJoinRequest(groupID, userID int) (int64, error) {
 	result, err := r.db.Exec(
 		`INSERT INTO group_join_requests (group_id, user_id) VALUES (?, ?)`,
@@ -287,7 +274,6 @@ func (r *Repository) CreateGroupJoinRequest(groupID, userID int) (int64, error) 
 
 	return result.LastInsertId()
 }
-
 
 func (r *Repository) GetGroupJoinRequestByID(requestID int) (*GroupJoinRequest, error) {
 	var jr GroupJoinRequest
@@ -307,7 +293,6 @@ func (r *Repository) GetGroupJoinRequestByID(requestID int) (*GroupJoinRequest, 
 
 	return &jr, nil
 }
-
 
 func (r *Repository) GetPendingJoinRequestsByGroup(groupID int) ([]GroupJoinRequest, error) {
 	rows, err := r.db.Query(
