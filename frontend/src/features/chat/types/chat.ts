@@ -23,3 +23,26 @@ export interface ChatHistoryParams {
   limit?: number;
   offset?: number;
 }
+
+export interface ChatSidebarProps {
+  conversations: ConversationSummary[];
+  activeUserId: number | null;
+  onlineUserIDs: number[];
+  loading: boolean;
+  onSelectConversation: (partnerId: number, partnerUsername: string) => void;
+}
+
+export interface ChatWindowProps {
+  partnerId: number;
+  partnerUsername: string;
+  partnerAvatar?: string;
+  isPartnerOnline: boolean;
+  isPartnerTyping: boolean;
+  myUserId: number | null;
+  messages: PrivateMessage[];
+  loadingHistory: boolean;
+  hasMoreHistory: boolean;
+  onLoadMore: () => void;
+  onSendMessage: (content: string) => void;
+  onTyping: (isTyping: boolean) => void;
+}
