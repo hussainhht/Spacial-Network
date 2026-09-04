@@ -88,9 +88,9 @@ Authentication, Docker, and final project-wide integration are not included in t
 
 ---
 
-## 3. Group Invitations
+## Database
 
-### Database
+## 2. Group Join Requests
 
 - [ ] Create `group_invitations` table migration
 - [ ] Store group ID
