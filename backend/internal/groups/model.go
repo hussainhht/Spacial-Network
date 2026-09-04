@@ -96,6 +96,58 @@ type MembershipResponse struct {
 	Role     string `json:"role,omitempty"`
 }
 
+// ActionResponse is a generic success/message envelope for endpoints that
+// perform an action but don't return any data (e.g. accept/reject/decline).
+type ActionResponse struct {
+	Success bool   `json:"success"`
+	Message string `json:"message"`
+}
+
+type CreateJoinRequestResponse struct {
+	Success bool   `json:"success"`
+	Message string `json:"message"`
+}
+
+type GroupJoinRequestResponse struct {
+	ID        int    `json:"id"`
+	GroupID   int    `json:"group_id"`
+	UserID    int    `json:"user_id"`
+	Status    string `json:"status"`
+	CreatedAt string `json:"created_at"`
+	UpdatedAt string `json:"updated_at"`
+}
+
+type GetJoinRequestsResponse struct {
+	Success      bool                       `json:"success"`
+	Message      string                     `json:"message,omitempty"`
+	JoinRequests []GroupJoinRequestResponse `json:"join_requests,omitempty"`
+}
+
+type CreateGroupInvitationRequest struct {
+	InvitedUserID int `json:"invited_user_id"`
+}
+
+type CreateGroupInvitationResponse struct {
+	Success bool   `json:"success"`
+	Message string `json:"message"`
+}
+
+type GroupInvitationResponse struct {
+	ID            int    `json:"id"`
+	GroupID       int    `json:"group_id"`
+	InvitedBy     int    `json:"invited_by"`
+	InvitedUserID int    `json:"invited_user_id"`
+	Status        string `json:"status"`
+	CreatedAt     string `json:"created_at"`
+	UpdatedAt     string `json:"updated_at"`
+}
+
+type GetGroupInvitationsResponse struct {
+	Success     bool                      `json:"success"`
+	Message     string                    `json:"message,omitempty"`
+	Invitations []GroupInvitationResponse `json:"invitations,omitempty"`
+}
+
 type Handler struct {
 	service *Service
 }

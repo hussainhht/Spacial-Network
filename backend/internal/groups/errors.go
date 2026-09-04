@@ -1,6 +1,9 @@
 package groups
 
-import "errors"
+import (
+	"errors"
+	"net/http"
+)
 
 // ErrGroupNotFound is returned when a group with the given ID does not exist.
 var ErrGroupNotFound = errors.New("group not found")
@@ -44,3 +47,47 @@ var ErrInvitationAlreadyPending = errors.New("a pending invitation already exist
 // ErrInvitationNotPending is returned when trying to accept or decline an
 // invitation that has already been resolved.
 var ErrInvitationNotPending = errors.New("invitation is not pending")
+
+// joinRequestErrorResponse maps a group join request service error to an
+// HTTP status code and a user-facing message.
+func joinRequestErrorResponse(err error) (int, string) {
+	switch {
+	case errors.Is(err, ErrGroupNotFound):
+		return http.StatusNotFound, "Group not found"
+	case errors.Is(err, ErrJoinRequestNotFound):
+		return http.StatusNotFound, "Join request not found"
+	case errors.Is(err, ErrNotGroupCreator):
+		return http.StatusForbidden, "Only the group creator can do this"
+	case errors.Is(err, ErrAlreadyMember):
+		return http.StatusConflict, "User is already a member of this group"
+	case errors.Is(err, ErrJoinRequestAlreadyPending):
+		return http.StatusConflict, "A pending join request already exists"
+	case errors.Is(err, ErrJoinRequestNotPending):
+		return http.StatusConflict, "Join request has already been processed"
+	default:
+		return http.StatusInternalServerError, "Failed to process join request"
+	}
+}
+
+// invitationErrorResponse maps a group invitation service error to an HTTP
+// status code and a user-facing message.
+func invitationErrorResponse(err error) (int, string) {
+	switch {
+	case errors.Is(err, ErrGroupNotFound):
+		return http.StatusNotFound, "Group not found"
+	case errors.Is(err, ErrInvitationNotFound):
+		return http.StatusNotFound, "Invitation not found"
+	case errors.Is(err, ErrCannotInviteSelf):
+		return http.StatusBadRequest, "Cannot invite yourself to a group"
+	case errors.Is(err, ErrNotGroupMember):
+		return http.StatusForbidden, "You must be a member of this group to do this"
+	case errors.Is(err, ErrAlreadyMember):
+		return http.StatusConflict, "User is already a member of this group"
+	case errors.Is(err, ErrInvitationAlreadyPending):
+		return http.StatusConflict, "A pending invitation already exists"
+	case errors.Is(err, ErrInvitationNotPending):
+		return http.StatusConflict, "Invitation has already been processed"
+	default:
+		return http.StatusInternalServerError, "Failed to process invitation"
+	}
+}

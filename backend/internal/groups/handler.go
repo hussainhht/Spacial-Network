@@ -29,6 +29,29 @@ func toGroupMemberResponse(m GroupMember) GroupMemberResponse {
 	}
 }
 
+func toGroupJoinRequestResponse(jr GroupJoinRequest) GroupJoinRequestResponse {
+	return GroupJoinRequestResponse{
+		ID:        jr.ID,
+		GroupID:   jr.GroupID,
+		UserID:    jr.UserID,
+		Status:    jr.Status,
+		CreatedAt: jr.CreatedAt.Format(time.RFC3339),
+		UpdatedAt: jr.UpdatedAt.Format(time.RFC3339),
+	}
+}
+
+func toGroupInvitationResponse(inv GroupInvitation) GroupInvitationResponse {
+	return GroupInvitationResponse{
+		ID:            inv.ID,
+		GroupID:       inv.GroupID,
+		InvitedBy:     inv.InvitedBy,
+		InvitedUserID: inv.InvitedUserID,
+		Status:        inv.Status,
+		CreatedAt:     inv.CreatedAt.Format(time.RFC3339),
+		UpdatedAt:     inv.UpdatedAt.Format(time.RFC3339),
+	}
+}
+
 func NewHandler(service *Service) *Handler {
 	return &Handler{
 		service: service,
@@ -290,3 +313,367 @@ func (h *Handler) GetMembershipHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(resp)
 }
 
+func (h *Handler) CreateJoinRequestHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	userID, ok := r.Context().Value(auth.UserIDKey).(int)
+	if !ok {
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(CreateJoinRequestResponse{
+			Success: false,
+			Message: "Not logged in",
+		})
+		return
+	}
+
+	groupID, err := ValidateGroupID(r.PathValue("id"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(CreateJoinRequestResponse{
+			Success: false,
+			Message: err.Error(),
+		})
+		return
+	}
+
+	if err := h.service.RequestToJoin(groupID, userID); err != nil {
+		status, message := joinRequestErrorResponse(err)
+		w.WriteHeader(status)
+		json.NewEncoder(w).Encode(CreateJoinRequestResponse{
+			Success: false,
+			Message: message,
+		})
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(CreateJoinRequestResponse{
+		Success: true,
+		Message: "Join request sent successfully",
+	})
+}
+
+func (h *Handler) GetPendingJoinRequestsHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	userID, ok := r.Context().Value(auth.UserIDKey).(int)
+	if !ok {
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(GetJoinRequestsResponse{
+			Success: false,
+			Message: "Not logged in",
+		})
+		return
+	}
+
+	groupID, err := ValidateGroupID(r.PathValue("id"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(GetJoinRequestsResponse{
+			Success: false,
+			Message: err.Error(),
+		})
+		return
+	}
+
+	requests, err := h.service.GetPendingJoinRequests(groupID, userID)
+	if err != nil {
+		status, message := joinRequestErrorResponse(err)
+		w.WriteHeader(status)
+		json.NewEncoder(w).Encode(GetJoinRequestsResponse{
+			Success: false,
+			Message: message,
+		})
+		return
+	}
+
+	resp := make([]GroupJoinRequestResponse, len(requests))
+	for i, jr := range requests {
+		resp[i] = toGroupJoinRequestResponse(jr)
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(GetJoinRequestsResponse{
+		Success:      true,
+		JoinRequests: resp,
+	})
+}
+
+func (h *Handler) AcceptJoinRequestHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	userID, ok := r.Context().Value(auth.UserIDKey).(int)
+	if !ok {
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(ActionResponse{
+			Success: false,
+			Message: "Not logged in",
+		})
+		return
+	}
+
+	groupID, err := ValidateGroupID(r.PathValue("id"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(ActionResponse{
+			Success: false,
+			Message: err.Error(),
+		})
+		return
+	}
+
+	requestID, err := ValidateJoinRequestID(r.PathValue("requestID"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(ActionResponse{
+			Success: false,
+			Message: err.Error(),
+		})
+		return
+	}
+
+	if err := h.service.AcceptJoinRequest(groupID, requestID, userID); err != nil {
+		status, message := joinRequestErrorResponse(err)
+		w.WriteHeader(status)
+		json.NewEncoder(w).Encode(ActionResponse{
+			Success: false,
+			Message: message,
+		})
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(ActionResponse{
+		Success: true,
+		Message: "Join request accepted",
+	})
+}
+
+func (h *Handler) RejectJoinRequestHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	userID, ok := r.Context().Value(auth.UserIDKey).(int)
+	if !ok {
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(ActionResponse{
+			Success: false,
+			Message: "Not logged in",
+		})
+		return
+	}
+
+	groupID, err := ValidateGroupID(r.PathValue("id"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(ActionResponse{
+			Success: false,
+			Message: err.Error(),
+		})
+		return
+	}
+
+	requestID, err := ValidateJoinRequestID(r.PathValue("requestID"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(ActionResponse{
+			Success: false,
+			Message: err.Error(),
+		})
+		return
+	}
+
+	if err := h.service.RejectJoinRequest(groupID, requestID, userID); err != nil {
+		status, message := joinRequestErrorResponse(err)
+		w.WriteHeader(status)
+		json.NewEncoder(w).Encode(ActionResponse{
+			Success: false,
+			Message: message,
+		})
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(ActionResponse{
+		Success: true,
+		Message: "Join request rejected",
+	})
+}
+
+// =========================
+// Group Invitations
+// =========================
+
+func (h *Handler) CreateGroupInvitationHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	userID, ok := r.Context().Value(auth.UserIDKey).(int)
+	if !ok {
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(CreateGroupInvitationResponse{
+			Success: false,
+			Message: "Not logged in",
+		})
+		return
+	}
+
+	groupID, err := ValidateGroupID(r.PathValue("id"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(CreateGroupInvitationResponse{
+			Success: false,
+			Message: err.Error(),
+		})
+		return
+	}
+
+	var req CreateGroupInvitationRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(CreateGroupInvitationResponse{
+			Success: false,
+			Message: "Invalid request payload",
+		})
+		return
+	}
+
+	invitedUserID, err := ValidateInvitedUserID(req.InvitedUserID)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(CreateGroupInvitationResponse{
+			Success: false,
+			Message: err.Error(),
+		})
+		return
+	}
+
+	if err := h.service.CreateGroupInvitation(groupID, userID, invitedUserID); err != nil {
+		status, message := invitationErrorResponse(err)
+		w.WriteHeader(status)
+		json.NewEncoder(w).Encode(CreateGroupInvitationResponse{
+			Success: false,
+			Message: message,
+		})
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(CreateGroupInvitationResponse{
+		Success: true,
+		Message: "Invitation sent successfully",
+	})
+}
+
+func (h *Handler) GetPendingInvitationsHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	userID, ok := r.Context().Value(auth.UserIDKey).(int)
+	if !ok {
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(GetGroupInvitationsResponse{
+			Success: false,
+			Message: "Not logged in",
+		})
+		return
+	}
+
+	invitations, err := h.service.GetPendingInvitations(userID)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(GetGroupInvitationsResponse{
+			Success: false,
+			Message: "Failed to get invitations",
+		})
+		return
+	}
+
+	resp := make([]GroupInvitationResponse, len(invitations))
+	for i, inv := range invitations {
+		resp[i] = toGroupInvitationResponse(inv)
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(GetGroupInvitationsResponse{
+		Success:     true,
+		Invitations: resp,
+	})
+}
+
+func (h *Handler) AcceptGroupInvitationHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	userID, ok := r.Context().Value(auth.UserIDKey).(int)
+	if !ok {
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(ActionResponse{
+			Success: false,
+			Message: "Not logged in",
+		})
+		return
+	}
+
+	invitationID, err := ValidateInvitationID(r.PathValue("invitationID"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(ActionResponse{
+			Success: false,
+			Message: err.Error(),
+		})
+		return
+	}
+
+	if err := h.service.AcceptGroupInvitation(invitationID, userID); err != nil {
+		status, message := invitationErrorResponse(err)
+		w.WriteHeader(status)
+		json.NewEncoder(w).Encode(ActionResponse{
+			Success: false,
+			Message: message,
+		})
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(ActionResponse{
+		Success: true,
+		Message: "Invitation accepted",
+	})
+}
+
+func (h *Handler) DeclineGroupInvitationHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	userID, ok := r.Context().Value(auth.UserIDKey).(int)
+	if !ok {
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(ActionResponse{
+			Success: false,
+			Message: "Not logged in",
+		})
+		return
+	}
+
+	invitationID, err := ValidateInvitationID(r.PathValue("invitationID"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(ActionResponse{
+			Success: false,
+			Message: err.Error(),
+		})
+		return
+	}
+
+	if err := h.service.DeclineGroupInvitation(invitationID, userID); err != nil {
+		status, message := invitationErrorResponse(err)
+		w.WriteHeader(status)
+		json.NewEncoder(w).Encode(ActionResponse{
+			Success: false,
+			Message: message,
+		})
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(ActionResponse{
+		Success: true,
+		Message: "Invitation declined",
+	})
+}
