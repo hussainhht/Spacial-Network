@@ -374,17 +374,21 @@ main:has(form) form > p {
 
 @media (prefers-reduced-motion: reduce) {
   main:has(form)::before,
-  main:has(form)::after {
+  main:has(form)::after,
+  .space-shell::before,
+  .space-shell::after {
     animation: none;
   }
 
-  main:has(form) * {
+  main:has(form) *,
+  .space-shell * {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
 
-  main:has(form) button[type="submit"]:hover:not(:disabled) {
+  main:has(form) button[type="submit"]:hover:not(:disabled),
+  .space-shell button:hover:not(:disabled) {
     transform: none;
   }
 }
@@ -553,6 +557,72 @@ main:has(form) form > p {
   line-height: 1.6;
 }
 
+/* ================================================================== */
+/*  Shared form primitives (Posts & Groups forms)                     */
+/* ================================================================== */
+
+.post-form,
+.group-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: clamp(1.5rem, 4vw, 2.5rem);
+  background: var(--space-card-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--space-border);
+  border-radius: var(--space-radius-lg);
+  box-shadow: 0 25px 60px -15px rgba(2, 6, 23, 0.7),
+    0 0 0 1px rgba(255, 255, 255, 0.02) inset;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.form-field label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--space-text-label);
+}
+
+.form-field input[type="text"],
+.form-field input[type="number"],
+.form-field input[type="email"],
+.form-field input[type="password"],
+.form-field textarea,
+.form-field select {
+  width: 100%;
+  padding: 0.65rem 0.9rem;
+  background: var(--space-input-bg);
+  border: 1px solid var(--space-border);
+  border-radius: var(--space-radius-md);
+  color: var(--space-text-heading);
+  font-size: 0.95rem;
+  font-family: inherit;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.form-field textarea {
+  resize: vertical;
+  min-height: 120px;
+  line-height: 1.5;
+}
+
+.form-field input:focus,
+.form-field textarea:focus,
+.form-field select:focus {
+  outline: none;
+  border-color: var(--space-accent-indigo);
+  background: var(--space-input-bg-focus);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25), 0 0 20px rgba(59, 130, 246, 0.35);
+}
+
 .form-field-checkbox label {
   display: flex;
   align-items: center;
@@ -562,4 +632,443 @@ main:has(form) form > p {
 .form-field-checkbox input {
   width: auto;
   min-height: auto;
+}
+
+.form-error {
+  margin: 0;
+  padding: 0.65rem 0.9rem;
+  background: var(--space-error-bg);
+  border: 1px solid var(--space-error-border);
+  border-radius: var(--space-radius-md);
+  color: var(--space-error-text);
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.post-form button[type="submit"],
+.group-form button[type="submit"] {
+  align-self: flex-start;
+  min-height: 46px;
+  padding: 0.8rem 1.75rem;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--space-accent-indigo), var(--space-accent-blue));
+  color: #f8fafc;
+  font-size: 1rem;
+  font-weight: 600;
+  font-family: inherit;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  box-shadow: 0 8px 24px -8px rgba(59, 130, 246, 0.6),
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+}
+
+.post-form button[type="submit"]:hover:not(:disabled),
+.group-form button[type="submit"]:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.08);
+}
+
+.post-form button[type="submit"]:disabled,
+.group-form button[type="submit"]:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* ================================================================== */
+/*  Space shell — starfield + nebula background shared by Groups pages */
+/* ================================================================== */
+
+.space-shell {
+  position: relative;
+  isolation: isolate;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: clamp(1.5rem, 5vw, 3rem) 1rem;
+  color: var(--space-text-body);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  line-height: 1.5;
+  color-scheme: dark;
+  background: linear-gradient(
+    180deg,
+    var(--space-bg-deep) 0%,
+    var(--space-bg-mid) 45%,
+    var(--space-bg-soft) 75%,
+    var(--space-bg-elevated) 100%
+  );
+}
+
+.space-shell::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background: radial-gradient(
+      38% 30% at 18% 22%,
+      rgba(99, 102, 241, 0.28),
+      transparent 70%
+    ),
+    radial-gradient(32% 30% at 85% 15%, rgba(34, 211, 238, 0.14), transparent 70%),
+    radial-gradient(45% 40% at 50% 92%, rgba(139, 92, 246, 0.22), transparent 70%),
+    radial-gradient(30% 25% at 82% 82%, rgba(59, 130, 246, 0.16), transparent 70%);
+  filter: blur(60px);
+  animation: nebula-breathe 20s ease-in-out infinite alternate;
+}
+
+.space-shell::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.75;
+  background-repeat: repeat;
+  background-image: radial-gradient(1px 1px at 20px 30px, rgba(255, 255, 255, 0.9), transparent 100%),
+    radial-gradient(1px 1px at 65px 12px, rgba(255, 255, 255, 0.5), transparent 100%),
+    radial-gradient(1px 1px at 110px 70px, rgba(255, 255, 255, 0.7), transparent 100%),
+    radial-gradient(1px 1px at 150px 40px, rgba(255, 255, 255, 0.4), transparent 100%),
+    radial-gradient(1px 1px at 40px 110px, rgba(255, 255, 255, 0.6), transparent 100%),
+    radial-gradient(1px 1px at 170px 150px, rgba(255, 255, 255, 0.35), transparent 100%),
+    radial-gradient(1px 1px at 95px 170px, rgba(255, 255, 255, 0.55), transparent 100%),
+    radial-gradient(1px 1px at 10px 160px, rgba(255, 255, 255, 0.45), transparent 100%),
+    radial-gradient(1.5px 1.5px at 40px 60px, rgba(255, 255, 255, 0.9), transparent 100%),
+    radial-gradient(1.5px 1.5px at 220px 140px, rgba(255, 255, 255, 0.7), transparent 100%),
+    radial-gradient(1.5px 1.5px at 300px 40px, rgba(255, 255, 255, 0.6), transparent 100%),
+    radial-gradient(1.5px 1.5px at 150px 260px, rgba(255, 255, 255, 0.8), transparent 100%),
+    radial-gradient(2px 2px at 80px 90px, rgba(255, 255, 255, 1), transparent 100%),
+    radial-gradient(2px 2px at 320px 260px, rgba(224, 231, 255, 0.9), transparent 100%),
+    radial-gradient(2px 2px at 180px 380px, rgba(203, 213, 255, 0.85), transparent 100%);
+  background-size: 200px 200px, 200px 200px, 200px 200px, 200px 200px, 200px 200px,
+    200px 200px, 200px 200px, 200px 200px, 340px 340px, 340px 340px, 340px 340px,
+    340px 340px, 480px 480px, 480px 480px, 480px 480px;
+  animation: star-twinkle 6s ease-in-out infinite alternate;
+}
+
+.space-shell ::selection {
+  background: rgba(99, 102, 241, 0.35);
+  color: #ffffff;
+}
+
+/* ================================================================== */
+/*  Groups (list, create, details)                                    */
+/* ================================================================== */
+
+.groups-container,
+.group-create-container,
+.group-details-container {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  width: min(100%, 720px);
+  margin: 0 auto;
+}
+
+.groups-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.groups-page h1,
+.group-create-page h1,
+.group-details-container h1 {
+  margin: 0;
+  color: var(--space-text-heading);
+  text-shadow: 0 0 18px rgba(99, 102, 241, 0.45), 0 0 40px rgba(59, 130, 246, 0.2);
+}
+
+.new-post-link,
+.new-group-link {
+  padding: 0.5rem 1rem;
+  border-radius: var(--space-radius-sm);
+  border: 1px solid var(--space-border-strong);
+  background: rgba(99, 102, 241, 0.15);
+  color: var(--space-accent-blue);
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.new-post-link:hover,
+.new-group-link:hover {
+  text-decoration: underline;
+}
+
+.groups-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.group-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1.25rem 1.5rem;
+  background: var(--space-card-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--space-border);
+  border-radius: var(--space-radius-lg);
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.group-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--space-border-strong);
+  box-shadow: 0 12px 30px -12px rgba(2, 6, 23, 0.6);
+}
+
+.group-card h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.group-card h2 a {
+  color: var(--space-text-heading);
+  text-decoration: none;
+}
+
+.group-card h2 a:hover {
+  text-decoration: underline;
+}
+
+.group-card p {
+  margin: 0;
+  color: var(--space-text-body);
+}
+
+.group-detail-card {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: clamp(1.5rem, 4vw, 2.5rem);
+  background: var(--space-card-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--space-border);
+  border-radius: var(--space-radius-lg);
+  box-shadow: 0 25px 60px -15px rgba(2, 6, 23, 0.7),
+    0 0 0 1px rgba(255, 255, 255, 0.02) inset;
+}
+
+.group-detail-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.group-detail-header h1 {
+  font-size: 1.75rem;
+}
+
+.group-detail-creator {
+  color: var(--space-text-muted);
+  font-size: 0.875rem;
+}
+
+.group-detail-description {
+  margin: 0;
+  color: var(--space-text-body);
+  line-height: 1.6;
+}
+
+.group-members h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+  color: var(--space-text-heading);
+}
+
+.group-members-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.group-member-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.6rem 0.9rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--space-border);
+  border-radius: var(--space-radius-sm);
+}
+
+.group-member-name {
+  color: var(--space-text-heading);
+  font-size: 0.9rem;
+}
+
+.group-member-role {
+  flex-shrink: 0;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid var(--space-border-strong);
+  background: rgba(139, 92, 246, 0.18);
+  color: var(--space-text-label);
+  font-size: 0.7rem;
+  text-transform: capitalize;
+}
+
+.group-action-panel {
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--space-border);
+}
+
+.group-invite-search h2 {
+  margin: 0 0 1rem;
+  font-size: 1.05rem;
+  color: var(--space-text-heading);
+}
+
+.group-invite-status {
+  margin: 0 0 0.75rem;
+  color: var(--space-text-muted);
+  font-size: 0.875rem;
+}
+
+.group-invite-results {
+  list-style: none;
+  margin: 1rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.group-invite-result {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 0.6rem 0.9rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--space-border);
+  border-radius: var(--space-radius-sm);
+}
+
+.group-invite-result-info {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+.group-invite-avatar,
+.group-invite-avatar-fallback {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.group-invite-avatar-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(99, 102, 241, 0.25);
+  color: var(--space-text-heading);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.group-invite-result-name {
+  color: var(--space-text-heading);
+  font-size: 0.9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.group-invite-result button {
+  flex-shrink: 0;
+  padding: 0.4rem 0.9rem;
+  border-radius: var(--space-radius-sm);
+  border: 1px solid var(--space-border-strong);
+  background: rgba(99, 102, 241, 0.18);
+  color: #e0e7ff;
+  font-size: 0.8rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.group-invite-result button:hover:not(:disabled) {
+  background: rgba(99, 102, 241, 0.32);
+  border-color: rgba(99, 102, 241, 0.5);
+}
+
+.group-invite-result button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.group-invite-result .form-error {
+  width: 100%;
+}
+
+.group-join {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+
+.group-join button {
+  min-height: 44px;
+  padding: 0.7rem 1.5rem;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--space-accent-indigo), var(--space-accent-blue));
+  color: #f8fafc;
+  font-size: 0.95rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  box-shadow: 0 8px 24px -8px rgba(59, 130, 246, 0.6),
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+  transition: transform 0.15s ease, filter 0.15s ease, box-shadow 0.15s ease;
+}
+
+.group-join button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.08);
+}
+
+.group-join button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.group-join-success {
+  margin: 0;
+  padding: 0.65rem 0.9rem;
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.35);
+  border-radius: var(--space-radius-md);
+  color: #86efac;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 480px) {
+  .group-detail-card,
+  .post-form,
+  .group-form {
+    padding: 1.5rem 1.25rem;
+    border-radius: 16px;
+  }
 }

@@ -14,12 +14,14 @@ export default function GroupInviteSearch({ groupId }: GroupInviteSearchProps) {
   const { invitingId, invitedIds, rowErrors, handleInvite } = useGroupInvitation(groupId);
 
   return (
-    <section>
+    <section className="group-invite-search">
       <h2>Invite people</h2>
 
-      {!isConnected && <p>Reconnecting to the server...</p>}
+      {!isConnected && (
+        <p className="group-invite-status">Reconnecting to the server...</p>
+      )}
 
-      <div>
+      <div className="form-field">
         <label htmlFor="invite-search">Search by name or username</label>
 
         <input
@@ -32,15 +34,17 @@ export default function GroupInviteSearch({ groupId }: GroupInviteSearchProps) {
         />
       </div>
 
-      {loading && !wsErrorPending && <p>Searching...</p>}
-      {wsErrorPending && <p>{errorMessage}</p>}
+      {loading && !wsErrorPending && (
+        <p className="group-invite-status">Searching...</p>
+      )}
+      {wsErrorPending && <p className="form-error">{errorMessage}</p>}
 
       {!loading && !wsErrorPending && query.trim().length > 0 && results.length === 0 && (
-        <p>No users found.</p>
+        <p className="group-invite-status">No users found.</p>
       )}
 
       {results.length > 0 && (
-        <ul>
+        <ul className="group-invite-results">
           {results.map((user) => {
             const invited = invitedIds.includes(user.id);
             const rowError = rowErrors[user.id];
@@ -48,14 +52,28 @@ export default function GroupInviteSearch({ groupId }: GroupInviteSearchProps) {
             const photo = avatarUrl(user.avatar);
 
             return (
-              <li key={user.id}>
-                {photo ? (
-                  <img src={photo} alt="" width={32} height={32} />
-                ) : (
-                  <span aria-hidden="true">{user.username.charAt(0).toUpperCase()}</span>
-                )}{" "}
-                {user.username}
-                {fullName && ` (${fullName})`}{" "}
+              <li key={user.id} className="group-invite-result">
+                <div className="group-invite-result-info">
+                  {photo ? (
+                    <img
+                      className="group-invite-avatar"
+                      src={photo}
+                      alt=""
+                      width={32}
+                      height={32}
+                    />
+                  ) : (
+                    <span className="group-invite-avatar-fallback" aria-hidden="true">
+                      {user.username.charAt(0).toUpperCase()}
+                    </span>
+                  )}
+
+                  <span className="group-invite-result-name">
+                    {user.username}
+                    {fullName && ` (${fullName})`}
+                  </span>
+                </div>
+
                 <button
                   type="button"
                   onClick={() => handleInvite(user.id)}
@@ -64,7 +82,7 @@ export default function GroupInviteSearch({ groupId }: GroupInviteSearchProps) {
                   {invited ? "Invited" : invitingId === user.id ? "Inviting..." : "Invite"}
                 </button>
 
-                {rowError && <p>{rowError}</p>}
+                {rowError && <p className="form-error">{rowError}</p>}
               </li>
             );
           })}

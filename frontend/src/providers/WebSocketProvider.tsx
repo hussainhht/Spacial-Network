@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from "react";
+import { getWebSocketUrl } from "@/lib/api";
 import type {
   EventType,
   MessagePayload,
@@ -41,7 +42,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     isConnectingRef.current = true;
 
     try {
-      const ws = new WebSocket("ws://localhost:8080/api/ws");
+      const ws = new WebSocket(getWebSocketUrl("/api/ws"));
       socketRef.current = ws;
 
       ws.onopen = () => {

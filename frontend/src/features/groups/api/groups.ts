@@ -1,7 +1,5 @@
 import type { Group , CreateGroupInput, GroupMember, Membership, InviteCandidate } from "../types/group";
-
-const API_BASE_URL = "http://localhost:8080/api";
-const UPLOADS_BASE_URL = "http://localhost:8080/uploads";
+import { getApiBaseUrl, getUploadsBaseUrl } from "@/lib/api";
 
 interface ApiGroup {
   id: number;
@@ -36,7 +34,7 @@ interface GroupsResponse {
 interface CreateGroupResponse {
   success: boolean;
   message?: string;
-  group?: ApiGroup;
+  group_id?: number;
 }
 
 interface GetGroupResponse {
@@ -65,8 +63,13 @@ interface CreateGroupInvitationResponse {
   message?: string;
 }
 
+interface CreateJoinRequestResponse {
+  success: boolean;
+  message?: string;
+}
+
 export async function getGroup(groupId: number): Promise<Group> {
-  const response = await fetch(`${API_BASE_URL}/groups/${groupId}`, {
+  const response = await fetch(`${getApiBaseUrl()}/groups/${groupId}`, {
     method: "GET",
     credentials: "include",
   });
@@ -107,7 +110,7 @@ export function toInviteCandidate(user: ApiInviteCandidate): InviteCandidate {
 export function avatarUrl(profilePhoto?: string): string | undefined {
   if (!profilePhoto) return undefined;
   if (/^https?:\/\//.test(profilePhoto)) return profilePhoto;
-  return `${UPLOADS_BASE_URL}/${profilePhoto}`;
+  return `${getUploadsBaseUrl()}/${profilePhoto}`;
 }
 
 function toGroup(group: ApiGroup): Group {
@@ -122,7 +125,7 @@ function toGroup(group: ApiGroup): Group {
 }
 
 export async function getGroups(): Promise<Group[]> {
-  const response = await fetch(`${API_BASE_URL}/groups`, {
+  const response = await fetch(`${getApiBaseUrl()}/groups`, {
     method: "GET",
     credentials: "include",
   });
@@ -140,7 +143,7 @@ export async function getGroups(): Promise<Group[]> {
 export async function createGroup(
   input: CreateGroupInput
 ): Promise<Group> {
-  const response = await fetch(`${API_BASE_URL}/groups`, {
+  const response = await fetch(`${getApiBaseUrl()}/groups`, {
     method: "POST",
 
     headers: {
@@ -154,11 +157,11 @@ export async function createGroup(
 
   const data: CreateGroupResponse = await response.json();
 
-  if (!response.ok || !data.success || !data.group) {
+  if (!response.ok || !data.success || !data.group_id) {
     throw new Error(data.message ?? "Failed to create group");
   }
 
-  return toGroup(data.group);
+  return getGroup(data.group_id);
 }
 
 
@@ -166,7 +169,7 @@ export async function getGroupMembers(
   groupId: number
 ): Promise<GroupMember[]> {
   const response = await fetch(
-    `${API_BASE_URL}/groups/${groupId}/members`,
+    `${getApiBaseUrl()}/groups/${groupId}/members`,
     {
       method: "GET",
       credentials: "include",
@@ -184,7 +187,7 @@ export async function getGroupMembers(
 
 export async function getMembership(groupId: number): Promise<Membership> {
   const response = await fetch(
-    `${API_BASE_URL}/groups/${groupId}/membership`,
+    `${getApiBaseUrl()}/groups/${groupId}/membership`,
     {
       method: "GET",
       credentials: "include",
@@ -200,11 +203,24 @@ export async function getMembership(groupId: number): Promise<Membership> {
   return { isMember: data.is_member, role: data.role };
 }
 
+export async function createJoinRequest(groupId: number): Promise<void> {
+  const response = await fetch(`${getApiBaseUrl()}/groups/${groupId}/join-requests`, {
+    method: "POST",
+    credentials: "include",
+  });
+
+  const data: CreateJoinRequestResponse = await response.json();
+
+  if (!response.ok || !data.success) {
+    throw new Error(data.message ?? "Failed to send join request");
+  }
+}
+
 export async function createGroupInvitation(
   groupId: number,
   invitedUserId: number
 ): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/groups/${groupId}/invitations`, {
+  const response = await fetch(`${getApiBaseUrl()}/groups/${groupId}/invitations`, {
     method: "POST",
 
     headers: {
