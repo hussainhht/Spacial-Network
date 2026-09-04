@@ -18,6 +18,25 @@ type GroupMember struct {
 	JoinedAt time.Time `db:"joined_at"`
 }
 
+type GroupInvitation struct {
+	ID            int       `db:"id"`
+	GroupID       int       `db:"group_id"`
+	InvitedBy     int       `db:"invited_by"`
+	InvitedUserID int       `db:"invited_user_id"`
+	Status        string    `db:"status"`
+	CreatedAt     time.Time `db:"created_at"`
+	UpdatedAt     time.Time `db:"updated_at"`
+}
+
+type GroupJoinRequest struct {
+	ID        int       `db:"id"`
+	GroupID   int       `db:"group_id"`
+	UserID    int       `db:"user_id"`
+	Status    string    `db:"status"`
+	CreatedAt time.Time `db:"created_at"`
+	UpdatedAt time.Time `db:"updated_at"`
+}
+
 type CreateGroupRequest struct {
 	Title       string `json:"title"`
 	Description string `json:"description"`

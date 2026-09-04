@@ -170,3 +170,206 @@ func (r *Repository) GetGroupMembers(groupID int) ([]GroupMember, error) {
 
 	return result, rows.Err()
 }
+
+
+func (r *Repository) CreateGroupInvitation(groupID, invitedBy, invitedUserID int) (int64, error) {
+	result, err := r.db.Exec(
+		`INSERT INTO group_invitations (group_id, invited_by, invited_user_id) VALUES (?, ?, ?)`,
+		groupID,
+		invitedBy,
+		invitedUserID,
+	)
+	if err != nil {
+		return 0, err
+	}
+
+	return result.LastInsertId()
+}
+
+
+func (r *Repository) GetGroupInvitationByID(invitationID int) (*GroupInvitation, error) {
+	var inv GroupInvitation
+
+	err := r.db.QueryRow(
+		`SELECT id, group_id, invited_by, invited_user_id, status, created_at, updated_at
+		 FROM group_invitations
+		 WHERE id = ?`,
+		invitationID,
+	).Scan(&inv.ID, &inv.GroupID, &inv.InvitedBy, &inv.InvitedUserID, &inv.Status, &inv.CreatedAt, &inv.UpdatedAt)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, ErrInvitationNotFound
+		}
+		return nil, err
+	}
+
+	return &inv, nil
+}
+
+
+func (r *Repository) GetPendingInvitationsByUser(userID int) ([]GroupInvitation, error) {
+	rows, err := r.db.Query(
+		`SELECT id, group_id, invited_by, invited_user_id, status, created_at, updated_at
+		 FROM group_invitations
+		 WHERE invited_user_id = ? AND status = 'pending'
+		 ORDER BY created_at DESC`,
+		userID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	result := make([]GroupInvitation, 0)
+	for rows.Next() {
+		var inv GroupInvitation
+		if err := rows.Scan(&inv.ID, &inv.GroupID, &inv.InvitedBy, &inv.InvitedUserID, &inv.Status, &inv.CreatedAt, &inv.UpdatedAt); err != nil {
+			return nil, err
+		}
+		result = append(result, inv)
+	}
+
+	return result, rows.Err()
+}
+
+
+func (r *Repository) HasPendingInvitation(groupID, invitedUserID int) (bool, error) {
+	var one int
+
+	err := r.db.QueryRow(
+		`SELECT 1 FROM group_invitations
+		 WHERE group_id = ? AND invited_user_id = ? AND status = 'pending'`,
+		groupID,
+		invitedUserID,
+	).Scan(&one)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return false, nil
+		}
+		return false, err
+	}
+
+	return true, nil
+}
+
+
+func (r *Repository) UpdateInvitationStatus(invitationID int, status string) error {
+	result, err := r.db.Exec(
+		`UPDATE group_invitations SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+		status,
+		invitationID,
+	)
+	if err != nil {
+		return err
+	}
+
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return ErrInvitationNotFound
+	}
+
+	return nil
+}
+
+
+func (r *Repository) CreateGroupJoinRequest(groupID, userID int) (int64, error) {
+	result, err := r.db.Exec(
+		`INSERT INTO group_join_requests (group_id, user_id) VALUES (?, ?)`,
+		groupID,
+		userID,
+	)
+	if err != nil {
+		return 0, err
+	}
+
+	return result.LastInsertId()
+}
+
+
+func (r *Repository) GetGroupJoinRequestByID(requestID int) (*GroupJoinRequest, error) {
+	var jr GroupJoinRequest
+
+	err := r.db.QueryRow(
+		`SELECT id, group_id, user_id, status, created_at, updated_at
+		 FROM group_join_requests
+		 WHERE id = ?`,
+		requestID,
+	).Scan(&jr.ID, &jr.GroupID, &jr.UserID, &jr.Status, &jr.CreatedAt, &jr.UpdatedAt)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, ErrJoinRequestNotFound
+		}
+		return nil, err
+	}
+
+	return &jr, nil
+}
+
+
+func (r *Repository) GetPendingJoinRequestsByGroup(groupID int) ([]GroupJoinRequest, error) {
+	rows, err := r.db.Query(
+		`SELECT id, group_id, user_id, status, created_at, updated_at
+		 FROM group_join_requests
+		 WHERE group_id = ? AND status = 'pending'
+		 ORDER BY created_at DESC`,
+		groupID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	result := make([]GroupJoinRequest, 0)
+	for rows.Next() {
+		var jr GroupJoinRequest
+		if err := rows.Scan(&jr.ID, &jr.GroupID, &jr.UserID, &jr.Status, &jr.CreatedAt, &jr.UpdatedAt); err != nil {
+			return nil, err
+		}
+		result = append(result, jr)
+	}
+
+	return result, rows.Err()
+}
+
+func (r *Repository) HasPendingJoinRequest(groupID, userID int) (bool, error) {
+	var one int
+
+	err := r.db.QueryRow(
+		`SELECT 1 FROM group_join_requests
+		 WHERE group_id = ? AND user_id = ? AND status = 'pending'`,
+		groupID,
+		userID,
+	).Scan(&one)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return false, nil
+		}
+		return false, err
+	}
+
+	return true, nil
+}
+
+func (r *Repository) UpdateJoinRequestStatus(requestID int, status string) error {
+	result, err := r.db.Exec(
+		`UPDATE group_join_requests SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+		status,
+		requestID,
+	)
+	if err != nil {
+		return err
+	}
+
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return ErrJoinRequestNotFound
+	}
+
+	return nil
+}
