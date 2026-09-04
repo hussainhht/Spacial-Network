@@ -1,8 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { createPost, type PostInput } from "@/lib/posts-api";
-import PostForm from "../../components/PostForm";
+import { createPost } from "@/features/posts/api/posts";
+import type { PostInput } from "@/features/posts/types/post";
+import PostForm from "./PostForm";
 
 export default function NewPostForm() {
   const router = useRouter();

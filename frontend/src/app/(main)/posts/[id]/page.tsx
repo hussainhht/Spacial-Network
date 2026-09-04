@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { deletePost, getPost, PostsApiError, type Post } from "@/lib/posts-api";
+import { deletePost, getPost } from "@/features/posts/api/posts";
+import { ApiError } from "@/lib/api/errors";
+import type { Post } from "@/features/posts/types/post";
 
 export default function PostDetailPage() {
   const router = useRouter();
@@ -29,7 +31,7 @@ export default function PostDetailPage() {
       } catch (err) {
         if (cancelled) return;
 
-        if (err instanceof PostsApiError && err.status === 401) {
+        if (err instanceof ApiError && err.status === 401) {
           router.push("/login");
           return;
         }

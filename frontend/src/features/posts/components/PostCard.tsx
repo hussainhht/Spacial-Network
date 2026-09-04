@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { deletePost, type Post } from "@/lib/posts-api";
+import { deletePost } from "@/features/posts/api/posts";
+import type { Post } from "@/features/posts/types/post";
 
 interface PostCardProps {
   post: Post;

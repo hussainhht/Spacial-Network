@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useEffect, useRef, useState, useCallback } from "react";
+import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from "react";
 import type {
   EventType,
   MessagePayload,
@@ -9,9 +9,9 @@ import type {
   UserStatusPayload,
   WebSocketContextType,
   ErrorPayload,
-} from "@/types/websocket";
+} from "@/lib/websocket/types";
 
-export const WebSocketContext = createContext<WebSocketContextType | undefined>(undefined);
+const WebSocketContext = createContext<WebSocketContextType | undefined>(undefined);
 
 export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   const [isConnected, setIsConnected] = useState(false);
@@ -148,4 +148,12 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
       {children}
     </WebSocketContext.Provider>
   );
+}
+
+export function useWebSocket() {
+  const context = useContext(WebSocketContext);
+  if (!context) {
+    throw new Error("useWebSocket must be used within a WebSocketProvider");
+  }
+  return context;
 }
