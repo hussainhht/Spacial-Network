@@ -116,10 +116,26 @@ func NewRouter(db *sql.DB, cfg config.Config) (http.Handler, error) {
 	// TODO: Register Chat routes here once the Chat handler is implemented.
 
 	// =========================
-	// Notifications Routes - Future
+	// Notifications Routes
 	// =========================
 
-	// TODO: Register Notifications routes here once the Notifications handler is implemented.
+	apiMux.Handle(
+		"GET /notifications",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Notifications.ListNotificationsHandler)),
+	)
+	apiMux.Handle(
+		"GET /notifications/unread-count",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Notifications.UnreadCountHandler)),
+	)
+	apiMux.Handle(
+		"PATCH /notifications/read-all",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Notifications.MarkAllAsReadHandler)),
+	)
+	apiMux.Handle(
+		"PATCH /notifications/{id}/read",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Notifications.MarkAsReadHandler)),
+	)
+
 	handler := middleware.CORS(apiMux)
 
 	mux := http.NewServeMux()
