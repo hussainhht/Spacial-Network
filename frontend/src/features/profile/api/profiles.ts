@@ -52,3 +52,18 @@ export async function getProfileByUsername(username: string): Promise<Profile> {
 
   return toProfile(data.profile);
 }
+
+export async function getMyProfile(): Promise<Profile> {
+  const response = await fetch(`${API_BASE_URL}/users/me`, {
+    method: "GET",
+    credentials: "include",
+  });
+
+  const data: ProfileResponse = await response.json();
+
+  if (!response.ok || !data.success || !data.profile) {
+    throw new Error(data.message ?? "Failed to load your profile");
+  }
+
+  return toProfile(data.profile);
+}

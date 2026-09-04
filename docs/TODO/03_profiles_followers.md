@@ -24,25 +24,25 @@ Authentication, Docker, and final project-wide integration are not included in t
 
 - [X] Get the current user's profile
 - [X] Get another user's profile by ID / username
-- [ ] Return email
-- [ ] Return first name
-- [ ] Return last name
+- [X] Return email
+- [X] Return first name
+- [X] Return last name
 - [ ] Return date of birth
-- [ ] Return avatar
+- [X] Return avatar
 - [ ] Return nickname
 - [ ] Return About Me
 - [ ] Return followers information
 - [ ] Return following information
 - [ ] Return user posts/activity information when needed
-- [ ] Never expose the user's password
-- [ ] Handle user-not-found errors
+- [X] Never expose the user's password
+- [X] Handle user-not-found errors
 
 ### Frontend
 
-- [ ] Create own Profile page
-- [ ] Create other-user Profile page
-- [ ] Display profile avatar
-- [ ] Display name
+- [X] Create own Profile page
+- [X] Create other-user Profile page
+- [X] Display profile avatar
+- [X] Display name
 - [ ] Display nickname
 - [ ] Display About Me
 - [ ] Display date of birth according to the required visibility rules
