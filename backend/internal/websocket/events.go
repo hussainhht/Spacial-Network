@@ -8,6 +8,7 @@ const (
 	EventUserOnline  EventType = "user_online"
 	EventUserOffline EventType = "user_offline"
 	EventOnlineUsers EventType = "online_users"
+	EventMarkread	EventType = "mark_read"
 	EventError EventType = "error"
 )
 type Event struct {
