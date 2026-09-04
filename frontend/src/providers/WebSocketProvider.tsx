@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from "react";
+import { getWebSocketUrl } from "@/lib/api";
 import type {
   EventType,
   MessagePayload,
@@ -9,6 +10,7 @@ import type {
   UserStatusPayload,
   WebSocketContextType,
   ErrorPayload,
+  InviteUserSearchResultsPayload,
 } from "@/lib/websocket/types";
 
 const WebSocketContext = createContext<WebSocketContextType | undefined>(undefined);
@@ -19,6 +21,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   const [lastMessage, setLastMessage] = useState<MessagePayload | null>(null);
   const [typingStatus, setTypingStatus] = useState<TypingPayload | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [inviteSearchResults, setInviteSearchResults] = useState<InviteUserSearchResultsPayload | null>(null);
 
   const socketRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -39,7 +42,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     isConnectingRef.current = true;
 
     try {
-      const ws = new WebSocket("ws://localhost:8080/api/ws");
+      const ws = new WebSocket(getWebSocketUrl("/api/ws"));
       socketRef.current = ws;
 
       ws.onopen = () => {
@@ -90,6 +93,9 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
             case "typing":
               setTypingStatus(data.payload as TypingPayload);
               break;
+            case "invite_user_search_results":
+              setInviteSearchResults(data.payload as InviteUserSearchResultsPayload);
+              break;
             case "error": {
               const errPayload = data.payload as ErrorPayload;
               console.error("WS error:", errPayload?.message);
@@ -118,21 +124,28 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     };
   }, [connect]);
 
-  function sendEvent(type: EventType, payload: unknown) {
-    if (!socketRef.current || socketRef.current.readyState !== WebSocket.OPEN) {
-      if (socketRef.current?.readyState === WebSocket.CONNECTING) {
-        // If connecting, retry in 500ms
-        setTimeout(() => sendEvent(type, payload), 500);
+  // Memoized so its identity is stable across renders - otherwise every WS
+  // message (even unrelated ones, e.g. someone else going online) would
+  // recreate this function, and any consumer effect that depends on it
+  // (like a debounced search) would spuriously re-fire on every message.
+  const sendEvent = useCallback(
+    function sendEvent(type: EventType, payload: unknown) {
+      if (!socketRef.current || socketRef.current.readyState !== WebSocket.OPEN) {
+        if (socketRef.current?.readyState === WebSocket.CONNECTING) {
+          // If connecting, retry in 500ms
+          setTimeout(() => sendEvent(type, payload), 500);
+          return;
+        }
+        console.warn("WebSocket is not connected (readyState:", socketRef.current?.readyState, ")");
+        setErrorMessage("WebSocket is not connected. Reconnecting...");
+        connect();
         return;
       }
-      console.warn("WebSocket is not connected (readyState:", socketRef.current?.readyState, ")");
-      setErrorMessage("WebSocket is not connected. Reconnecting...");
-      connect();
-      return;
-    }
-    setErrorMessage(null);
-    socketRef.current.send(JSON.stringify({ type, payload }));
-  }
+      setErrorMessage(null);
+      socketRef.current.send(JSON.stringify({ type, payload }));
+    },
+    [connect]
+  );
 
   return (
     <WebSocketContext.Provider
@@ -142,6 +155,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
         lastMessage,
         typingStatus,
         errorMessage,
+        inviteSearchResults,
         sendEvent,
       }}
     >

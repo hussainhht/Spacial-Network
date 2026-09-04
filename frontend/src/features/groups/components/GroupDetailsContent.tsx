@@ -1,10 +1,13 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 
-import { getGroup, getGroupMembers } from "../api/groups";
+import { getGroup, getGroupMembers, getMembership } from "../api/groups";
 import type { Group, GroupMember } from "../types/group";
+import GroupInviteSearch from "./GroupInviteSearch";
+import GroupJoinButton from "./GroupJoinButton";
 
 export default function GroupDetailsContent() {
   const params = useParams<{ groupId: string }>();
@@ -14,6 +17,7 @@ export default function GroupDetailsContent() {
   const [error, setError] = useState<string | null>(null);
   const [creator, setCreator] = useState<GroupMember>();
   const [members, setMembers] = useState<GroupMember[]>([]);
+  const [isMember, setIsMember] = useState(false);
 
   useEffect(() => {
     async function loadGroup() {
@@ -26,6 +30,7 @@ export default function GroupDetailsContent() {
 
         const result = await getGroup(groupId);
         const members = await getGroupMembers(groupId);
+        const membership = await getMembership(groupId);
 
         setGroup(result);
 
@@ -35,6 +40,7 @@ export default function GroupDetailsContent() {
 
         setCreator(groupCreator);
         setMembers(members);
+        setIsMember(membership.isMember);
 
       } catch (error) {
         setError(
@@ -48,36 +54,53 @@ export default function GroupDetailsContent() {
     loadGroup();
   }, [params.groupId]);
 
-  if (loading) {
-    return <p>Loading group...</p>;
-  }
-
-  if (error) {
-    return <p>{error}</p>;
-  }
-
-  if (!group) {
-    return <p>Group not found.</p>;
-  }
-
-  if (!creator) {
-    return <p>Group creator not found.</p>;
-  }
-
   return (
-    <section>
-      <h1>{group.title}</h1>
+    <div className="group-details-container">
+      <Link href="/groups" className="back-link">
+        &larr; Back to groups
+      </Link>
 
-      <h2>Created by: {creator.username}</h2>
-      <ol>
-        {members.map((member) => (
-          <li key={member.userId}>
-            {member.username} - {member.role}
-          </li>
-        ))}
-      </ol>
+      {loading && <p>Loading group...</p>}
+      {error && <p className="form-error">{error}</p>}
 
-      <p>{group.description}</p>
-    </section>
+      {!loading && !error && !group && <p>Group not found.</p>}
+      {!loading && !error && group && !creator && (
+        <p>Group creator not found.</p>
+      )}
+
+      {!loading && !error && group && creator && (
+        <article className="group-detail-card">
+          <header className="group-detail-header">
+            <h1>{group.title}</h1>
+            <span className="group-detail-creator">
+              Created by {creator.username}
+            </span>
+          </header>
+
+          <p className="group-detail-description">{group.description}</p>
+
+          <div className="group-members">
+            <h2>Members</h2>
+
+            <ul className="group-members-list">
+              {members.map((member) => (
+                <li key={member.userId} className="group-member-item">
+                  <span className="group-member-name">{member.username}</span>
+                  <span className="group-member-role">{member.role}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="group-action-panel">
+            {isMember ? (
+              <GroupInviteSearch groupId={group.id} />
+            ) : (
+              <GroupJoinButton groupId={group.id} />
+            )}
+          </div>
+        </article>
+      )}
+    </div>
   );
 }

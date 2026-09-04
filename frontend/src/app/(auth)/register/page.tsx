@@ -3,6 +3,7 @@ import { useRouter } from "next/navigation";
 
 import { useState} from "react";
 import type { SyntheticEvent } from "react";
+import { getApiUrl } from "@/lib/api";
 
 export default function RegisterPage() {
   const [username, setUsername] = useState("");
@@ -43,7 +44,7 @@ export default function RegisterPage() {
 
     try {
       const response = await fetch(
-        "http://localhost:8080/api/register",
+        getApiUrl("/register"),
         {
           method: "POST",
           credentials: "include",

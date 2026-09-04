@@ -108,6 +108,38 @@ func NewRouter(db *sql.DB, cfg config.Config) (http.Handler, error) {
 		"GET /groups/{id}/membership",
 		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.GetMembershipHandler)),
 	)
+	apiMux.Handle(
+		"POST /groups/{id}/join-requests",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.CreateJoinRequestHandler)),
+	)
+	apiMux.Handle(
+		"GET /groups/{id}/join-requests",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.GetPendingJoinRequestsHandler)),
+	)
+	apiMux.Handle(
+		"POST /groups/{id}/join-requests/{requestID}/accept",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.AcceptJoinRequestHandler)),
+	)
+	apiMux.Handle(
+		"POST /groups/{id}/join-requests/{requestID}/reject",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.RejectJoinRequestHandler)),
+	)
+	apiMux.Handle(
+		"POST /groups/{id}/invitations",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.CreateGroupInvitationHandler)),
+	)
+	apiMux.Handle(
+		"GET /group-invitations",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.GetPendingInvitationsHandler)),
+	)
+	apiMux.Handle(
+		"POST /group-invitations/{invitationID}/accept",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.AcceptGroupInvitationHandler)),
+	)
+	apiMux.Handle(
+		"POST /group-invitations/{invitationID}/decline",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.DeclineGroupInvitationHandler)),
+	)
 
 	// =========================
 	// Chat Routes - Future

@@ -2,14 +2,15 @@
 // with credentials so the session cookie set by /api/login is included.
 
 import { ApiError } from "./errors";
+import { getApiUrl, getApiBaseUrl } from "../api";
 
-export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080/api";
+export { getApiUrl, getApiBaseUrl };
 
 export async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
   let response: Response;
 
   try {
-    response = await fetch(`${API_URL}${path}`, {
+    response = await fetch(getApiUrl(path), {
       credentials: "include",
       ...init,
       headers: {

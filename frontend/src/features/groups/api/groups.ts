@@ -1,6 +1,5 @@
-import type { Group , CreateGroupInput, GroupMember } from "../types/group";
-
-const API_BASE_URL = "http://localhost:8080/api";
+import type { Group , CreateGroupInput, GroupMember, Membership, InviteCandidate } from "../types/group";
+import { getApiBaseUrl, getUploadsBaseUrl } from "@/lib/api";
 
 interface ApiGroup {
   id: number;
@@ -35,7 +34,7 @@ interface GroupsResponse {
 interface CreateGroupResponse {
   success: boolean;
   message?: string;
-  group?: ApiGroup;
+  group_id?: number;
 }
 
 interface GetGroupResponse {
@@ -44,8 +43,33 @@ interface GetGroupResponse {
   group?: ApiGroup;
 }
 
+interface MembershipResponse {
+  success: boolean;
+  message?: string;
+  is_member: boolean;
+  role?: string;
+}
+
+interface ApiInviteCandidate {
+  id: number;
+  username: string;
+  first_name: string;
+  last_name: string;
+  avatar?: string;
+}
+
+interface CreateGroupInvitationResponse {
+  success: boolean;
+  message?: string;
+}
+
+interface CreateJoinRequestResponse {
+  success: boolean;
+  message?: string;
+}
+
 export async function getGroup(groupId: number): Promise<Group> {
-  const response = await fetch(`${API_BASE_URL}/groups/${groupId}`, {
+  const response = await fetch(`${getApiBaseUrl()}/groups/${groupId}`, {
     method: "GET",
     credentials: "include",
   });
@@ -68,6 +92,27 @@ function toGroupMember(member: ApiGroupMember): GroupMember {
   };
 }
 
+// Exported so the WebSocket-based search results (same field shape as the
+// HTTP search response's `users`) can go through the same mapping.
+export function toInviteCandidate(user: ApiInviteCandidate): InviteCandidate {
+  return {
+    id: user.id,
+    username: user.username,
+    firstName: user.first_name,
+    lastName: user.last_name,
+    avatar: user.avatar,
+  };
+}
+
+// avatarUrl turns a raw profile_photo path (as stored/returned by the
+// backend, e.g. "avatars/xxx.jpg") into a URL the browser can load. The
+// backend serves uploads directly from /uploads/, outside of /api/.
+export function avatarUrl(profilePhoto?: string): string | undefined {
+  if (!profilePhoto) return undefined;
+  if (/^https?:\/\//.test(profilePhoto)) return profilePhoto;
+  return `${getUploadsBaseUrl()}/${profilePhoto}`;
+}
+
 function toGroup(group: ApiGroup): Group {
   return {
     id: group.id,
@@ -80,7 +125,7 @@ function toGroup(group: ApiGroup): Group {
 }
 
 export async function getGroups(): Promise<Group[]> {
-  const response = await fetch(`${API_BASE_URL}/groups`, {
+  const response = await fetch(`${getApiBaseUrl()}/groups`, {
     method: "GET",
     credentials: "include",
   });
@@ -98,7 +143,7 @@ export async function getGroups(): Promise<Group[]> {
 export async function createGroup(
   input: CreateGroupInput
 ): Promise<Group> {
-  const response = await fetch(`${API_BASE_URL}/groups`, {
+  const response = await fetch(`${getApiBaseUrl()}/groups`, {
     method: "POST",
 
     headers: {
@@ -112,11 +157,11 @@ export async function createGroup(
 
   const data: CreateGroupResponse = await response.json();
 
-  if (!response.ok || !data.success || !data.group) {
+  if (!response.ok || !data.success || !data.group_id) {
     throw new Error(data.message ?? "Failed to create group");
   }
 
-  return toGroup(data.group);
+  return getGroup(data.group_id);
 }
 
 
@@ -124,7 +169,7 @@ export async function getGroupMembers(
   groupId: number
 ): Promise<GroupMember[]> {
   const response = await fetch(
-    `${API_BASE_URL}/groups/${groupId}/members`,
+    `${getApiBaseUrl()}/groups/${groupId}/members`,
     {
       method: "GET",
       credentials: "include",
@@ -138,4 +183,58 @@ export async function getGroupMembers(
   }
 
   return (data.members ?? []).map(toGroupMember);
+}
+
+export async function getMembership(groupId: number): Promise<Membership> {
+  const response = await fetch(
+    `${getApiBaseUrl()}/groups/${groupId}/membership`,
+    {
+      method: "GET",
+      credentials: "include",
+    }
+  );
+
+  const data: MembershipResponse = await response.json();
+
+  if (!response.ok || !data.success) {
+    throw new Error(data.message ?? "Failed to load membership status");
+  }
+
+  return { isMember: data.is_member, role: data.role };
+}
+
+export async function createJoinRequest(groupId: number): Promise<void> {
+  const response = await fetch(`${getApiBaseUrl()}/groups/${groupId}/join-requests`, {
+    method: "POST",
+    credentials: "include",
+  });
+
+  const data: CreateJoinRequestResponse = await response.json();
+
+  if (!response.ok || !data.success) {
+    throw new Error(data.message ?? "Failed to send join request");
+  }
+}
+
+export async function createGroupInvitation(
+  groupId: number,
+  invitedUserId: number
+): Promise<void> {
+  const response = await fetch(`${getApiBaseUrl()}/groups/${groupId}/invitations`, {
+    method: "POST",
+
+    headers: {
+      "Content-Type": "application/json",
+    },
+
+    credentials: "include",
+
+    body: JSON.stringify({ invited_user_id: invitedUserId }),
+  });
+
+  const data: CreateGroupInvitationResponse = await response.json();
+
+  if (!response.ok || !data.success) {
+    throw new Error(data.message ?? "Failed to send invitation");
+  }
 }
