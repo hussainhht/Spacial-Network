@@ -164,3 +164,16 @@ func (r *Repository) MarkMessagesAsRead(senderID, recipientID int64) error {
 	}
 	return nil
 }
+
+// UserExists checks if a user with the given ID exists in the database.
+func (r *Repository) UserExists(userID int64) (bool, error) {
+	var exists int
+	err := r.db.QueryRow(`SELECT 1 FROM users WHERE id = ? LIMIT 1`, userID).Scan(&exists)
+	if err == sql.ErrNoRows {
+		return false, nil
+	}
+	if err != nil {
+		return false, fmt.Errorf("check user exists: %w", err)
+	}
+	return true, nil
+}

@@ -78,6 +78,19 @@ func (s *Service) handlePrivateMessage(senderID int64, rawPayload json.RawMessag
 		return
 	}
 
+	if s.repo != nil {
+		exists, err := s.repo.UserExists(req.RecipientID)
+		if err != nil {
+			log.Printf("failed to check recipient existence: %v", err)
+			s.sendError(senderID, "Internal server error")
+			return
+		}
+		if !exists {
+			s.sendError(senderID, "Recipient does not exist")
+			return
+		}
+	}
+
 	savedMsg, err := s.repo.SavePrivateMessage(senderID, req.RecipientID, content)
 	if err != nil {
 		log.Printf("failed to save private message: %v", err)
