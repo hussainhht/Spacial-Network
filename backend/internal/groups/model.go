@@ -35,6 +35,16 @@ type GroupInvitation struct {
 	UpdatedAt     time.Time `db:"updated_at"`
 }
 
+// InviteCandidate is a user who can be shown as a match when a group member
+// searches for someone to invite.
+type InviteCandidate struct {
+	ID           int    `db:"id"`
+	Username     string `db:"username"`
+	FirstName    string `db:"first_name"`
+	LastName     string `db:"last_name"`
+	ProfilePhoto string `db:"profile_photo"`
+}
+
 type GroupJoinRequest struct {
 	ID        int       `db:"id"`
 	GroupID   int       `db:"group_id"`
@@ -146,6 +156,16 @@ type GetGroupInvitationsResponse struct {
 	Success     bool                      `json:"success"`
 	Message     string                    `json:"message,omitempty"`
 	Invitations []GroupInvitationResponse `json:"invitations,omitempty"`
+}
+
+// InviteCandidateResponse is one user returned by the invite-candidate
+// search endpoint.
+type InviteCandidateResponse struct {
+	ID        int    `json:"id"`
+	Username  string `json:"username"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+	Avatar    string `json:"avatar,omitempty"`
 }
 
 type Handler struct {

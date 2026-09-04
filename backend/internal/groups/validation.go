@@ -13,6 +13,10 @@ const (
 
 	DefaultListLimit = 20
 	MaxListLimit     = 100
+
+	MaxInviteSearchQueryLength  = 100
+	DefaultInviteCandidateLimit = 10
+	MaxInviteCandidateLimit     = 25
 )
 
 func ValidateTitle(title string) (string, error) {
@@ -95,4 +99,14 @@ func ValidateInvitedUserID(id int) (int, error) {
 		return 0, errors.New("invited_user_id must be a positive integer")
 	}
 	return id, nil
+}
+
+// ValidateInviteSearchQuery sanitizes the `q` query param used to search for
+// invite candidates.
+func ValidateInviteSearchQuery(query string) (string, error) {
+	return validation.SanitizeText(query, validation.TextRules{
+		Field:    "search query",
+		Required: true,
+		Max:      MaxInviteSearchQueryLength,
+	})
 }

@@ -2,6 +2,7 @@ package groups
 
 import (
 	"database/sql"
+	"strings"
 )
 
 type Repository struct {
@@ -13,7 +14,6 @@ func NewRepository(db *sql.DB) *Repository {
 		db: db,
 	}
 }
-
 
 func (r *Repository) InsertGroup(creatorID int, title, description string) (int64, error) {
 	tx, err := r.db.Begin()
@@ -78,7 +78,6 @@ func (r *Repository) GetAllGroups(limit, offset int) ([]Group, error) {
 	return result, rows.Err()
 }
 
-
 func (r *Repository) GetMembership(groupID, userID int) (*GroupMember, error) {
 	var m GroupMember
 
@@ -100,7 +99,6 @@ func (r *Repository) GetMembership(groupID, userID int) (*GroupMember, error) {
 	return &m, nil
 }
 
-
 func (r *Repository) AddMember(groupID, userID int) error {
 	member, err := r.GetMembership(groupID, userID)
 	if err != nil {
@@ -117,7 +115,6 @@ func (r *Repository) AddMember(groupID, userID int) error {
 	)
 	return err
 }
-
 
 func (r *Repository) GetGroupByID(id int) (*Group, error) {
 	var g Group
@@ -336,6 +333,59 @@ func (r *Repository) HasPendingJoinRequest(groupID, userID int) (bool, error) {
 	}
 
 	return true, nil
+}
+
+
+func (r *Repository) SearchInviteCandidates(groupID, currentUserID int, query string, limit int) ([]InviteCandidate, error) {
+	like := "%" + escapeLikePattern(query) + "%"
+
+	rows, err := r.db.Query(
+		`SELECT u.id, u.username, u.first_name, u.last_name, COALESCE(u.profile_photo, '')
+		 FROM users u
+		 WHERE u.id != ?
+		   AND (
+		     LOWER(u.username) LIKE LOWER(?) ESCAPE '\'
+		     OR LOWER(u.first_name) LIKE LOWER(?) ESCAPE '\'
+		     OR LOWER(u.last_name) LIKE LOWER(?) ESCAPE '\'
+		     OR LOWER(u.first_name || ' ' || u.last_name) LIKE LOWER(?) ESCAPE '\'
+		   )
+		   AND NOT EXISTS (
+		     SELECT 1 FROM group_members gm
+		     WHERE gm.group_id = ? AND gm.user_id = u.id
+		   )
+		   AND NOT EXISTS (
+		     SELECT 1 FROM group_invitations gi
+		     WHERE gi.group_id = ? AND gi.invited_user_id = u.id AND gi.status = 'pending'
+		   )
+		 ORDER BY u.username ASC
+		 LIMIT ?`,
+		currentUserID,
+		like, like, like, like,
+		groupID,
+		groupID,
+		limit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	result := make([]InviteCandidate, 0)
+	for rows.Next() {
+		var c InviteCandidate
+		if err := rows.Scan(&c.ID, &c.Username, &c.FirstName, &c.LastName, &c.ProfilePhoto); err != nil {
+			return nil, err
+		}
+		result = append(result, c)
+	}
+
+	return result, rows.Err()
+}
+
+
+func escapeLikePattern(s string) string {
+	replacer := strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`) 
+	return replacer.Replace(s)
 }
 
 func (r *Repository) UpdateJoinRequestStatus(requestID int, status string) error {

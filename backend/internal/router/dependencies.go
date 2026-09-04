@@ -54,7 +54,8 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 	chatService := chat.NewService(chatRepo, hub)
 	chatHandler := chat.NewHandler(chatService)
 	wsHandler := websocket.NewHandler(hub)
-	wsHandler.SetMessageHandler(chatService.HandleIncomingWSMessage)
+	// Message routing is finished further down, once every feature that
+	// handles inbound WebSocket events (chat, groups) has been constructed.
 	// =========================
 	// Users
 	// =========================
@@ -140,6 +141,7 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 	groupNotifier := notifiers.NewGroupNotifier(notificationsService)
 	groupsService := groups.NewService(groupsRepo, groupNotifier)
 	groupsHandler := groups.NewHandler(groupsService)
+	inviteSearchWSHandler := groups.NewInviteSearchWSHandler(groupsService, hub)
 
 	// =========================
 	// Chat - Future
@@ -150,6 +152,18 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 	// chatRepo := chat.NewRepository(db)
 	// chatService := chat.NewService(chatRepo)
 	// chatHandler := chat.NewHandler(chatService)
+
+	// =========================
+	// WebSocket message routing
+	// =========================
+	// Both Chat and Groups handle inbound client messages; Router dispatches
+	// each by its event type to whichever feature registered it, so the Hub
+	// stays a single connection per user regardless of how many features
+	// use it.
+
+	wsRouter := websocket.NewRouter()
+	wsRouter.Register(groups.EventInviteUserSearch, inviteSearchWSHandler.HandleInviteUserSearch)
+	wsHandler.SetMessageHandler(wsRouter.Dispatch)
 
 	return &Dependencies{
 		Handlers: Handlers{

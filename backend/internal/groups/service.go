@@ -264,6 +264,35 @@ func (s *Service) DeclineGroupInvitation(invitationID, userID int) error {
 	return s.repo.UpdateInvitationStatus(invitationID, StatusDeclined)
 }
 
+
+func (s *Service) SearchInviteCandidates(groupID, currentUserID int, rawQuery string, limit int) ([]InviteCandidate, error) {
+	if _, err := s.repo.GetGroupByID(groupID); err != nil {
+		return nil, err
+	}
+
+	member, err := s.repo.GetMembership(groupID, currentUserID)
+	if err != nil {
+		return nil, err
+	}
+	if member == nil {
+		return nil, ErrNotGroupMember
+	}
+
+	query, err := ValidateInviteSearchQuery(rawQuery)
+	if err != nil {
+		return nil, ErrInvalidSearchQuery
+	}
+
+	if limit <= 0 {
+		limit = DefaultInviteCandidateLimit
+	}
+	if limit > MaxInviteCandidateLimit {
+		limit = MaxInviteCandidateLimit
+	}
+
+	return s.repo.SearchInviteCandidates(groupID, currentUserID, query, limit)
+}
+
 func (s *Service) resolvePendingInvitation(invitationID, userID int) (*GroupInvitation, error) {
 	inv, err := s.repo.GetGroupInvitationByID(invitationID)
 	if err != nil {

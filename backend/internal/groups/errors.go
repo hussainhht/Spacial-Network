@@ -48,6 +48,10 @@ var ErrInvitationAlreadyPending = errors.New("a pending invitation already exist
 // invitation that has already been resolved.
 var ErrInvitationNotPending = errors.New("invitation is not pending")
 
+// ErrInvalidSearchQuery is returned when the invite-candidate search query
+// fails validation (e.g. empty or too long).
+var ErrInvalidSearchQuery = errors.New("search query is invalid")
+
 // joinRequestErrorResponse maps a group join request service error to an
 // HTTP status code and a user-facing message.
 func joinRequestErrorResponse(err error) (int, string) {
@@ -89,5 +93,20 @@ func invitationErrorResponse(err error) (int, string) {
 		return http.StatusConflict, "Invitation has already been processed"
 	default:
 		return http.StatusInternalServerError, "Failed to process invitation"
+	}
+}
+
+// inviteCandidateErrorResponse maps a search-invite-candidates service error
+// to an HTTP status code and a user-facing message.
+func inviteCandidateErrorResponse(err error) (int, string) {
+	switch {
+	case errors.Is(err, ErrGroupNotFound):
+		return http.StatusNotFound, "Group not found"
+	case errors.Is(err, ErrNotGroupMember):
+		return http.StatusForbidden, "You must be a member of this group to do this"
+	case errors.Is(err, ErrInvalidSearchQuery):
+		return http.StatusBadRequest, "Search query must be between 1 and 100 characters"
+	default:
+		return http.StatusInternalServerError, "Failed to search invite candidates"
 	}
 }

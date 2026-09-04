@@ -52,6 +52,16 @@ func toGroupInvitationResponse(inv GroupInvitation) GroupInvitationResponse {
 	}
 }
 
+func toInviteCandidateResponse(c InviteCandidate) InviteCandidateResponse {
+	return InviteCandidateResponse{
+		ID:        c.ID,
+		Username:  c.Username,
+		FirstName: c.FirstName,
+		LastName:  c.LastName,
+		Avatar:    c.ProfilePhoto,
+	}
+}
+
 func NewHandler(service *Service) *Handler {
 	return &Handler{
 		service: service,

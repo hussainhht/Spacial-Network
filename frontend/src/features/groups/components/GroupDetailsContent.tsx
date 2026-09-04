@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 
-import { getGroup, getGroupMembers } from "../api/groups";
+import { getGroup, getGroupMembers, getMembership } from "../api/groups";
 import type { Group, GroupMember } from "../types/group";
+import GroupInviteSearch from "./GroupInviteSearch";
 
 export default function GroupDetailsContent() {
   const params = useParams<{ groupId: string }>();
@@ -14,6 +15,7 @@ export default function GroupDetailsContent() {
   const [error, setError] = useState<string | null>(null);
   const [creator, setCreator] = useState<GroupMember>();
   const [members, setMembers] = useState<GroupMember[]>([]);
+  const [isMember, setIsMember] = useState(false);
 
   useEffect(() => {
     async function loadGroup() {
@@ -26,6 +28,7 @@ export default function GroupDetailsContent() {
 
         const result = await getGroup(groupId);
         const members = await getGroupMembers(groupId);
+        const membership = await getMembership(groupId);
 
         setGroup(result);
 
@@ -35,6 +38,7 @@ export default function GroupDetailsContent() {
 
         setCreator(groupCreator);
         setMembers(members);
+        setIsMember(membership.isMember);
 
       } catch (error) {
         setError(
@@ -78,6 +82,8 @@ export default function GroupDetailsContent() {
       </ol>
 
       <p>{group.description}</p>
+
+      {isMember && <GroupInviteSearch groupId={group.id} />}
     </section>
   );
 }
