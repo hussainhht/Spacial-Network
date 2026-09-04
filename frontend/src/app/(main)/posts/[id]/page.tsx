@@ -6,6 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import { deletePost, getPost } from "@/features/posts/api/posts";
 import { ApiError } from "@/lib/api/errors";
 import type { Post } from "@/features/posts/types/post";
+import { formatDateTime } from "@/lib/utils";
 
 export default function PostDetailPage() {
   const router = useRouter();
@@ -85,7 +86,7 @@ export default function PostDetailPage() {
 
             <footer className="post-card-footer">
               <time dateTime={post.created_at}>
-                {new Date(post.created_at).toLocaleString()}
+                {formatDateTime(post.created_at)}
               </time>
 
               {post.is_owner && (

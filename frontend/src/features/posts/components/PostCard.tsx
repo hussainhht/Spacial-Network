@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { deletePost } from "@/features/posts/api/posts";
 import type { Post } from "@/features/posts/types/post";
+import { formatDateTime } from "@/lib/utils";
 
 interface PostCardProps {
   post: Post;
@@ -44,7 +45,7 @@ export default function PostCard({ post, onDeleted }: PostCardProps) {
 
       <footer className="post-card-footer">
         <time dateTime={post.created_at}>
-          {new Date(post.created_at).toLocaleString()}
+          {formatDateTime(post.created_at)}
         </time>
 
         {post.is_owner && (
