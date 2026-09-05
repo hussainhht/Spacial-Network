@@ -1,13 +1,16 @@
 "use client";
 
 import { useState } from "react";
+import ImageAttachmentField from "@/components/ImageAttachmentField";
 
 interface CommentFormProps {
-  onSubmit: (content: string) => Promise<void>;
+  onSubmit: (content: string, image?: File | null) => Promise<void>;
 }
 
 export default function CommentForm({ onSubmit }: CommentFormProps) {
   const [content, setContent] = useState("");
+  const [image, setImage] = useState<File | null>(null);
+  const [imageFieldKey, setImageFieldKey] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -18,8 +21,11 @@ export default function CommentForm({ onSubmit }: CommentFormProps) {
     setLoading(true);
 
     try {
-      await onSubmit(content);
+      await onSubmit(content, image);
       setContent("");
+      setImage(null);
+      // Remount the file input so its selected file is cleared.
+      setImageFieldKey((key) => key + 1);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to add comment");
     } finally {
@@ -45,6 +51,13 @@ export default function CommentForm({ onSubmit }: CommentFormProps) {
           required
         />
       </div>
+
+      <ImageAttachmentField
+        key={imageFieldKey}
+        id="comment-image"
+        label="Image or GIF (optional)"
+        onChange={setImage}
+      />
 
       {error && <p className="form-error">{error}</p>}
 

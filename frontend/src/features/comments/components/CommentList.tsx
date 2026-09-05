@@ -1,8 +1,10 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 import { deleteComment } from "@/features/comments/api/comments";
 import type { Comment } from "@/features/comments/types/comment";
+import { getBackendBaseUrl } from "@/lib/api";
 
 interface CommentListProps {
   comments: Comment[];
@@ -53,6 +55,17 @@ function CommentItem({
   return (
     <li className="comment-item">
       <p className="comment-content">{comment.content}</p>
+
+      {comment.image_url && (
+        <Image
+          className="comment-image"
+          src={`${getBackendBaseUrl()}${comment.image_url}`}
+          alt=""
+          width={600}
+          height={338}
+          style={{ width: "100%", height: "auto" }}
+        />
+      )}
 
       <footer className="comment-footer">
         <time dateTime={comment.created_at}>

@@ -38,8 +38,8 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
     };
   }, [postId]);
 
-  async function handleCreate(content: string) {
-    const comment = await createComment(postId, content);
+  async function handleCreate(content: string, image?: File | null) {
+    const comment = await createComment(postId, content, image);
     setComments((current) => [...current, comment]);
   }
 

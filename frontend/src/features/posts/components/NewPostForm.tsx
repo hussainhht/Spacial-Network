@@ -8,7 +8,7 @@ import PostForm from "./PostForm";
 export default function NewPostForm() {
   const router = useRouter();
 
-  async function handleSubmit(input: PostInput) {
+  async function handleSubmit(input: PostInput & { image?: File | null }) {
     await createPost(input);
     router.push("/posts");
   }
@@ -17,6 +17,7 @@ export default function NewPostForm() {
     <PostForm
       submitLabel="Create post"
       pendingLabel="Creating..."
+      showImage
       onSubmit={handleSubmit}
     />
   );
