@@ -1,19 +1,23 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { useWebSocket } from "@/providers/WebSocketProvider";
 import { getCurrentUser } from "@/features/auth/api/getCurrentUser";
 import { getConversations, getChatHistory } from "@/features/chat/api/chat";
+import { ApiError } from "@/lib/api/errors";
 import type { ConversationSummary, PrivateMessage } from "@/features/chat/types/chat";
 
 const HISTORY_PAGE_SIZE = 20;
 
 export function useChat() {
+  const router = useRouter();
   const {
     isConnected,
     onlineUserIDs,
     lastMessage,
     typingStatus,
+    lastReadReceipt,
     errorMessage,
     sendEvent,
   } = useWebSocket();
@@ -22,25 +26,32 @@ export function useChat() {
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [loadingConversations, setLoadingConversations] = useState(true);
 
-  // Active chat partner state
   const [activePartnerId, setActivePartnerId] = useState<number | null>(null);
   const [activePartnerUsername, setActivePartnerUsername] = useState<string>("");
   const [activePartnerAvatar, setActivePartnerAvatar] = useState<string | undefined>(undefined);
 
-  // Messages in active conversation
   const [messages, setMessages] = useState<PrivateMessage[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [hasMoreHistory, setHasMoreHistory] = useState(false);
   const [historyOffset, setHistoryOffset] = useState(0);
 
-  // 1. Load current logged-in user and conversations list on mount
+  const conversationsRef = useRef<ConversationSummary[]>([]);
+  conversationsRef.current = conversations;
+  const lastHandledMsgRef = useRef<string | null>(null);
+  const lastHandledReceiptRef = useRef<string | null>(null);
+
   useEffect(() => {
     let isMounted = true;
 
     async function init() {
       try {
         const user = await getCurrentUser();
-        if (isMounted && user) {
+        if (!user) {
+          router.push("/login");
+          return;
+        }
+
+        if (isMounted) {
           setMyUserId(user.user_id);
         }
 
@@ -49,6 +60,10 @@ export function useChat() {
           setConversations(convos);
         }
       } catch (err) {
+        if (err instanceof ApiError && err.status === 401) {
+          router.push("/login");
+          return;
+        }
         console.error("Failed to load chat initial state:", err);
       } finally {
         if (isMounted) {
@@ -62,9 +77,8 @@ export function useChat() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [router]);
 
-  // 2. Select a conversation & load message history
   const selectConversation = useCallback(
     async (partnerId: number, partnerUsername: string) => {
       setActivePartnerId(partnerId);
@@ -73,32 +87,34 @@ export function useChat() {
       setHistoryOffset(0);
       setLoadingHistory(true);
 
-      const convo = conversations.find((c) => c.partner_id === partnerId);
+      const convo = conversationsRef.current.find((c) => c.partner_id === partnerId);
       setActivePartnerAvatar(convo?.partner_avatar);
 
-      // Reset unread count locally in sidebar
       setConversations((prev) =>
         prev.map((c) =>
           c.partner_id === partnerId ? { ...c, unread_count: 0 } : c
         )
       );
 
+      sendEvent("mark_read", { sender_id: partnerId });
+
       try {
         const history = await getChatHistory(partnerId, HISTORY_PAGE_SIZE, 0);
-        // Backend returns descending (newest first). Reverse for chronological order
-        const chronological = [...history].reverse();
-        setMessages(chronological);
+        setMessages(history);
         setHasMoreHistory(history.length >= HISTORY_PAGE_SIZE);
       } catch (err) {
+        if (err instanceof ApiError && err.status === 401) {
+          router.push("/login");
+          return;
+        }
         console.error("Failed to load chat history:", err);
       } finally {
         setLoadingHistory(false);
       }
     },
-    [conversations]
+    [router, sendEvent]
   );
 
-  // 3. Load older messages (Pagination / Scroll-up)
   const loadMoreHistory = useCallback(async () => {
     if (!activePartnerId || loadingHistory || !hasMoreHistory) return;
 
@@ -111,19 +127,25 @@ export function useChat() {
         setHasMoreHistory(false);
       }
 
-      const chronologicalOlder = [...older].reverse();
-      setMessages((prev) => [...chronologicalOlder, ...prev]);
+      setMessages((prev) => [...older, ...prev]);
       setHistoryOffset(nextOffset);
     } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        router.push("/login");
+        return;
+      }
       console.error("Failed to load more chat history:", err);
     } finally {
       setLoadingHistory(false);
     }
-  }, [activePartnerId, historyOffset, hasMoreHistory, loadingHistory]);
+  }, [activePartnerId, historyOffset, hasMoreHistory, loadingHistory, router]);
 
-  // 4. Handle incoming WebSocket messages live
   useEffect(() => {
     if (!lastMessage) return;
+
+    const msgKey = `${lastMessage.id || ""}-${lastMessage.sender_id}-${lastMessage.recipient_id}-${lastMessage.content}-${lastMessage.created_at || ""}`;
+    if (lastHandledMsgRef.current === msgKey) return;
+    lastHandledMsgRef.current = msgKey;
 
     const senderId = lastMessage.sender_id;
     const recipientId = lastMessage.recipient_id;
@@ -132,7 +154,6 @@ export function useChat() {
       ((senderId === activePartnerId && recipientId === myUserId) ||
         (senderId === myUserId && recipientId === activePartnerId));
 
-    // A. If belongs to active chat, append message
     if (isForActiveChat) {
       const newMsg: PrivateMessage = {
         id: lastMessage.id || Date.now(),
@@ -148,9 +169,12 @@ export function useChat() {
         }
         return [...prev, newMsg];
       });
+
+      if (senderId === activePartnerId) {
+        sendEvent("mark_read", { sender_id: activePartnerId });
+      }
     }
 
-    // B. Update conversation preview snippet in sidebar & bump to top
     const partnerId = senderId === myUserId ? recipientId : senderId;
 
     setConversations((prev) => {
@@ -179,9 +203,29 @@ export function useChat() {
       };
       return [newItem, ...prev];
     });
-  }, [lastMessage, activePartnerId, myUserId]);
+  }, [lastMessage, activePartnerId, myUserId, sendEvent]);
 
-  // 5. Send message handler
+  useEffect(() => {
+    if (!lastReadReceipt) return;
+    const { reader_id, sender_id, read_at } = lastReadReceipt;
+
+    const receiptKey = `${reader_id}-${sender_id}-${read_at}`;
+    if (lastHandledReceiptRef.current === receiptKey) return;
+    lastHandledReceiptRef.current = receiptKey;
+
+    if (
+      activePartnerId !== null &&
+      reader_id === activePartnerId &&
+      sender_id === myUserId
+    ) {
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.sender_id === myUserId && !m.read_at ? { ...m, read_at } : m
+        )
+      );
+    }
+  }, [lastReadReceipt, activePartnerId, myUserId]);
+
   const sendMessage = useCallback(
     (content: string) => {
       if (!activePartnerId) return;
@@ -194,7 +238,6 @@ export function useChat() {
     [activePartnerId, sendEvent]
   );
 
-  // 6. Typing handler
   const sendTyping = useCallback(
     (isTyping: boolean) => {
       if (!activePartnerId) return;
@@ -209,8 +252,8 @@ export function useChat() {
 
   const isPartnerTyping = Boolean(
     activePartnerId &&
-      typingStatus?.sender_id === activePartnerId &&
-      typingStatus.is_typing
+    typingStatus?.sender_id === activePartnerId &&
+    typingStatus.is_typing
   );
 
   const isPartnerOnline = Boolean(

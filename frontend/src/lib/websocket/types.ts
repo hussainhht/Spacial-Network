@@ -4,6 +4,8 @@ export type EventType =
   | "online_users"
   | "private_message"
   | "typing"
+  | "mark_read"
+  | "messages_read"
   | "error";
 
 export interface WSEvent<T = unknown> {
@@ -25,6 +27,16 @@ export interface TypingPayload {
   is_typing: boolean;
 }
 
+export interface MarkReadPayload {
+  sender_id: number;
+}
+
+export interface MessagesReadPayload {
+  reader_id: number;
+  sender_id: number;
+  read_at: string;
+}
+
 export interface UserStatusPayload {
   user_id: number;
   is_online: boolean;
@@ -43,6 +55,7 @@ export interface WebSocketContextType {
   onlineUserIDs: number[];
   lastMessage: MessagePayload | null;
   typingStatus: TypingPayload | null;
+  lastReadReceipt: MessagesReadPayload | null;
   errorMessage: string | null;
   sendEvent: (type: EventType, payload: unknown) => void;
 }

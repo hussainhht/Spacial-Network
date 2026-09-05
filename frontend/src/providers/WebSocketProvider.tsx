@@ -1,9 +1,10 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from "react";
+import React, { createContext, useContext, useEffect, useRef, useState, useCallback, useMemo } from "react";
 import type {
   EventType,
   MessagePayload,
+  MessagesReadPayload,
   OnlineUsersPayload,
   TypingPayload,
   UserStatusPayload,
@@ -18,6 +19,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   const [onlineUserIDs, setOnlineUserIDs] = useState<number[]>([]);
   const [lastMessage, setLastMessage] = useState<MessagePayload | null>(null);
   const [typingStatus, setTypingStatus] = useState<TypingPayload | null>(null);
+  const [lastReadReceipt, setLastReadReceipt] = useState<MessagesReadPayload | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const socketRef = useRef<WebSocket | null>(null);
@@ -58,7 +60,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
         if (reconnectTimeoutRef.current) {
           clearTimeout(reconnectTimeoutRef.current);
         }
-        reconnectTimeoutRef.current = setTimeout(connect, 300);
+        reconnectTimeoutRef.current = setTimeout(connect, 1500);
       };
 
       ws.onerror = (error) => {
@@ -90,6 +92,9 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
             case "typing":
               setTypingStatus(data.payload as TypingPayload);
               break;
+            case "messages_read":
+              setLastReadReceipt(data.payload as MessagesReadPayload);
+              break;
             case "error": {
               const errPayload = data.payload as ErrorPayload;
               console.error("WS error:", errPayload?.message);
@@ -118,33 +123,47 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     };
   }, [connect]);
 
-  function sendEvent(type: EventType, payload: unknown) {
-    if (!socketRef.current || socketRef.current.readyState !== WebSocket.OPEN) {
-      if (socketRef.current?.readyState === WebSocket.CONNECTING) {
-        // If connecting, retry in 500ms
-        setTimeout(() => sendEvent(type, payload), 500);
+  const sendEvent = useCallback(
+    (type: EventType, payload: unknown) => {
+      if (!socketRef.current || socketRef.current.readyState !== WebSocket.OPEN) {
+        if (socketRef.current?.readyState === WebSocket.CONNECTING) {
+          setTimeout(() => sendEvent(type, payload), 500);
+          return;
+        }
+        console.warn("WebSocket is not connected (readyState:", socketRef.current?.readyState, ")");
+        setErrorMessage("WebSocket is not connected. Reconnecting...");
+        connect();
         return;
       }
-      console.warn("WebSocket is not connected (readyState:", socketRef.current?.readyState, ")");
-      setErrorMessage("WebSocket is not connected. Reconnecting...");
-      connect();
-      return;
-    }
-    setErrorMessage(null);
-    socketRef.current.send(JSON.stringify({ type, payload }));
-  }
+      setErrorMessage(null);
+      socketRef.current.send(JSON.stringify({ type, payload }));
+    },
+    [connect]
+  );
+
+  const contextValue = useMemo(
+    () => ({
+      isConnected,
+      onlineUserIDs,
+      lastMessage,
+      typingStatus,
+      lastReadReceipt,
+      errorMessage,
+      sendEvent,
+    }),
+    [
+      isConnected,
+      onlineUserIDs,
+      lastMessage,
+      typingStatus,
+      lastReadReceipt,
+      errorMessage,
+      sendEvent,
+    ]
+  );
 
   return (
-    <WebSocketContext.Provider
-      value={{
-        isConnected,
-        onlineUserIDs,
-        lastMessage,
-        typingStatus,
-        errorMessage,
-        sendEvent,
-      }}
-    >
+    <WebSocketContext.Provider value={contextValue}>
       {children}
     </WebSocketContext.Provider>
   );
