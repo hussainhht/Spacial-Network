@@ -7,7 +7,7 @@ interface GroupCardProps {
 
 export default function GroupCard({ group }: GroupCardProps) {
   return (
-    <article>
+    <article className="group-card">
       <h2>
         <Link href={`/groups/${group.id}`}>
           {group.title}

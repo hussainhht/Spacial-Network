@@ -7,51 +7,55 @@ import (
 	"social/internal/chat"
 	"social/internal/config"
 	"social/internal/groups"
+	"social/internal/notifications"
+	"social/internal/notifications/notifiers"
+	"social/internal/posts"
 	"social/internal/upload"
 	"social/internal/users"
 	"social/internal/websocket"
 )
 
 type Handlers struct {
-	Auth        *auth.Handler
-	Chat      *chat.Handler
-	Websocket *websocket.Handler
-	Groups *groups.Handler
+	Auth          *auth.Handler
+	Posts         *posts.Handler
+	Chat          *chat.Handler
+	Websocket     *websocket.Handler
+	Groups        *groups.Handler
+	Notifications *notifications.Handler
 
 	// Future handlers:
 	// TODO: Add Users handler when the users feature exposes one.
 	// Users *users.Handler
-	// TODO: Add Posts handler when the posts feature is implemented.
-	// Posts *posts.Handler
+
 	// TODO: Add Comments handler when the comments feature is implemented.
 	// Comments *comments.Handler
 	// TODO: Add Followers handler when the followers feature is implemented.
 	// Followers *followers.Handler
 	// TODO: Add Chat handler when the chat feature is implemented.
 	// Chat *chat.Handler
-	// TODO: Add Notifications handler when the notifications feature is implemented.
-	// Notifications *notifications.Handler
 }
 
 type Dependencies struct {
 	Handlers Handlers
 
-	AuthService   *auth.Service
-	GroupsService *groups.Service
+	AuthService          *auth.Service
+	GroupsService        *groups.Service
+	NotificationsService *notifications.Service
 
 	// Future shared services:
+	PostsService *posts.Service
+	// GroupsService        *groups.Service
 	// PostsService         *posts.Service
-	// NotificationsService *notifications.Service
 }
 
 func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 	hub := websocket.NewHub()
-	go hub.Run()
 	chatRepo := chat.NewRepository(db)
 	chatService := chat.NewService(chatRepo, hub)
 	chatHandler := chat.NewHandler(chatService)
 	wsHandler := websocket.NewHandler(hub)
-	wsHandler.SetMessageHandler(chatService.HandleIncomingWSMessage)
+	// Message routing is finished further down, once every feature that
+	// handles inbound WebSocket events (chat, groups) has been constructed.
 	// =========================
 	// Users
 	// =========================
@@ -84,14 +88,17 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 	)
 
 	// =========================
-	// Posts - Future
+	// Posts
 	// =========================
 
-	// TODO: Enable when the posts package is implemented.
-	//
-	// postsRepo := posts.NewRepository(db)
-	// postsService := posts.NewService(postsRepo)
-	// postsHandler := posts.NewHandler(postsService)
+	postsRepo := posts.NewRepository(db)
+	postsService := posts.NewService(postsRepo)
+	postsHandler := posts.NewHandler(
+		postsService,
+		cfg.SessionCookieName,
+		cfg.CookieSecure,
+		cfg.SessionLifetime,
+	)
 
 	// =========================
 	// Comments - Future
@@ -114,12 +121,27 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 	// followersHandler := followers.NewHandler(followersService)
 
 	// =========================
+	// Notifications
+	// =========================
+	// Persists notifications to SQLite and pushes them over the existing
+	// websocket hub. Other features (Groups, and Followers once it exists)
+	// depend only on notificationsService.Create(...) - never on this
+	// package's repository or SQL.
+
+	notificationsRepo := notifications.NewRepository(db)
+	notificationsSender := notifications.NewHubSender(hub)
+	notificationsService := notifications.NewService(notificationsRepo, notificationsSender)
+	notificationsHandler := notifications.NewHandler(notificationsService)
+
+	// =========================
 	// Groups
 	// =========================
 
 	groupsRepo := groups.NewRepository(db)
-	groupsService := groups.NewService(groupsRepo)
+	groupNotifier := notifiers.NewGroupNotifier(notificationsService)
+	groupsService := groups.NewService(groupsRepo, groupNotifier)
 	groupsHandler := groups.NewHandler(groupsService)
+	inviteSearchWSHandler := groups.NewInviteSearchWSHandler(groupsService, hub)
 
 	// =========================
 	// Chat - Future
@@ -132,30 +154,32 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 	// chatHandler := chat.NewHandler(chatService)
 
 	// =========================
-	// Notifications - Future
+	// WebSocket message routing
 	// =========================
+	// Both Chat and Groups handle inbound client messages; Router dispatches
+	// each by its event type to whichever feature registered it, so the Hub
+	// stays a single connection per user regardless of how many features
+	// use it.
 
-	// TODO: Enable when the notifications package is implemented.
-	//
-	// notificationsRepo := notifications.NewRepository(db)
-	// notificationsService := notifications.NewService(notificationsRepo)
-	// notificationsHandler := notifications.NewHandler(notificationsService)
+	wsRouter := websocket.NewRouter()
+	wsRouter.Register(groups.EventInviteUserSearch, inviteSearchWSHandler.HandleInviteUserSearch)
+	wsHandler.SetMessageHandler(wsRouter.Dispatch)
 
 	return &Dependencies{
 		Handlers: Handlers{
-			Auth:        authHandler,
-			Chat:      chatHandler,
-			Websocket: wsHandler,			Groups: groupsHandler,
-
-			// Posts:         postsHandler,
+			Auth:          authHandler,
+			Chat:          chatHandler,
+			Websocket:     wsHandler,
+			Groups:        groupsHandler,
+			Posts:         postsHandler,
+			Notifications: notificationsHandler,
 			// Comments:      commentsHandler,
 			// Followers:     followersHandler,
-			// Notifications: notificationsHandler,
 		},
-		AuthService:   authService,
-		GroupsService: groupsService,
+		AuthService:          authService,
+		GroupsService:        groupsService,
+		NotificationsService: notificationsService,
 
-		// PostsService:         postsService,
-		// NotificationsService: notificationsService,
+		// PostsService: postsService,
 	}, nil
 }
