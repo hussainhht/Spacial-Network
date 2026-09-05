@@ -12,6 +12,7 @@ const navigation: { href: string; label: string; icon: AppIconName }[] = [
   { href: "/posts", label: "Posts", icon: "posts" },
   { href: "/groups", label: "Groups", icon: "groups" },
   { href: "/chat", label: "Messages", icon: "chat" },
+  { href: "/profile", label: "Profile", icon: "user" },
 ];
 
 export default function AppSidebar() {
@@ -62,7 +63,7 @@ export default function AppSidebar() {
       <div className={styles.developmentNote}>
         <span className={styles.eyebrow}>A WORK IN PROGRESS</span>
         <p>A space to build together.</p>
-        <span>Profile, notifications, and settings are still in development.</span>
+        <span>Notifications and settings are still in development.</span>
       </div>
       <div className={styles.account}>
         {/* Temporary fallback: neither login nor an existing /me API exposes identity. */}
