@@ -10,4 +10,5 @@ export interface Profile {
   profilePhoto?: string;
   createdAt: string;
   updatedAt: string;
+  isPrivate: boolean;
 }

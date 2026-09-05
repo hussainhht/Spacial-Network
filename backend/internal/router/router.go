@@ -46,6 +46,11 @@ func NewRouter(db *sql.DB, cfg config.Config) (http.Handler, error) {
 	)
 
 	apiMux.Handle(
+		"/users/me/privacy",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Users.UpdateProfilePrivacyHandler)),
+	)
+
+	apiMux.Handle(
 		"/profiles/{username}",
 		sessionMiddleware(http.HandlerFunc(deps.Handlers.Users.GetProfileHandler)),
 	)

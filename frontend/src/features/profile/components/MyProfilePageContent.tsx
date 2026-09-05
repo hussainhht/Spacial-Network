@@ -2,13 +2,15 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { getMyProfile } from "../api/profiles";
+import { getMyProfile, updateMyProfilePrivacy } from "../api/profiles";
 import type { Profile } from "../types/profile";
 
 export default function MyProfilePageContent() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [privacyError, setPrivacyError] = useState<string | null>(null);
+  const [privacyUpdating, setPrivacyUpdating] = useState(false);
 
   useEffect(() => {
     async function loadProfile() {
@@ -28,6 +30,32 @@ export default function MyProfilePageContent() {
 
     loadProfile();
   }, []);
+
+  async function handlePrivacyToggle() {
+    if (!profile) {
+      return;
+    }
+
+    const nextPrivacy = !profile.isPrivate;
+    setPrivacyError(null);
+    setPrivacyUpdating(true);
+
+    try {
+      const updatedPrivacy = await updateMyProfilePrivacy(nextPrivacy);
+      setProfile({
+        ...profile,
+        isPrivate: updatedPrivacy,
+      });
+    } catch (error) {
+      setPrivacyError(
+        error instanceof Error
+          ? error.message
+          : "Failed to update profile privacy",
+      );
+    } finally {
+      setPrivacyUpdating(false);
+    }
+  }
 
   if (loading) {
     return <p>Loading your profile...</p>;
@@ -62,9 +90,27 @@ export default function MyProfilePageContent() {
 
       <section>
         <h2>Profile Info</h2>
+        <p>Privacy: {profile.isPrivate ? "Private" : "Public"}</p>
         <p>Email: {profile.email}</p>
         <p>Age: {profile.age}</p>
         <p>Gender: {profile.gender}</p>
+      </section>
+
+      <section>
+        <h2>Privacy Settings</h2>
+        <p>{profile.isPrivate ? "Private profile" : "Public profile"}</p>
+        <button
+          type="button"
+          onClick={handlePrivacyToggle}
+          disabled={privacyUpdating}
+        >
+          {privacyUpdating
+            ? "Saving..."
+            : profile.isPrivate
+              ? "Make Public"
+              : "Make Private"}
+        </button>
+        {privacyError && <p>{privacyError}</p>}
       </section>
 
       <section>

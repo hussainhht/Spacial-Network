@@ -14,12 +14,19 @@ interface ApiProfile {
   profile_photo?: string;
   created_at: string;
   updated_at: string;
+  is_private: boolean;
 }
 
 interface ProfileResponse {
   success: boolean;
   message?: string;
   profile?: ApiProfile;
+}
+
+interface UpdateProfilePrivacyResponse {
+  success: boolean;
+  message?: string;
+  is_private: boolean;
 }
 
 function toProfile(profile: ApiProfile): Profile {
@@ -35,6 +42,7 @@ function toProfile(profile: ApiProfile): Profile {
     profilePhoto: profile.profile_photo,
     createdAt: profile.created_at,
     updatedAt: profile.updated_at,
+    isPrivate: profile.is_private,
   };
 }
 
@@ -51,6 +59,29 @@ export async function getProfileByUsername(username: string): Promise<Profile> {
   }
 
   return toProfile(data.profile);
+}
+
+export async function updateMyProfilePrivacy(
+  isPrivate: boolean,
+): Promise<boolean> {
+  const response = await fetch(`${API_BASE_URL}/users/me/privacy`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify({
+      is_private: isPrivate,
+    }),
+  });
+
+  const data: UpdateProfilePrivacyResponse = await response.json();
+
+  if (!response.ok || !data.success) {
+    throw new Error(data.message ?? "Failed to update profile privacy");
+  }
+
+  return data.is_private;
 }
 
 export async function getMyProfile(): Promise<Profile> {

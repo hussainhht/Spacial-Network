@@ -56,16 +56,16 @@ Authentication, Docker, and final project-wide integration are not included in t
 
 ### Database
 
-- [ ] Add/store profile privacy state
-- [ ] Support Public profile
-- [ ] Support Private profile
-- [ ] Add migration if the existing `users` table needs modification
-- [ ] Create matching `.down.sql` migration
+- [X] Add/store profile privacy state
+- [X] Support Public profile
+- [X] Support Private profile
+- [X] Add migration if the existing `users` table needs modification
+- [X] Create matching `.down.sql` migration
 
 ### Backend
 
-- [ ] Change profile from Public to Private
-- [ ] Change profile from Private to Public
+- [X] Change profile from Public to Private
+- [X] Change profile from Private to Public
 - [ ] Check profile privacy before exposing protected information
 - [ ] Allow followers to view permitted private-profile information
 - [ ] Prevent non-followers from viewing protected private-profile information
@@ -73,9 +73,9 @@ Authentication, Docker, and final project-wide integration are not included in t
 
 ### Frontend
 
-- [ ] Add profile privacy control
-- [ ] Show current privacy state
-- [ ] Allow user to switch Public ↔ Private
+- [X] Add profile privacy control
+- [X] Show current privacy state
+- [X] Allow user to switch Public ↔ Private
 - [ ] Update visible actions based on target profile privacy
 
 ---

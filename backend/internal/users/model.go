@@ -18,6 +18,7 @@ type User struct {
 	ProfilePhoto sql.NullString `db:"profile_photo"` //* sql.NullString is Go’s way to represent a database column that can contain either a string or a NULL
 	CreatedAt    time.Time      `db:"created_at"`
 	UpdatedAt    time.Time      `db:"updated_at"`
+	IsPrivate    bool           `db:"is_private"`
 }
 
 type Profile struct {
@@ -32,6 +33,7 @@ type Profile struct {
 	ProfilePhoto sql.NullString `db:"profile_photo"`
 	CreatedAt    time.Time      `db:"created_at"`
 	UpdatedAt    time.Time      `db:"updated_at"`
+	IsPrivate    bool           `db:"is_private"`
 }
 
 // ProfileResponse is the JSON profile data sent to the frontend.
@@ -47,12 +49,23 @@ type ProfileResponse struct {
 	ProfilePhoto string `json:"profile_photo,omitempty"`
 	CreatedAt    string `json:"created_at"`
 	UpdatedAt    string `json:"updated_at"`
+	IsPrivate    bool   `json:"is_private"`
 }
 
 type GetProfileResponse struct {
 	Success bool             `json:"success"`
 	Message string           `json:"message,omitempty"`
 	Profile *ProfileResponse `json:"profile,omitempty"`
+}
+
+type UpdateProfilePrivacyRequest struct {
+	IsPrivate *bool `json:"is_private"`
+}
+
+type UpdateProfilePrivacyResponse struct {
+	Success   bool   `json:"success"`
+	Message   string `json:"message,omitempty"`
+	IsPrivate bool   `json:"is_private"`
 }
 
 type Handler struct {

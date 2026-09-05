@@ -66,6 +66,7 @@ export default function ProfilePageContent({
 
       <section>
         <h2>Profile Info</h2>
+        <p>Privacy: {profile.isPrivate ? "Private" : "Public"}</p>
         <p>Email: {profile.email}</p>
         <p>Age: {profile.age}</p>
         <p>Gender: {profile.gender}</p>

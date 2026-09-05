@@ -77,3 +77,7 @@ func hashPassword(password string) (string, error) {
 func comparePasswords(hashedPassword, plainPassword string) bool {
 	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(plainPassword)) == nil
 }
+
+func (s *Service) UpdateProfilePrivacy(userID int, isPrivate bool) error {
+	return s.repo.UpdateProfilePrivacy(userID, isPrivate)
+}
