@@ -1,6 +1,10 @@
 package comments
 
-import "social/internal/posts"
+import (
+	"database/sql"
+
+	"social/internal/posts"
+)
 
 type Service struct {
 	repo         *Repository
@@ -15,8 +19,9 @@ func NewService(repo *Repository, postsService *posts.Service) *Service {
 }
 
 // CreateComment adds a comment to postID on behalf of userID, provided
-// userID can view the post.
-func (s *Service) CreateComment(userID, postID int, content string) (*comment, error) {
+// userID can view the post. imagePath is the already-saved relative path of
+// an optional image/GIF attachment.
+func (s *Service) CreateComment(userID, postID int, content string, imagePath sql.NullString) (*comment, error) {
 	canAccess, err := s.postsService.CanAccess(userID, postID)
 	if err != nil {
 		return nil, err
@@ -26,9 +31,10 @@ func (s *Service) CreateComment(userID, postID int, content string) (*comment, e
 	}
 
 	c := &comment{
-		PostID:  postID,
-		UserID:  userID,
-		Content: content,
+		PostID:    postID,
+		UserID:    userID,
+		Content:   content,
+		ImagePath: imagePath,
 	}
 	if err := s.repo.CreateComment(c); err != nil {
 		return nil, err

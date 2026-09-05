@@ -1,6 +1,7 @@
 package comments
 
 import (
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -9,19 +10,21 @@ import (
 
 	"social/internal/posts"
 	"social/internal/requestctx"
+	"social/internal/upload"
 )
 
+// maxNewCommentRequestSize bounds the total size of a create-comment
+// request (form fields plus the optional image attachment).
+const maxNewCommentRequestSize = 8 << 20 // 8 MiB
+
 type Handler struct {
-	service *Service
+	service      *Service
+	mediaStorage *upload.MediaStorage
 }
 
 type Response struct {
 	Message string `json:"message,omitempty"`
 	Error   string `json:"error,omitempty"`
-}
-
-type NewCommentRequest struct {
-	Content string `json:"content"`
 }
 
 // CommentResponse is the JSON-serializable view of a comment returned to
@@ -31,6 +34,7 @@ type CommentResponse struct {
 	PostID    int       `json:"post_id"`
 	UserID    int       `json:"user_id"`
 	Content   string    `json:"content"`
+	ImageURL  string    `json:"image_url,omitempty"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 	// IsOwner tells the client whether the requesting user owns this
@@ -39,7 +43,7 @@ type CommentResponse struct {
 }
 
 func newCommentResponse(c *comment, viewerID int) CommentResponse {
-	return CommentResponse{
+	resp := CommentResponse{
 		ID:        c.ID,
 		PostID:    c.PostID,
 		UserID:    c.UserID,
@@ -48,17 +52,24 @@ func newCommentResponse(c *comment, viewerID int) CommentResponse {
 		UpdatedAt: c.Updated_At,
 		IsOwner:   c.UserID == viewerID,
 	}
+	if c.ImagePath.Valid {
+		resp.ImageURL = "/uploads/" + c.ImagePath.String
+	}
+	return resp
 }
 
 // NewHandler creates a new Handler instance with the provided dependencies.
-func NewHandler(service *Service) *Handler {
+func NewHandler(service *Service, mediaStorage *upload.MediaStorage) *Handler {
 	return &Handler{
-		service: service,
+		service:      service,
+		mediaStorage: mediaStorage,
 	}
 }
 
 // NewCommentHandler creates a comment on the post identified by the {id}
-// path segment. The user must be able to view the post to comment on it.
+// path segment. It expects a multipart/form-data body with a "content"
+// field and an optional "image" file attachment (JPEG, PNG, GIF, or WebP).
+// The user must be able to view the post to comment on it.
 func (h *Handler) NewCommentHandler(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requestctx.UserID(r.Context())
 	if !ok {
@@ -74,22 +85,44 @@ func (h *Handler) NewCommentHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var req NewCommentRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	r.Body = http.MaxBytesReader(w, r.Body, maxNewCommentRequestSize)
+	if err := r.ParseMultipartForm(maxNewCommentRequestSize); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(Response{Error: "Invalid request"})
+		json.NewEncoder(w).Encode(Response{Error: "Invalid request payload or body"})
 		return
 	}
 
-	content, err := ValidateContent(req.Content)
+	content, err := ValidateContent(r.FormValue("content"))
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(Response{Error: err.Error()})
 		return
 	}
 
-	c, err := h.service.CreateComment(userID, postID, content)
+	var imagePath string
+	file, header, err := r.FormFile("image")
+	if err != nil && !errors.Is(err, http.ErrMissingFile) {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(Response{Error: "Invalid image upload"})
+		return
+	}
+	if err == nil {
+		imagePath, err = h.mediaStorage.Save(file, header)
+		file.Close()
+		if err != nil {
+			status := http.StatusBadRequest
+			if !errors.Is(err, upload.ErrInvalidFileType) && !errors.Is(err, upload.ErrFileTooLarge) {
+				status = http.StatusInternalServerError
+			}
+			w.WriteHeader(status)
+			json.NewEncoder(w).Encode(Response{Error: err.Error()})
+			return
+		}
+	}
+
+	c, err := h.service.CreateComment(userID, postID, content, sql.NullString{String: imagePath, Valid: imagePath != ""})
 	if err != nil {
+		h.mediaStorage.Remove(imagePath)
 		writeCommentError(w, err)
 		return
 	}

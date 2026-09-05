@@ -21,9 +21,9 @@ func (r *Repository) CreateComment(c *comment) error {
 	c.Updated_At = now
 
 	res, err := r.db.Exec(`
-		INSERT INTO comments (post_id, user_id, content, created_at, updated_at)
-		VALUES (?, ?, ?, ?, ?)
-	`, c.PostID, c.UserID, c.Content, c.Created_At, c.Updated_At)
+		INSERT INTO comments (post_id, user_id, content, image_path, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?)
+	`, c.PostID, c.UserID, c.Content, c.ImagePath, c.Created_At, c.Updated_At)
 	if err != nil {
 		return err
 	}
@@ -41,10 +41,10 @@ func (r *Repository) GetCommentByID(id int) (*comment, error) {
 	var c comment
 
 	err := r.db.QueryRow(`
-		SELECT id, post_id, user_id, content, created_at, updated_at
+		SELECT id, post_id, user_id, content, image_path, created_at, updated_at
 		FROM comments
 		WHERE id = ?
-	`, id).Scan(&c.ID, &c.PostID, &c.UserID, &c.Content, &c.Created_At, &c.Updated_At)
+	`, id).Scan(&c.ID, &c.PostID, &c.UserID, &c.Content, &c.ImagePath, &c.Created_At, &c.Updated_At)
 	if err == sql.ErrNoRows {
 		return nil, ErrCommentNotFound
 	}
@@ -58,7 +58,7 @@ func (r *Repository) GetCommentByID(id int) (*comment, error) {
 // ListCommentsByPost returns every comment on postID, oldest first.
 func (r *Repository) ListCommentsByPost(postID int) ([]*comment, error) {
 	rows, err := r.db.Query(`
-		SELECT id, post_id, user_id, content, created_at, updated_at
+		SELECT id, post_id, user_id, content, image_path, created_at, updated_at
 		FROM comments
 		WHERE post_id = ?
 		ORDER BY created_at ASC
@@ -71,7 +71,7 @@ func (r *Repository) ListCommentsByPost(postID int) ([]*comment, error) {
 	comments := []*comment{}
 	for rows.Next() {
 		var c comment
-		if err := rows.Scan(&c.ID, &c.PostID, &c.UserID, &c.Content, &c.Created_At, &c.Updated_At); err != nil {
+		if err := rows.Scan(&c.ID, &c.PostID, &c.UserID, &c.Content, &c.ImagePath, &c.Created_At, &c.Updated_At); err != nil {
 			return nil, err
 		}
 		comments = append(comments, &c)
