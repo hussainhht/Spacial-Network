@@ -5,7 +5,7 @@ import (
 	"errors"
 	"net/http"
 
-	"social/internal/auth"
+	"social/internal/requestctx"
 )
 
 type Handler struct {
@@ -27,7 +27,7 @@ type Response struct {
 func (h *Handler) ListNotificationsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	userID, ok := r.Context().Value(auth.UserIDKey).(int)
+	userID, ok := requestctx.UserID(r.Context())
 	if !ok {
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode(Response{Error: "Not logged in"})
@@ -56,7 +56,7 @@ func (h *Handler) ListNotificationsHandler(w http.ResponseWriter, r *http.Reques
 func (h *Handler) UnreadCountHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	userID, ok := r.Context().Value(auth.UserIDKey).(int)
+	userID, ok := requestctx.UserID(r.Context())
 	if !ok {
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode(Response{Error: "Not logged in"})
@@ -80,7 +80,7 @@ func (h *Handler) UnreadCountHandler(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) MarkAsReadHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	userID, ok := r.Context().Value(auth.UserIDKey).(int)
+	userID, ok := requestctx.UserID(r.Context())
 	if !ok {
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode(Response{Error: "Not logged in"})
@@ -107,7 +107,7 @@ func (h *Handler) MarkAsReadHandler(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) MarkAllAsReadHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	userID, ok := r.Context().Value(auth.UserIDKey).(int)
+	userID, ok := requestctx.UserID(r.Context())
 	if !ok {
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode(Response{Error: "Not logged in"})

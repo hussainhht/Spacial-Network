@@ -7,15 +7,12 @@ import (
 	"strconv"
 	"time"
 
+	"social/internal/requestctx"
 	"social/internal/upload"
 	"social/internal/users"
 
 	"github.com/google/uuid"
 )
-
-type contextKey string
-
-const UserIDKey contextKey = "userID"
 
 // LoginRequest represents the JSON body
 type LoginRequest struct {
@@ -143,7 +140,7 @@ func (h *Handler) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, ok := r.Context().Value(UserIDKey).(int); !ok {
+	if _, ok := requestctx.UserID(r.Context()); !ok {
 		if _, err := h.service.ValidateSession(cookie.Value); err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			json.NewEncoder(w).Encode(Response{Error: "Invalid session"})
@@ -172,7 +169,6 @@ func (h *Handler) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(Response{Message: "Logged out"})
 }
-
 
 func (h *Handler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")

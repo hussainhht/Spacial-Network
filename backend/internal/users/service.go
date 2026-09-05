@@ -53,6 +53,16 @@ func (s *Service) GetUserIDByUsername(username string) (int, error) {
 	return s.repo.GetUserIDByUsername(username)
 }
 
+// GetProfileByID retrieves a user's profile by their user ID.
+func (s *Service) GetProfileByID(userID int) (*Profile, error) {
+	return s.repo.GetProfileByID(userID)
+}
+
+// GetProfileByUsername retrieves a user's profile by their username.
+func (s *Service) GetProfileByUsername(username string) (*Profile, error) {
+	return s.repo.GetProfileByUsername(username)
+}
+
 func hashPassword(password string) (string, error) {
 	hashed, err := bcrypt.GenerateFromPassword(
 		[]byte(password),
@@ -66,4 +76,8 @@ func hashPassword(password string) (string, error) {
 
 func comparePasswords(hashedPassword, plainPassword string) bool {
 	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(plainPassword)) == nil
+}
+
+func (s *Service) UpdateProfilePrivacy(userID int, isPrivate bool) error {
+	return s.repo.UpdateProfilePrivacy(userID, isPrivate)
 }
