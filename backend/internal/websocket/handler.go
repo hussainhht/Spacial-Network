@@ -4,7 +4,7 @@ import (
 	"log"
 	"net/http"
 
-	"social/internal/auth"
+	"social/internal/requestctx"
 )
 
 type Handler struct {
@@ -23,13 +23,7 @@ func (h *Handler) SetMessageHandler(handler MessageHandler) {
 }
 
 func (h *Handler) ServeWS(w http.ResponseWriter, r *http.Request) {
-	userIDVal := r.Context().Value(auth.UserIDKey)
-	if userIDVal == nil {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return
-	}
-
-	userID, ok := userIDVal.(int)
+	userID, ok := requestctx.UserID(r.Context())
 	if !ok || userID <= 0 {
 		http.Error(w, "Unauthorized: invalid user", http.StatusUnauthorized)
 		return

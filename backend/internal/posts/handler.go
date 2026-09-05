@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"time"
 
-	"social/internal/auth"
+	"social/internal/requestctx"
 	"social/internal/users"
 )
 
@@ -82,7 +82,7 @@ func (h *Handler) NewPostHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID, ok := r.Context().Value(auth.UserIDKey).(int)
+	userID, ok := requestctx.UserID(r.Context())
 	if !ok {
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode(Response{Error: "Not logged in"})
@@ -125,7 +125,7 @@ func (h *Handler) NewPostHandler(w http.ResponseWriter, r *http.Request) {
 // their owner - to anyone else a private post looks the same as one that
 // doesn't exist.
 func (h *Handler) GetPostByIDHandler(w http.ResponseWriter, r *http.Request) {
-	userID, ok := r.Context().Value(auth.UserIDKey).(int)
+	userID, ok := requestctx.UserID(r.Context())
 	if !ok {
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode(Response{Error: "Not logged in"})
@@ -158,7 +158,7 @@ func (h *Handler) GetPostByIDHandler(w http.ResponseWriter, r *http.Request) {
 // ListPostsHandler returns every post visible to the logged-in user: all
 // public posts plus their own private posts, newest first.
 func (h *Handler) ListPostsHandler(w http.ResponseWriter, r *http.Request) {
-	userID, ok := r.Context().Value(auth.UserIDKey).(int)
+	userID, ok := requestctx.UserID(r.Context())
 	if !ok {
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode(Response{Error: "Not logged in"})
@@ -185,7 +185,7 @@ func (h *Handler) ListPostsHandler(w http.ResponseWriter, r *http.Request) {
 // path segment. It is registered on its own PUT/PATCH routes, so the
 // method is guaranteed by the router.
 func (h *Handler) EditPostHandler(w http.ResponseWriter, r *http.Request) {
-	userID, ok := r.Context().Value(auth.UserIDKey).(int)
+	userID, ok := requestctx.UserID(r.Context())
 	if !ok {
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode(Response{Error: "Not logged in"})
@@ -225,7 +225,7 @@ func (h *Handler) EditPostHandler(w http.ResponseWriter, r *http.Request) {
 // path segment. It is registered on its own DELETE route, so the method is
 // guaranteed by the router.
 func (h *Handler) DeletePostHandler(w http.ResponseWriter, r *http.Request) {
-	userID, ok := r.Context().Value(auth.UserIDKey).(int)
+	userID, ok := requestctx.UserID(r.Context())
 	if !ok {
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode(Response{Error: "Not logged in"})

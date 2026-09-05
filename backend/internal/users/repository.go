@@ -120,3 +120,91 @@ func (r *Repository) GetUserIDByUsername(username string) (int, error) {
 
 	return userID, nil
 }
+
+// GetProfileByID returns profile data for a user ID.
+func (r *Repository) GetProfileByID(userID int) (*Profile, error) {
+	profile := &Profile{}
+
+	err := r.db.QueryRow(`
+		SELECT id, uuid, username, age, gender, first_name, last_name, email, profile_photo, created_at, updated_at, is_private
+		FROM users
+		WHERE id = ?
+	`, userID).Scan(
+		&profile.ID,
+		&profile.UUID,
+		&profile.Username,
+		&profile.Age,
+		&profile.Gender,
+		&profile.FirstName,
+		&profile.LastName,
+		&profile.Email,
+		&profile.ProfilePhoto,
+		&profile.CreatedAt,
+		&profile.UpdatedAt,
+		&profile.IsPrivate,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return profile, nil
+}
+
+// GetProfileByUsername returns profile data for a username.
+func (r *Repository) GetProfileByUsername(username string) (*Profile, error) {
+	profile := &Profile{}
+
+	err := r.db.QueryRow(`
+		SELECT id, uuid, username, age, gender, first_name, last_name, email, profile_photo, created_at, updated_at, is_private
+		FROM users
+		WHERE username = ?
+	`, username).Scan(
+		&profile.ID,
+		&profile.UUID,
+		&profile.Username,
+		&profile.Age,
+		&profile.Gender,
+		&profile.FirstName,
+		&profile.LastName,
+		&profile.Email,
+		&profile.ProfilePhoto,
+		&profile.CreatedAt,
+		&profile.UpdatedAt,
+		&profile.IsPrivate,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return profile, nil
+}
+
+// UpdateProfilePrivacy updates the privacy setting of a user's profile.
+func (r *Repository) UpdateProfilePrivacy(userID int, isPrivate bool) error {
+	privacyValue := 0
+	if isPrivate {
+		privacyValue = 1
+	}
+
+	result, err := r.db.Exec(`
+		UPDATE users
+		SET is_private = ?, updated_at = CURRENT_TIMESTAMP
+		WHERE id = ?
+	`, privacyValue, userID)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return sql.ErrNoRows
+	}
+
+	return nil
+}
