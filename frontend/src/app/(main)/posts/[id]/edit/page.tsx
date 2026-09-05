@@ -60,8 +60,13 @@ export default function EditPostPage() {
     title: string;
     content: string;
     private: boolean;
+    image?: File | null;
   }) {
-    await updatePost(postId, input);
+    await updatePost(postId, {
+      title: input.title,
+      content: input.content,
+      private: input.private,
+    });
     router.push(`/posts/${postId}`);
   }
 
