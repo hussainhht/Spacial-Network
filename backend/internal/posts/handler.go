@@ -1,6 +1,7 @@
 package posts
 
 import (
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -8,12 +9,18 @@ import (
 	"time"
 
 	"social/internal/requestctx"
+	"social/internal/upload"
 	"social/internal/users"
 )
+
+// maxNewPostRequestSize bounds the total size of a create-post request
+// (form fields plus the optional image attachment).
+const maxNewPostRequestSize = 8 << 20 // 8 MiB
 
 type Handler struct {
 	service         *Service
 	usersService    *users.Service
+	mediaStorage    *upload.MediaStorage
 	cookieName      string
 	cookieSecure    bool
 	sessionLifetime time.Duration
@@ -43,6 +50,7 @@ type PostResponse struct {
 	Private   bool      `json:"private"`
 	Title     string    `json:"title"`
 	Content   string    `json:"content"`
+	ImageURL  string    `json:"image_url,omitempty"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 	// IsOwner tells the client whether the requesting user owns this post,
@@ -51,7 +59,7 @@ type PostResponse struct {
 }
 
 func newPostResponse(p *post, viewerID int) PostResponse {
-	return PostResponse{
+	resp := PostResponse{
 		ID:        p.ID,
 		UserID:    p.User_ID,
 		Private:   p.isPrivate,
@@ -61,12 +69,17 @@ func newPostResponse(p *post, viewerID int) PostResponse {
 		UpdatedAt: p.Updated_At,
 		IsOwner:   p.User_ID == viewerID,
 	}
+	if p.ImagePath.Valid {
+		resp.ImageURL = "/uploads/" + p.ImagePath.String
+	}
+	return resp
 }
 
 // NewHandler creates a new Handler instance with the provided dependencies.
-func NewHandler(service *Service, cookieName string, cookieSecure bool, sessionLifetime time.Duration) *Handler {
+func NewHandler(service *Service, mediaStorage *upload.MediaStorage, cookieName string, cookieSecure bool, sessionLifetime time.Duration) *Handler {
 	return &Handler{
 		service:         service,
+		mediaStorage:    mediaStorage,
 		cookieName:      cookieName,
 		cookieSecure:    cookieSecure,
 		sessionLifetime: sessionLifetime,
@@ -76,6 +89,9 @@ func NewHandler(service *Service, cookieName string, cookieSecure bool, sessionL
 // NewPostHandler handles the creation of a new post.
 // It expects a JSON payload with the post's title, content, and privacy setting.
 // The user must be authenticated to create a post.
+// NewPostHandler expects a multipart/form-data body with "title",
+// "content", and "private" fields, plus an optional "image" file
+// attachment (JPEG, PNG, GIF, or WebP).
 func (h *Handler) NewPostHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		w.WriteHeader(errMethodNotAllowed)
@@ -89,11 +105,17 @@ func (h *Handler) NewPostHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var req NewPostRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	r.Body = http.MaxBytesReader(w, r.Body, maxNewPostRequestSize)
+	if err := r.ParseMultipartForm(maxNewPostRequestSize); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(Response{Error: "Invalid request"})
+		json.NewEncoder(w).Encode(Response{Error: "Invalid request payload or body"})
 		return
+	}
+
+	req := NewPostRequest{
+		Title:   r.FormValue("title"),
+		Content: r.FormValue("content"),
+		Private: r.FormValue("private") == "true",
 	}
 
 	if err := ValidateNewPostRequest(&req); err != nil {
@@ -102,21 +124,44 @@ func (h *Handler) NewPostHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var imagePath string
+	file, header, err := r.FormFile("image")
+	if err != nil && !errors.Is(err, http.ErrMissingFile) {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(Response{Error: "Invalid image upload"})
+		return
+	}
+	if err == nil {
+		imagePath, err = h.mediaStorage.Save(file, header)
+		file.Close()
+		if err != nil {
+			status := http.StatusBadRequest
+			if !errors.Is(err, upload.ErrInvalidFileType) && !errors.Is(err, upload.ErrFileTooLarge) {
+				status = http.StatusInternalServerError
+			}
+			w.WriteHeader(status)
+			json.NewEncoder(w).Encode(Response{Error: err.Error()})
+			return
+		}
+	}
+
 	p := &post{
 		User_ID:   userID,
 		isPrivate: req.Private,
 		Title:     req.Title,
 		Content:   req.Content,
+		ImagePath: sql.NullString{String: imagePath, Valid: imagePath != ""},
 	}
 
 	if err := h.service.CreatePost(p); err != nil {
+		h.mediaStorage.Remove(imagePath)
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(Response{Error: "Server error"})
 		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(Response{Message: "Post created"})
+	json.NewEncoder(w).Encode(newPostResponse(p, userID))
 }
 
 // GetPostByIDHandler retrieves a post by its ID.
