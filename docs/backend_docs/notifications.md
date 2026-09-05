@@ -16,11 +16,12 @@ Implemented:
 - Real-time push over the existing websocket hub when the receiver is
   connected; notifications persist regardless of whether delivery succeeds.
 
-Not implemented (out of scope for this change): the Follow Request, Group
-Invitation, Group Join Request, and Group Event features themselves do not
-exist yet in this backend, so nothing currently *calls*
-`notificationService.Create(...)`. Section 6 below is the contract those
-features should use once they're built.
+Not implemented (out of scope for this change): the Follow Request and
+Group Event features themselves do not exist yet in this backend.
+Group Invitations and Group Join Requests **do** exist and already call
+into this system (Section 6 walks through exactly how, using Groups as
+the worked example) - Section 7 is the step-by-step guide for wiring up
+a feature that doesn't yet call `notificationService.Create(...)`.
 
 ## 2. Database Table
 
@@ -57,25 +58,41 @@ internal/notifications/
     validation.go    pagination / ID parsing for the HTTP layer
     repository.go    SQL only
     events.go        the "notification" websocket envelope
-    sender.go        NotificationSender interface + HubSender adapter
+    sender.go        NotificationSender interface + HubSender adapter -> websocket.Hub
     service.go        business logic, delivery orchestration
     handler.go        HTTP only
+    notifiers/
+        groups.go      GroupNotifier: adapts this service to Groups' OWN notifier
+                        interface (see Section 6) - one file per feature that plugs in
 ```
 
 This mirrors the layout used by `internal/groups` and `internal/posts`:
 handler → service → repository, with sentinel errors in `errors.go` and
-request-parsing helpers in `validation.go`.
+request-parsing helpers in `validation.go`. `notifiers/` is a separate
+sub-package on purpose: it's the only place that imports both this
+package and (indirectly) a consuming feature's expectations, so
+`internal/notifications` itself never has to import `internal/groups`,
+`internal/posts`, etc.
 
 ## 4. Request Flow
 
+Two different paths feed into this package: the HTTP API a client polls
+directly, and the "a feature wants to notify someone" path used
+internally by other backend packages (Groups today).
+
 ```mermaid
 flowchart TD
-    Client["Client"] --> Handler["notifications.Handler"]
+    Client["Client (HTTP)"] --> Handler["notifications.Handler"]
     Handler --> Service["notifications.Service"]
+
+    FeatureAction["Another feature's own write succeeds\n(e.g. groups.Service.CreateGroupInvitation)"] --> FeatureNotifier["Feature's OWN notifier interface\n(e.g. groups.NotificationSender)"]
+    FeatureNotifier --> Adapter["Adapter in internal/notifications/notifiers\n(e.g. notifiers.GroupNotifier)"]
+    Adapter --> Service
+
     Service --> Repo["notifications.Repository"]
     Repo --> DB[("SQLite: notifications table")]
 
-    Service --> Sender["NotificationSender (interface)"]
+    Service --> Sender["NotificationSender (interface, THIS package's own)"]
     Sender -.implemented by.-> HubSender["notifications.HubSender"]
     HubSender --> Hub["websocket.Hub (existing)"]
     Hub --> Connected["Connected receiver's browser tab(s)"]
@@ -83,8 +100,20 @@ flowchart TD
 
 `Service` depends only on the `NotificationSender` interface
 (`SendToUser(userID int, event any) error`), never on `*websocket.Hub`
-directly. `HubSender` is the concrete 1.6adapter, wired up once in
+directly. `HubSender` is the concrete adapter, wired up once in
 `router.setupDependencies` and injected into `notifications.NewService`.
+
+Note there are **two different interfaces both called
+`NotificationSender`** in this codebase, and they are not the same
+thing:
+
+| Interface                            | Declared in                          | Purpose                                                                             | Implemented by              |
+| ------------------------------------ | ------------------------------------ | ----------------------------------------------------------------------------------- | --------------------------- |
+| `notifications.NotificationSender` | `internal/notifications/sender.go` | lets this package push over websocket without importing the hub directly            | `notifications.HubSender` |
+| `groups.NotificationSender`        | `internal/groups/service.go`       | lets`groups.Service` create notifications without importing this package directly | `notifiers.GroupNotifier` |
+
+Section 6 is about the second row - that's the pattern to copy for any
+new feature.
 
 ## 5. HTTP Endpoints
 
@@ -105,60 +134,232 @@ can never mark another user's notification as read by guessing IDs
 (`ErrNotificationNotFound` is returned identically whether the ID doesn't
 exist or just isn't owned by the caller).
 
-## 6. How A Feature Should Call NotificationService
+## 6. The Adapter Pattern (worked example: Groups)
 
-Once Follow Requests, Group Invitations, Group Join Requests, or Group
-Events exist, their **service** layer (never their handler, never the
-notifications package) should call `notificationService.Create(...)` right
-after its own write succeeds:
+This is how a feature is actually meant to plug into the notification
+system - worked from the one real, already-wired example in the
+codebase (`internal/groups`), not a hypothetical.
+
+`groups.Service` never imports `internal/notifications`. Instead it
+declares the exact shape of notification it needs, as an interface
+local to its own package:
 
 ```go
-// inside e.g. followers.Service.CreateFollowRequest, after the follow
-// request row itself has been inserted:
-_, err = s.notifications.Create(notifications.CreateNotificationRequest{
-    ReceiverID: targetUserID,
-    ActorID:    &requesterID,
-    Type:       notifications.NotificationFollowRequest,
-    EntityType: strPtr(notifications.EntityFollowRequest),
-    EntityID:   &followRequestID,
-    Message:    fmt.Sprintf("%s sent you a follow request", requesterUsername),
-})
-if err != nil {
-    log.Printf("notify follow request: %v", err)
-    // do not fail or roll back the follow request itself for this
+// internal/groups/service.go
+type NotificationSender interface {
+    NotifyGroupInvitation(receiverID, actorID, invitationID int) error
+    NotifyGroupJoinRequest(receiverID, actorID, requestID int) error
+}
+
+type Service struct {
+    repo     *Repository
+    notifier NotificationSender
 }
 ```
 
-Rules that follow from the responsibility boundary in the spec:
+`internal/notifications/notifiers/groups.go` implements that interface
+by wrapping a real `*notifications.Service` and translating each
+feature-specific call into a generic `Create`:
 
-- The notifications package never creates, accepts, or rejects follow
-  requests, invitations, join requests, or events - it only records that
-  something happened.
-- A notification failure must never undo or fail the original action. Log
-  it and move on.
-- `notificationService` is injected into a feature's `Service` constructor
-  the same way `*websocket.Hub` is injected into `chat.Service` today -
-  add a `notifications *notifications.Service` field, pass it in from
-  `router.setupDependencies` (which already builds and exposes
-  `Dependencies.NotificationsService`).
+```go
+type GroupNotifier struct {
+    service *notifications.Service
+}
 
-Expected `(Type, EntityType)` pairs per the spec:
+func (n *GroupNotifier) NotifyGroupJoinRequest(receiverID, actorID, requestID int) error {
+    entityType := notifications.EntityGroupJoinRequest
+    actor := actorID
+    _, err := n.service.Create(notifications.CreateNotificationRequest{
+        ReceiverID: receiverID,
+        ActorID:    &actor,
+        Type:       notifications.NotificationGroupJoinRequest,
+        EntityType: &entityType,
+        EntityID:   &requestID,
+        Message:    "requested to join your group",
+    })
+    return err
+}
+```
 
-| Type                   | EntityType             | Receiver                                                                                                                                 |
-| ---------------------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `follow_request`     | `follow_request`     | the target user                                                                                                                          |
-| `group_invitation`   | `group_invitation`   | the invited user                                                                                                                         |
-| `group_join_request` | `group_join_request` | the group's creator                                                                                                                      |
-| `group_event`        | `event`              | each group member (reuse the existing group members repository/service to list them; the spec suggests skipping the event's own creator) |
+And the call site, inside `groups.Service.CreateJoinRequest`, right
+after the join-request row itself is persisted - never before, and a
+notification failure never fails the join request:
 
-## 7. Adding A New Notification Type
+```go
+requestID, err := s.repo.CreateGroupJoinRequest(groupID, userID)
+if err != nil {
+    return err
+}
 
-1. Add a new `NotificationType` const in `model.go` (e.g.
-   `NotificationPostLike NotificationType = "post_like"`).
-2. Add it to `validNotificationTypes`.
-3. Optionally add an `Entity...` constant if it needs its own entity_type
-   label.
-4. No migration needed - `type` and `entity_type` are plain `TEXT` columns.
+if s.notifier != nil {
+    if err := s.notifier.NotifyGroupJoinRequest(
+        group.CreatorID, // receiver
+        userID,          // actor
+        int(requestID),  // the join request itself
+    ); err != nil {
+        // log the notification error, but don't fail the join request
+    }
+}
+return nil
+```
+
+Finally, wiring happens once, in `router.setupDependencies`:
+
+```go
+notificationsSender  := notifications.NewHubSender(hub)
+notificationsService := notifications.NewService(notificationsRepo, notificationsSender)
+
+groupNotifier := notifiers.NewGroupNotifier(notificationsService) // implements groups.NotificationSender
+groupsService := groups.NewService(groupsRepo, groupNotifier)
+```
+
+**Why bother with the extra interface + adapter, instead of just
+injecting `*notifications.Service` straight into `groups.Service`?**
+Two reasons visible in the code: (1) `groups.Service`'s own unit tests
+can fake `NotificationSender` with a two-method stub instead of needing
+a real `notifications.Service` (and its DB) in scope, and (2)
+`groups.Service` only ever sees the two operations it actually needs
+(`NotifyGroupInvitation`/`NotifyGroupJoinRequest`), not the entire
+notifications API (`GetForUser`, `MarkAsRead`, ...). The trade-off is
+one extra small file per feature (`notifiers/<feature>.go`) - injecting
+`*notifications.Service` directly and calling `.Create(...)` inline
+would work too and is simpler, it just gives up both of those benefits.
+Either way, the rules below always apply:
+
+- The notifications package never creates, accepts, or rejects the
+  underlying thing (a follow request, an invitation, a join request) -
+  it only records that something happened. Business logic and
+  validation belong entirely to the triggering feature.
+- Always call `notifier.Notify...` (or `notificationService.Create`)
+  from the triggering feature's **service** layer, never its handler,
+  and only after the underlying row is already committed.
+- A notification failure must never roll back or fail the original
+  action - log it and move on, exactly as both existing call sites in
+  `groups/service.go` do.
+
+## 7. Adding A New Notification
+
+Concrete, copy-pasteable walkthrough for a feature that wants to
+trigger a brand new kind of notification - e.g. "someone liked your
+post" (`post_like`), which doesn't exist yet. The steps are the same
+regardless of which feature is doing the notifying.
+
+**1. Declare the type** in `model.go` - this is the only place a new
+`NotificationType` needs to be listed, and it's not a migration:
+
+```go
+const (
+    NotificationFollowRequest    NotificationType = "follow_request"
+    NotificationGroupInvitation  NotificationType = "group_invitation"
+    NotificationGroupJoinRequest NotificationType = "group_join_request"
+    NotificationGroupEvent       NotificationType = "group_event"
+    NotificationPostLike         NotificationType = "post_like" // new
+)
+
+var validNotificationTypes = map[NotificationType]bool{
+    NotificationFollowRequest:    true,
+    NotificationGroupInvitation:  true,
+    NotificationGroupJoinRequest: true,
+    NotificationGroupEvent:       true,
+    NotificationPostLike:         true, // new
+}
+```
+
+Optionally add an `EntityType` constant too (e.g. `EntityPost = "post"`)
+if the notification should carry a descriptive `entity_type` alongside
+`entity_id` - this is free-form and only used for display, not enforced
+against a real table.
+
+**2. Declare a narrow notifier interface in your own feature package**
+(don't import `internal/notifications` into your feature's `Service` -
+mirror what `groups.NotificationSender` does in Section 6):
+
+```go
+// internal/posts/service.go
+type NotificationSender interface {
+    NotifyPostLike(receiverID, actorID, postID int) error
+}
+
+type Service struct {
+    repo     *Repository
+    notifier NotificationSender
+}
+
+func NewService(repo *Repository, notifier NotificationSender) *Service {
+    return &Service{repo: repo, notifier: notifier}
+}
+```
+
+**3. Implement that interface as an adapter** in `notifiers/` (new
+file, e.g. `posts.go`):
+
+```go
+package notifiers
+
+import "social/internal/notifications"
+
+type PostsNotifier struct {
+    service *notifications.Service
+}
+
+func NewPostsNotifier(service *notifications.Service) *PostsNotifier {
+    return &PostsNotifier{service: service}
+}
+
+func (n *PostsNotifier) NotifyPostLike(receiverID, actorID, postID int) error {
+    entityType := "post"
+    actor := actorID
+    _, err := n.service.Create(notifications.CreateNotificationRequest{
+        ReceiverID: receiverID,
+        ActorID:    &actor,
+        Type:       notifications.NotificationPostLike,
+        EntityType: &entityType,
+        EntityID:   &postID,
+        Message:    "liked your post",
+    })
+    return err
+}
+```
+
+**4. Wire it up once**, in `router.setupDependencies`, right next to
+where Groups does the same thing:
+
+```go
+postsNotifier := notifiers.NewPostsNotifier(notificationsService)
+postsService  := posts.NewService(postsRepo, postsNotifier) // constructor now takes the notifier too
+```
+
+**5. Call it from your feature's service, after your own write
+succeeds** - never before, and never let a notification failure undo or
+fail the action that triggered it:
+
+```go
+// inside posts.Service, right after the like itself is recorded
+if err := s.notifier.NotifyPostLike(post.AuthorID, likerID, post.ID); err != nil {
+    log.Printf("notify post like: %v", err)
+    // do not return err - the like already succeeded
+}
+```
+
+**6. No database migration needed** - `type`/`entity_type` are plain
+`TEXT` columns validated only in Go (Section 2).
+
+**7. Nothing to do on the frontend to get delivery working** - any
+connected receiver already gets a `notification` websocket event
+through the existing hub pipeline the moment `Create` succeeds (Section
+8). What's still missing today is a UI that *reads* those events - see
+`docs/backend_docs/websocket-system.md` Section 12 - until that exists,
+the notification is still safely queryable via `GET /api/notifications`
+and `GET /api/notifications/unread-count`.
+
+### Existing Notification Types Reference
+
+| Type                   | EntityType             | Triggered by (today)                               | Receiver                       |
+| ---------------------- | ---------------------- | -------------------------------------------------- | ------------------------------ |
+| `follow_request`     | `follow_request`     | nobody yet - Follow Requests feature doesn't exist | the target user (once built)   |
+| `group_invitation`   | `group_invitation`   | `groups.Service.CreateGroupInvitation`           | the invited user               |
+| `group_join_request` | `group_join_request` | `groups.Service.CreateJoinRequest`               | the group's creator            |
+| `group_event`        | `event`              | nobody yet - Group Events feature doesn't exist    | each group member (once built) |
 
 ## 8. Real-Time Delivery & Offline Users
 
