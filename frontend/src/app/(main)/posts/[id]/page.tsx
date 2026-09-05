@@ -6,6 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import { deletePost, getPost } from "@/features/posts/api/posts";
 import { ApiError } from "@/lib/api/errors";
 import type { Post } from "@/features/posts/types/post";
+import CommentsSection from "@/features/comments/components/CommentsSection";
 
 export default function PostDetailPage() {
   const router = useRouter();
@@ -99,6 +100,8 @@ export default function PostDetailPage() {
             </footer>
           </article>
         )}
+
+        {post && <CommentsSection postId={post.id} />}
       </div>
     </main>
   );
