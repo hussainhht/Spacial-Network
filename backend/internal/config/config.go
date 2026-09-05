@@ -17,6 +17,7 @@ type Config struct {
 
 	UploadsDir    string
 	MaxAvatarSize int64
+	MaxMediaSize  int64
 }
 
 func Load() Config {
@@ -37,5 +38,6 @@ func Load() Config {
 
 		UploadsDir:    "data/uploads",
 		MaxAvatarSize: 5 << 20, // 5 MiB
+		MaxMediaSize:  5 << 20, // 5 MiB, per post/comment attachment
 	}
 }

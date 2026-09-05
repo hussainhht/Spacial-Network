@@ -70,6 +70,16 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 		return nil, err
 	}
 
+	postMediaStorage, err := upload.NewMediaStorage(cfg.UploadsDir, upload.PostsSubdir, cfg.MaxMediaSize)
+	if err != nil {
+		return nil, err
+	}
+
+	commentMediaStorage, err := upload.NewMediaStorage(cfg.UploadsDir, upload.CommentsSubdir, cfg.MaxMediaSize)
+	if err != nil {
+		return nil, err
+	}
+
 	// =========================
 	// Authentication
 	// =========================
@@ -93,6 +103,7 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 	postsService := posts.NewService(postsRepo)
 	postsHandler := posts.NewHandler(
 		postsService,
+		postMediaStorage,
 		cfg.SessionCookieName,
 		cfg.CookieSecure,
 		cfg.SessionLifetime,
@@ -104,7 +115,7 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 
 	commentsRepo := comments.NewRepository(db)
 	commentsService := comments.NewService(commentsRepo, postsService)
-	commentsHandler := comments.NewHandler(commentsService)
+	commentsHandler := comments.NewHandler(commentsService, commentMediaStorage)
 
 	// =========================
 	// Followers - Future
