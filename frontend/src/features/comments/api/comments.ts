@@ -7,10 +7,20 @@ export function listComments(postId: number): Promise<Comment[]> {
   return apiRequest<Comment[]>(`/posts/${postId}/comments`);
 }
 
-export function createComment(postId: number, content: string): Promise<Comment> {
+export function createComment(
+  postId: number,
+  content: string,
+  image?: File | null,
+): Promise<Comment> {
+  const formData = new FormData();
+  formData.append("content", content);
+  if (image) {
+    formData.append("image", image);
+  }
+
   return apiRequest<Comment>(`/posts/${postId}/comments`, {
     method: "POST",
-    body: JSON.stringify({ content }),
+    body: formData,
   });
 }
 
