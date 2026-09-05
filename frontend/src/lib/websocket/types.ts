@@ -6,6 +6,8 @@ export type EventType =
   | "typing"
   | "mark_read"
   | "messages_read"
+  | "invite_user_search"
+  | "invite_user_search_results"
   | "error";
 
 export interface WSEvent<T = unknown> {
@@ -50,6 +52,27 @@ export interface ErrorPayload {
   message: string;
 }
 
+export interface InviteUserSearchPayload {
+  request_id: string;
+  group_id: number;
+  query: string;
+  limit?: number;
+}
+
+export interface InviteSearchResultUser {
+  id: number;
+  username: string;
+  first_name: string;
+  last_name: string;
+  avatar?: string;
+}
+
+export interface InviteUserSearchResultsPayload {
+  request_id: string;
+  group_id: number;
+  users: InviteSearchResultUser[];
+}
+
 export interface WebSocketContextType {
   isConnected: boolean;
   onlineUserIDs: number[];
@@ -57,5 +80,6 @@ export interface WebSocketContextType {
   typingStatus: TypingPayload | null;
   lastReadReceipt: MessagesReadPayload | null;
   errorMessage: string | null;
+  inviteSearchResults: InviteUserSearchResultsPayload | null;
   sendEvent: (type: EventType, payload: unknown) => void;
 }

@@ -8,6 +8,7 @@ import (
 	"social/internal/config"
 	"social/internal/groups"
 	"social/internal/notifications"
+	"social/internal/notifications/notifiers"
 	"social/internal/posts"
 	"social/internal/upload"
 	"social/internal/users"
@@ -53,7 +54,8 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 	chatService := chat.NewService(chatRepo, hub)
 	chatHandler := chat.NewHandler(chatService)
 	wsHandler := websocket.NewHandler(hub)
-	wsHandler.SetMessageHandler(chatService.HandleIncomingWSMessage)
+	// Message routing is finished further down, once every feature that
+	// handles inbound WebSocket events (chat, groups) has been constructed.
 	// =========================
 	// Users
 	// =========================
@@ -119,24 +121,6 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 	// followersHandler := followers.NewHandler(followersService)
 
 	// =========================
-	// Groups
-	// =========================
-
-	groupsRepo := groups.NewRepository(db)
-	groupsService := groups.NewService(groupsRepo)
-	groupsHandler := groups.NewHandler(groupsService)
-
-	// =========================
-	// Chat - Future
-	// =========================
-
-	// TODO: Enable when the chat package is implemented.
-	//
-	// chatRepo := chat.NewRepository(db)
-	// chatService := chat.NewService(chatRepo)
-	// chatHandler := chat.NewHandler(chatService)
-
-	// =========================
 	// Notifications
 	// =========================
 	// Persists notifications to SQLite and pushes them over the existing
@@ -149,12 +133,44 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 	notificationsService := notifications.NewService(notificationsRepo, notificationsSender)
 	notificationsHandler := notifications.NewHandler(notificationsService)
 
+	// =========================
+	// Groups
+	// =========================
+
+	groupsRepo := groups.NewRepository(db)
+	groupNotifier := notifiers.NewGroupNotifier(notificationsService)
+	groupsService := groups.NewService(groupsRepo, groupNotifier)
+	groupsHandler := groups.NewHandler(groupsService)
+	inviteSearchWSHandler := groups.NewInviteSearchWSHandler(groupsService, hub)
+
+	// =========================
+	// Chat - Future
+	// =========================
+
+	// TODO: Enable when the chat package is implemented.
+	//
+	// chatRepo := chat.NewRepository(db)
+	// chatService := chat.NewService(chatRepo)
+	// chatHandler := chat.NewHandler(chatService)
+
+	// =========================
+	// WebSocket message routing
+	// =========================
+	// Both Chat and Groups handle inbound client messages; Router dispatches
+	// each by its event type to whichever feature registered it, so the Hub
+	// stays a single connection per user regardless of how many features
+	// use it.
+
+	wsRouter := websocket.NewRouter()
+	wsRouter.Register(groups.EventInviteUserSearch, inviteSearchWSHandler.HandleInviteUserSearch)
+	wsHandler.SetMessageHandler(wsRouter.Dispatch)
+
 	return &Dependencies{
 		Handlers: Handlers{
-			Auth:      authHandler,
-			Chat:      chatHandler,
-			Websocket: wsHandler, Groups: groupsHandler,
-
+			Auth:          authHandler,
+			Chat:          chatHandler,
+			Websocket:     wsHandler,
+			Groups:        groupsHandler,
 			Posts:         postsHandler,
 			Notifications: notificationsHandler,
 			// Comments:      commentsHandler,

@@ -2,7 +2,7 @@ import GroupDetailsContent from "@/features/groups/components/GroupDetailsConten
 
 export default function GroupDetailsPage() {
   return (
-    <main>
+    <main className="group-details-page space-shell">
       <GroupDetailsContent />
     </main>
   );

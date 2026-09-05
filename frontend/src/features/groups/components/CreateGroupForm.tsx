@@ -39,8 +39,8 @@ export default function CreateGroupForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit}>
-      <div>
+    <form onSubmit={handleSubmit} className="group-form">
+      <div className="form-field">
         <label htmlFor="title">Title</label>
 
         <input
@@ -52,7 +52,7 @@ export default function CreateGroupForm() {
         />
       </div>
 
-      <div>
+      <div className="form-field">
         <label htmlFor="description">Description</label>
 
         <textarea
@@ -63,7 +63,7 @@ export default function CreateGroupForm() {
         />
       </div>
 
-      {error && <p>{error}</p>}
+      {error && <p className="form-error">{error}</p>}
 
       <button type="submit" disabled={isSubmitting}>
         {isSubmitting ? "Creating..." : "Create Group"}

@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { getApiUrl } from "@/lib/api";
 
 export default function Home() {
   const router = useRouter();
@@ -10,7 +11,7 @@ export default function Home() {
   async function handleLogout() {
     setLoggingOut(true);
     try {
-      await fetch("http://localhost:8080/api/logout", {
+      await fetch(getApiUrl("/logout"), {
         method: "POST",
         credentials: "include",
       });
