@@ -1,6 +1,8 @@
 package auth
 
-import "errors"
+import (
+	"errors"
+)
 
 var (
 	ErrTypeNotCorrect     = errors.New("Invalid Type")

@@ -3,13 +3,36 @@ package groups
 import "errors"
 
 type Service struct {
-	repo *Repository
+	repo     *Repository
+	notifier NotificationSender
 }
 
-func NewService(repo *Repository) *Service {
+func NewService(
+	repo *Repository, notifier NotificationSender) *Service {
 	return &Service{
-		repo: repo,
+		repo:     repo,
+		notifier: notifier,
 	}
+}
+
+type NotificationSender interface {
+	NotifyGroupInvitation(
+		receiverID int,
+		actorID int,
+		invitationID int,
+	) error
+
+	NotifyGroupJoinRequest(
+		receiverID int,
+		actorID int,
+		requestID int,
+	) error
+
+	// NotifyGroupEvent(
+	// 	receiverID int,
+	// 	actorID int,
+	// 	eventID int,
+	// ) error
 }
 
 // CreateGroup stores a new group owned by creatorID and returns its ID.
@@ -62,10 +85,225 @@ func (s *Service) IsGroupCreator(groupID, userID int) (bool, error) {
 	return group.CreatorID == userID, nil
 }
 
-
 func (s *Service) AddMember(groupID, userID int) error {
 	if _, err := s.repo.GetGroupByID(groupID); err != nil {
 		return err
 	}
 	return s.repo.AddMember(groupID, userID)
+}
+
+func (s *Service) RequestToJoin(groupID, userID int) error {
+	group, err := s.repo.GetGroupByID(groupID)
+	if err != nil {
+		return err
+	}
+
+	member, err := s.repo.GetMembership(groupID, userID)
+	if err != nil {
+		return err
+	}
+	if member != nil {
+		return ErrAlreadyMember
+	}
+
+	pending, err := s.repo.HasPendingJoinRequest(groupID, userID)
+	if err != nil {
+		return err
+	}
+	if pending {
+		return ErrJoinRequestAlreadyPending
+	}
+
+	requestID, err := s.repo.CreateGroupJoinRequest(groupID, userID)
+	if err != nil {
+		return err
+	}
+
+	if s.notifier != nil {
+		if err := s.notifier.NotifyGroupJoinRequest(
+			group.CreatorID, // receiver
+			userID,          // actor
+			int(requestID),  // join request
+		); err != nil {
+			// log the notification error, but don't fail the join request
+		}
+	}
+
+	return nil
+}
+
+func (s *Service) GetPendingJoinRequests(groupID, creatorID int) ([]GroupJoinRequest, error) {
+	group, err := s.repo.GetGroupByID(groupID)
+	if err != nil {
+		return nil, err
+	}
+	if group.CreatorID != creatorID {
+		return nil, ErrNotGroupCreator
+	}
+
+	return s.repo.GetPendingJoinRequestsByGroup(groupID)
+}
+
+func (s *Service) AcceptJoinRequest(groupID, requestID, creatorID int) error {
+	req, err := s.resolvePendingJoinRequest(groupID, requestID, creatorID)
+	if err != nil {
+		return err
+	}
+
+	if err := s.repo.AddMember(groupID, req.UserID); err != nil && !errors.Is(err, ErrAlreadyMember) {
+		return err
+	}
+
+	return s.repo.UpdateJoinRequestStatus(requestID, StatusAccepted)
+}
+
+func (s *Service) RejectJoinRequest(groupID, requestID, creatorID int) error {
+	if _, err := s.resolvePendingJoinRequest(groupID, requestID, creatorID); err != nil {
+		return err
+	}
+
+	return s.repo.UpdateJoinRequestStatus(requestID, StatusDeclined)
+}
+
+func (s *Service) resolvePendingJoinRequest(groupID, requestID, creatorID int) (*GroupJoinRequest, error) {
+	group, err := s.repo.GetGroupByID(groupID)
+	if err != nil {
+		return nil, err
+	}
+	if group.CreatorID != creatorID {
+		return nil, ErrNotGroupCreator
+	}
+
+	req, err := s.repo.GetGroupJoinRequestByID(requestID)
+	if err != nil {
+		return nil, err
+	}
+	if req.GroupID != groupID {
+		return nil, ErrJoinRequestNotFound
+	}
+	if req.Status != StatusPending {
+		return nil, ErrJoinRequestNotPending
+	}
+
+	return req, nil
+}
+
+func (s *Service) CreateGroupInvitation(groupID, inviterID, invitedUserID int) error {
+	if _, err := s.repo.GetGroupByID(groupID); err != nil {
+		return err
+	}
+
+	if inviterID == invitedUserID {
+		return ErrCannotInviteSelf
+	}
+
+	inviter, err := s.repo.GetMembership(groupID, inviterID)
+	if err != nil {
+		return err
+	}
+	if inviter == nil {
+		return ErrNotGroupMember
+	}
+
+	invited, err := s.repo.GetMembership(groupID, invitedUserID)
+	if err != nil {
+		return err
+	}
+	if invited != nil {
+		return ErrAlreadyMember
+	}
+
+	pending, err := s.repo.HasPendingInvitation(groupID, invitedUserID)
+	if err != nil {
+		return err
+	}
+	if pending {
+		return ErrInvitationAlreadyPending
+	}
+
+	invitationID, err := s.repo.CreateGroupInvitation(groupID, inviterID, invitedUserID)
+	if err != nil {
+		return err
+	}
+
+	if s.notifier != nil {
+		if err := s.notifier.NotifyGroupInvitation(
+			invitedUserID,     // receiver
+			inviterID,         // actor
+			int(invitationID), // invitation
+		); err != nil {
+			// log the notification error, but don't fail the invitation
+		}
+	}
+
+	return nil
+}
+
+func (s *Service) GetPendingInvitations(userID int) ([]GroupInvitation, error) {
+	return s.repo.GetPendingInvitationsByUser(userID)
+}
+
+func (s *Service) AcceptGroupInvitation(invitationID, userID int) error {
+	inv, err := s.resolvePendingInvitation(invitationID, userID)
+	if err != nil {
+		return err
+	}
+
+	if err := s.repo.AddMember(inv.GroupID, userID); err != nil && !errors.Is(err, ErrAlreadyMember) {
+		return err
+	}
+
+	return s.repo.UpdateInvitationStatus(invitationID, StatusAccepted)
+}
+
+func (s *Service) DeclineGroupInvitation(invitationID, userID int) error {
+	if _, err := s.resolvePendingInvitation(invitationID, userID); err != nil {
+		return err
+	}
+
+	return s.repo.UpdateInvitationStatus(invitationID, StatusDeclined)
+}
+
+
+func (s *Service) SearchInviteCandidates(groupID, currentUserID int, rawQuery string, limit int) ([]InviteCandidate, error) {
+	if _, err := s.repo.GetGroupByID(groupID); err != nil {
+		return nil, err
+	}
+
+	member, err := s.repo.GetMembership(groupID, currentUserID)
+	if err != nil {
+		return nil, err
+	}
+	if member == nil {
+		return nil, ErrNotGroupMember
+	}
+
+	query, err := ValidateInviteSearchQuery(rawQuery)
+	if err != nil {
+		return nil, ErrInvalidSearchQuery
+	}
+
+	if limit <= 0 {
+		limit = DefaultInviteCandidateLimit
+	}
+	if limit > MaxInviteCandidateLimit {
+		limit = MaxInviteCandidateLimit
+	}
+
+	return s.repo.SearchInviteCandidates(groupID, currentUserID, query, limit)
+}
+
+func (s *Service) resolvePendingInvitation(invitationID, userID int) (*GroupInvitation, error) {
+	inv, err := s.repo.GetGroupInvitationByID(invitationID)
+	if err != nil {
+		return nil, err
+	}
+	if inv.InvitedUserID != userID {
+		return nil, ErrInvitationNotFound
+	}
+	if inv.Status != StatusPending {
+		return nil, ErrInvitationNotPending
+	}
+
+	return inv, nil
 }

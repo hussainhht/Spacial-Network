@@ -40,6 +40,10 @@ func NewRouter(db *sql.DB, cfg config.Config) (http.Handler, error) {
 		sessionMiddleware(http.HandlerFunc(deps.Handlers.Auth.LogoutHandler)),
 	)
 
+	apiMux.Handle("/ws", sessionMiddleware(http.HandlerFunc(deps.Handlers.Websocket.ServeWS)))
+	apiMux.Handle("/chat/history", sessionMiddleware(http.HandlerFunc(deps.Handlers.Chat.GetHistoryHandler)))
+	apiMux.Handle("/chat/conversations", sessionMiddleware(http.HandlerFunc(deps.Handlers.Chat.GetConversationsHandler)))
+
 	apiMux.Handle(
 		"/users/me",
 		sessionMiddleware(http.HandlerFunc(deps.Handlers.Users.GetMeHandler)),
@@ -56,10 +60,33 @@ func NewRouter(db *sql.DB, cfg config.Config) (http.Handler, error) {
 	)
 
 	// =========================
-	// Posts Routes - Future
+	// Posts Routes
 	// =========================
 
-	// TODO: Register Posts routes here once the Posts handler is implemented.
+	apiMux.Handle(
+		"POST /posts",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Posts.NewPostHandler)),
+	)
+	apiMux.Handle(
+		"GET /posts",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Posts.ListPostsHandler)),
+	)
+	apiMux.Handle(
+		"GET /posts/{id}",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Posts.GetPostByIDHandler)),
+	)
+	apiMux.Handle(
+		"PUT /posts/{id}",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Posts.EditPostHandler)),
+	)
+	apiMux.Handle(
+		"PATCH /posts/{id}",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Posts.EditPostHandler)),
+	)
+	apiMux.Handle(
+		"DELETE /posts/{id}",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Posts.DeletePostHandler)),
+	)
 
 	// =========================
 	// Comments Routes - Future
@@ -78,20 +105,56 @@ func NewRouter(db *sql.DB, cfg config.Config) (http.Handler, error) {
 	// =========================
 
 	apiMux.Handle(
-		"/groups",
-		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.GroupsHandler)),
+		"GET /groups",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.ListGroupsHandler)),
 	)
 	apiMux.Handle(
-		"/groups/{id}",
+		"POST /groups",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.CreateGroupHandler)),
+	)
+	apiMux.Handle(
+		"GET /groups/{id}",
 		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.GetGroupHandler)),
 	)
 	apiMux.Handle(
-		"/groups/{id}/members",
+		"GET /groups/{id}/members",
 		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.GetGroupMembersHandler)),
 	)
 	apiMux.Handle(
-		"/groups/{id}/membership",
+		"GET /groups/{id}/membership",
 		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.GetMembershipHandler)),
+	)
+	apiMux.Handle(
+		"POST /groups/{id}/join-requests",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.CreateJoinRequestHandler)),
+	)
+	apiMux.Handle(
+		"GET /groups/{id}/join-requests",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.GetPendingJoinRequestsHandler)),
+	)
+	apiMux.Handle(
+		"POST /groups/{id}/join-requests/{requestID}/accept",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.AcceptJoinRequestHandler)),
+	)
+	apiMux.Handle(
+		"POST /groups/{id}/join-requests/{requestID}/reject",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.RejectJoinRequestHandler)),
+	)
+	apiMux.Handle(
+		"POST /groups/{id}/invitations",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.CreateGroupInvitationHandler)),
+	)
+	apiMux.Handle(
+		"GET /group-invitations",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.GetPendingInvitationsHandler)),
+	)
+	apiMux.Handle(
+		"POST /group-invitations/{invitationID}/accept",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.AcceptGroupInvitationHandler)),
+	)
+	apiMux.Handle(
+		"POST /group-invitations/{invitationID}/decline",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.DeclineGroupInvitationHandler)),
 	)
 
 	// =========================
@@ -101,10 +164,26 @@ func NewRouter(db *sql.DB, cfg config.Config) (http.Handler, error) {
 	// TODO: Register Chat routes here once the Chat handler is implemented.
 
 	// =========================
-	// Notifications Routes - Future
+	// Notifications Routes
 	// =========================
 
-	// TODO: Register Notifications routes here once the Notifications handler is implemented.
+	apiMux.Handle(
+		"GET /notifications",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Notifications.ListNotificationsHandler)),
+	)
+	apiMux.Handle(
+		"GET /notifications/unread-count",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Notifications.UnreadCountHandler)),
+	)
+	apiMux.Handle(
+		"PATCH /notifications/read-all",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Notifications.MarkAllAsReadHandler)),
+	)
+	apiMux.Handle(
+		"PATCH /notifications/{id}/read",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Notifications.MarkAsReadHandler)),
+	)
+
 	handler := middleware.CORS(apiMux)
 
 	mux := http.NewServeMux()

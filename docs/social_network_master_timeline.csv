@@ -1,0 +1,101 @@
+﻿SOCIAL NETWORK — MASTER 3-WEEK TIMELINE,,,,,,,,,,,,,,,,,,,,,,,,,
+One shared timeline • parallel work is aligned by time • dependencies show what must finish before the next task can start,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,
+"DEPENDENCY GATE A
+Profiles / follower checks → unlock Post Privacy + Private Chat",,,,,,,,"DEPENDENCY GATE B
+Group membership checks → unlock Group Posts + Group Chat",,,,,,,,,"DEPENDENCY GATE C
+Notification infrastructure → receives triggers from Follow / Group / Event flows",,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,
+MASTER WORK PLAN,,,,,WEEK 1 — FOUNDATIONS & BACKEND,,,,,,,"WEEK 2 — DEPENDENCIES, FRONTEND & INTEGRATION",,,,,,,"WEEK 3 — TESTING, UI POLISH & FINAL DELIVERY",,,,,,
+ID,Owner,Task / Deliverable,Depends On,Stage,"D1
+02 Sep
+","D2
+03 Sep
+","D3
+04 Sep
+◆ PR","D4
+05 Sep
+","D5
+06 Sep
+","D6
+07 Sep
+◆ PR","D7
+08 Sep
+","D8
+09 Sep
+","D9
+10 Sep
+◆ PR","D10
+11 Sep
+","D11
+12 Sep
+","D12
+13 Sep
+◆ PR","D13
+14 Sep
+","D14
+15 Sep
+","D15
+16 Sep
+◆ PR","D16
+17 Sep
+","D17
+18 Sep
+","D18
+19 Sep
+◆ PR","D19
+20 Sep
+","D20
+21 Sep
+","D21
+22 Sep
+◆ PR"
+,TEAM,MEETING + PULL REQUEST CHECKPOINTS,,Milestone,,,"MEETING
++ PR",,,"MEETING
++ PR",,,"MEETING
++ PR",,,"MEETING
++ PR",,,"MEETING
++ PR",,,"MEETING
++ PR",,,"MEETING
++ PR"
+STAGE 1 — INDEPENDENT FOUNDATIONS (everyone starts in parallel),,,,,,,,,,,,,,,,,,,,,,,,,
+T01,Person 1,Groups DB + core APIs + membership base,—,Foundation,■,■,■,,,,,,,,,,,,,,,,,,
+T02,Person 2,Posts DB + CRUD + feed base,—,Foundation,■,■,■,,,,,,,,,,,,,,,,,,
+T03,Person 3,Profiles + profile privacy,—,Foundation,■,■,■,,,,,,,,,,,,,,,,,,
+T04,Person 4,WebSocket core + realtime message schema,—,Foundation,■,■,■,,,,,,,,,,,,,,,,,,
+STAGE 2 — FEATURE LOGIC + SHARED INTERFACES,,,,,,,,,,,,,,,,,,,,,,,,,
+T05,Person 1,Group join requests + invitations,T01,Backend,,,,■,■,■,,,,,,,,,,,,,,,
+T06,Person 2,Comments + image/GIF upload handling,T02,Backend,,,,■,■,■,,,,,,,,,,,,,,,
+T07,Person 3,Followers + follow requests + reusable follower checks,T03,Shared Interface,,,,■,■,■,,,,,,,,,,,,,,,
+T08,Person 4,Notification infrastructure + unread/read realtime delivery,T04,Backend,,,,■,■,■,,,,,,,,,,,,,,,
+STAGE 3 — CROSS-FEATURE DEPENDENCIES (tasks start only after their required interface exists),,,,,,,,,,,,,,,,,,,,,,,,,
+T09,Person 1,Group events + event responses + membership interface freeze,T01,Backend,,,,,,,■,■,■,,,,,,,,,,,,
+T10,Person 2,Post privacy: Public / Almost Private / Private,T02 + T07,Dependency Work,,,,,,,■,■,■,,,,,,,,,,,,
+T11,Person 2,Group posts + group comments backend,T01 + T06,Dependency Work,,,,,,,■,■,■,,,,,,,,,,,,
+T12,Person 4,Private chat + history + messaging permissions,T04 + T07,Dependency Work,,,,,,,■,■,■,,,,,,,,,,,,
+T13,Person 4,Group chat + history + member-only broadcast,T01 + T04,Dependency Work,,,,,,,■,■,■,,,,,,,,,,,,
+STAGE 4 — FRONTEND BUILD + NOTIFICATION TRIGGER WIRING,,,,,,,,,,,,,,,,,,,,,,,,,
+T14,Team,"Wire required notification triggers: follow request, invite, join request, event",T05 + T07 + T08 + T09,Integration,,,,,,,,,,■,■,,,,,,,,,,
+T15,Person 1,Groups / invitations / join requests / events frontend,T05 + T09,Frontend,,,,,,,,,,■,■,■,,,,,,,,,
+T16,Person 2,Feed / post privacy / comments / group-post frontend,T06 + T10 + T11,Frontend,,,,,,,,,,■,■,■,,,,,,,,,
+T17,Person 3,Profile / privacy / followers / follow-request frontend,T07,Frontend,,,,,,,,,,■,■,■,,,,,,,,,
+T18,Person 4,Private chat / group chat / global notifications frontend,T08 + T12 + T13,Frontend,,,,,,,,,,■,■,■,,,,,,,,,
+STAGE 5 — FEATURE TESTING + CROSS-FEATURE INTEGRATION,,,,,,,,,,,,,,,,,,,,,,,,,
+T19,Team,"Cross-feature integration: Groups↔Posts/Chat, Followers↔Posts/Chat, Notifications",T10–T18,Integration,,,,,,,,,,,,,■,■,■,,,,,,
+T20,Person 1,Groups & Events feature tests + edge cases,T15,Testing,,,,,,,,,,,,,■,■,■,,,,,,
+T21,Person 2,Posts / Comments privacy + media + access tests,T16,Testing,,,,,,,,,,,,,■,■,■,,,,,,
+T22,Person 3,Profile privacy + follow flow tests,T17,Testing,,,,,,,,,,,,,■,■,■,,,,,,
+T23,Person 4,Realtime chat / offline / unread notification tests,T18,Testing,,,,,,,,,,,,,■,■,■,,,,,,
+STAGE 6 — UI / STYLING + FIRST FULL END-TO-END PASS,,,,,,,,,,,,,,,,,,,,,,,,,
+T24,Person 1,Groups & Events responsive UI polish,T20,UI / Styling,,,,,,,,,,,,,,,,■,■,■,,,
+T25,Person 2,Feed / Posts / Comments responsive UI polish,T21,UI / Styling,,,,,,,,,,,,,,,,■,■,■,,,
+T26,Person 3,Profile / Followers responsive UI polish,T22,UI / Styling,,,,,,,,,,,,,,,,■,■,■,,,
+T27,Person 4,Chat / Notifications realtime UI polish,T23,UI / Styling,,,,,,,,,,,,,,,,■,■,■,,,
+T28,Team,End-to-end pass #1 + resolve integration blockers,T19 + T20–T23,Integration,,,,,,,,,,,,,,,,■,■,■,,,
+STAGE 7 — FINAL DELIVERY GATE,,,,,,,,,,,,,,,,,,,,,,,,,
+T29,Team,Full regression test + final bug fixes,T24–T28,Final QA,,,,,,,,,,,,,,,,,,,■,■,
+T30,Team,Docker verification + docs / README + cleanup,Core features stable,Delivery,,,,,,,,,,,,,,,,,,,■,■,
+T31,Team,"Final acceptance, final PR review, merge to main",T29 + T30,Release,,,,,,,,,,,,,,,,,,,,,■
+,,,,,,,,,,,,,,,,,,,,,,,,,
+HOW TO READ IT: tasks on the same days are expected to run in parallel. A task with IDs in “Depends On” should not be treated as ready until those outputs/interfaces are stable.,,,,,,,,,,,,,,,,,,,,,,,,,
+"PR RULE: every 3 days → meet, review completed work, resolve blockers, update/open the Pull Request, then unlock the next dependency stage.",,,,,,,,,,,,,,,,,,,,,,,,,

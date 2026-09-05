@@ -13,6 +13,10 @@ const (
 
 	DefaultListLimit = 20
 	MaxListLimit     = 100
+
+	MaxInviteSearchQueryLength  = 100
+	DefaultInviteCandidateLimit = 10
+	MaxInviteCandidateLimit     = 25
 )
 
 func ValidateTitle(title string) (string, error) {
@@ -66,4 +70,43 @@ func ValidateGroupID(idParam string) (int, error) {
 		return 0, errors.New("group id must be a positive integer")
 	}
 	return id, nil
+}
+
+// ValidateJoinRequestID parses and validates a group join request ID taken
+// from a URL path.
+func ValidateJoinRequestID(idParam string) (int, error) {
+	id, err := strconv.Atoi(idParam)
+	if err != nil || id <= 0 {
+		return 0, errors.New("join request id must be a positive integer")
+	}
+	return id, nil
+}
+
+// ValidateInvitationID parses and validates a group invitation ID taken
+// from a URL path.
+func ValidateInvitationID(idParam string) (int, error) {
+	id, err := strconv.Atoi(idParam)
+	if err != nil || id <= 0 {
+		return 0, errors.New("invitation id must be a positive integer")
+	}
+	return id, nil
+}
+
+// ValidateInvitedUserID validates the invited user's ID from a group
+// invitation request body.
+func ValidateInvitedUserID(id int) (int, error) {
+	if id <= 0 {
+		return 0, errors.New("invited_user_id must be a positive integer")
+	}
+	return id, nil
+}
+
+// ValidateInviteSearchQuery sanitizes the `q` query param used to search for
+// invite candidates.
+func ValidateInviteSearchQuery(query string) (string, error) {
+	return validation.SanitizeText(query, validation.TextRules{
+		Field:    "search query",
+		Required: true,
+		Max:      MaxInviteSearchQueryLength,
+	})
 }

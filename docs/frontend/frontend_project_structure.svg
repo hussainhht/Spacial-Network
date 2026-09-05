@@ -1,0 +1,1067 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="2100" viewBox="0 0 1600 2100">
+  <defs>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#0f172a" flood-opacity=".10"/>
+    </filter>
+  </defs>
+
+  <rect width="100%" height="100%" fill="#f8fafc"/>
+
+  <text x="800.0" y="78" text-anchor="middle"
+        font-family="Arial, Helvetica, sans-serif" font-size="54" font-weight="800" fill="#0f172a">
+    Frontend Project Structure
+  </text>
+  <text x="800.0" y="125" text-anchor="middle"
+        font-family="Arial, Helvetica, sans-serif" font-size="26" font-weight="500" fill="#64748b">
+    Next.js + React + TypeScript
+  </text>
+
+  <rect x="70" y="180" width="1460" height="1820" rx="24"
+        fill="white" stroke="#dbe3ee" stroke-width="2" filter="url(#shadow)"/>
+
+  <line x1="790" y1="215" x2="790" y2="1945" stroke="#e2e8f0" stroke-width="2" stroke-dasharray="4 8"/>
+
+  
+        <g transform="translate(110,225)">
+          <path d="M0 4 Q0 1 3 1 H10 L14 5 H29 Q32 5 32 8 V23 Q32 26 29 26 H3 Q0 26 0 23 Z"
+                fill="#3b82f6"/>
+          <path d="M1 7 H31 V10 H1 Z" fill="#60a5fa" opacity=".65"/>
+        </g>
+<text x="149" y="244" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="17" font-weight="700" fill="#0f172a">frontend/</text>
+<line x1="123" y1="246" x2="123" y2="276" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="123" y1="273" x2="133" y2="273" stroke="#cbd5e1" stroke-width="1.2"/>
+
+        <g transform="translate(140,260)">
+          <path d="M0 4 Q0 1 3 1 H10 L14 5 H29 Q32 5 32 8 V23 Q32 26 29 26 H3 Q0 26 0 23 Z"
+                fill="#3b82f6"/>
+          <path d="M1 7 H31 V10 H1 Z" fill="#60a5fa" opacity=".65"/>
+        </g>
+<text x="179" y="279" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="17" font-weight="700" fill="#0f172a">public/</text>
+<line x1="153" y1="281" x2="153" y2="311" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="153" y1="308" x2="163" y2="308" stroke="#cbd5e1" stroke-width="1.2"/>
+
+        <g transform="translate(170,295)">
+          <path d="M0 4 Q0 1 3 1 H10 L14 5 H29 Q32 5 32 8 V23 Q32 26 29 26 H3 Q0 26 0 23 Z"
+                fill="#3b82f6"/>
+          <path d="M1 7 H31 V10 H1 Z" fill="#60a5fa" opacity=".65"/>
+        </g>
+<text x="209" y="314" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="17" font-weight="700" fill="#0f172a">images/</text>
+<line x1="153" y1="316" x2="153" y2="346" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="153" y1="343" x2="163" y2="343" stroke="#cbd5e1" stroke-width="1.2"/>
+
+        <g transform="translate(170,330)">
+          <path d="M0 4 Q0 1 3 1 H10 L14 5 H29 Q32 5 32 8 V23 Q32 26 29 26 H3 Q0 26 0 23 Z"
+                fill="#3b82f6"/>
+          <path d="M1 7 H31 V10 H1 Z" fill="#60a5fa" opacity=".65"/>
+        </g>
+<text x="209" y="349" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="17" font-weight="700" fill="#0f172a">icons/</text>
+<line x1="153" y1="351" x2="153" y2="381" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="153" y1="378" x2="163" y2="378" stroke="#cbd5e1" stroke-width="1.2"/>
+
+      <g transform="translate(170,365)">
+        <rect x="0" y="0" width="27" height="27" rx="5" fill="#94a3b8"/>
+        <text x="13.5" y="18" text-anchor="middle" font-size="9.5" font-weight="700" fill="white"
+              font-family="Arial, Helvetica, sans-serif"></text>
+      </g>
+<text x="209" y="384" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="17" font-weight="500" fill="#0f172a">...</text>
+<line x1="123" y1="386" x2="123" y2="416" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="123" y1="413" x2="133" y2="413" stroke="#cbd5e1" stroke-width="1.2"/>
+
+        <g transform="translate(140,400)">
+          <path d="M0 4 Q0 1 3 1 H10 L14 5 H29 Q32 5 32 8 V23 Q32 26 29 26 H3 Q0 26 0 23 Z"
+                fill="#3b82f6"/>
+          <path d="M1 7 H31 V10 H1 Z" fill="#60a5fa" opacity=".65"/>
+        </g>
+<text x="179" y="419" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="17" font-weight="700" fill="#0f172a">src/</text>
+<line x1="153" y1="421" x2="153" y2="451" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="153" y1="448" x2="163" y2="448" stroke="#cbd5e1" stroke-width="1.2"/>
+
+        <g transform="translate(170,435)">
+          <path d="M0 4 Q0 1 3 1 H10 L14 5 H29 Q32 5 32 8 V23 Q32 26 29 26 H3 Q0 26 0 23 Z"
+                fill="#3b82f6"/>
+          <path d="M1 7 H31 V10 H1 Z" fill="#60a5fa" opacity=".65"/>
+        </g>
+<text x="209" y="454" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="17" font-weight="700" fill="#0f172a">app/</text>
+<line x1="183" y1="456" x2="183" y2="486" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="183" y1="483" x2="193" y2="483" stroke="#cbd5e1" stroke-width="1.2"/>
+
+      <g transform="translate(200,470)">
+        <rect x="0" y="0" width="27" height="27" rx="5" fill="#0ea5e9"/>
+        <text x="13.5" y="18" text-anchor="middle" font-size="9.5" font-weight="700" fill="white"
+              font-family="Arial, Helvetica, sans-serif">TSX</text>
+      </g>
+<text x="239" y="489" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="17" font-weight="500" fill="#0f172a">layout.tsx</text>
+<line x1="183" y1="491" x2="183" y2="521" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="183" y1="518" x2="193" y2="518" stroke="#cbd5e1" stroke-width="1.2"/>
+
+      <g transform="translate(200,505)">
+        <rect x="0" y="0" width="27" height="27" rx="5" fill="#2563eb"/>
+        <text x="13.5" y="18" text-anchor="middle" font-size="9.5" font-weight="700" fill="white"
+              font-family="Arial, Helvetica, sans-serif">CSS</text>
+      </g>
+<text x="239" y="524" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="17" font-weight="500" fill="#0f172a">globals.css</text>
+<line x1="183" y1="526" x2="183" y2="556" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="183" y1="553" x2="193" y2="553" stroke="#cbd5e1" stroke-width="1.2"/>
+
+        <g transform="translate(200,540)">
+          <path d="M0 4 Q0 1 3 1 H10 L14 5 H29 Q32 5 32 8 V23 Q32 26 29 26 H3 Q0 26 0 23 Z"
+                fill="#3b82f6"/>
+          <path d="M1 7 H31 V10 H1 Z" fill="#60a5fa" opacity=".65"/>
+        </g>
+<text x="239" y="559" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="17" font-weight="700" fill="#0f172a">(auth)/</text>
+<line x1="213" y1="561" x2="213" y2="591" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="213" y1="588" x2="223" y2="588" stroke="#cbd5e1" stroke-width="1.2"/>
+
+        <g transform="translate(230,575)">
+          <path d="M0 4 Q0 1 3 1 H10 L14 5 H29 Q32 5 32 8 V23 Q32 26 29 26 H3 Q0 26 0 23 Z"
+                fill="#3b82f6"/>
+          <path d="M1 7 H31 V10 H1 Z" fill="#60a5fa" opacity=".65"/>
+        </g>
+<text x="269" y="594" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="17" font-weight="700" fill="#0f172a">login/</text>
+<line x1="243" y1="596" x2="243" y2="626" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="243" y1="623" x2="253" y2="623" stroke="#cbd5e1" stroke-width="1.2"/>
+
+      <g transform="translate(260,610)">
+        <rect x="0" y="0" width="27" height="27" rx="5" fill="#0ea5e9"/>
+        <text x="13.5" y="18" text-anchor="middle" font-size="9.5" font-weight="700" fill="white"
+              font-family="Arial, Helvetica, sans-serif">TSX</text>
+      </g>
+<text x="299" y="629" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="17" font-weight="500" fill="#0f172a">page.tsx</text>
+<line x1="213" y1="631" x2="213" y2="661" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="213" y1="658" x2="223" y2="658" stroke="#cbd5e1" stroke-width="1.2"/>
+
+        <g transform="translate(230,645)">
+          <path d="M0 4 Q0 1 3 1 H10 L14 5 H29 Q32 5 32 8 V23 Q32 26 29 26 H3 Q0 26 0 23 Z"
+                fill="#3b82f6"/>
+          <path d="M1 7 H31 V10 H1 Z" fill="#60a5fa" opacity=".65"/>
+        </g>
+<text x="269" y="664" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="17" font-weight="700" fill="#0f172a">register/</text>
+<line x1="243" y1="666" x2="243" y2="696" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="243" y1="693" x2="253" y2="693" stroke="#cbd5e1" stroke-width="1.2"/>
+
+      <g transform="translate(260,680)">
+        <rect x="0" y="0" width="27" height="27" rx="5" fill="#0ea5e9"/>
+        <text x="13.5" y="18" text-anchor="middle" font-size="9.5" font-weight="700" fill="white"
+              font-family="Arial, Helvetica, sans-serif">TSX</text>
+      </g>
+<text x="299" y="699" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="17" font-weight="500" fill="#0f172a">page.tsx</text>
+<line x1="183" y1="701" x2="183" y2="731" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="183" y1="728" x2="193" y2="728" stroke="#cbd5e1" stroke-width="1.2"/>
+
+        <g transform="translate(200,715)">
+          <path d="M0 4 Q0 1 3 1 H10 L14 5 H29 Q32 5 32 8 V23 Q32 26 29 26 H3 Q0 26 0 23 Z"
+                fill="#3b82f6"/>
+          <path d="M1 7 H31 V10 H1 Z" fill="#60a5fa" opacity=".65"/>
+        </g>
+<text x="239" y="734" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="17" font-weight="700" fill="#0f172a">(main)/</text>
+<line x1="213" y1="736" x2="213" y2="766" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="213" y1="763" x2="223" y2="763" stroke="#cbd5e1" stroke-width="1.2"/>
+
+      <g transform="translate(230,750)">
+        <rect x="0" y="0" width="27" height="27" rx="5" fill="#0ea5e9"/>
+        <text x="13.5" y="18" text-anchor="middle" font-size="9.5" font-weight="700" fill="white"
+              font-family="Arial, Helvetica, sans-serif">TSX</text>
+      </g>
+<text x="269" y="769" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="17" font-weight="500" fill="#0f172a">layout.tsx</text>
+<line x1="213" y1="771" x2="213" y2="801" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="213" y1="798" x2="223" y2="798" stroke="#cbd5e1" stroke-width="1.2"/>
+
+      <g transform="translate(230,785)">
+        <rect x="0" y="0" width="27" height="27" rx="5" fill="#0ea5e9"/>
+        <text x="13.5" y="18" text-anchor="middle" font-size="9.5" font-weight="700" fill="white"
+              font-family="Arial, Helvetica, sans-serif">TSX</text>
+      </g>
+<text x="269" y="804" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="17" font-weight="500" fill="#0f172a">page.tsx</text>
+<line x1="213" y1="806" x2="213" y2="836" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="213" y1="833" x2="223" y2="833" stroke="#cbd5e1" stroke-width="1.2"/>
+
+        <g transform="translate(230,820)">
+          <path d="M0 4 Q0 1 3 1 H10 L14 5 H29 Q32 5 32 8 V23 Q32 26 29 26 H3 Q0 26 0 23 Z"
+                fill="#3b82f6"/>
+          <path d="M1 7 H31 V10 H1 Z" fill="#60a5fa" opacity=".65"/>
+        </g>
+<text x="269" y="839" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="17" font-weight="700" fill="#0f172a">profile/</text>
+<line x1="243" y1="841" x2="243" y2="871" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="243" y1="868" x2="253" y2="868" stroke="#cbd5e1" stroke-width="1.2"/>
+
+        <g transform="translate(260,855)">
+          <path d="M0 4 Q0 1 3 1 H10 L14 5 H29 Q32 5 32 8 V23 Q32 26 29 26 H3 Q0 26 0 23 Z"
+                fill="#3b82f6"/>
+          <path d="M1 7 H31 V10 H1 Z" fill="#60a5fa" opacity=".65"/>
+        </g>
+<text x="299" y="874" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="17" font-weight="700" fill="#0f172a">[userId]/</text>
+<line x1="273" y1="876" x2="273" y2="906" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="273" y1="903" x2="283" y2="903" stroke="#cbd5e1" stroke-width="1.2"/>
+
+      <g transform="translate(290,890)">
+        <rect x="0" y="0" width="27" height="27" rx="5" fill="#0ea5e9"/>
+        <text x="13.5" y="18" text-anchor="middle" font-size="9.5" font-weight="700" fill="white"
+              font-family="Arial, Helvetica, sans-serif">TSX</text>
+      </g>
+<text x="329" y="909" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="17" font-weight="500" fill="#0f172a">page.tsx</text>
+<line x1="213" y1="911" x2="213" y2="941" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="213" y1="938" x2="223" y2="938" stroke="#cbd5e1" stroke-width="1.2"/>
+
+        <g transform="translate(230,925)">
+          <path d="M0 4 Q0 1 3 1 H10 L14 5 H29 Q32 5 32 8 V23 Q32 26 29 26 H3 Q0 26 0 23 Z"
+                fill="#3b82f6"/>
+          <path d="M1 7 H31 V10 H1 Z" fill="#60a5fa" opacity=".65"/>
+        </g>
+<text x="269" y="944" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="17" font-weight="700" fill="#0f172a">groups/</text>
+<line x1="243" y1="946" x2="243" y2="976" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="243" y1="973" x2="253" y2="973" stroke="#cbd5e1" stroke-width="1.2"/>
+
+      <g transform="translate(260,960)">
+        <rect x="0" y="0" width="27" height="27" rx="5" fill="#0ea5e9"/>
+        <text x="13.5" y="18" text-anchor="middle" font-size="9.5" font-weight="700" fill="white"
+              font-family="Arial, Helvetica, sans-serif">TSX</text>
+      </g>
+<text x="299" y="979" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="17" font-weight="500" fill="#0f172a">page.tsx</text>
+<line x1="243" y1="981" x2="243" y2="1011" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="243" y1="1008" x2="253" y2="1008" stroke="#cbd5e1" stroke-width="1.2"/>
+
+        <g transform="translate(260,995)">
+          <path d="M0 4 Q0 1 3 1 H10 L14 5 H29 Q32 5 32 8 V23 Q32 26 29 26 H3 Q0 26 0 23 Z"
+                fill="#3b82f6"/>
+          <path d="M1 7 H31 V10 H1 Z" fill="#60a5fa" opacity=".65"/>
+        </g>
+<text x="299" y="1014" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="17" font-weight="700" fill="#0f172a">[groupId]/</text>
+<line x1="273" y1="1016" x2="273" y2="1046" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="273" y1="1043" x2="283" y2="1043" stroke="#cbd5e1" stroke-width="1.2"/>
+
+      <g transform="translate(290,1030)">
+        <rect x="0" y="0" width="27" height="27" rx="5" fill="#0ea5e9"/>
+        <text x="13.5" y="18" text-anchor="middle" font-size="9.5" font-weight="700" fill="white"
+              font-family="Arial, Helvetica, sans-serif">TSX</text>
+      </g>
+<text x="329" y="1049" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="17" font-weight="500" fill="#0f172a">page.tsx</text>
+<line x1="213" y1="1051" x2="213" y2="1081" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="213" y1="1078" x2="223" y2="1078" stroke="#cbd5e1" stroke-width="1.2"/>
+
+        <g transform="translate(230,1065)">
+          <path d="M0 4 Q0 1 3 1 H10 L14 5 H29 Q32 5 32 8 V23 Q32 26 29 26 H3 Q0 26 0 23 Z"
+                fill="#3b82f6"/>
+          <path d="M1 7 H31 V10 H1 Z" fill="#60a5fa" opacity=".65"/>
+        </g>
+<text x="269" y="1084" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="17" font-weight="700" fill="#0f172a">chat/</text>
+<line x1="243" y1="1086" x2="243" y2="1116" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="243" y1="1113" x2="253" y2="1113" stroke="#cbd5e1" stroke-width="1.2"/>
+
+      <g transform="translate(260,1100)">
+        <rect x="0" y="0" width="27" height="27" rx="5" fill="#0ea5e9"/>
+        <text x="13.5" y="18" text-anchor="middle" font-size="9.5" font-weight="700" fill="white"
+              font-family="Arial, Helvetica, sans-serif">TSX</text>
+      </g>
+<text x="299" y="1119" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="17" font-weight="500" fill="#0f172a">page.tsx</text>
+<line x1="243" y1="1121" x2="243" y2="1151" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="243" y1="1148" x2="253" y2="1148" stroke="#cbd5e1" stroke-width="1.2"/>
+
+        <g transform="translate(260,1135)">
+          <path d="M0 4 Q0 1 3 1 H10 L14 5 H29 Q32 5 32 8 V23 Q32 26 29 26 H3 Q0 26 0 23 Z"
+                fill="#3b82f6"/>
+          <path d="M1 7 H31 V10 H1 Z" fill="#60a5fa" opacity=".65"/>
+        </g>
+<text x="299" y="1154" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="17" font-weight="700" fill="#0f172a">[userId]/</text>
+<line x1="273" y1="1156" x2="273" y2="1186" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="273" y1="1183" x2="283" y2="1183" stroke="#cbd5e1" stroke-width="1.2"/>
+
+      <g transform="translate(290,1170)">
+        <rect x="0" y="0" width="27" height="27" rx="5" fill="#0ea5e9"/>
+        <text x="13.5" y="18" text-anchor="middle" font-size="9.5" font-weight="700" fill="white"
+              font-family="Arial, Helvetica, sans-serif">TSX</text>
+      </g>
+<text x="329" y="1189" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="17" font-weight="500" fill="#0f172a">page.tsx</text>
+<line x1="153" y1="1191" x2="153" y2="1221" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="153" y1="1218" x2="163" y2="1218" stroke="#cbd5e1" stroke-width="1.2"/>
+
+        <g transform="translate(170,1205)">
+          <path d="M0 4 Q0 1 3 1 H10 L14 5 H29 Q32 5 32 8 V23 Q32 26 29 26 H3 Q0 26 0 23 Z"
+                fill="#3b82f6"/>
+          <path d="M1 7 H31 V10 H1 Z" fill="#60a5fa" opacity=".65"/>
+        </g>
+<text x="209" y="1224" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="17" font-weight="700" fill="#0f172a">features/</text>
+<line x1="183" y1="1226" x2="183" y2="1256" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="183" y1="1253" x2="193" y2="1253" stroke="#cbd5e1" stroke-width="1.2"/>
+
+        <g transform="translate(200,1240)">
+          <path d="M0 4 Q0 1 3 1 H10 L14 5 H29 Q32 5 32 8 V23 Q32 26 29 26 H3 Q0 26 0 23 Z"
+                fill="#3b82f6"/>
+          <path d="M1 7 H31 V10 H1 Z" fill="#60a5fa" opacity=".65"/>
+        </g>
+<text x="239" y="1259" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="17" font-weight="700" fill="#0f172a">auth/</text>
+<line x1="183" y1="1261" x2="183" y2="1291" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="183" y1="1288" x2="193" y2="1288" stroke="#cbd5e1" stroke-width="1.2"/>
+
+        <g transform="translate(200,1275)">
+          <path d="M0 4 Q0 1 3 1 H10 L14 5 H29 Q32 5 32 8 V23 Q32 26 29 26 H3 Q0 26 0 23 Z"
+                fill="#3b82f6"/>
+          <path d="M1 7 H31 V10 H1 Z" fill="#60a5fa" opacity=".65"/>
+        </g>
+<text x="239" y="1294" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="17" font-weight="700" fill="#0f172a">posts/</text>
+<line x1="183" y1="1296" x2="183" y2="1326" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="183" y1="1323" x2="193" y2="1323" stroke="#cbd5e1" stroke-width="1.2"/>
+
+        <g transform="translate(200,1310)">
+          <path d="M0 4 Q0 1 3 1 H10 L14 5 H29 Q32 5 32 8 V23 Q32 26 29 26 H3 Q0 26 0 23 Z"
+                fill="#3b82f6"/>
+          <path d="M1 7 H31 V10 H1 Z" fill="#60a5fa" opacity=".65"/>
+        </g>
+<text x="239" y="1329" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="17" font-weight="700" fill="#0f172a">profile/</text>
+<line x1="183" y1="1331" x2="183" y2="1361" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="183" y1="1358" x2="193" y2="1358" stroke="#cbd5e1" stroke-width="1.2"/>
+
+        <g transform="translate(200,1345)">
+          <path d="M0 4 Q0 1 3 1 H10 L14 5 H29 Q32 5 32 8 V23 Q32 26 29 26 H3 Q0 26 0 23 Z"
+                fill="#3b82f6"/>
+          <path d="M1 7 H31 V10 H1 Z" fill="#60a5fa" opacity=".65"/>
+        </g>
+<text x="239" y="1364" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="17" font-weight="700" fill="#0f172a">followers/</text>
+<line x1="183" y1="1366" x2="183" y2="1396" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="183" y1="1393" x2="193" y2="1393" stroke="#cbd5e1" stroke-width="1.2"/>
+
+        <g transform="translate(200,1380)">
+          <path d="M0 4 Q0 1 3 1 H10 L14 5 H29 Q32 5 32 8 V23 Q32 26 29 26 H3 Q0 26 0 23 Z"
+                fill="#3b82f6"/>
+          <path d="M1 7 H31 V10 H1 Z" fill="#60a5fa" opacity=".65"/>
+        </g>
+<text x="239" y="1399" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="17" font-weight="700" fill="#0f172a">groups/</text>
+<line x1="183" y1="1401" x2="183" y2="1431" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="183" y1="1428" x2="193" y2="1428" stroke="#cbd5e1" stroke-width="1.2"/>
+
+        <g transform="translate(200,1415)">
+          <path d="M0 4 Q0 1 3 1 H10 L14 5 H29 Q32 5 32 8 V23 Q32 26 29 26 H3 Q0 26 0 23 Z"
+                fill="#3b82f6"/>
+          <path d="M1 7 H31 V10 H1 Z" fill="#60a5fa" opacity=".65"/>
+        </g>
+<text x="239" y="1434" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="17" font-weight="700" fill="#0f172a">events/</text>
+<line x1="183" y1="1436" x2="183" y2="1466" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="183" y1="1463" x2="193" y2="1463" stroke="#cbd5e1" stroke-width="1.2"/>
+
+        <g transform="translate(200,1450)">
+          <path d="M0 4 Q0 1 3 1 H10 L14 5 H29 Q32 5 32 8 V23 Q32 26 29 26 H3 Q0 26 0 23 Z"
+                fill="#3b82f6"/>
+          <path d="M1 7 H31 V10 H1 Z" fill="#60a5fa" opacity=".65"/>
+        </g>
+<text x="239" y="1469" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="17" font-weight="700" fill="#0f172a">chat/</text>
+<line x1="183" y1="1471" x2="183" y2="1501" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="183" y1="1498" x2="193" y2="1498" stroke="#cbd5e1" stroke-width="1.2"/>
+
+        <g transform="translate(200,1485)">
+          <path d="M0 4 Q0 1 3 1 H10 L14 5 H29 Q32 5 32 8 V23 Q32 26 29 26 H3 Q0 26 0 23 Z"
+                fill="#3b82f6"/>
+          <path d="M1 7 H31 V10 H1 Z" fill="#60a5fa" opacity=".65"/>
+        </g>
+<text x="239" y="1504" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="17" font-weight="700" fill="#0f172a">notifications/</text>
+<line x1="153" y1="1506" x2="153" y2="1536" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="153" y1="1533" x2="163" y2="1533" stroke="#cbd5e1" stroke-width="1.2"/>
+
+        <g transform="translate(170,1520)">
+          <path d="M0 4 Q0 1 3 1 H10 L14 5 H29 Q32 5 32 8 V23 Q32 26 29 26 H3 Q0 26 0 23 Z"
+                fill="#3b82f6"/>
+          <path d="M1 7 H31 V10 H1 Z" fill="#60a5fa" opacity=".65"/>
+        </g>
+<text x="209" y="1539" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="17" font-weight="700" fill="#0f172a">components/</text>
+<line x1="153" y1="1541" x2="153" y2="1571" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="153" y1="1568" x2="163" y2="1568" stroke="#cbd5e1" stroke-width="1.2"/>
+
+        <g transform="translate(170,1555)">
+          <path d="M0 4 Q0 1 3 1 H10 L14 5 H29 Q32 5 32 8 V23 Q32 26 29 26 H3 Q0 26 0 23 Z"
+                fill="#3b82f6"/>
+          <path d="M1 7 H31 V10 H1 Z" fill="#60a5fa" opacity=".65"/>
+        </g>
+<text x="209" y="1574" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="17" font-weight="700" fill="#0f172a">lib/</text>
+<line x1="153" y1="1576" x2="153" y2="1606" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="153" y1="1603" x2="163" y2="1603" stroke="#cbd5e1" stroke-width="1.2"/>
+
+        <g transform="translate(170,1590)">
+          <path d="M0 4 Q0 1 3 1 H10 L14 5 H29 Q32 5 32 8 V23 Q32 26 29 26 H3 Q0 26 0 23 Z"
+                fill="#3b82f6"/>
+          <path d="M1 7 H31 V10 H1 Z" fill="#60a5fa" opacity=".65"/>
+        </g>
+<text x="209" y="1609" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="17" font-weight="700" fill="#0f172a">providers/</text>
+<line x1="153" y1="1611" x2="153" y2="1641" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="153" y1="1638" x2="163" y2="1638" stroke="#cbd5e1" stroke-width="1.2"/>
+
+        <g transform="translate(170,1625)">
+          <path d="M0 4 Q0 1 3 1 H10 L14 5 H29 Q32 5 32 8 V23 Q32 26 29 26 H3 Q0 26 0 23 Z"
+                fill="#3b82f6"/>
+          <path d="M1 7 H31 V10 H1 Z" fill="#60a5fa" opacity=".65"/>
+        </g>
+<text x="209" y="1644" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="17" font-weight="700" fill="#0f172a">types/</text>
+<line x1="123" y1="1646" x2="123" y2="1676" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="123" y1="1673" x2="133" y2="1673" stroke="#cbd5e1" stroke-width="1.2"/>
+
+      <g transform="translate(140,1660)">
+        <rect x="0" y="0" width="27" height="27" rx="5" fill="#16a34a"/>
+        <text x="13.5" y="18" text-anchor="middle" font-size="9.5" font-weight="700" fill="white"
+              font-family="Arial, Helvetica, sans-serif">●</text>
+      </g>
+<text x="179" y="1679" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="17" font-weight="500" fill="#0f172a">.env.local</text>
+<line x1="123" y1="1681" x2="123" y2="1711" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="123" y1="1708" x2="133" y2="1708" stroke="#cbd5e1" stroke-width="1.2"/>
+
+      <g transform="translate(140,1695)">
+        <rect x="0" y="0" width="27" height="27" rx="5" fill="#2563eb"/>
+        <text x="13.5" y="18" text-anchor="middle" font-size="9.5" font-weight="700" fill="white"
+              font-family="Arial, Helvetica, sans-serif">TS</text>
+      </g>
+<text x="179" y="1714" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="17" font-weight="500" fill="#0f172a">next.config.ts</text>
+<line x1="123" y1="1716" x2="123" y2="1746" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="123" y1="1743" x2="133" y2="1743" stroke="#cbd5e1" stroke-width="1.2"/>
+
+      <g transform="translate(140,1730)">
+        <rect x="0" y="0" width="27" height="27" rx="5" fill="#16a34a"/>
+        <text x="13.5" y="18" text-anchor="middle" font-size="9.5" font-weight="700" fill="white"
+              font-family="Arial, Helvetica, sans-serif">{}</text>
+      </g>
+<text x="179" y="1749" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="17" font-weight="500" fill="#0f172a">package.json</text>
+<line x1="123" y1="1751" x2="123" y2="1781" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="123" y1="1778" x2="133" y2="1778" stroke="#cbd5e1" stroke-width="1.2"/>
+
+      <g transform="translate(140,1765)">
+        <rect x="0" y="0" width="27" height="27" rx="5" fill="#2563eb"/>
+        <text x="13.5" y="18" text-anchor="middle" font-size="9.5" font-weight="700" fill="white"
+              font-family="Arial, Helvetica, sans-serif">TS</text>
+      </g>
+<text x="179" y="1784" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="17" font-weight="500" fill="#0f172a">tsconfig.json</text>
+  
+        <g transform="translate(830,225)">
+          <path d="M0 4 Q0 1 3 1 H10 L14 5 H29 Q32 5 32 8 V23 Q32 26 29 26 H3 Q0 26 0 23 Z"
+                fill="#3b82f6"/>
+          <path d="M1 7 H31 V10 H1 Z" fill="#60a5fa" opacity=".65"/>
+        </g>
+<text x="869" y="244" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="700" fill="#0f172a">features/</text>
+<line x1="843" y1="239" x2="843" y2="269" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="843" y1="266" x2="850" y2="266" stroke="#cbd5e1" stroke-width="1.2"/>
+
+        <g transform="translate(857,253)">
+          <path d="M0 4 Q0 1 3 1 H10 L14 5 H29 Q32 5 32 8 V23 Q32 26 29 26 H3 Q0 26 0 23 Z"
+                fill="#3b82f6"/>
+          <path d="M1 7 H31 V10 H1 Z" fill="#60a5fa" opacity=".65"/>
+        </g>
+<text x="896" y="272" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="700" fill="#0f172a">auth/</text>
+<line x1="870" y1="267" x2="870" y2="297" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="870" y1="294" x2="877" y2="294" stroke="#cbd5e1" stroke-width="1.2"/>
+
+        <g transform="translate(884,281)">
+          <path d="M0 4 Q0 1 3 1 H10 L14 5 H29 Q32 5 32 8 V23 Q32 26 29 26 H3 Q0 26 0 23 Z"
+                fill="#3b82f6"/>
+          <path d="M1 7 H31 V10 H1 Z" fill="#60a5fa" opacity=".65"/>
+        </g>
+<text x="923" y="300" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="700" fill="#0f172a">api/</text>
+<line x1="897" y1="295" x2="897" y2="325" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="897" y1="322" x2="904" y2="322" stroke="#cbd5e1" stroke-width="1.2"/>
+
+      <g transform="translate(911,309)">
+        <rect x="0" y="0" width="27" height="27" rx="5" fill="#2563eb"/>
+        <text x="13.5" y="18" text-anchor="middle" font-size="9.5" font-weight="700" fill="white"
+              font-family="Arial, Helvetica, sans-serif">TS</text>
+      </g>
+<text x="950" y="328" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="500" fill="#0f172a">login.ts</text>
+<line x1="897" y1="323" x2="897" y2="353" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="897" y1="350" x2="904" y2="350" stroke="#cbd5e1" stroke-width="1.2"/>
+
+      <g transform="translate(911,337)">
+        <rect x="0" y="0" width="27" height="27" rx="5" fill="#2563eb"/>
+        <text x="13.5" y="18" text-anchor="middle" font-size="9.5" font-weight="700" fill="white"
+              font-family="Arial, Helvetica, sans-serif">TS</text>
+      </g>
+<text x="950" y="356" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="500" fill="#0f172a">register.ts</text>
+<line x1="897" y1="351" x2="897" y2="381" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="897" y1="378" x2="904" y2="378" stroke="#cbd5e1" stroke-width="1.2"/>
+
+      <g transform="translate(911,365)">
+        <rect x="0" y="0" width="27" height="27" rx="5" fill="#2563eb"/>
+        <text x="13.5" y="18" text-anchor="middle" font-size="9.5" font-weight="700" fill="white"
+              font-family="Arial, Helvetica, sans-serif">TS</text>
+      </g>
+<text x="950" y="384" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="500" fill="#0f172a">logout.ts</text>
+<line x1="897" y1="379" x2="897" y2="409" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="897" y1="406" x2="904" y2="406" stroke="#cbd5e1" stroke-width="1.2"/>
+
+      <g transform="translate(911,393)">
+        <rect x="0" y="0" width="27" height="27" rx="5" fill="#2563eb"/>
+        <text x="13.5" y="18" text-anchor="middle" font-size="9.5" font-weight="700" fill="white"
+              font-family="Arial, Helvetica, sans-serif">TS</text>
+      </g>
+<text x="950" y="412" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="500" fill="#0f172a">getCurrentUser.ts</text>
+<line x1="870" y1="407" x2="870" y2="437" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="870" y1="434" x2="877" y2="434" stroke="#cbd5e1" stroke-width="1.2"/>
+
+        <g transform="translate(884,421)">
+          <path d="M0 4 Q0 1 3 1 H10 L14 5 H29 Q32 5 32 8 V23 Q32 26 29 26 H3 Q0 26 0 23 Z"
+                fill="#3b82f6"/>
+          <path d="M1 7 H31 V10 H1 Z" fill="#60a5fa" opacity=".65"/>
+        </g>
+<text x="923" y="440" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="700" fill="#0f172a">components/</text>
+<line x1="897" y1="435" x2="897" y2="465" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="897" y1="462" x2="904" y2="462" stroke="#cbd5e1" stroke-width="1.2"/>
+
+      <g transform="translate(911,449)">
+        <rect x="0" y="0" width="27" height="27" rx="5" fill="#0ea5e9"/>
+        <text x="13.5" y="18" text-anchor="middle" font-size="9.5" font-weight="700" fill="white"
+              font-family="Arial, Helvetica, sans-serif">TSX</text>
+      </g>
+<text x="950" y="468" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="500" fill="#0f172a">LoginForm.tsx</text>
+<line x1="897" y1="463" x2="897" y2="493" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="897" y1="490" x2="904" y2="490" stroke="#cbd5e1" stroke-width="1.2"/>
+
+      <g transform="translate(911,477)">
+        <rect x="0" y="0" width="27" height="27" rx="5" fill="#0ea5e9"/>
+        <text x="13.5" y="18" text-anchor="middle" font-size="9.5" font-weight="700" fill="white"
+              font-family="Arial, Helvetica, sans-serif">TSX</text>
+      </g>
+<text x="950" y="496" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="500" fill="#0f172a">RegisterForm.tsx</text>
+<line x1="870" y1="491" x2="870" y2="521" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="870" y1="518" x2="877" y2="518" stroke="#cbd5e1" stroke-width="1.2"/>
+
+        <g transform="translate(884,505)">
+          <path d="M0 4 Q0 1 3 1 H10 L14 5 H29 Q32 5 32 8 V23 Q32 26 29 26 H3 Q0 26 0 23 Z"
+                fill="#3b82f6"/>
+          <path d="M1 7 H31 V10 H1 Z" fill="#60a5fa" opacity=".65"/>
+        </g>
+<text x="923" y="524" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="700" fill="#0f172a">hooks/</text>
+<line x1="897" y1="519" x2="897" y2="549" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="897" y1="546" x2="904" y2="546" stroke="#cbd5e1" stroke-width="1.2"/>
+
+      <g transform="translate(911,533)">
+        <rect x="0" y="0" width="27" height="27" rx="5" fill="#2563eb"/>
+        <text x="13.5" y="18" text-anchor="middle" font-size="9.5" font-weight="700" fill="white"
+              font-family="Arial, Helvetica, sans-serif">TS</text>
+      </g>
+<text x="950" y="552" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="500" fill="#0f172a">useAuth.ts</text>
+<line x1="870" y1="547" x2="870" y2="577" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="870" y1="574" x2="877" y2="574" stroke="#cbd5e1" stroke-width="1.2"/>
+
+        <g transform="translate(884,561)">
+          <path d="M0 4 Q0 1 3 1 H10 L14 5 H29 Q32 5 32 8 V23 Q32 26 29 26 H3 Q0 26 0 23 Z"
+                fill="#3b82f6"/>
+          <path d="M1 7 H31 V10 H1 Z" fill="#60a5fa" opacity=".65"/>
+        </g>
+<text x="923" y="580" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="700" fill="#0f172a">types/</text>
+<line x1="897" y1="575" x2="897" y2="605" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="897" y1="602" x2="904" y2="602" stroke="#cbd5e1" stroke-width="1.2"/>
+
+      <g transform="translate(911,589)">
+        <rect x="0" y="0" width="27" height="27" rx="5" fill="#2563eb"/>
+        <text x="13.5" y="18" text-anchor="middle" font-size="9.5" font-weight="700" fill="white"
+              font-family="Arial, Helvetica, sans-serif">TS</text>
+      </g>
+<text x="950" y="608" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="500" fill="#0f172a">auth.ts</text>
+<line x1="843" y1="603" x2="843" y2="633" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="843" y1="630" x2="850" y2="630" stroke="#cbd5e1" stroke-width="1.2"/>
+
+        <g transform="translate(857,617)">
+          <path d="M0 4 Q0 1 3 1 H10 L14 5 H29 Q32 5 32 8 V23 Q32 26 29 26 H3 Q0 26 0 23 Z"
+                fill="#3b82f6"/>
+          <path d="M1 7 H31 V10 H1 Z" fill="#60a5fa" opacity=".65"/>
+        </g>
+<text x="896" y="636" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="700" fill="#0f172a">posts/</text>
+<line x1="870" y1="631" x2="870" y2="661" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="870" y1="658" x2="877" y2="658" stroke="#cbd5e1" stroke-width="1.2"/>
+
+        <g transform="translate(884,645)">
+          <path d="M0 4 Q0 1 3 1 H10 L14 5 H29 Q32 5 32 8 V23 Q32 26 29 26 H3 Q0 26 0 23 Z"
+                fill="#3b82f6"/>
+          <path d="M1 7 H31 V10 H1 Z" fill="#60a5fa" opacity=".65"/>
+        </g>
+<text x="923" y="664" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="700" fill="#0f172a">api/</text>
+<line x1="897" y1="659" x2="897" y2="689" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="897" y1="686" x2="904" y2="686" stroke="#cbd5e1" stroke-width="1.2"/>
+
+      <g transform="translate(911,673)">
+        <rect x="0" y="0" width="27" height="27" rx="5" fill="#2563eb"/>
+        <text x="13.5" y="18" text-anchor="middle" font-size="9.5" font-weight="700" fill="white"
+              font-family="Arial, Helvetica, sans-serif">TS</text>
+      </g>
+<text x="950" y="692" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="500" fill="#0f172a">createPost.ts</text>
+<line x1="897" y1="687" x2="897" y2="717" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="897" y1="714" x2="904" y2="714" stroke="#cbd5e1" stroke-width="1.2"/>
+
+      <g transform="translate(911,701)">
+        <rect x="0" y="0" width="27" height="27" rx="5" fill="#2563eb"/>
+        <text x="13.5" y="18" text-anchor="middle" font-size="9.5" font-weight="700" fill="white"
+              font-family="Arial, Helvetica, sans-serif">TS</text>
+      </g>
+<text x="950" y="720" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="500" fill="#0f172a">getPosts.ts</text>
+<line x1="897" y1="715" x2="897" y2="745" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="897" y1="742" x2="904" y2="742" stroke="#cbd5e1" stroke-width="1.2"/>
+
+      <g transform="translate(911,729)">
+        <rect x="0" y="0" width="27" height="27" rx="5" fill="#2563eb"/>
+        <text x="13.5" y="18" text-anchor="middle" font-size="9.5" font-weight="700" fill="white"
+              font-family="Arial, Helvetica, sans-serif">TS</text>
+      </g>
+<text x="950" y="748" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="500" fill="#0f172a">getPost.ts</text>
+<line x1="897" y1="743" x2="897" y2="773" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="897" y1="770" x2="904" y2="770" stroke="#cbd5e1" stroke-width="1.2"/>
+
+      <g transform="translate(911,757)">
+        <rect x="0" y="0" width="27" height="27" rx="5" fill="#2563eb"/>
+        <text x="13.5" y="18" text-anchor="middle" font-size="9.5" font-weight="700" fill="white"
+              font-family="Arial, Helvetica, sans-serif">TS</text>
+      </g>
+<text x="950" y="776" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="500" fill="#0f172a">createComment.ts</text>
+<line x1="870" y1="771" x2="870" y2="801" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="870" y1="798" x2="877" y2="798" stroke="#cbd5e1" stroke-width="1.2"/>
+
+        <g transform="translate(884,785)">
+          <path d="M0 4 Q0 1 3 1 H10 L14 5 H29 Q32 5 32 8 V23 Q32 26 29 26 H3 Q0 26 0 23 Z"
+                fill="#3b82f6"/>
+          <path d="M1 7 H31 V10 H1 Z" fill="#60a5fa" opacity=".65"/>
+        </g>
+<text x="923" y="804" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="700" fill="#0f172a">components/</text>
+<line x1="897" y1="799" x2="897" y2="829" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="897" y1="826" x2="904" y2="826" stroke="#cbd5e1" stroke-width="1.2"/>
+
+      <g transform="translate(911,813)">
+        <rect x="0" y="0" width="27" height="27" rx="5" fill="#0ea5e9"/>
+        <text x="13.5" y="18" text-anchor="middle" font-size="9.5" font-weight="700" fill="white"
+              font-family="Arial, Helvetica, sans-serif">TSX</text>
+      </g>
+<text x="950" y="832" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="500" fill="#0f172a">Feed.tsx</text>
+<line x1="897" y1="827" x2="897" y2="857" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="897" y1="854" x2="904" y2="854" stroke="#cbd5e1" stroke-width="1.2"/>
+
+      <g transform="translate(911,841)">
+        <rect x="0" y="0" width="27" height="27" rx="5" fill="#0ea5e9"/>
+        <text x="13.5" y="18" text-anchor="middle" font-size="9.5" font-weight="700" fill="white"
+              font-family="Arial, Helvetica, sans-serif">TSX</text>
+      </g>
+<text x="950" y="860" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="500" fill="#0f172a">PostCard.tsx</text>
+<line x1="897" y1="855" x2="897" y2="885" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="897" y1="882" x2="904" y2="882" stroke="#cbd5e1" stroke-width="1.2"/>
+
+      <g transform="translate(911,869)">
+        <rect x="0" y="0" width="27" height="27" rx="5" fill="#0ea5e9"/>
+        <text x="13.5" y="18" text-anchor="middle" font-size="9.5" font-weight="700" fill="white"
+              font-family="Arial, Helvetica, sans-serif">TSX</text>
+      </g>
+<text x="950" y="888" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="500" fill="#0f172a">CreatePostForm.tsx</text>
+<line x1="897" y1="883" x2="897" y2="913" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="897" y1="910" x2="904" y2="910" stroke="#cbd5e1" stroke-width="1.2"/>
+
+      <g transform="translate(911,897)">
+        <rect x="0" y="0" width="27" height="27" rx="5" fill="#0ea5e9"/>
+        <text x="13.5" y="18" text-anchor="middle" font-size="9.5" font-weight="700" fill="white"
+              font-family="Arial, Helvetica, sans-serif">TSX</text>
+      </g>
+<text x="950" y="916" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="500" fill="#0f172a">PostPrivacySelector.tsx</text>
+<line x1="897" y1="911" x2="897" y2="941" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="897" y1="938" x2="904" y2="938" stroke="#cbd5e1" stroke-width="1.2"/>
+
+      <g transform="translate(911,925)">
+        <rect x="0" y="0" width="27" height="27" rx="5" fill="#0ea5e9"/>
+        <text x="13.5" y="18" text-anchor="middle" font-size="9.5" font-weight="700" fill="white"
+              font-family="Arial, Helvetica, sans-serif">TSX</text>
+      </g>
+<text x="950" y="944" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="500" fill="#0f172a">CommentsList.tsx</text>
+<line x1="897" y1="939" x2="897" y2="969" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="897" y1="966" x2="904" y2="966" stroke="#cbd5e1" stroke-width="1.2"/>
+
+      <g transform="translate(911,953)">
+        <rect x="0" y="0" width="27" height="27" rx="5" fill="#0ea5e9"/>
+        <text x="13.5" y="18" text-anchor="middle" font-size="9.5" font-weight="700" fill="white"
+              font-family="Arial, Helvetica, sans-serif">TSX</text>
+      </g>
+<text x="950" y="972" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="500" fill="#0f172a">CommentForm.tsx</text>
+<line x1="870" y1="967" x2="870" y2="997" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="870" y1="994" x2="877" y2="994" stroke="#cbd5e1" stroke-width="1.2"/>
+
+        <g transform="translate(884,981)">
+          <path d="M0 4 Q0 1 3 1 H10 L14 5 H29 Q32 5 32 8 V23 Q32 26 29 26 H3 Q0 26 0 23 Z"
+                fill="#3b82f6"/>
+          <path d="M1 7 H31 V10 H1 Z" fill="#60a5fa" opacity=".65"/>
+        </g>
+<text x="923" y="1000" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="700" fill="#0f172a">hooks/</text>
+<line x1="897" y1="995" x2="897" y2="1025" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="897" y1="1022" x2="904" y2="1022" stroke="#cbd5e1" stroke-width="1.2"/>
+
+      <g transform="translate(911,1009)">
+        <rect x="0" y="0" width="27" height="27" rx="5" fill="#2563eb"/>
+        <text x="13.5" y="18" text-anchor="middle" font-size="9.5" font-weight="700" fill="white"
+              font-family="Arial, Helvetica, sans-serif">TS</text>
+      </g>
+<text x="950" y="1028" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="500" fill="#0f172a">usePosts.ts</text>
+<line x1="897" y1="1023" x2="897" y2="1053" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="897" y1="1050" x2="904" y2="1050" stroke="#cbd5e1" stroke-width="1.2"/>
+
+      <g transform="translate(911,1037)">
+        <rect x="0" y="0" width="27" height="27" rx="5" fill="#2563eb"/>
+        <text x="13.5" y="18" text-anchor="middle" font-size="9.5" font-weight="700" fill="white"
+              font-family="Arial, Helvetica, sans-serif">TS</text>
+      </g>
+<text x="950" y="1056" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="500" fill="#0f172a">useComments.ts</text>
+<line x1="870" y1="1051" x2="870" y2="1081" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="870" y1="1078" x2="877" y2="1078" stroke="#cbd5e1" stroke-width="1.2"/>
+
+        <g transform="translate(884,1065)">
+          <path d="M0 4 Q0 1 3 1 H10 L14 5 H29 Q32 5 32 8 V23 Q32 26 29 26 H3 Q0 26 0 23 Z"
+                fill="#3b82f6"/>
+          <path d="M1 7 H31 V10 H1 Z" fill="#60a5fa" opacity=".65"/>
+        </g>
+<text x="923" y="1084" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="700" fill="#0f172a">types/</text>
+<line x1="897" y1="1079" x2="897" y2="1109" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="897" y1="1106" x2="904" y2="1106" stroke="#cbd5e1" stroke-width="1.2"/>
+
+      <g transform="translate(911,1093)">
+        <rect x="0" y="0" width="27" height="27" rx="5" fill="#2563eb"/>
+        <text x="13.5" y="18" text-anchor="middle" font-size="9.5" font-weight="700" fill="white"
+              font-family="Arial, Helvetica, sans-serif">TS</text>
+      </g>
+<text x="950" y="1112" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="500" fill="#0f172a">post.ts</text>
+<line x1="897" y1="1107" x2="897" y2="1137" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="897" y1="1134" x2="904" y2="1134" stroke="#cbd5e1" stroke-width="1.2"/>
+
+      <g transform="translate(911,1121)">
+        <rect x="0" y="0" width="27" height="27" rx="5" fill="#2563eb"/>
+        <text x="13.5" y="18" text-anchor="middle" font-size="9.5" font-weight="700" fill="white"
+              font-family="Arial, Helvetica, sans-serif">TS</text>
+      </g>
+<text x="950" y="1140" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="500" fill="#0f172a">comment.ts</text>
+<line x1="843" y1="1135" x2="843" y2="1165" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="843" y1="1162" x2="850" y2="1162" stroke="#cbd5e1" stroke-width="1.2"/>
+
+        <g transform="translate(857,1149)">
+          <path d="M0 4 Q0 1 3 1 H10 L14 5 H29 Q32 5 32 8 V23 Q32 26 29 26 H3 Q0 26 0 23 Z"
+                fill="#3b82f6"/>
+          <path d="M1 7 H31 V10 H1 Z" fill="#60a5fa" opacity=".65"/>
+        </g>
+<text x="896" y="1168" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="700" fill="#0f172a">profile/    api/   components/   hooks/   types/</text>
+<line x1="843" y1="1163" x2="843" y2="1193" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="843" y1="1190" x2="850" y2="1190" stroke="#cbd5e1" stroke-width="1.2"/>
+
+        <g transform="translate(857,1177)">
+          <path d="M0 4 Q0 1 3 1 H10 L14 5 H29 Q32 5 32 8 V23 Q32 26 29 26 H3 Q0 26 0 23 Z"
+                fill="#3b82f6"/>
+          <path d="M1 7 H31 V10 H1 Z" fill="#60a5fa" opacity=".65"/>
+        </g>
+<text x="896" y="1196" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="700" fill="#0f172a">followers/  api/   components/   hooks/   types/</text>
+<line x1="843" y1="1191" x2="843" y2="1221" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="843" y1="1218" x2="850" y2="1218" stroke="#cbd5e1" stroke-width="1.2"/>
+
+        <g transform="translate(857,1205)">
+          <path d="M0 4 Q0 1 3 1 H10 L14 5 H29 Q32 5 32 8 V23 Q32 26 29 26 H3 Q0 26 0 23 Z"
+                fill="#3b82f6"/>
+          <path d="M1 7 H31 V10 H1 Z" fill="#60a5fa" opacity=".65"/>
+        </g>
+<text x="896" y="1224" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="700" fill="#0f172a">groups/     hooks/ types/ utils/</text>
+<line x1="843" y1="1219" x2="843" y2="1249" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="843" y1="1246" x2="850" y2="1246" stroke="#cbd5e1" stroke-width="1.2"/>
+
+        <g transform="translate(857,1233)">
+          <path d="M0 4 Q0 1 3 1 H10 L14 5 H29 Q32 5 32 8 V23 Q32 26 29 26 H3 Q0 26 0 23 Z"
+                fill="#3b82f6"/>
+          <path d="M1 7 H31 V10 H1 Z" fill="#60a5fa" opacity=".65"/>
+        </g>
+<text x="896" y="1252" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="700" fill="#0f172a">events/     api/   components/   hooks/   types/</text>
+<line x1="843" y1="1247" x2="843" y2="1277" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="843" y1="1274" x2="850" y2="1274" stroke="#cbd5e1" stroke-width="1.2"/>
+
+        <g transform="translate(857,1261)">
+          <path d="M0 4 Q0 1 3 1 H10 L14 5 H29 Q32 5 32 8 V23 Q32 26 29 26 H3 Q0 26 0 23 Z"
+                fill="#3b82f6"/>
+          <path d="M1 7 H31 V10 H1 Z" fill="#60a5fa" opacity=".65"/>
+        </g>
+<text x="896" y="1280" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="700" fill="#0f172a">chat/       api/   components/   hooks/   types/</text>
+<line x1="843" y1="1275" x2="843" y2="1305" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="843" y1="1302" x2="850" y2="1302" stroke="#cbd5e1" stroke-width="1.2"/>
+
+        <g transform="translate(857,1289)">
+          <path d="M0 4 Q0 1 3 1 H10 L14 5 H29 Q32 5 32 8 V23 Q32 26 29 26 H3 Q0 26 0 23 Z"
+                fill="#3b82f6"/>
+          <path d="M1 7 H31 V10 H1 Z" fill="#60a5fa" opacity=".65"/>
+        </g>
+<text x="896" y="1308" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="700" fill="#0f172a">notifications/ api/ components/ hooks/ types/</text>
+
+        <g transform="translate(830,1317)">
+          <path d="M0 4 Q0 1 3 1 H10 L14 5 H29 Q32 5 32 8 V23 Q32 26 29 26 H3 Q0 26 0 23 Z"
+                fill="#3b82f6"/>
+          <path d="M1 7 H31 V10 H1 Z" fill="#60a5fa" opacity=".65"/>
+        </g>
+<text x="869" y="1336" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="700" fill="#0f172a">components/</text>
+<line x1="843" y1="1331" x2="843" y2="1361" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="843" y1="1358" x2="850" y2="1358" stroke="#cbd5e1" stroke-width="1.2"/>
+
+        <g transform="translate(857,1345)">
+          <path d="M0 4 Q0 1 3 1 H10 L14 5 H29 Q32 5 32 8 V23 Q32 26 29 26 H3 Q0 26 0 23 Z"
+                fill="#3b82f6"/>
+          <path d="M1 7 H31 V10 H1 Z" fill="#60a5fa" opacity=".65"/>
+        </g>
+<text x="896" y="1364" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="700" fill="#0f172a">ui/</text>
+<line x1="870" y1="1359" x2="870" y2="1389" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="870" y1="1386" x2="877" y2="1386" stroke="#cbd5e1" stroke-width="1.2"/>
+
+      <g transform="translate(884,1373)">
+        <rect x="0" y="0" width="27" height="27" rx="5" fill="#0ea5e9"/>
+        <text x="13.5" y="18" text-anchor="middle" font-size="9.5" font-weight="700" fill="white"
+              font-family="Arial, Helvetica, sans-serif">TSX</text>
+      </g>
+<text x="923" y="1392" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="500" fill="#0f172a">Button.tsx</text>
+<line x1="870" y1="1387" x2="870" y2="1417" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="870" y1="1414" x2="877" y2="1414" stroke="#cbd5e1" stroke-width="1.2"/>
+
+      <g transform="translate(884,1401)">
+        <rect x="0" y="0" width="27" height="27" rx="5" fill="#0ea5e9"/>
+        <text x="13.5" y="18" text-anchor="middle" font-size="9.5" font-weight="700" fill="white"
+              font-family="Arial, Helvetica, sans-serif">TSX</text>
+      </g>
+<text x="923" y="1420" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="500" fill="#0f172a">Input.tsx</text>
+<line x1="870" y1="1415" x2="870" y2="1445" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="870" y1="1442" x2="877" y2="1442" stroke="#cbd5e1" stroke-width="1.2"/>
+
+      <g transform="translate(884,1429)">
+        <rect x="0" y="0" width="27" height="27" rx="5" fill="#0ea5e9"/>
+        <text x="13.5" y="18" text-anchor="middle" font-size="9.5" font-weight="700" fill="white"
+              font-family="Arial, Helvetica, sans-serif">TSX</text>
+      </g>
+<text x="923" y="1448" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="500" fill="#0f172a">Modal.tsx</text>
+<line x1="870" y1="1443" x2="870" y2="1473" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="870" y1="1470" x2="877" y2="1470" stroke="#cbd5e1" stroke-width="1.2"/>
+
+      <g transform="translate(884,1457)">
+        <rect x="0" y="0" width="27" height="27" rx="5" fill="#0ea5e9"/>
+        <text x="13.5" y="18" text-anchor="middle" font-size="9.5" font-weight="700" fill="white"
+              font-family="Arial, Helvetica, sans-serif">TSX</text>
+      </g>
+<text x="923" y="1476" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="500" fill="#0f172a">Avatar.tsx</text>
+<line x1="870" y1="1471" x2="870" y2="1501" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="870" y1="1498" x2="877" y2="1498" stroke="#cbd5e1" stroke-width="1.2"/>
+
+      <g transform="translate(884,1485)">
+        <rect x="0" y="0" width="27" height="27" rx="5" fill="#0ea5e9"/>
+        <text x="13.5" y="18" text-anchor="middle" font-size="9.5" font-weight="700" fill="white"
+              font-family="Arial, Helvetica, sans-serif">TSX</text>
+      </g>
+<text x="923" y="1504" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="500" fill="#0f172a">Spinner.tsx</text>
+<line x1="870" y1="1499" x2="870" y2="1529" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="870" y1="1526" x2="877" y2="1526" stroke="#cbd5e1" stroke-width="1.2"/>
+
+      <g transform="translate(884,1513)">
+        <rect x="0" y="0" width="27" height="27" rx="5" fill="#0ea5e9"/>
+        <text x="13.5" y="18" text-anchor="middle" font-size="9.5" font-weight="700" fill="white"
+              font-family="Arial, Helvetica, sans-serif">TSX</text>
+      </g>
+<text x="923" y="1532" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="500" fill="#0f172a">EmptyState.tsx</text>
+<line x1="843" y1="1527" x2="843" y2="1557" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="843" y1="1554" x2="850" y2="1554" stroke="#cbd5e1" stroke-width="1.2"/>
+
+        <g transform="translate(857,1541)">
+          <path d="M0 4 Q0 1 3 1 H10 L14 5 H29 Q32 5 32 8 V23 Q32 26 29 26 H3 Q0 26 0 23 Z"
+                fill="#3b82f6"/>
+          <path d="M1 7 H31 V10 H1 Z" fill="#60a5fa" opacity=".65"/>
+        </g>
+<text x="896" y="1560" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="700" fill="#0f172a">layout/</text>
+<line x1="870" y1="1555" x2="870" y2="1585" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="870" y1="1582" x2="877" y2="1582" stroke="#cbd5e1" stroke-width="1.2"/>
+
+      <g transform="translate(884,1569)">
+        <rect x="0" y="0" width="27" height="27" rx="5" fill="#0ea5e9"/>
+        <text x="13.5" y="18" text-anchor="middle" font-size="9.5" font-weight="700" fill="white"
+              font-family="Arial, Helvetica, sans-serif">TSX</text>
+      </g>
+<text x="923" y="1588" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="500" fill="#0f172a">Navbar.tsx</text>
+<line x1="870" y1="1583" x2="870" y2="1613" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="870" y1="1610" x2="877" y2="1610" stroke="#cbd5e1" stroke-width="1.2"/>
+
+      <g transform="translate(884,1597)">
+        <rect x="0" y="0" width="27" height="27" rx="5" fill="#0ea5e9"/>
+        <text x="13.5" y="18" text-anchor="middle" font-size="9.5" font-weight="700" fill="white"
+              font-family="Arial, Helvetica, sans-serif">TSX</text>
+      </g>
+<text x="923" y="1616" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="500" fill="#0f172a">Sidebar.tsx</text>
+<line x1="870" y1="1611" x2="870" y2="1641" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="870" y1="1638" x2="877" y2="1638" stroke="#cbd5e1" stroke-width="1.2"/>
+
+      <g transform="translate(884,1625)">
+        <rect x="0" y="0" width="27" height="27" rx="5" fill="#0ea5e9"/>
+        <text x="13.5" y="18" text-anchor="middle" font-size="9.5" font-weight="700" fill="white"
+              font-family="Arial, Helvetica, sans-serif">TSX</text>
+      </g>
+<text x="923" y="1644" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="500" fill="#0f172a">MobileNav.tsx</text>
+<line x1="870" y1="1639" x2="870" y2="1669" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="870" y1="1666" x2="877" y2="1666" stroke="#cbd5e1" stroke-width="1.2"/>
+
+      <g transform="translate(884,1653)">
+        <rect x="0" y="0" width="27" height="27" rx="5" fill="#0ea5e9"/>
+        <text x="13.5" y="18" text-anchor="middle" font-size="9.5" font-weight="700" fill="white"
+              font-family="Arial, Helvetica, sans-serif">TSX</text>
+      </g>
+<text x="923" y="1672" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="500" fill="#0f172a">AppShell.tsx</text>
+
+        <g transform="translate(830,1681)">
+          <path d="M0 4 Q0 1 3 1 H10 L14 5 H29 Q32 5 32 8 V23 Q32 26 29 26 H3 Q0 26 0 23 Z"
+                fill="#3b82f6"/>
+          <path d="M1 7 H31 V10 H1 Z" fill="#60a5fa" opacity=".65"/>
+        </g>
+<text x="869" y="1700" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="700" fill="#0f172a">lib/</text>
+<line x1="843" y1="1695" x2="843" y2="1725" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="843" y1="1722" x2="850" y2="1722" stroke="#cbd5e1" stroke-width="1.2"/>
+
+        <g transform="translate(857,1709)">
+          <path d="M0 4 Q0 1 3 1 H10 L14 5 H29 Q32 5 32 8 V23 Q32 26 29 26 H3 Q0 26 0 23 Z"
+                fill="#3b82f6"/>
+          <path d="M1 7 H31 V10 H1 Z" fill="#60a5fa" opacity=".65"/>
+        </g>
+<text x="896" y="1728" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="700" fill="#0f172a">api/</text>
+<line x1="870" y1="1723" x2="870" y2="1753" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="870" y1="1750" x2="877" y2="1750" stroke="#cbd5e1" stroke-width="1.2"/>
+
+      <g transform="translate(884,1737)">
+        <rect x="0" y="0" width="27" height="27" rx="5" fill="#2563eb"/>
+        <text x="13.5" y="18" text-anchor="middle" font-size="9.5" font-weight="700" fill="white"
+              font-family="Arial, Helvetica, sans-serif">TS</text>
+      </g>
+<text x="923" y="1756" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="500" fill="#0f172a">client.ts</text>
+<line x1="870" y1="1751" x2="870" y2="1781" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="870" y1="1778" x2="877" y2="1778" stroke="#cbd5e1" stroke-width="1.2"/>
+
+      <g transform="translate(884,1765)">
+        <rect x="0" y="0" width="27" height="27" rx="5" fill="#2563eb"/>
+        <text x="13.5" y="18" text-anchor="middle" font-size="9.5" font-weight="700" fill="white"
+              font-family="Arial, Helvetica, sans-serif">TS</text>
+      </g>
+<text x="923" y="1784" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="500" fill="#0f172a">errors.ts</text>
+<line x1="843" y1="1779" x2="843" y2="1809" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="843" y1="1806" x2="850" y2="1806" stroke="#cbd5e1" stroke-width="1.2"/>
+
+        <g transform="translate(857,1793)">
+          <path d="M0 4 Q0 1 3 1 H10 L14 5 H29 Q32 5 32 8 V23 Q32 26 29 26 H3 Q0 26 0 23 Z"
+                fill="#3b82f6"/>
+          <path d="M1 7 H31 V10 H1 Z" fill="#60a5fa" opacity=".65"/>
+        </g>
+<text x="896" y="1812" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="700" fill="#0f172a">websocket/</text>
+<line x1="870" y1="1807" x2="870" y2="1837" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="870" y1="1834" x2="877" y2="1834" stroke="#cbd5e1" stroke-width="1.2"/>
+
+      <g transform="translate(884,1821)">
+        <rect x="0" y="0" width="27" height="27" rx="5" fill="#2563eb"/>
+        <text x="13.5" y="18" text-anchor="middle" font-size="9.5" font-weight="700" fill="white"
+              font-family="Arial, Helvetica, sans-serif">TS</text>
+      </g>
+<text x="923" y="1840" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="500" fill="#0f172a">client.ts</text>
+<line x1="843" y1="1835" x2="843" y2="1865" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="843" y1="1862" x2="850" y2="1862" stroke="#cbd5e1" stroke-width="1.2"/>
+
+        <g transform="translate(857,1849)">
+          <path d="M0 4 Q0 1 3 1 H10 L14 5 H29 Q32 5 32 8 V23 Q32 26 29 26 H3 Q0 26 0 23 Z"
+                fill="#3b82f6"/>
+          <path d="M1 7 H31 V10 H1 Z" fill="#60a5fa" opacity=".65"/>
+        </g>
+<text x="896" y="1868" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="700" fill="#0f172a">utils/</text>
+<line x1="870" y1="1863" x2="870" y2="1893" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="870" y1="1890" x2="877" y2="1890" stroke="#cbd5e1" stroke-width="1.2"/>
+
+      <g transform="translate(884,1877)">
+        <rect x="0" y="0" width="27" height="27" rx="5" fill="#2563eb"/>
+        <text x="13.5" y="18" text-anchor="middle" font-size="9.5" font-weight="700" fill="white"
+              font-family="Arial, Helvetica, sans-serif">TS</text>
+      </g>
+<text x="923" y="1896" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="500" fill="#0f172a">date.ts</text>
+<line x1="870" y1="1891" x2="870" y2="1921" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="870" y1="1918" x2="877" y2="1918" stroke="#cbd5e1" stroke-width="1.2"/>
+
+      <g transform="translate(884,1905)">
+        <rect x="0" y="0" width="27" height="27" rx="5" fill="#2563eb"/>
+        <text x="13.5" y="18" text-anchor="middle" font-size="9.5" font-weight="700" fill="white"
+              font-family="Arial, Helvetica, sans-serif">TS</text>
+      </g>
+<text x="923" y="1924" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="500" fill="#0f172a">file.ts</text>
+
+        <g transform="translate(830,1933)">
+          <path d="M0 4 Q0 1 3 1 H10 L14 5 H29 Q32 5 32 8 V23 Q32 26 29 26 H3 Q0 26 0 23 Z"
+                fill="#3b82f6"/>
+          <path d="M1 7 H31 V10 H1 Z" fill="#60a5fa" opacity=".65"/>
+        </g>
+<text x="869" y="1952" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="700" fill="#0f172a">providers/</text>
+<line x1="843" y1="1947" x2="843" y2="1977" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="843" y1="1974" x2="850" y2="1974" stroke="#cbd5e1" stroke-width="1.2"/>
+
+      <g transform="translate(857,1961)">
+        <rect x="0" y="0" width="27" height="27" rx="5" fill="#0ea5e9"/>
+        <text x="13.5" y="18" text-anchor="middle" font-size="9.5" font-weight="700" fill="white"
+              font-family="Arial, Helvetica, sans-serif">TSX</text>
+      </g>
+<text x="896" y="1980" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="500" fill="#0f172a">AuthProvider.tsx</text>
+<line x1="843" y1="1975" x2="843" y2="2005" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="843" y1="2002" x2="850" y2="2002" stroke="#cbd5e1" stroke-width="1.2"/>
+
+      <g transform="translate(857,1989)">
+        <rect x="0" y="0" width="27" height="27" rx="5" fill="#0ea5e9"/>
+        <text x="13.5" y="18" text-anchor="middle" font-size="9.5" font-weight="700" fill="white"
+              font-family="Arial, Helvetica, sans-serif">TSX</text>
+      </g>
+<text x="896" y="2008" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="500" fill="#0f172a">WebSocketProvider.tsx</text>
+<line x1="843" y1="2003" x2="843" y2="2033" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="843" y1="2030" x2="850" y2="2030" stroke="#cbd5e1" stroke-width="1.2"/>
+
+      <g transform="translate(857,2017)">
+        <rect x="0" y="0" width="27" height="27" rx="5" fill="#0ea5e9"/>
+        <text x="13.5" y="18" text-anchor="middle" font-size="9.5" font-weight="700" fill="white"
+              font-family="Arial, Helvetica, sans-serif">TSX</text>
+      </g>
+<text x="896" y="2036" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="500" fill="#0f172a">NotificationProvider.tsx</text>
+
+        <g transform="translate(830,2045)">
+          <path d="M0 4 Q0 1 3 1 H10 L14 5 H29 Q32 5 32 8 V23 Q32 26 29 26 H3 Q0 26 0 23 Z"
+                fill="#3b82f6"/>
+          <path d="M1 7 H31 V10 H1 Z" fill="#60a5fa" opacity=".65"/>
+        </g>
+<text x="869" y="2064" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="700" fill="#0f172a">types/</text>
+<line x1="843" y1="2059" x2="843" y2="2089" stroke="#cbd5e1" stroke-width="1.2"/>
+<line x1="843" y1="2086" x2="850" y2="2086" stroke="#cbd5e1" stroke-width="1.2"/>
+
+      <g transform="translate(857,2073)">
+        <rect x="0" y="0" width="27" height="27" rx="5" fill="#2563eb"/>
+        <text x="13.5" y="18" text-anchor="middle" font-size="9.5" font-weight="700" fill="white"
+              font-family="Arial, Helvetica, sans-serif">TS</text>
+      </g>
+<text x="896" y="2092" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" font-weight="500" fill="#0f172a">api.ts</text>
+
+  <!-- Legend -->
+  <g transform="translate(1210,1650)">
+    <rect x="0" y="0" width="270" height="250" rx="16" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+    <text x="135" y="30" text-anchor="middle" font-family="Arial, Helvetica, sans-serif"
+          font-size="16" font-weight="800" fill="#0f172a">LEGEND</text>
+
+    
+        <g transform="translate(22,48)">
+          <path d="M0 4 Q0 1 3 1 H10 L14 5 H29 Q32 5 32 8 V23 Q32 26 29 26 H3 Q0 26 0 23 Z"
+                fill="#3b82f6"/>
+          <path d="M1 7 H31 V10 H1 Z" fill="#60a5fa" opacity=".65"/>
+        </g>
+    <text x="66" y="67" font-family="Arial" font-size="15" fill="#334155">Folder</text>
+
+    
+      <g transform="translate(22,85)">
+        <rect x="0" y="0" width="27" height="27" rx="5" fill="#2563eb"/>
+        <text x="13.5" y="18" text-anchor="middle" font-size="9.5" font-weight="700" fill="white"
+              font-family="Arial, Helvetica, sans-serif">TS</text>
+      </g>
+    <text x="66" y="104" font-family="Arial" font-size="15" fill="#334155">TypeScript (.ts)</text>
+
+    
+      <g transform="translate(22,122)">
+        <rect x="0" y="0" width="27" height="27" rx="5" fill="#0ea5e9"/>
+        <text x="13.5" y="18" text-anchor="middle" font-size="9.5" font-weight="700" fill="white"
+              font-family="Arial, Helvetica, sans-serif">TSX</text>
+      </g>
+    <text x="66" y="141" font-family="Arial" font-size="15" fill="#334155">TSX (.tsx)</text>
+
+    
+      <g transform="translate(22,159)">
+        <rect x="0" y="0" width="27" height="27" rx="5" fill="#2563eb"/>
+        <text x="13.5" y="18" text-anchor="middle" font-size="9.5" font-weight="700" fill="white"
+              font-family="Arial, Helvetica, sans-serif">CSS</text>
+      </g>
+    <text x="66" y="178" font-family="Arial" font-size="15" fill="#334155">CSS (.css)</text>
+
+    
+      <g transform="translate(22,196)">
+        <rect x="0" y="0" width="27" height="27" rx="5" fill="#16a34a"/>
+        <text x="13.5" y="18" text-anchor="middle" font-size="9.5" font-weight="700" fill="white"
+              font-family="Arial, Helvetica, sans-serif">{}</text>
+      </g>
+    <text x="66" y="215" font-family="Arial" font-size="15" fill="#334155">JSON (.json)</text>
+  </g>
+</svg>

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getGroups } from "../api/groups";
 import type { Group } from "../types/group";
@@ -30,30 +31,34 @@ export default function GroupsPageContent() {
     loadGroups();
   }, []);
 
-  if (loading) {
-    return <p>Loading groups...</p>;
-  }
-
-  if (error) {
-    return <p>{error}</p>;
-  }
-
   return (
-    <section>
-      <h1>Groups</h1>
+    <main className="groups-page space-shell">
+      <div className="groups-container">
+        <header className="groups-page-header">
+          <h1>Groups</h1>
+          <Link href="/groups/create" className="new-group-link">
+            Create Group
+          </Link>
+        </header>
 
-      {groups.length === 0 ? (
-        <p>No groups yet.</p>
-      ) : (
-        <div>
-          {groups.map((group) => (
-            <GroupCard
-              key={group.id}
-              group={group}
-            />
-          ))}
-        </div>
-      )}
-    </section>
+        {loading && <p>Loading groups...</p>}
+        {error && <p className="form-error">{error}</p>}
+
+        {!loading && !error && groups.length === 0 && (
+          <p>No groups yet.</p>
+        )}
+
+        {!loading && !error && groups.length > 0 && (
+          <div className="groups-list">
+            {groups.map((group) => (
+              <GroupCard
+                key={group.id}
+                group={group}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </main>
   );
 }
