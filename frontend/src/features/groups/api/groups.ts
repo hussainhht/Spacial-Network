@@ -1,4 +1,4 @@
-import type { Group , CreateGroupInput, GroupMember, Membership, InviteCandidate } from "../types/group";
+import type { Group , CreateGroupInput, GroupMember, Membership, InviteCandidate, GroupInvitation } from "../types/group";
 import { getApiBaseUrl, getUploadsBaseUrl } from "@/lib/api";
 
 interface ApiGroup {
@@ -66,6 +66,34 @@ interface CreateGroupInvitationResponse {
 interface CreateJoinRequestResponse {
   success: boolean;
   message?: string;
+}
+
+interface ApiGroupInvitation {
+  id: number;
+  group_id: number;
+  invited_by: number;
+  invited_user_id: number;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface GetGroupInvitationsResponse {
+  success: boolean;
+  message?: string;
+  invitations?: ApiGroupInvitation[];
+}
+
+function toGroupInvitation(invitation: ApiGroupInvitation): GroupInvitation {
+  return {
+    id: invitation.id,
+    groupId: invitation.group_id,
+    invitedBy: invitation.invited_by,
+    invitedUserId: invitation.invited_user_id,
+    status: invitation.status,
+    createdAt: invitation.created_at,
+    updatedAt: invitation.updated_at,
+  };
 }
 
 export async function getGroup(groupId: number): Promise<Group> {
@@ -214,6 +242,25 @@ export async function createJoinRequest(groupId: number): Promise<void> {
   if (!response.ok || !data.success) {
     throw new Error(data.message ?? "Failed to send join request");
   }
+}
+
+// getPendingInvitations lists the current user's pending group invitations
+// (GET /group-invitations). Used to resolve a group_invitation
+// notification's entity_id (the invitation ID) to its group, since the
+// notification payload itself doesn't carry a group_id.
+export async function getPendingInvitations(): Promise<GroupInvitation[]> {
+  const response = await fetch(`${getApiBaseUrl()}/group-invitations`, {
+    method: "GET",
+    credentials: "include",
+  });
+
+  const data: GetGroupInvitationsResponse = await response.json();
+
+  if (!response.ok || !data.success) {
+    throw new Error(data.message ?? "Failed to load invitations");
+  }
+
+  return (data.invitations ?? []).map(toGroupInvitation);
 }
 
 export async function createGroupInvitation(

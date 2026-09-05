@@ -77,7 +77,11 @@
 .connection { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; font-size: 10px; color: var(--space-text-muted); }
 .connection i { width: 5px; height: 5px; border-radius: 50%; background: var(--space-text-muted); }
 .connection[data-connected="true"] i { background: #5eead4; }
-.iconButton { display: inline-flex; align-items: center; justify-content: center; min-width: 40px; min-height: 40px; border: 0; background: none; color: var(--space-text-muted); cursor: not-allowed; }
+.iconButton { position: relative; display: inline-flex; align-items: center; justify-content: center; min-width: 40px; min-height: 40px; border: 0; background: none; color: var(--space-text-muted); cursor: pointer; }
+.iconButton:hover:not(:disabled) { color: var(--space-text-heading); }
+.iconButton:disabled { cursor: not-allowed; }
+.notificationWrapper { position: relative; display: inline-flex; }
+.notificationBadge { position: absolute; top: 2px; right: 2px; min-width: 16px; height: 16px; padding: 0 4px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: linear-gradient(135deg, var(--space-accent-violet), var(--space-accent-indigo)); color: #fff; font-size: 9px; font-weight: 600; line-height: 1; box-shadow: 0 0 0 2px rgba(5, 8, 22, .85); }
 .homeContent { max-width: 860px; margin: 0 auto; padding: 44px 30px 28px; }
 .welcome { position: relative; isolation: isolate; overflow: hidden; padding: 32px; min-height: 230px; border: 1px solid rgba(167, 139, 250, .18); border-radius: 18px; background: radial-gradient(ellipse at 90% 85%, rgba(99, 102, 241, .2), transparent 65%), linear-gradient(115deg, rgba(23, 25, 53, .95), rgba(35, 24, 62, .5)); }
 .welcome .eyebrow { color: #beb1df; font-size: 9px; }

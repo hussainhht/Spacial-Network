@@ -1,6 +1,7 @@
 "use client";
 
 import { useWebSocket } from "@/providers/WebSocketProvider";
+import NotificationBell from "@/features/notifications/components/NotificationBell";
 import AppIcon from "./AppIcon";
 import styles from "./AppShell.module.css";
 
@@ -19,7 +20,7 @@ export default function AppHeader() {
         <span className={styles.connection} data-connected={isConnected} role="status">
           <i aria-hidden="true" />{isConnected ? "Chat connected" : "Chat offline"}
         </span>
-        <button type="button" className={styles.iconButton} disabled title="Notifications page coming soon" aria-label="Notifications (coming soon)"><AppIcon name="bell" /></button>
+        <NotificationBell />
         <span className={styles.avatar} role="img" aria-label="Account details unavailable" title="Account details unavailable"><AppIcon name="user" /></span>
       </div>
     </header>
