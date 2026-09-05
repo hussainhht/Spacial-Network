@@ -144,16 +144,6 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 	inviteSearchWSHandler := groups.NewInviteSearchWSHandler(groupsService, hub)
 
 	// =========================
-	// Chat - Future
-	// =========================
-
-	// TODO: Enable when the chat package is implemented.
-	//
-	// chatRepo := chat.NewRepository(db)
-	// chatService := chat.NewService(chatRepo)
-	// chatHandler := chat.NewHandler(chatService)
-
-	// =========================
 	// WebSocket message routing
 	// =========================
 	// Both Chat and Groups handle inbound client messages; Router dispatches
@@ -162,6 +152,7 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 	// use it.
 
 	wsRouter := websocket.NewRouter()
+	chatService.RegisterWSRoutes(wsRouter)
 	wsRouter.Register(groups.EventInviteUserSearch, inviteSearchWSHandler.HandleInviteUserSearch)
 	wsHandler.SetMessageHandler(wsRouter.Dispatch)
 

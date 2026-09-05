@@ -35,6 +35,13 @@ func NewService(repo *Repository, hub *websocket.Hub) *Service {
 	}
 }
 
+// RegisterWSRoutes registers all chat WebSocket event handlers with the given WebSocket router.
+func (s *Service) RegisterWSRoutes(r *websocket.Router) {
+	r.Register(EventPrivateMessage, s.HandlePrivateMessage)
+	r.Register(EventTyping, s.HandleTyping)
+	r.Register(EventMarkRead, s.HandleMarkRead)
+}
+
 func (s *Service) HandleIncomingWSMessage(senderID int64, raw []byte) {
 	var event websocket.Event
 	if err := json.Unmarshal(raw, &event); err != nil {
@@ -44,17 +51,17 @@ func (s *Service) HandleIncomingWSMessage(senderID int64, raw []byte) {
 
 	switch event.Type {
 	case EventPrivateMessage:
-		s.handlePrivateMessage(senderID, event.Payload)
+		s.HandlePrivateMessage(senderID, event.Payload)
 
 	case EventTyping:
-		s.handleTyping(senderID, event.Payload)
+		s.HandleTyping(senderID, event.Payload)
 
 	case EventMarkRead:
-		s.handleMarkRead(senderID, event.Payload)
+		s.HandleMarkRead(senderID, event.Payload)
 	}
 }
 
-func (s *Service) handlePrivateMessage(senderID int64, rawPayload json.RawMessage) {
+func (s *Service) HandlePrivateMessage(senderID int64, rawPayload json.RawMessage) {
 	var req MessagePayload
 	if err := json.Unmarshal(rawPayload, &req); err != nil {
 		s.sendError(senderID, "Invalid message payload format")
@@ -120,7 +127,7 @@ func (s *Service) handlePrivateMessage(senderID int64, rawPayload json.RawMessag
 	s.hub.SendToUser(savedMsg.SenderID, outEvent)
 }
 
-func (s *Service) handleTyping(senderID int64, rawPayload json.RawMessage) {
+func (s *Service) HandleTyping(senderID int64, rawPayload json.RawMessage) {
 	var payload TypingPayload
 	if err := json.Unmarshal(rawPayload, &payload); err != nil {
 		return
@@ -139,7 +146,7 @@ func (s *Service) handleTyping(senderID int64, rawPayload json.RawMessage) {
 	s.hub.SendToUser(payload.RecipientID, outEvent)
 }
 
-func (s *Service) handleMarkRead(readerID int64, rawPayload json.RawMessage) {
+func (s *Service) HandleMarkRead(readerID int64, rawPayload json.RawMessage) {
 	var payload MarkReadPayload
 	if err := json.Unmarshal(rawPayload, &payload); err != nil {
 		return
