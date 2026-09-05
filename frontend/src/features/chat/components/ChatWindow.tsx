@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { ChatWindowProps } from "../types/chat";
-import { formatMessageTime, getInitials } from "@/lib/utils";
+import { formatMessageDateTime, getInitials } from "@/lib/utils";
 
 export default function ChatWindow({
   partnerId,
@@ -141,7 +141,7 @@ export default function ChatWindow({
                   }}
                 >
                   <time style={styles.timestamp}>
-                    {formatMessageTime(msg.created_at)}
+                    {formatMessageDateTime(msg.created_at)}
                   </time>
                   {isMine && (
                     <span
