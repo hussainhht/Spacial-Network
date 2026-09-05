@@ -6,7 +6,8 @@ export type EventType =
   | "typing"
   | "error"
   | "invite_user_search"
-  | "invite_user_search_results";
+  | "invite_user_search_results"
+  | "notification";
 
 export interface WSEvent<T = unknown> {
   type: EventType;
@@ -61,6 +62,23 @@ export interface InviteUserSearchResultsPayload {
   users: InviteSearchResultUser[];
 }
 
+// NotificationEventPayload mirrors the "notification" websocket event's
+// payload exactly as sent by the backend (see
+// backend/internal/notifications/events.go). `type` is left as a plain
+// string here since this file has no notion of which notification types the
+// UI currently supports - that filtering happens in the notifications
+// feature, not at the transport layer.
+export interface NotificationEventPayload {
+  id: number;
+  actor_id?: number;
+  type: string;
+  entity_type?: string;
+  entity_id?: number;
+  message: string;
+  read_at?: string | null;
+  created_at: string;
+}
+
 export interface WebSocketContextType {
   isConnected: boolean;
   onlineUserIDs: number[];
@@ -68,5 +86,6 @@ export interface WebSocketContextType {
   typingStatus: TypingPayload | null;
   errorMessage: string | null;
   inviteSearchResults: InviteUserSearchResultsPayload | null;
+  lastNotification: NotificationEventPayload | null;
   sendEvent: (type: EventType, payload: unknown) => void;
 }
