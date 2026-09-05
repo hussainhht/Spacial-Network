@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"social/internal/websocket"
@@ -47,6 +48,9 @@ func (s *Service) HandleIncomingWSMessage(senderID int64, raw []byte) {
 
 	case EventTyping:
 		s.handleTyping(senderID, event.Payload)
+
+	case EventMarkRead:
+		s.handleMarkRead(senderID, event.Payload)
 	}
 }
 
@@ -103,7 +107,7 @@ func (s *Service) handlePrivateMessage(senderID int64, rawPayload json.RawMessag
 		SenderID:    savedMsg.SenderID,
 		RecipientID: savedMsg.RecipientID,
 		Content:     savedMsg.Content,
-		CreatedAt:   savedMsg.CreatedAt.Format("2006-01-02 15:04:05"),
+		CreatedAt:   savedMsg.CreatedAt.UTC().Format(time.RFC3339),
 	}
 
 	outEvent, err := websocket.NewEvent(EventPrivateMessage, outPayload)
@@ -115,6 +119,7 @@ func (s *Service) handlePrivateMessage(senderID int64, rawPayload json.RawMessag
 	s.hub.SendToUser(savedMsg.RecipientID, outEvent)
 	s.hub.SendToUser(savedMsg.SenderID, outEvent)
 }
+
 func (s *Service) handleTyping(senderID int64, rawPayload json.RawMessage) {
 	var payload TypingPayload
 	if err := json.Unmarshal(rawPayload, &payload); err != nil {
@@ -134,12 +139,54 @@ func (s *Service) handleTyping(senderID int64, rawPayload json.RawMessage) {
 	s.hub.SendToUser(payload.RecipientID, outEvent)
 }
 
+func (s *Service) handleMarkRead(readerID int64, rawPayload json.RawMessage) {
+	var payload MarkReadPayload
+	if err := json.Unmarshal(rawPayload, &payload); err != nil {
+		return
+	}
+
+	if payload.SenderID <= 0 || payload.SenderID == readerID {
+		return
+	}
+
+	if err := s.repo.MarkMessagesAsRead(payload.SenderID, readerID); err != nil {
+		log.Printf("failed to mark messages as read: %v", err)
+		return
+	}
+
+	readAt := time.Now().UTC().Format(time.RFC3339)
+	outPayload := MessagesReadPayload{
+		ReaderID: readerID,
+		SenderID: payload.SenderID,
+		ReadAt:   readAt,
+	}
+
+	outEvent, err := websocket.NewEvent(EventMessagesRead, outPayload)
+	if err != nil {
+		return
+	}
+
+	s.hub.SendToUser(payload.SenderID, outEvent)
+	s.hub.SendToUser(readerID, outEvent)
+}
+
 func (s *Service) GetHistory(userA, userB int64, limit, offset int) ([]PrivateMessage, error) {
 	if userB <= 0 {
 		return nil, ErrInvalidReceiver
 	}
 	if err := s.repo.MarkMessagesAsRead(userB, userA); err != nil {
 		log.Printf("failed to mark messages as read: %v", err)
+	} else if s.hub != nil {
+		readAt := time.Now().UTC().Format(time.RFC3339)
+		outPayload := MessagesReadPayload{
+			ReaderID: userA,
+			SenderID: userB,
+			ReadAt:   readAt,
+		}
+		if outEvent, err := websocket.NewEvent(EventMessagesRead, outPayload); err == nil {
+			s.hub.SendToUser(userB, outEvent)
+			s.hub.SendToUser(userA, outEvent)
+		}
 	}
 
 	return s.repo.GetPrivateHistory(userA, userB, limit, offset)
