@@ -26,7 +26,7 @@ export type RawNotification = NotificationEventPayload;
 
 // GroupNotificationData is the `data` payload for group_invitation and
 // group_join_request notifications (see
-// backend/internal/notifications/group_data.go). It is display/navigation
+// backend/internal/notifications/model.go). It is display/navigation
 // context only, never authorization evidence - accepting/rejecting still
 // goes through the Groups API, which re-checks the session user.
 export interface GroupNotificationData {

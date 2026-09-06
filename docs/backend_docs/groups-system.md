@@ -147,11 +147,11 @@ param. Registered in `router/router.go`.
 | GET    | `/api/groups/{id}`                               | `GetGroupHandler`                 |                                           |
 | GET    | `/api/groups/{id}/members`                       | `GetGroupMembersHandler`          |                                           |
 | GET    | `/api/groups/{id}/membership`                    | `GetMembershipHandler`            | `{is_member, role}` for the caller     |
-| POST   | `/api/groups/{id}/join-requests`                 | `CreateJoinRequestHandler`        | -> triggers `NotifyGroupJoinRequest`   |
+| POST   | `/api/groups/{id}/join-requests`                 | `CreateJoinRequestHandler`        | -> triggers a `group_join_request` notification |
 | GET    | `/api/groups/{id}/join-requests`                 | `GetPendingJoinRequestsHandler`   | creator only                             |
 | POST   | `/api/groups/{id}/join-requests/{requestID}/accept` | `AcceptJoinRequestHandler`     | creator only, adds member                |
 | POST   | `/api/groups/{id}/join-requests/{requestID}/reject` | `RejectJoinRequestHandler`     | creator only                             |
-| POST   | `/api/groups/{id}/invitations`                   | `CreateGroupInvitationHandler`    | body `{invited_user_id}` -> triggers `NotifyGroupInvitation` |
+| POST   | `/api/groups/{id}/invitations`                   | `CreateGroupInvitationHandler`    | body `{invited_user_id}` -> triggers a `group_invitation` notification |
 | GET    | `/api/group-invitations`                         | `GetPendingInvitationsHandler`    | the caller's own pending invitations     |
 | POST   | `/api/group-invitations/{invitationID}/accept`   | `AcceptGroupInvitationHandler`    | invited user only, adds member           |
 | POST   | `/api/group-invitations/{invitationID}/decline`  | `DeclineGroupInvitationHandler`   | invited user only                        |
@@ -182,8 +182,8 @@ sequenceDiagram
     API->>Svc: RequestToJoin(groupID, userID)
     Svc->>Repo: GetGroupByID / GetMembership / HasPendingJoinRequest
     Svc->>Repo: CreateGroupJoinRequest -> requestID
-    Svc->>Notifier: NotifyGroupJoinRequest(creatorID, userID, requestID)
-    Notifier->>NotifSvc: Create({Type: group_join_request, ...})
+    Svc->>Notifier: Notify({Type: group_join_request, ReceiverID: creatorID, ActorID: userID, EntityID: requestID, ...})
+    Notifier->>NotifSvc: Create(req)
     NotifSvc->>NotifSvc: persist to SQLite (source of truth)
     NotifSvc->>Hub: SendToUser(creatorID, "notification" event)
     Hub-->>Creator: pushed if online, otherwise dropped (row is still saved)
@@ -199,8 +199,8 @@ sequenceDiagram
 
 Group invitations follow the mirror-image flow: an existing **member**
 calls `POST /api/groups/{id}/invitations`, `CreateGroupInvitation` fires
-`NotifyGroupInvitation(invitedUserID, inviterID, invitationID)`, and
-later the **invited user** (not the creator) calls accept/decline on
+a `group_invitation` notification to the invited user, and later the
+**invited user** (not the creator) calls accept/decline on
 `/api/group-invitations/{invitationID}/...`.
 
 ## 7. Syncing To Notifications
@@ -209,18 +209,18 @@ This is the primary way Groups is "real-time": not by pushing
 group-specific events, but by creating rows in the generic
 notification system, which - if the receiver happens to be connected -
 get pushed over the shared hub as a plain `"notification"` event
-(`notifications.md` Section 9, `websocket-system.md` Section 7 event
+(`notifications.md` Section 11, `websocket-system.md` Section 7 event
 catalog). Groups never touches `*websocket.Hub` directly for this path.
 
-`internal/notifications.md` Section 6 documents the general adapter
-pattern in depth using Groups as its worked example; this section is
-the short version, from Groups' side of the fence:
+`internal/notifications.md` Section 6 documents this pattern in depth
+using Groups as its worked example; this section is the short version,
+from Groups' side of the fence. `groups.Service` declares a single
+generic method - it never imports this package's repository or SQL:
 
 ```go
 // internal/groups/service.go - declared here, not in internal/notifications
 type NotificationSender interface {
-    NotifyGroupInvitation(receiverID, actorID, invitationID int) error
-    NotifyGroupJoinRequest(receiverID, actorID, requestID int) error
+    Notify(notifications.CreateNotificationRequest) error
 }
 
 type Service struct {
@@ -229,21 +229,14 @@ type Service struct {
 }
 ```
 
-`internal/notifications/notifiers/groups.go` implements it by wrapping
-a real `*notifications.Service`:
+`*notifications.Service` implements that interface directly (no
+adapter file) - `Notify` just calls the existing `Create` and discards
+the returned row:
 
 ```go
-func (n *GroupNotifier) NotifyGroupJoinRequest(receiverID, actorID, requestID int) error {
-    entityType := notifications.EntityGroupJoinRequest
-    actor := actorID
-    _, err := n.service.Create(notifications.CreateNotificationRequest{
-        ReceiverID: receiverID,
-        ActorID:    &actor,
-        Type:       notifications.NotificationGroupJoinRequest,
-        EntityType: &entityType,
-        EntityID:   &requestID,
-        Message:    "requested to join your group",
-    })
+// internal/notifications/service.go
+func (s *Service) Notify(req CreateNotificationRequest) error {
+    _, err := s.Create(req)
     return err
 }
 ```
@@ -251,27 +244,22 @@ func (n *GroupNotifier) NotifyGroupJoinRequest(receiverID, actorID, requestID in
 Wired once, in `router.setupDependencies`:
 
 ```go
-groupNotifier := notifiers.NewGroupNotifier(notificationsService) // implements groups.NotificationSender
-groupsService := groups.NewService(groupsRepo, groupNotifier)
+groupsService := groups.NewService(groupsRepo, notificationsService) // *notifications.Service satisfies groups.NotificationSender
 ```
 
-Both call sites follow the same shape - fire the notification *after*
-the row is committed, and never fail the original action if it errors:
+Both call sites go through the same small private helper,
+`groups.Service.notify` - it builds the generic request and fires it
+*after* the row is committed, logging (never failing) the original
+action if delivery errors:
 
 ```go
 // RequestToJoin, after CreateGroupJoinRequest succeeds:
-if s.notifier != nil {
-    if err := s.notifier.NotifyGroupJoinRequest(group.CreatorID, userID, int(requestID)); err != nil {
-        // log the notification error, but don't fail the join request
-    }
-}
+s.notify(group.CreatorID, userID, notifications.NotificationGroupJoinRequest,
+    notifications.EntityGroupJoinRequest, int(requestID), "requested to join your group")
 
 // CreateGroupInvitation, after CreateGroupInvitation succeeds:
-if s.notifier != nil {
-    if err := s.notifier.NotifyGroupInvitation(invitedUserID, inviterID, int(invitationID)); err != nil {
-        // log the notification error, but don't fail the invitation
-    }
-}
+s.notify(invitedUserID, inviterID, notifications.NotificationGroupInvitation,
+    notifications.EntityGroupInvitation, int(invitationID), "invited you to join a group")
 ```
 
 **What is *not* wired yet:** accepting, rejecting, or declining never
@@ -279,10 +267,11 @@ calls the notifier - `AcceptJoinRequest`, `RejectJoinRequest`,
 `AcceptGroupInvitation`, and `DeclineGroupInvitation` only touch
 `repo`. So today a requester/inviter finds out their request was
 resolved only by polling `GET /api/group-invitations` or re-checking
-membership - there's no live push for that half of the lifecycle. (The
-`NotificationSender` interface in `service.go` also has a commented-out
-`NotifyGroupEvent` method - the placeholder for when the Group Events
-feature is built.)
+membership - there's no live push for that half of the lifecycle.
+(`NotificationGroupEvent` / `EntityEvent` already exist in
+`internal/notifications/model.go` as placeholders for when the Group
+Events feature is built - see `notifications.md` Section 8 for the
+walkthrough to follow when that happens.)
 
 ## 8. Syncing To WebSocket Directly - Invite-Candidate Search
 
@@ -374,7 +363,7 @@ different people:
 flowchart TD
     subgraph "Path A: creating a join request / invitation (Section 7)"
         A1["POST /api/groups/{id}/join-requests\nor /invitations (HTTP)"] --> A2["groups.Service\nwrites the row"]
-        A2 --> A3["groups.NotificationSender\n(notifiers.GroupNotifier)"]
+        A2 --> A3["groups.NotificationSender\n(*notifications.Service)"]
         A3 --> A4["notifications.Service.Create\n(SQLite write, source of truth)"]
         A4 --> A5["notifications.HubSender"]
         A5 --> Hub["websocket.Hub"]
