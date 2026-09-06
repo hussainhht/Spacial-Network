@@ -2,7 +2,6 @@ package groups
 
 import "database/sql"
 
-
 func (r *Repository) RespondToJoinRequest(groupID, requestID, creatorID int, status string) error {
 	tx, err := r.db.Begin()
 	if err != nil {

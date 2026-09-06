@@ -71,6 +71,9 @@ export interface InviteUserSearchResultsPayload {
 export interface NotificationEventPayload {
   id: number;
   actor_id?: number;
+  actor_username?: string;
+  group_id?: number;
+  group_title?: string;
   type: string;
   entity_type?: string;
   entity_id?: number;
@@ -87,5 +90,6 @@ export interface WebSocketContextType {
   errorMessage: string | null;
   inviteSearchResults: InviteUserSearchResultsPayload | null;
   lastNotification: NotificationEventPayload | null;
+  subscribeNotifications: (listener: (notification: NotificationEventPayload) => void) => () => void;
   sendEvent: (type: EventType, payload: unknown) => void;
 }

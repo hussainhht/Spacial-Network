@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { InvitationActions, JoinRequestActions } from "@/features/groups/components/GroupResponseActions";
 import { useNotifications } from "../context/NotificationProvider";
 import { useNotificationNavigate } from "../hooks/useNotificationNavigate";
 import type { Notification, SupportedNotificationType } from "../types/notification";
@@ -40,23 +41,19 @@ interface NotificationItemProps {
 export default function NotificationItem({ notification, onNavigate }: NotificationItemProps) {
   const { markAsRead } = useNotifications();
   const navigateToNotification = useNotificationNavigate();
-  const [navigating, setNavigating] = useState(false);
-
-  async function handleClick() {
-    if (navigating) return;
-    setNavigating(true);
-
-    if (!notification.isRead) {
-      markAsRead(notification.id);
-    }
-
-    try {
-      await navigateToNotification(notification);
-    } finally {
-      setNavigating(false);
-      onNavigate?.();
-    }
+  const [readError, setReadError] = useState<string | null>(null);
+  async function markRead() {
+    try { await markAsRead(notification.id); setReadError(null); }
+    catch { setReadError("Notification could not be marked read."); }
   }
+  function handleClick() {
+    if (!notification.isRead) void markRead();
+    navigateToNotification(notification);
+    onNavigate?.();
+  }
+  // Membership succeeded and Groups queries reconciled before this callback.
+  // A notification read failure is displayed separately from the group action.
+  async function afterAction() { await markRead(); }
 
   return (
     <li className="notification-item" data-unread={!notification.isRead}>
@@ -64,15 +61,23 @@ export default function NotificationItem({ notification, onNavigate }: Notificat
         type="button"
         className="notification-item-button"
         onClick={handleClick}
-        disabled={navigating}
       >
         <span className="notification-item-dot" aria-hidden="true" />
         <span className="notification-item-content">
           <span className="notification-item-type">{TYPE_LABELS[notification.type]}</span>
-          <span className="notification-item-message">{notification.message}</span>
+          <span className="notification-item-message">{notification.actorUsername && `@${notification.actorUsername} `}{notification.message}</span>
+          {notification.groupTitle && <span className="notification-group-title">{notification.groupTitle}</span>}
           <span className="notification-item-time">{formatRelativeTime(notification.createdAt)}</span>
         </span>
       </button>
+      <div className="notification-actions">
+        {notification.groupId && notification.entityId && notification.entityType === notification.type ? (
+          notification.type === "group_invitation"
+            ? <InvitationActions groupId={notification.groupId} entityId={notification.entityId} onSuccess={afterAction} />
+            : <JoinRequestActions groupId={notification.groupId} entityId={notification.entityId} onSuccess={afterAction} />
+        ) : <span className="group-muted">Group context unavailable</span>}
+        {readError && <p className="form-error" role="alert">{readError} <button type="button" className="group-button secondary" onClick={() => void markRead()}>Retry mark read</button></p>}
+      </div>
     </li>
   );
 }

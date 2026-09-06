@@ -1,27 +1,18 @@
 "use client";
 
-import { useState } from "react";
-
 import { createJoinRequest } from "../api/groups";
-
-type JoinRequestStatus = "idle" | "requesting" | "requested";
+import { useGroupAction } from "./useGroupAction";
+import { useMembership, usePendingInvitations } from "./useGroupData";
 
 export function useGroupJoinRequest(groupId: number) {
-  const [status, setStatus] = useState<JoinRequestStatus>("idle");
-  const [error, setError] = useState<string | null>(null);
-
-  async function handleRequestToJoin() {
-    setStatus("requesting");
-    setError(null);
-
-    try {
-      await createJoinRequest(groupId);
-      setStatus("requested");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to send join request");
-      setStatus("idle");
-    }
-  }
-
-  return { status, error, handleRequestToJoin };
+  const membership = useMembership(groupId);
+  const invitations = usePendingInvitations();
+  const action = useGroupAction(`join:${groupId}`, groupId);
+  const pending = membership.data?.hasPendingJoinRequest ?? false;
+  const canRequest = !membership.loading && !invitations.loading && !membership.error && !invitations.error && membership.data && !membership.data.isMember && !pending && !invitations.data?.some(i => i.groupId === groupId);
+  return {
+    pending, busy: action.busy, error: action.error,
+    disabled: !canRequest || Boolean(action.busy),
+    handleRequestToJoin: () => { if (canRequest) void action.run("Sending…", () => createJoinRequest(groupId)); },
+  };
 }

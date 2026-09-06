@@ -23,6 +23,9 @@ export type RawNotification = NotificationEventPayload;
 export interface Notification {
   id: number;
   actorId: number | null;
+  actorUsername: string | null;
+  groupId: number | null;
+  groupTitle: string | null;
   type: SupportedNotificationType;
   entityType: string | null;
   entityId: number | null;
@@ -39,6 +42,9 @@ export function toNotification(raw: RawNotification): Notification | null {
   return {
     id: raw.id,
     actorId: raw.actor_id ?? null,
+    actorUsername: raw.actor_username ?? null,
+    groupId: raw.group_id ?? null,
+    groupTitle: raw.group_title ?? null,
     type: raw.type,
     entityType: raw.entity_type ?? null,
     entityId: raw.entity_id ?? null,
