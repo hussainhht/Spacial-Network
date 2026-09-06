@@ -7,6 +7,7 @@ This guide explains how to connect new features (e.g. Notifications, Followers, 
 ## 1. Architectural Overview
 
 The application uses a **Single Connection Multiplexer** pattern:
+
 - **One Connection:** The browser opens a single persistent WebSocket connection to `/api/ws`.
 - **One Hub:** The Go backend manages active client connections in a central `websocket.Hub`.
 - **Decoupled Routing:** Inbound messages are dispatched by event type via `websocket.Router` on the backend, and routed through `WebSocketProvider` on the frontend.
@@ -54,6 +55,7 @@ All messages sent over the WebSocket (in both directions) follow this JSON envel
 Connecting a new feature to the backend involves **3 simple steps**:
 
 ### Step 3.1: Define Event Types & Payloads
+
 Inside your feature package (e.g., `backend/internal/notifications/models.go`):
 
 ```go
@@ -84,6 +86,7 @@ type NewNotificationPayload struct {
 ---
 
 ### Step 3.2: To PUSH Events to a User (Server $\to$ Client)
+
 Whenever an action occurs in your service (e.g. someone commented on a post or requested to join a group), send a real-time event through `websocket.Hub`:
 
 ```go
@@ -116,6 +119,7 @@ func (s *Service) NotifyUser(recipientID int64, title, message string) error {
 ---
 
 ### Step 3.3: To RECEIVE Events from a User (Client $\to$ Server)
+
 If your feature handles incoming WebSocket events from the browser:
 
 1. Write an `EventHandler` method matching `func(senderID int64, rawPayload json.RawMessage)`:
@@ -155,6 +159,7 @@ func (s *Service) RegisterWSRoutes(r *websocket.Router) {
 ### Step 4.1: Add Event Types to [`frontend/src/lib/websocket/types.ts`](file:///Users/baderal3foo/git/reboot01/Projects/social-network/frontend/src/lib/websocket/types.ts)
 
 1. Add your event names to `EventType`:
+
 ```ts
 export type EventType =
   | "private_message"
@@ -165,6 +170,7 @@ export type EventType =
 ```
 
 2. Define your TypeScript payload interfaces:
+
 ```ts
 export interface NotificationPayload {
   id: number;
@@ -175,6 +181,7 @@ export interface NotificationPayload {
 ```
 
 3. Expose your state in `WebSocketContextType`:
+
 ```ts
 export interface WebSocketContextType {
   // ... existing fields ...
@@ -187,11 +194,13 @@ export interface WebSocketContextType {
 ### Step 4.2: Expose Incoming Event in [`frontend/src/providers/WebSocketProvider.tsx`](file:///Users/baderal3foo/git/reboot01/Projects/social-network/frontend/src/providers/WebSocketProvider.tsx)
 
 1. Add state in the provider:
+
 ```tsx
 const [lastNotification, setLastNotification] = useState<NotificationPayload | null>(null);
 ```
 
 2. Route the incoming event in `ws.onmessage`:
+
 ```tsx
 switch (data.type) {
   // ...
@@ -202,6 +211,7 @@ switch (data.type) {
 ```
 
 3. Include `lastNotification` in `contextValue` (and in its `useMemo` dependencies):
+
 ```tsx
 const contextValue = useMemo(
   () => ({
@@ -289,13 +299,11 @@ export default function NotificationBell() {
 
 1. **NEVER create a new `new WebSocket(...)` in your components:**
    Always use `useWebSocket()` from `WebSocketProvider`. The browser must maintain only **one** WebSocket connection for the entire application.
-
 2. **Always Use Deduplication Refs (`useRef`):**
    React 18/19 renders components multiple times in StrictMode. Always store the ID of the last handled event in a `useRef` before updating state inside `useEffect` to prevent infinite update depth loops.
-
 3. **Always Store and Format Timestamps in UTC RFC3339:**
+
    - **Backend:** `time.Now().UTC().Format(time.RFC3339)`
    - **Frontend:** Use `parseDate` and `formatDateTime` from `@/lib/utils`. This ensures dates display accurately in the client's local timezone.
-
 4. **Always Verify `senderID` on the Backend:**
    The `senderID` passed into your `EventHandler` is extracted directly from the validated session cookie by the server. Never trust a `user_id` passed inside the JSON payload if it claims to be the sender.
