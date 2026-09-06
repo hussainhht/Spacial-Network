@@ -64,10 +64,13 @@ export interface InviteUserSearchResultsPayload {
 
 // NotificationEventPayload mirrors the "notification" websocket event's
 // payload exactly as sent by the backend (see
-// backend/internal/notifications/events.go). `type` is left as a plain
-// string here since this file has no notion of which notification types the
-// UI currently supports - that filtering happens in the notifications
-// feature, not at the transport layer.
+// backend/internal/notifications/{model,events}.go) - both REST and
+// WebSocket serialize the same generic Notification struct, so this one
+// type covers both transports. `type` is left as a plain string and `data`
+// as unknown here since this file has no notion of which notification types
+// the UI currently supports, or their feature-specific data shape - that
+// filtering/typing happens in the notifications feature, not at the
+// transport layer.
 export interface NotificationEventPayload {
   id: number;
   actor_id?: number;
@@ -75,6 +78,7 @@ export interface NotificationEventPayload {
   entity_type?: string;
   entity_id?: number;
   message: string;
+  data?: unknown;
   read_at?: string | null;
   created_at: string;
 }
@@ -87,5 +91,8 @@ export interface WebSocketContextType {
   errorMessage: string | null;
   inviteSearchResults: InviteUserSearchResultsPayload | null;
   lastNotification: NotificationEventPayload | null;
+  subscribeNotifications: (
+    listener: (notification: NotificationEventPayload) => void,
+  ) => () => void;
   sendEvent: (type: EventType, payload: unknown) => void;
 }

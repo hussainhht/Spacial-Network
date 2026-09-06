@@ -1,5 +1,17 @@
 # Groups Frontend Architecture — A Teaching Guide
 
+> **⚠️ Partially outdated (2026-09-06):** this guide was written when join
+> requests were simulated on the frontend with `mockJoinRequests.ts` and
+> `localStorage` (see the "mock" references throughout, especially the
+> `mockJoinRequests.ts` section). That file has since been deleted. Join
+> requests, invitations, and membership state are now real, backend-persisted
+> data served by `backend/internal/groups` and read through
+> `features/groups/api/groups.ts`, `features/groups/hooks/useGroupData.ts`,
+> and `features/groups/hooks/useGroupAction.ts`. Treat every mention of
+> "mock", "simulated", or `localStorage`-backed join requests below as
+> historical context for *why* the code evolved the way it did, not as a
+> description of current behavior.
+
 This document explains, in detail, how the Groups feature on the frontend
 (`frontend/src/app/groups/` and `frontend/src/features/groups/`) is built and
 *why* it's organized the way it is. It's written for someone learning

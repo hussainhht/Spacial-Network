@@ -1,64 +1,93 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { getGroups } from "../api/groups";
-import type { Group } from "../types/group";
+import { useGroupQuery } from "../hooks/useGroupData";
+import { GroupLoadError, InvitationsPanel } from "./GroupPanels";
 import GroupCard from "./GroupCard";
 
+const PAGE_SIZE = 20;
 export default function GroupsPageContent() {
-  const [groups, setGroups] = useState<Group[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    async function loadGroups() {
-      try {
-        const result = await getGroups();
-
-        setGroups(result);
-      } catch (error) {
-        setError(
-          error instanceof Error
-            ? error.message
-            : "Failed to load groups"
-        );
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    loadGroups();
-  }, []);
-
+  const [pages, setPages] = useState(1);
   return (
     <main className="groups-page space-shell">
       <div className="groups-container">
         <header className="groups-page-header">
-          <h1>Groups</h1>
+          <div>
+            <p className="group-eyebrow">Find your people</p>
+            <h1>Groups</h1>
+            <p className="group-muted">
+              Discover communities. Share an interest. Make a connection.
+            </p>
+          </div>
           <Link href="/groups/create" className="new-group-link">
-            Create Group
+            + Create Group
           </Link>
         </header>
-
-        {loading && <p>Loading groups...</p>}
-        {error && <p className="form-error">{error}</p>}
-
-        {!loading && !error && groups.length === 0 && (
-          <p>No groups yet.</p>
-        )}
-
-        {!loading && !error && groups.length > 0 && (
-          <div className="groups-list">
-            {groups.map((group) => (
-              <GroupCard
-                key={group.id}
-                group={group}
-              />
-            ))}
+        <InvitationsPanel />
+        <section aria-labelledby="browse-heading">
+          <div className="group-section-heading">
+            <h2 id="browse-heading">Explore communities</h2>
           </div>
-        )}
+          {Array.from({ length: pages }, (_, page) => (
+            <GroupsPage
+              key={page}
+              page={page}
+              last={page === pages - 1}
+              loadMore={() => setPages((p) => p + 1)}
+            />
+          ))}
+        </section>
       </div>
     </main>
+  );
+}
+function GroupsPage({
+  page,
+  last,
+  loadMore,
+}: {
+  page: number;
+  last: boolean;
+  loadMore: () => void;
+}) {
+  const state = useGroupQuery(`groups:${page}`, () =>
+    getGroups(PAGE_SIZE, page * PAGE_SIZE),
+  );
+  return (
+    <>
+      {state.loading && (
+        <p className="group-muted" role="status">
+          Loading groups…
+        </p>
+      )}
+      {state.error && (
+        <GroupLoadError error={state.error} retry={state.refresh} />
+      )}
+      {!state.loading && !state.error && !state.data?.length && page === 0 && (
+        <div className="group-panel group-empty">
+          <h3>A community starts with you</h3>
+          <p>
+            Create the first group and invite people who share your interests.
+          </p>
+        </div>
+      )}
+      <div className="groups-list">
+        {state.data?.map((group) => (
+          <GroupCard key={group.id} group={group} />
+        ))}
+      </div>
+      {last && state.data?.length === PAGE_SIZE && (
+        <button
+          type="button"
+          className="group-button secondary group-load-more"
+          disabled={state.loading}
+          onClick={loadMore}
+        >
+          Load more groups
+        </button>
+      )}
+    </>
   );
 }

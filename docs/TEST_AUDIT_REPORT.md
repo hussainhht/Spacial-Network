@@ -622,6 +622,8 @@ Session-middleware-generated 401s (`internal/middleware/auth.go`, using `http.Er
 ### WARN-008 — Notification click-through is not deep-linked
 Both supported notification types currently navigate to `/groups` on click rather than to the specific group/request involved — acknowledged in the frontend code's own comments as a limitation (no backend endpoint currently resolves a join-request ID back to its group ID without the client already knowing it).
 
+**Resolved (2026-09-06, groups+notifications implementation):** the notifications repository now resolves `entity_type`/`entity_id` to the owning group via a `LEFT JOIN` through `group_invitations`/`group_join_requests` (see `backend/internal/notifications/repository.go`'s `notificationSelect`) and exposes it as a derived, nullable `group_id`/`group_title` on both the REST and WebSocket payloads — never used as authorization evidence. `useNotificationNavigate` now routes to `/groups/{groupId}#invitations` or `#join-requests` instead of the generic `/groups` list.
+
 ### WARN-009 — Inconsistent backend response conventions; dead helper
 `pkg/response/json.go` defines a `JsonResponse` helper that is never called anywhere in the codebase — every handler duplicates `w.WriteHeader` + `json.NewEncoder(w).Encode(...)` independently, and different packages use different envelope shapes (`{success, message}` vs. `{message, error}`).
 

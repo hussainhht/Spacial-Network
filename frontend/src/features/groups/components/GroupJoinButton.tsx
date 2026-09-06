@@ -1,29 +1,23 @@
 "use client";
-
 import { useGroupJoinRequest } from "../hooks/useGroupJoinRequest";
-
-interface GroupJoinButtonProps {
-  groupId: number;
-}
-
-export default function GroupJoinButton({ groupId }: GroupJoinButtonProps) {
-  const { status, error, handleRequestToJoin } = useGroupJoinRequest(groupId);
-
-  if (status === "requested") {
-    return <p className="group-join-success">Join request sent.</p>;
-  }
-
+export default function GroupJoinButton({ groupId }: { groupId: number }) {
+  const { pending, busy, error, disabled, handleRequestToJoin } =
+    useGroupJoinRequest(groupId);
   return (
-    <div className="group-join">
+    <div className="group-join" aria-live="polite">
       <button
         type="button"
+        className="group-button"
         onClick={handleRequestToJoin}
-        disabled={status === "requesting"}
+        disabled={disabled}
       >
-        {status === "requesting" ? "Requesting..." : "Request to Join"}
+        {busy ?? (pending ? "Request Pending" : "Request to Join")}
       </button>
-
-      {error && <p className="form-error">{error}</p>}
+      {error && (
+        <p className="form-error" role="alert">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

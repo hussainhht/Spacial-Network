@@ -1,287 +1,86 @@
-import type { Group , CreateGroupInput, GroupMember, Membership, InviteCandidate, GroupInvitation } from "../types/group";
 import { getApiBaseUrl, getUploadsBaseUrl } from "@/lib/api";
+import { ApiError } from "@/lib/api/errors";
+import type { Group, CreateGroupInput, GroupMember, Membership, InviteCandidate, GroupInvitation, GroupJoinRequest } from "../types/group";
 
+interface Envelope { success: boolean; message?: string }
 interface ApiGroup {
-  id: number;
-  creator_id: number;
-  title: string;
-  description: string;
-  created_at: string;
-  updated_at: string;
+  id: number; creator_id: number; title: string; description: string;
+  created_at: string; updated_at: string; creator_username: string; member_count: number;
+  membership_role?: string; has_pending_join_request: boolean; has_pending_invitation: boolean;
 }
-
-
-
-interface ApiGroupMember {
-  user_id: number;
-  username: string;
-  role: string;
-  joined_at: string;
-}
-
-interface GroupMembersResponse {
-  success: boolean;
-  message?: string;
-  members?: ApiGroupMember[];
-}
-
-interface GroupsResponse {
-  success: boolean;
-  message?: string;
-  groups?: ApiGroup[];
-}
-
-interface CreateGroupResponse {
-  success: boolean;
-  message?: string;
-  group_id?: number;
-}
-
-interface GetGroupResponse {
-  success: boolean;
-  message?: string;
-  group?: ApiGroup;
-}
-
-interface MembershipResponse {
-  success: boolean;
-  message?: string;
-  is_member: boolean;
-  role?: string;
-}
-
-interface ApiInviteCandidate {
-  id: number;
-  username: string;
-  first_name: string;
-  last_name: string;
-  avatar?: string;
-}
-
-interface CreateGroupInvitationResponse {
-  success: boolean;
-  message?: string;
-}
-
-interface CreateJoinRequestResponse {
-  success: boolean;
-  message?: string;
-}
-
+interface ApiGroupMember { user_id: number; username: string; role: string; joined_at: string; avatar?: string }
+interface ApiInviteCandidate { id: number; username: string; first_name: string; last_name: string; avatar?: string }
 interface ApiGroupInvitation {
-  id: number;
-  group_id: number;
-  invited_by: number;
-  invited_user_id: number;
-  status: string;
-  created_at: string;
-  updated_at: string;
+  id: number; group_id: number; invited_by: number; invited_user_id: number; status: string;
+  created_at: string; updated_at: string; group_title: string; inviter_username: string;
+}
+interface ApiGroupJoinRequest {
+  id: number; group_id: number; user_id: number; username: string; status: string; created_at: string; updated_at: string;
 }
 
-interface GetGroupInvitationsResponse {
-  success: boolean;
-  message?: string;
-  invitations?: ApiGroupInvitation[];
+// Groups uses {success,message}, unlike the shared client's {error} envelope.
+// Keep status and the server's domain message, including conflicts and authorization.
+async function groupRequest<T extends Envelope>(path: string, body?: unknown, method = "GET"): Promise<T> {
+  let response: Response;
+  try {
+    response = await fetch(`${getApiBaseUrl()}${path}`, {
+      method, credentials: "include", cache: "no-store",
+      ...(body === undefined ? {} : { headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }),
+    });
+  } catch { throw new ApiError("Could not connect to server. Checking the latest group state…", 0); }
+  let data: T;
+  try { data = await response.json(); }
+  catch { throw new ApiError("The server returned an unreadable response. Check the latest group state before retrying.", response.status); }
+  if (!response.ok || !data.success) throw new ApiError(data.message ?? "Unable to complete the group request", response.status);
+  return data;
 }
-
-function toGroupInvitation(invitation: ApiGroupInvitation): GroupInvitation {
-  return {
-    id: invitation.id,
-    groupId: invitation.group_id,
-    invitedBy: invitation.invited_by,
-    invitedUserId: invitation.invited_user_id,
-    status: invitation.status,
-    createdAt: invitation.created_at,
-    updatedAt: invitation.updated_at,
-  };
+const post = (path: string, body?: unknown) => groupRequest<Envelope>(path, body, "POST").then(() => undefined);
+function toGroup(g: ApiGroup): Group {
+  return { id: g.id, creatorId: g.creator_id, title: g.title, description: g.description,
+    createdAt: g.created_at, updatedAt: g.updated_at, creatorUsername: g.creator_username, memberCount: g.member_count,
+    membershipRole: g.membership_role, hasPendingJoinRequest: g.has_pending_join_request, hasPendingInvitation: g.has_pending_invitation };
 }
-
 export async function getGroup(groupId: number): Promise<Group> {
-  const response = await fetch(`${getApiBaseUrl()}/groups/${groupId}`, {
-    method: "GET",
-    credentials: "include",
-  });
-
-  const data: GetGroupResponse = await response.json();
-
-  if (!response.ok || !data.success || !data.group) {
-    throw new Error(data.message ?? "Failed to load group");
-  }
-
+  const data = await groupRequest<Envelope & { group: ApiGroup }>(`/groups/${groupId}`);
   return toGroup(data.group);
 }
-
-function toGroupMember(member: ApiGroupMember): GroupMember {
-  return {
-    userId: member.user_id,
-    username: member.username,
-    role: member.role,
-    joinedAt: member.joined_at,
-  };
-}
-
-// Exported so the WebSocket-based search results (same field shape as the
-// HTTP search response's `users`) can go through the same mapping.
-export function toInviteCandidate(user: ApiInviteCandidate): InviteCandidate {
-  return {
-    id: user.id,
-    username: user.username,
-    firstName: user.first_name,
-    lastName: user.last_name,
-    avatar: user.avatar,
-  };
-}
-
-// avatarUrl turns a raw profile_photo path (as stored/returned by the
-// backend, e.g. "avatars/xxx.jpg") into a URL the browser can load. The
-// backend serves uploads directly from /uploads/, outside of /api/.
-export function avatarUrl(profilePhoto?: string): string | undefined {
-  if (!profilePhoto) return undefined;
-  if (/^https?:\/\//.test(profilePhoto)) return profilePhoto;
-  return `${getUploadsBaseUrl()}/${profilePhoto}`;
-}
-
-function toGroup(group: ApiGroup): Group {
-  return {
-    id: group.id,
-    creatorId: group.creator_id,
-    title: group.title,
-    description: group.description,
-    createdAt: group.created_at,
-    updatedAt: group.updated_at,
-  };
-}
-
-export async function getGroups(): Promise<Group[]> {
-  const response = await fetch(`${getApiBaseUrl()}/groups`, {
-    method: "GET",
-    credentials: "include",
-  });
-
-  const data: GroupsResponse = await response.json();
-
-  if (!response.ok || !data.success) {
-    throw new Error(data.message ?? "Failed to load groups");
-  }
-
+export async function getGroups(limit = 20, offset = 0): Promise<Group[]> {
+  const data = await groupRequest<Envelope & { groups?: ApiGroup[] }>(`/groups?limit=${limit}&offset=${offset}`);
   return (data.groups ?? []).map(toGroup);
 }
-
-
-export async function createGroup(
-  input: CreateGroupInput
-): Promise<Group> {
-  const response = await fetch(`${getApiBaseUrl()}/groups`, {
-    method: "POST",
-
-    headers: {
-      "Content-Type": "application/json",
-    },
-
-    credentials: "include",
-
-    body: JSON.stringify(input),
-  });
-
-  const data: CreateGroupResponse = await response.json();
-
-  if (!response.ok || !data.success || !data.group_id) {
-    throw new Error(data.message ?? "Failed to create group");
-  }
-
+export async function createGroup(input: CreateGroupInput): Promise<Group> {
+  const data = await groupRequest<Envelope & { group_id: number }>("/groups", input, "POST");
   return getGroup(data.group_id);
 }
-
-
-export async function getGroupMembers(
-  groupId: number
-): Promise<GroupMember[]> {
-  const response = await fetch(
-    `${getApiBaseUrl()}/groups/${groupId}/members`,
-    {
-      method: "GET",
-      credentials: "include",
-    }
-  );
-
-  const data: GroupMembersResponse = await response.json();
-
-  if (!response.ok || !data.success) {
-    throw new Error(data.message ?? "Failed to load group members");
-  }
-
-  return (data.members ?? []).map(toGroupMember);
+export async function getGroupMembers(groupId: number): Promise<GroupMember[]> {
+  const data = await groupRequest<Envelope & { members?: ApiGroupMember[] }>(`/groups/${groupId}/members`);
+  return (data.members ?? []).map(m => ({ userId: m.user_id, username: m.username, role: m.role, joinedAt: m.joined_at, avatar: m.avatar }));
 }
-
 export async function getMembership(groupId: number): Promise<Membership> {
-  const response = await fetch(
-    `${getApiBaseUrl()}/groups/${groupId}/membership`,
-    {
-      method: "GET",
-      credentials: "include",
-    }
-  );
-
-  const data: MembershipResponse = await response.json();
-
-  if (!response.ok || !data.success) {
-    throw new Error(data.message ?? "Failed to load membership status");
-  }
-
-  return { isMember: data.is_member, role: data.role };
+  const data = await groupRequest<Envelope & { is_member: boolean; role?: string; has_pending_join_request: boolean }>(`/groups/${groupId}/membership`);
+  return { isMember: data.is_member, role: data.role, hasPendingJoinRequest: data.has_pending_join_request };
 }
-
-export async function createJoinRequest(groupId: number): Promise<void> {
-  const response = await fetch(`${getApiBaseUrl()}/groups/${groupId}/join-requests`, {
-    method: "POST",
-    credentials: "include",
-  });
-
-  const data: CreateJoinRequestResponse = await response.json();
-
-  if (!response.ok || !data.success) {
-    throw new Error(data.message ?? "Failed to send join request");
-  }
-}
-
-// getPendingInvitations lists the current user's pending group invitations
-// (GET /group-invitations). Used to resolve a group_invitation
-// notification's entity_id (the invitation ID) to its group, since the
-// notification payload itself doesn't carry a group_id.
 export async function getPendingInvitations(): Promise<GroupInvitation[]> {
-  const response = await fetch(`${getApiBaseUrl()}/group-invitations`, {
-    method: "GET",
-    credentials: "include",
-  });
-
-  const data: GetGroupInvitationsResponse = await response.json();
-
-  if (!response.ok || !data.success) {
-    throw new Error(data.message ?? "Failed to load invitations");
-  }
-
-  return (data.invitations ?? []).map(toGroupInvitation);
+  const data = await groupRequest<Envelope & { invitations?: ApiGroupInvitation[] }>("/group-invitations");
+  return (data.invitations ?? []).map(i => ({ id: i.id, groupId: i.group_id, invitedBy: i.invited_by, invitedUserId: i.invited_user_id,
+    status: i.status, createdAt: i.created_at, updatedAt: i.updated_at, groupTitle: i.group_title, inviterUsername: i.inviter_username }));
 }
+export async function getPendingJoinRequests(groupId: number): Promise<GroupJoinRequest[]> {
+  const data = await groupRequest<Envelope & { join_requests?: ApiGroupJoinRequest[] }>(`/groups/${groupId}/join-requests`);
+  return (data.join_requests ?? []).map(r => ({ id: r.id, groupId: r.group_id, userId: r.user_id, username: r.username,
+    status: r.status, createdAt: r.created_at, updatedAt: r.updated_at }));
+}
+export const createJoinRequest = (id: number) => post(`/groups/${id}/join-requests`);
+export const createGroupInvitation = (groupId: number, userId: number) => post(`/groups/${groupId}/invitations`, { invited_user_id: userId });
+export const acceptJoinRequest = (groupId: number, id: number) => post(`/groups/${groupId}/join-requests/${id}/accept`);
+export const rejectJoinRequest = (groupId: number, id: number) => post(`/groups/${groupId}/join-requests/${id}/reject`);
+export const acceptGroupInvitation = (id: number) => post(`/group-invitations/${id}/accept`);
+export const declineGroupInvitation = (id: number) => post(`/group-invitations/${id}/decline`);
 
-export async function createGroupInvitation(
-  groupId: number,
-  invitedUserId: number
-): Promise<void> {
-  const response = await fetch(`${getApiBaseUrl()}/groups/${groupId}/invitations`, {
-    method: "POST",
-
-    headers: {
-      "Content-Type": "application/json",
-    },
-
-    credentials: "include",
-
-    body: JSON.stringify({ invited_user_id: invitedUserId }),
-  });
-
-  const data: CreateGroupInvitationResponse = await response.json();
-
-  if (!response.ok || !data.success) {
-    throw new Error(data.message ?? "Failed to send invitation");
-  }
+export function toInviteCandidate(user: ApiInviteCandidate): InviteCandidate {
+  return { id: user.id, username: user.username, firstName: user.first_name, lastName: user.last_name, avatar: user.avatar };
+}
+export function avatarUrl(photo?: string): string | undefined {
+  if (!photo) return undefined;
+  return /^https?:\/\//.test(photo) ? photo : `${getUploadsBaseUrl()}/${photo}`;
 }
