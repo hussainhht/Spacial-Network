@@ -158,6 +158,27 @@ func NewRouter(db *sql.DB, cfg config.Config) (http.Handler, error) {
 	)
 
 	// =========================
+	// Group Events Routes
+	// =========================
+
+	apiMux.Handle(
+		"POST /groups/{id}/events",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.CreateEventHandler)),
+	)
+	apiMux.Handle(
+		"GET /groups/{id}/events",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.GetGroupEventsHandler)),
+	)
+	apiMux.Handle(
+		"GET /groups/{id}/events/{eventID}",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.GetEventHandler)),
+	)
+	apiMux.Handle(
+		"PUT /groups/{id}/events/{eventID}/response",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.RespondToEventHandler)),
+	)
+
+	// =========================
 	// Chat Routes - Future
 	// =========================
 

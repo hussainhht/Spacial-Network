@@ -92,8 +92,8 @@ Authentication, Docker, and final project-wide integration are not included in t
 
 ### Database
 
-- [ ] Create `events` table migration (group ID, creator ID, title, description, date/time, and `.down.sql`)
-- [ ] Create `event_responses` table migration (event ID, user ID, response status, unique constraint, and `.down.sql`)
+- [X] Create `events` table migration (group ID, creator ID, title, description, date/time, and `.down.sql`)
+- [X] Create `event_responses` table migration (event ID, user ID, response status, unique constraint, and `.down.sql`)
 
 ### Backend
 
