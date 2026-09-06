@@ -1,6 +1,7 @@
 "use client";
 import { useEffect } from "react";
 import { useWebSocket } from "@/providers/WebSocketProvider";
+import { getGroupNotificationData } from "@/features/notifications/types/notification";
 import { refreshGroupData } from "../hooks/useGroupData";
 
 export default function GroupStateSync() {
@@ -12,7 +13,7 @@ export default function GroupStateSync() {
           event.type === "group_invitation" ||
           event.type === "group_join_request"
         )
-          void refreshGroupData(event.group_id);
+          void refreshGroupData(getGroupNotificationData(event)?.group_id);
       }),
     [subscribeNotifications],
   );

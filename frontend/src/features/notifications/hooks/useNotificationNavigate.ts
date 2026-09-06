@@ -12,16 +12,16 @@ export function useNotificationNavigate() {
     (notification: Notification) => {
       switch (notification.type) {
         case "group_join_request":
-          if (notification.groupId) {
-            router.push(`/groups/${notification.groupId}#join-requests`);
+          if (notification.data) {
+            router.push(`/groups/${notification.data.group_id}#join-requests`);
           } else {
             router.push("/groups");
           }
           break;
 
         case "group_invitation":
-          if (notification.groupId) {
-            router.push(`/groups/${notification.groupId}#invitations`);
+          if (notification.data) {
+            router.push(`/groups/${notification.data.group_id}#invitations`);
           } else {
             router.push("/groups");
           }
