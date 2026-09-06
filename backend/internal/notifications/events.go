@@ -6,9 +6,7 @@ import (
 	"social/internal/websocket"
 )
 
-
 const EventNotification websocket.EventType = "notification"
-
 
 type NotificationPayload struct {
 	ID      int              `json:"id"`
@@ -18,7 +16,11 @@ type NotificationPayload struct {
 	EntityType *string `json:"entity_type,omitempty"`
 	EntityID   *int    `json:"entity_id,omitempty"`
 
-	Message string `json:"message"`
+	// Display/navigation context is derived from the entity relationship, never authorization evidence.
+	GroupID       *int    `json:"group_id,omitempty"`
+	GroupTitle    *string `json:"group_title,omitempty"`
+	ActorUsername *string `json:"actor_username,omitempty"`
+	Message       string  `json:"message"`
 
 	ReadAt    *time.Time `json:"read_at,omitempty"`
 	CreatedAt time.Time  `json:"created_at"`
@@ -26,7 +28,8 @@ type NotificationPayload struct {
 
 func toPayload(n Notification) NotificationPayload {
 	return NotificationPayload{
-		ID:         n.ID,
+		ID:      n.ID,
+		GroupID: n.GroupID, GroupTitle: n.GroupTitle, ActorUsername: n.ActorUsername,
 		ActorID:    n.ActorID,
 		Type:       n.Type,
 		EntityType: n.EntityType,
@@ -36,7 +39,6 @@ func toPayload(n Notification) NotificationPayload {
 		CreatedAt:  n.CreatedAt,
 	}
 }
-
 
 func NewNotificationEvent(n Notification) (websocket.Event, error) {
 	return websocket.NewEvent(EventNotification, toPayload(n))

@@ -11,7 +11,8 @@ import (
 
 func toGroupResponse(g *Group) GroupResponse {
 	return GroupResponse{
-		ID:          g.ID,
+		ID:              g.ID,
+		CreatorUsername: g.CreatorUsername, MemberCount: g.MemberCount, MembershipRole: g.MembershipRole, HasPendingJoinRequest: g.HasPendingJoinRequest, HasPendingInvitation: g.HasPendingInvitation,
 		CreatorID:   g.CreatorID,
 		Title:       g.Title,
 		Description: g.Description,
@@ -22,7 +23,7 @@ func toGroupResponse(g *Group) GroupResponse {
 
 func toGroupMemberResponse(m GroupMember) GroupMemberResponse {
 	return GroupMemberResponse{
-		UserID:   m.UserID,
+		UserID: m.UserID, Avatar: m.Avatar,
 		Username: m.Username,
 		Role:     m.Role,
 		JoinedAt: m.JoinedAt.Format(time.RFC3339),
@@ -31,7 +32,7 @@ func toGroupMemberResponse(m GroupMember) GroupMemberResponse {
 
 func toGroupJoinRequestResponse(jr GroupJoinRequest) GroupJoinRequestResponse {
 	return GroupJoinRequestResponse{
-		ID:        jr.ID,
+		ID: jr.ID, Username: jr.Username,
 		GroupID:   jr.GroupID,
 		UserID:    jr.UserID,
 		Status:    jr.Status,
@@ -42,7 +43,7 @@ func toGroupJoinRequestResponse(jr GroupJoinRequest) GroupJoinRequestResponse {
 
 func toGroupInvitationResponse(inv GroupInvitation) GroupInvitationResponse {
 	return GroupInvitationResponse{
-		ID:            inv.ID,
+		ID: inv.ID, GroupTitle: inv.GroupTitle, InviterUsername: inv.InviterUsername,
 		GroupID:       inv.GroupID,
 		InvitedBy:     inv.InvitedBy,
 		InvitedUserID: inv.InvitedUserID,
@@ -151,7 +152,8 @@ func (h *Handler) ListGroupsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	groupsList, err := h.service.GetAllGroups(limit, offset)
+	userID, _ := requestctx.UserID(r.Context())
+	groupsList, err := h.service.GetAllGroups(limit, offset, userID)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(ListGroupsResponse{
@@ -341,7 +343,13 @@ func (h *Handler) GetMembershipHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := MembershipResponse{Success: true, IsMember: member != nil}
+	pending, err := h.service.HasPendingJoinRequest(groupID, userID)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(MembershipResponse{Message: "Failed to get membership status"})
+		return
+	}
+	resp := MembershipResponse{Success: true, IsMember: member != nil, HasPendingJoinRequest: pending}
 	if member != nil {
 		resp.Role = member.Role
 	}

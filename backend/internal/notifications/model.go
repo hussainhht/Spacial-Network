@@ -50,7 +50,11 @@ type Notification struct {
 	EntityType *string `json:"entity_type,omitempty"`
 	EntityID   *int    `json:"entity_id,omitempty"`
 
-	Message string `json:"message"`
+	// Display/navigation context is derived from the entity relationship, never authorization evidence.
+	GroupID       *int    `json:"group_id,omitempty"`
+	GroupTitle    *string `json:"group_title,omitempty"`
+	ActorUsername *string `json:"actor_username,omitempty"`
+	Message       string  `json:"message"`
 
 	ReadAt    *time.Time `json:"read_at,omitempty"`
 	CreatedAt time.Time  `json:"created_at"`

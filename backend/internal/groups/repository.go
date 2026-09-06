@@ -2,6 +2,8 @@ package groups
 
 import (
 	"database/sql"
+	"errors"
+	"github.com/mattn/go-sqlite3"
 	"strings"
 )
 
@@ -52,12 +54,17 @@ func (r *Repository) InsertGroup(creatorID int, title, description string) (int6
 	return groupID, nil
 }
 
-func (r *Repository) GetAllGroups(limit, offset int) ([]Group, error) {
+func (r *Repository) GetAllGroups(limit, offset, userID int) ([]Group, error) {
 	rows, err := r.db.Query(
-		`SELECT id, creator_id, title, description, created_at, updated_at
-		 FROM groups
-		 ORDER BY created_at DESC
+		`SELECT g.id, g.creator_id, g.title, g.description, g.created_at, g.updated_at,
+         u.username, (SELECT COUNT(*) FROM group_members WHERE group_id = g.id),
+         COALESCE((SELECT role FROM group_members WHERE group_id = g.id AND user_id = ?), ''),
+         EXISTS(SELECT 1 FROM group_join_requests WHERE group_id = g.id AND user_id = ? AND status = 'pending'),
+         EXISTS(SELECT 1 FROM group_invitations WHERE group_id = g.id AND invited_user_id = ? AND status = 'pending')
+         FROM groups g JOIN users u ON u.id = g.creator_id
+         ORDER BY g.created_at DESC, g.id DESC
 		 LIMIT ? OFFSET ?`,
+		userID, userID, userID,
 		limit,
 		offset,
 	)
@@ -69,7 +76,7 @@ func (r *Repository) GetAllGroups(limit, offset int) ([]Group, error) {
 	result := make([]Group, 0)
 	for rows.Next() {
 		var g Group
-		if err := rows.Scan(&g.ID, &g.CreatorID, &g.Title, &g.Description, &g.CreatedAt, &g.UpdatedAt); err != nil {
+		if err := rows.Scan(&g.ID, &g.CreatorID, &g.Title, &g.Description, &g.CreatedAt, &g.UpdatedAt, &g.CreatorUsername, &g.MemberCount, &g.MembershipRole, &g.HasPendingJoinRequest, &g.HasPendingInvitation); err != nil {
 			return nil, err
 		}
 		result = append(result, g)
@@ -82,13 +89,13 @@ func (r *Repository) GetMembership(groupID, userID int) (*GroupMember, error) {
 	var m GroupMember
 
 	err := r.db.QueryRow(
-		`SELECT gm.user_id, u.username, gm.role, gm.joined_at
+		`SELECT gm.user_id, u.username, gm.role, gm.joined_at, COALESCE(u.profile_photo, '')
 		 FROM group_members gm
 		 JOIN users u ON u.id = gm.user_id
 		 WHERE gm.group_id = ? AND gm.user_id = ?`,
 		groupID,
 		userID,
-	).Scan(&m.UserID, &m.Username, &m.Role, &m.JoinedAt)
+	).Scan(&m.UserID, &m.Username, &m.Role, &m.JoinedAt, &m.Avatar)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
@@ -120,11 +127,11 @@ func (r *Repository) GetGroupByID(id int) (*Group, error) {
 	var g Group
 
 	err := r.db.QueryRow(
-		`SELECT id, creator_id, title, description, created_at, updated_at
-		 FROM groups
-		 WHERE id = ?`,
+		`SELECT g.id, g.creator_id, g.title, g.description, g.created_at, g.updated_at,
+         u.username, (SELECT COUNT(*) FROM group_members WHERE group_id = g.id)
+         FROM groups g JOIN users u ON u.id = g.creator_id WHERE g.id = ?`,
 		id,
-	).Scan(&g.ID, &g.CreatorID, &g.Title, &g.Description, &g.CreatedAt, &g.UpdatedAt)
+	).Scan(&g.ID, &g.CreatorID, &g.Title, &g.Description, &g.CreatedAt, &g.UpdatedAt, &g.CreatorUsername, &g.MemberCount)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, ErrGroupNotFound
@@ -137,7 +144,7 @@ func (r *Repository) GetGroupByID(id int) (*Group, error) {
 
 func (r *Repository) GetGroupMembers(groupID int) ([]GroupMember, error) {
 	rows, err := r.db.Query(
-		`SELECT gm.user_id, u.username, gm.role, gm.joined_at
+		`SELECT gm.user_id, u.username, gm.role, gm.joined_at, COALESCE(u.profile_photo, '')
 		 FROM group_members gm
 		 JOIN users u ON u.id = gm.user_id
 		 WHERE gm.group_id = ?
@@ -152,7 +159,7 @@ func (r *Repository) GetGroupMembers(groupID int) ([]GroupMember, error) {
 	result := make([]GroupMember, 0)
 	for rows.Next() {
 		var m GroupMember
-		if err := rows.Scan(&m.UserID, &m.Username, &m.Role, &m.JoinedAt); err != nil {
+		if err := rows.Scan(&m.UserID, &m.Username, &m.Role, &m.JoinedAt, &m.Avatar); err != nil {
 			return nil, err
 		}
 		result = append(result, m)
@@ -163,15 +170,20 @@ func (r *Repository) GetGroupMembers(groupID int) ([]GroupMember, error) {
 
 func (r *Repository) CreateGroupInvitation(groupID, invitedBy, invitedUserID int) (int64, error) {
 	result, err := r.db.Exec(
-		`INSERT INTO group_invitations (group_id, invited_by, invited_user_id) VALUES (?, ?, ?)`,
+		`INSERT INTO group_invitations (group_id, invited_by, invited_user_id)
+         SELECT ?, ?, ? WHERE NOT EXISTS (SELECT 1 FROM group_members WHERE group_id = ? AND user_id = ?)`,
 		groupID,
 		invitedBy,
-		invitedUserID,
+		invitedUserID, groupID, invitedUserID,
 	)
 	if err != nil {
-		return 0, err
+		return 0, pendingInsertError(err, ErrInvitationAlreadyPending)
 	}
-
+	if n, err := result.RowsAffected(); err != nil {
+		return 0, err
+	} else if n == 0 {
+		return 0, ErrAlreadyMember
+	}
 	return result.LastInsertId()
 }
 
@@ -196,10 +208,10 @@ func (r *Repository) GetGroupInvitationByID(invitationID int) (*GroupInvitation,
 
 func (r *Repository) GetPendingInvitationsByUser(userID int) ([]GroupInvitation, error) {
 	rows, err := r.db.Query(
-		`SELECT id, group_id, invited_by, invited_user_id, status, created_at, updated_at
-		 FROM group_invitations
-		 WHERE invited_user_id = ? AND status = 'pending'
-		 ORDER BY created_at DESC`,
+		`SELECT i.id, i.group_id, i.invited_by, i.invited_user_id, i.status, i.created_at, i.updated_at, g.title, u.username
+         FROM group_invitations i JOIN groups g ON g.id = i.group_id JOIN users u ON u.id = i.invited_by
+         WHERE i.invited_user_id = ? AND i.status = 'pending'
+         ORDER BY i.created_at DESC, i.id DESC`,
 		userID,
 	)
 	if err != nil {
@@ -210,7 +222,7 @@ func (r *Repository) GetPendingInvitationsByUser(userID int) ([]GroupInvitation,
 	result := make([]GroupInvitation, 0)
 	for rows.Next() {
 		var inv GroupInvitation
-		if err := rows.Scan(&inv.ID, &inv.GroupID, &inv.InvitedBy, &inv.InvitedUserID, &inv.Status, &inv.CreatedAt, &inv.UpdatedAt); err != nil {
+		if err := rows.Scan(&inv.ID, &inv.GroupID, &inv.InvitedBy, &inv.InvitedUserID, &inv.Status, &inv.CreatedAt, &inv.UpdatedAt, &inv.GroupTitle, &inv.InviterUsername); err != nil {
 			return nil, err
 		}
 		result = append(result, inv)
@@ -238,37 +250,22 @@ func (r *Repository) HasPendingInvitation(groupID, invitedUserID int) (bool, err
 	return true, nil
 }
 
-func (r *Repository) UpdateInvitationStatus(invitationID int, status string) error {
-	result, err := r.db.Exec(
-		`UPDATE group_invitations SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
-		status,
-		invitationID,
-	)
-	if err != nil {
-		return err
-	}
-
-	affected, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if affected == 0 {
-		return ErrInvitationNotFound
-	}
-
-	return nil
-}
-
 func (r *Repository) CreateGroupJoinRequest(groupID, userID int) (int64, error) {
 	result, err := r.db.Exec(
-		`INSERT INTO group_join_requests (group_id, user_id) VALUES (?, ?)`,
+		`INSERT INTO group_join_requests (group_id, user_id)
+         SELECT ?, ? WHERE NOT EXISTS (SELECT 1 FROM group_members WHERE group_id = ? AND user_id = ?)`,
 		groupID,
-		userID,
+		userID, groupID, userID,
 	)
 	if err != nil {
-		return 0, err
+		return 0, pendingInsertError(err, ErrJoinRequestAlreadyPending)
 	}
 
+	if n, err := result.RowsAffected(); err != nil {
+		return 0, err
+	} else if n == 0 {
+		return 0, ErrAlreadyMember
+	}
 	return result.LastInsertId()
 }
 
@@ -293,10 +290,10 @@ func (r *Repository) GetGroupJoinRequestByID(requestID int) (*GroupJoinRequest, 
 
 func (r *Repository) GetPendingJoinRequestsByGroup(groupID int) ([]GroupJoinRequest, error) {
 	rows, err := r.db.Query(
-		`SELECT id, group_id, user_id, status, created_at, updated_at
-		 FROM group_join_requests
-		 WHERE group_id = ? AND status = 'pending'
-		 ORDER BY created_at DESC`,
+		`SELECT jr.id, jr.group_id, jr.user_id, jr.status, jr.created_at, jr.updated_at, u.username
+         FROM group_join_requests jr JOIN users u ON u.id = jr.user_id
+         WHERE jr.group_id = ? AND jr.status = 'pending'
+         ORDER BY jr.created_at DESC, jr.id DESC`,
 		groupID,
 	)
 	if err != nil {
@@ -307,7 +304,7 @@ func (r *Repository) GetPendingJoinRequestsByGroup(groupID int) ([]GroupJoinRequ
 	result := make([]GroupJoinRequest, 0)
 	for rows.Next() {
 		var jr GroupJoinRequest
-		if err := rows.Scan(&jr.ID, &jr.GroupID, &jr.UserID, &jr.Status, &jr.CreatedAt, &jr.UpdatedAt); err != nil {
+		if err := rows.Scan(&jr.ID, &jr.GroupID, &jr.UserID, &jr.Status, &jr.CreatedAt, &jr.UpdatedAt, &jr.Username); err != nil {
 			return nil, err
 		}
 		result = append(result, jr)
@@ -334,7 +331,6 @@ func (r *Repository) HasPendingJoinRequest(groupID, userID int) (bool, error) {
 
 	return true, nil
 }
-
 
 func (r *Repository) SearchInviteCandidates(groupID, currentUserID int, query string, limit int) ([]InviteCandidate, error) {
 	like := "%" + escapeLikePattern(query) + "%"
@@ -382,29 +378,21 @@ func (r *Repository) SearchInviteCandidates(groupID, currentUserID int, query st
 	return result, rows.Err()
 }
 
-
 func escapeLikePattern(s string) string {
-	replacer := strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`) 
+	replacer := strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`)
 	return replacer.Replace(s)
 }
 
-func (r *Repository) UpdateJoinRequestStatus(requestID int, status string) error {
-	result, err := r.db.Exec(
-		`UPDATE group_join_requests SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
-		status,
-		requestID,
-	)
-	if err != nil {
-		return err
+func pendingInsertError(err error, conflict error) error {
+	var sqliteErr sqlite3.Error
+	if errors.As(err, &sqliteErr) && sqliteErr.ExtendedCode == sqlite3.ErrConstraintUnique {
+		return conflict
 	}
+	return err
+}
 
-	affected, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if affected == 0 {
-		return ErrJoinRequestNotFound
-	}
-
-	return nil
+func (r *Repository) UserExists(userID int) (bool, error) {
+	var exists bool
+	err := r.db.QueryRow(`SELECT EXISTS(SELECT 1 FROM users WHERE id = ?)`, userID).Scan(&exists)
+	return exists, err
 }

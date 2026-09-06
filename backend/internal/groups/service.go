@@ -1,6 +1,9 @@
 package groups
 
-import "errors"
+import (
+	"errors"
+	"log"
+)
 
 type Service struct {
 	repo     *Repository
@@ -41,8 +44,8 @@ func (s *Service) CreateGroup(creatorID int, title, description string) (int64, 
 }
 
 // GetAllGroups returns a page of groups, most recently created first.
-func (s *Service) GetAllGroups(limit, offset int) ([]Group, error) {
-	return s.repo.GetAllGroups(limit, offset)
+func (s *Service) GetAllGroups(limit, offset, userID int) ([]Group, error) {
+	return s.repo.GetAllGroups(limit, offset, userID)
 }
 
 // GetGroupByID returns the group with the given ID.
@@ -125,7 +128,7 @@ func (s *Service) RequestToJoin(groupID, userID int) error {
 			userID,          // actor
 			int(requestID),  // join request
 		); err != nil {
-			// log the notification error, but don't fail the join request
+			log.Printf("groups: join request %d notification failed: %v", requestID, err)
 		}
 	}
 
@@ -145,47 +148,13 @@ func (s *Service) GetPendingJoinRequests(groupID, creatorID int) ([]GroupJoinReq
 }
 
 func (s *Service) AcceptJoinRequest(groupID, requestID, creatorID int) error {
-	req, err := s.resolvePendingJoinRequest(groupID, requestID, creatorID)
-	if err != nil {
-		return err
-	}
-
-	if err := s.repo.AddMember(groupID, req.UserID); err != nil && !errors.Is(err, ErrAlreadyMember) {
-		return err
-	}
-
-	return s.repo.UpdateJoinRequestStatus(requestID, StatusAccepted)
+	return s.repo.RespondToJoinRequest(groupID, requestID, creatorID, StatusAccepted)
 }
-
 func (s *Service) RejectJoinRequest(groupID, requestID, creatorID int) error {
-	if _, err := s.resolvePendingJoinRequest(groupID, requestID, creatorID); err != nil {
-		return err
-	}
-
-	return s.repo.UpdateJoinRequestStatus(requestID, StatusDeclined)
+	return s.repo.RespondToJoinRequest(groupID, requestID, creatorID, StatusDeclined)
 }
-
-func (s *Service) resolvePendingJoinRequest(groupID, requestID, creatorID int) (*GroupJoinRequest, error) {
-	group, err := s.repo.GetGroupByID(groupID)
-	if err != nil {
-		return nil, err
-	}
-	if group.CreatorID != creatorID {
-		return nil, ErrNotGroupCreator
-	}
-
-	req, err := s.repo.GetGroupJoinRequestByID(requestID)
-	if err != nil {
-		return nil, err
-	}
-	if req.GroupID != groupID {
-		return nil, ErrJoinRequestNotFound
-	}
-	if req.Status != StatusPending {
-		return nil, ErrJoinRequestNotPending
-	}
-
-	return req, nil
+func (s *Service) HasPendingJoinRequest(groupID, userID int) (bool, error) {
+	return s.repo.HasPendingJoinRequest(groupID, userID)
 }
 
 func (s *Service) CreateGroupInvitation(groupID, inviterID, invitedUserID int) error {
@@ -203,6 +172,14 @@ func (s *Service) CreateGroupInvitation(groupID, inviterID, invitedUserID int) e
 	}
 	if inviter == nil {
 		return ErrNotGroupMember
+	}
+
+	exists, err := s.repo.UserExists(invitedUserID)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return ErrInviteeNotFound
 	}
 
 	invited, err := s.repo.GetMembership(groupID, invitedUserID)
@@ -232,7 +209,7 @@ func (s *Service) CreateGroupInvitation(groupID, inviterID, invitedUserID int) e
 			inviterID,         // actor
 			int(invitationID), // invitation
 		); err != nil {
-			// log the notification error, but don't fail the invitation
+			log.Printf("groups: invitation %d notification failed: %v", invitationID, err)
 		}
 	}
 
@@ -244,26 +221,11 @@ func (s *Service) GetPendingInvitations(userID int) ([]GroupInvitation, error) {
 }
 
 func (s *Service) AcceptGroupInvitation(invitationID, userID int) error {
-	inv, err := s.resolvePendingInvitation(invitationID, userID)
-	if err != nil {
-		return err
-	}
-
-	if err := s.repo.AddMember(inv.GroupID, userID); err != nil && !errors.Is(err, ErrAlreadyMember) {
-		return err
-	}
-
-	return s.repo.UpdateInvitationStatus(invitationID, StatusAccepted)
+	return s.repo.RespondToInvitation(invitationID, userID, StatusAccepted)
 }
-
 func (s *Service) DeclineGroupInvitation(invitationID, userID int) error {
-	if _, err := s.resolvePendingInvitation(invitationID, userID); err != nil {
-		return err
-	}
-
-	return s.repo.UpdateInvitationStatus(invitationID, StatusDeclined)
+	return s.repo.RespondToInvitation(invitationID, userID, StatusDeclined)
 }
-
 
 func (s *Service) SearchInviteCandidates(groupID, currentUserID int, rawQuery string, limit int) ([]InviteCandidate, error) {
 	if _, err := s.repo.GetGroupByID(groupID); err != nil {
@@ -291,19 +253,4 @@ func (s *Service) SearchInviteCandidates(groupID, currentUserID int, rawQuery st
 	}
 
 	return s.repo.SearchInviteCandidates(groupID, currentUserID, query, limit)
-}
-
-func (s *Service) resolvePendingInvitation(invitationID, userID int) (*GroupInvitation, error) {
-	inv, err := s.repo.GetGroupInvitationByID(invitationID)
-	if err != nil {
-		return nil, err
-	}
-	if inv.InvitedUserID != userID {
-		return nil, ErrInvitationNotFound
-	}
-	if inv.Status != StatusPending {
-		return nil, ErrInvitationNotPending
-	}
-
-	return inv, nil
 }

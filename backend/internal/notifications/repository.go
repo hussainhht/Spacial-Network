@@ -33,17 +33,12 @@ func (r *Repository) Create(req CreateNotificationRequest) (*Notification, error
 	}
 	n.Type = NotificationType(typ)
 
-	return &n, nil
+	// Use the same projection as REST before live delivery, including completed entities.
+	return r.getByID(n.ID, n.ReceiverID)
 }
 
 func (r *Repository) GetByUser(userID, limit, offset int) ([]Notification, error) {
-	query := `
-		SELECT id, receiver_id, actor_id, type, entity_type, entity_id, message, read_at, created_at
-		FROM notifications
-		WHERE receiver_id = ?
-		ORDER BY created_at DESC, id DESC
-		LIMIT ? OFFSET ?
-	`
+	query := notificationSelect + ` WHERE n.receiver_id = ? ORDER BY n.created_at DESC, n.id DESC LIMIT ? OFFSET ?`
 
 	rows, err := r.db.Query(query, userID, limit, offset)
 	if err != nil {
@@ -56,7 +51,7 @@ func (r *Repository) GetByUser(userID, limit, offset int) ([]Notification, error
 		var n Notification
 		var typ string
 		if err := rows.Scan(
-			&n.ID, &n.ReceiverID, &n.ActorID, &typ, &n.EntityType, &n.EntityID, &n.Message, &n.ReadAt, &n.CreatedAt,
+			&n.ID, &n.ReceiverID, &n.ActorID, &typ, &n.EntityType, &n.EntityID, &n.Message, &n.ReadAt, &n.CreatedAt, &n.GroupID, &n.GroupTitle, &n.ActorUsername,
 		); err != nil {
 			return nil, fmt.Errorf("scan notification: %w", err)
 		}
@@ -78,7 +73,6 @@ func (r *Repository) GetUnreadCount(userID int) (int, error) {
 	}
 	return count, nil
 }
-
 
 func (r *Repository) MarkAsRead(notificationID, receiverID int) error {
 	result, err := r.db.Exec(
@@ -135,4 +129,26 @@ func (r *Repository) belongsToReceiver(notificationID, receiverID int) (bool, er
 		return false, fmt.Errorf("check notification ownership: %w", err)
 	}
 	return true, nil
+}
+
+// LEFT JOIN preserves historical notifications whose related entity was deleted.
+// No pending filter: completed attempts still resolve to their original group.
+const notificationSelect = `SELECT n.id, n.receiver_id, n.actor_id, n.type, n.entity_type, n.entity_id,
+ n.message, n.read_at, n.created_at, g.id, g.title, u.username
+ FROM notifications n
+ LEFT JOIN group_invitations i ON n.entity_type = 'group_invitation' AND n.entity_id = i.id
+ LEFT JOIN group_join_requests jr ON n.entity_type = 'group_join_request' AND n.entity_id = jr.id
+ LEFT JOIN groups g ON g.id = COALESCE(i.group_id, jr.group_id)
+ LEFT JOIN users u ON u.id = n.actor_id`
+
+func (r *Repository) getByID(id, receiverID int) (*Notification, error) {
+	var n Notification
+	err := r.db.QueryRow(notificationSelect+` WHERE n.id = ? AND n.receiver_id = ?`, id, receiverID).Scan(
+		&n.ID, &n.ReceiverID, &n.ActorID, &n.Type, &n.EntityType, &n.EntityID, &n.Message, &n.ReadAt, &n.CreatedAt,
+		&n.GroupID, &n.GroupTitle, &n.ActorUsername,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("load notification context: %w", err)
+	}
+	return &n, nil
 }
