@@ -1,10 +1,10 @@
 package middleware
 
 import (
-	"context"
 	"net/http"
 
 	"social/internal/auth"
+	"social/internal/requestctx"
 )
 
 func SessionMiddleware(authService *auth.Service, cookieName string) func(http.Handler) http.Handler {
@@ -29,7 +29,7 @@ func SessionMiddleware(authService *auth.Service, cookieName string) func(http.H
 				return
 			}
 
-			ctx := context.WithValue(r.Context(), auth.UserIDKey, userID)
+			ctx := requestctx.WithUserID(r.Context(), userID)
 
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})

@@ -1,9 +1,11 @@
 # Person 3 — Profiles & Followers
 
 ## Main Responsibility
+
 Own the complete Profile and Followers features.
 
 This includes:
+
 - Database migrations
 - Backend logic
 - API handlers
@@ -19,26 +21,28 @@ Authentication, Docker, and final project-wide integration are not included in t
 ## 1. User Profile
 
 ### Backend
-- [ ] Get the current user's profile
-- [ ] Get another user's profile by ID
-- [ ] Return email
-- [ ] Return first name
-- [ ] Return last name
+
+- [X] Get the current user's profile
+- [X] Get another user's profile by ID / username
+- [X] Return email
+- [X] Return first name
+- [X] Return last name
 - [ ] Return date of birth
-- [ ] Return avatar
+- [X] Return avatar
 - [ ] Return nickname
 - [ ] Return About Me
 - [ ] Return followers information
 - [ ] Return following information
 - [ ] Return user posts/activity information when needed
-- [ ] Never expose the user's password
-- [ ] Handle user-not-found errors
+- [X] Never expose the user's password
+- [X] Handle user-not-found errors
 
 ### Frontend
-- [ ] Create own Profile page
-- [ ] Create other-user Profile page
-- [ ] Display profile avatar
-- [ ] Display name
+
+- [X] Create own Profile page
+- [X] Create other-user Profile page
+- [X] Display profile avatar
+- [X] Display name
 - [ ] Display nickname
 - [ ] Display About Me
 - [ ] Display date of birth according to the required visibility rules
@@ -51,24 +55,27 @@ Authentication, Docker, and final project-wide integration are not included in t
 ## 2. Profile Privacy
 
 ### Database
-- [ ] Add/store profile privacy state
-- [ ] Support Public profile
-- [ ] Support Private profile
-- [ ] Add migration if the existing `users` table needs modification
-- [ ] Create matching `.down.sql` migration
+
+- [X] Add/store profile privacy state
+- [X] Support Public profile
+- [X] Support Private profile
+- [X] Add migration if the existing `users` table needs modification
+- [X] Create matching `.down.sql` migration
 
 ### Backend
-- [ ] Change profile from Public to Private
-- [ ] Change profile from Private to Public
+
+- [X] Change profile from Public to Private
+- [X] Change profile from Private to Public
 - [ ] Check profile privacy before exposing protected information
 - [ ] Allow followers to view permitted private-profile information
 - [ ] Prevent non-followers from viewing protected private-profile information
 - [ ] Allow the profile owner to view their own information
 
 ### Frontend
-- [ ] Add profile privacy control
-- [ ] Show current privacy state
-- [ ] Allow user to switch Public ↔ Private
+
+- [X] Add profile privacy control
+- [X] Show current privacy state
+- [X] Allow user to switch Public ↔ Private
 - [ ] Update visible actions based on target profile privacy
 
 ---
@@ -76,6 +83,7 @@ Authentication, Docker, and final project-wide integration are not included in t
 ## 3. Followers
 
 ### Database
+
 - [ ] Create `followers` table migration
 - [ ] Store follower user ID
 - [ ] Store followed user ID
@@ -84,6 +92,7 @@ Authentication, Docker, and final project-wide integration are not included in t
 - [ ] Create matching `.down.sql` migration
 
 ### Backend
+
 - [ ] Follow another user
 - [ ] Unfollow another user
 - [ ] Get followers list
@@ -93,11 +102,13 @@ Authentication, Docker, and final project-wide integration are not included in t
 - [ ] Handle invalid follow operations safely
 
 ### Public Profile Follow Flow
+
 - [ ] Follow immediately when the target profile is Public
 - [ ] Create follower relationship directly
 - [ ] Do not require approval
 
 ### Frontend
+
 - [ ] Add Follow button
 - [ ] Add Unfollow button
 - [ ] Display Followers list
@@ -109,6 +120,7 @@ Authentication, Docker, and final project-wide integration are not included in t
 ## 4. Follow Requests
 
 ### Database
+
 - [ ] Create `follow_requests` table migration
 - [ ] Store requester user ID
 - [ ] Store target user ID
@@ -117,6 +129,7 @@ Authentication, Docker, and final project-wide integration are not included in t
 - [ ] Create matching `.down.sql` migration
 
 ### Backend
+
 - [ ] Send follow request when target profile is Private
 - [ ] Prevent duplicate pending requests
 - [ ] Get incoming pending follow requests
@@ -127,6 +140,7 @@ Authentication, Docker, and final project-wide integration are not included in t
 - [ ] Prevent unauthorized users from accepting/declining another user's requests
 
 ### Frontend
+
 - [ ] Show Request Follow button for private profiles
 - [ ] Show Requested/Pending state
 - [ ] Create Follow Requests UI
@@ -149,10 +163,12 @@ Authentication, Docker, and final project-wide integration are not included in t
 ## 6. Interfaces Needed by Other Team Members
 
 For Person 2 — Posts:
+
 - [ ] Provide a reusable follower check
 - [ ] Provide a way to get a user's followers for Private post selection
 
 For Person 4 — Chat:
+
 - [ ] Provide a reusable check for whether User A follows User B
 - [ ] Provide a reusable check for whether either user follows the other
 - [ ] Provide target profile privacy information when required by chat rules

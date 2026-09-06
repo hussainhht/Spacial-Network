@@ -12,6 +12,7 @@ import type {
   WebSocketContextType,
   ErrorPayload,
   InviteUserSearchResultsPayload,
+  NotificationEventPayload,
 } from "@/lib/websocket/types";
 
 const WebSocketContext = createContext<WebSocketContextType | undefined>(undefined);
@@ -24,6 +25,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   const [lastReadReceipt, setLastReadReceipt] = useState<MessagesReadPayload | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [inviteSearchResults, setInviteSearchResults] = useState<InviteUserSearchResultsPayload | null>(null);
+  const [lastNotification, setLastNotification] = useState<NotificationEventPayload | null>(null);
 
   const socketRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -116,6 +118,9 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
             case "invite_user_search_results":
               setInviteSearchResults(data.payload as InviteUserSearchResultsPayload);
               break;
+            case "notification":
+              setLastNotification(data.payload as NotificationEventPayload);
+              break;
             case "error": {
               const errPayload = data.payload as ErrorPayload;
               console.error("WS error:", errPayload?.message);
@@ -182,6 +187,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
       lastReadReceipt,
       errorMessage,
       inviteSearchResults,
+      lastNotification,
       sendEvent,
     }),
     [
@@ -192,6 +198,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
       lastReadReceipt,
       errorMessage,
       inviteSearchResults,
+      lastNotification,
       sendEvent,
     ]
   );

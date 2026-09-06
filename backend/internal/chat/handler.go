@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"social/internal/auth"
+	"social/internal/requestctx"
 )
 
 type Handler struct {
@@ -27,8 +27,7 @@ func (h *Handler) GetHistoryHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userIDVal := r.Context().Value(auth.UserIDKey)
-	userID, ok := userIDVal.(int)
+	userID, ok := requestctx.UserID(r.Context())
 	if !ok || userID <= 0 {
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode(map[string]string{"error": "Unauthorized"})
@@ -76,8 +75,7 @@ func (h *Handler) GetConversationsHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	userIDVal := r.Context().Value(auth.UserIDKey)
-	userID, ok := userIDVal.(int)
+	userID, ok := requestctx.UserID(r.Context())
 	if !ok || userID <= 0 {
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode(map[string]string{"error": "Unauthorized"})

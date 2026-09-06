@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"social/internal/auth"
+	"social/internal/requestctx"
 )
 
 func toGroupResponse(g *Group) GroupResponse {
@@ -71,7 +71,7 @@ func NewHandler(service *Service) *Handler {
 func (h *Handler) CreateGroupHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	userID, ok := r.Context().Value(auth.UserIDKey).(int)
+	userID, ok := requestctx.UserID(r.Context())
 	if !ok {
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode(CreateGroupResponse{
@@ -132,7 +132,7 @@ func (h *Handler) CreateGroupHandler(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) ListGroupsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	if _, ok := r.Context().Value(auth.UserIDKey).(int); !ok {
+	if _, ok := requestctx.UserID(r.Context()); !ok {
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode(ListGroupsResponse{
 			Success: false,
@@ -176,7 +176,16 @@ func (h *Handler) ListGroupsHandler(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) GetGroupHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	if _, ok := r.Context().Value(auth.UserIDKey).(int); !ok {
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		json.NewEncoder(w).Encode(GetGroupResponse{
+			Success: false,
+			Message: "Method not allowed",
+		})
+		return
+	}
+
+	if _, ok := requestctx.UserID(r.Context()); !ok {
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode(GetGroupResponse{
 			Success: false,
@@ -224,7 +233,16 @@ func (h *Handler) GetGroupHandler(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) GetGroupMembersHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	if _, ok := r.Context().Value(auth.UserIDKey).(int); !ok {
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		json.NewEncoder(w).Encode(GetGroupMembersResponse{
+			Success: false,
+			Message: "Method not allowed",
+		})
+		return
+	}
+
+	if _, ok := requestctx.UserID(r.Context()); !ok {
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode(GetGroupMembersResponse{
 			Success: false,
@@ -276,7 +294,16 @@ func (h *Handler) GetGroupMembersHandler(w http.ResponseWriter, r *http.Request)
 func (h *Handler) GetMembershipHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	userID, ok := r.Context().Value(auth.UserIDKey).(int)
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		json.NewEncoder(w).Encode(MembershipResponse{
+			Success: false,
+			Message: "Method not allowed",
+		})
+		return
+	}
+
+	userID, ok := requestctx.UserID(r.Context())
 	if !ok {
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode(MembershipResponse{
@@ -326,7 +353,7 @@ func (h *Handler) GetMembershipHandler(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) CreateJoinRequestHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	userID, ok := r.Context().Value(auth.UserIDKey).(int)
+	userID, ok := requestctx.UserID(r.Context())
 	if !ok {
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode(CreateJoinRequestResponse{
@@ -366,7 +393,7 @@ func (h *Handler) CreateJoinRequestHandler(w http.ResponseWriter, r *http.Reques
 func (h *Handler) GetPendingJoinRequestsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	userID, ok := r.Context().Value(auth.UserIDKey).(int)
+	userID, ok := requestctx.UserID(r.Context())
 	if !ok {
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode(GetJoinRequestsResponse{
@@ -412,7 +439,7 @@ func (h *Handler) GetPendingJoinRequestsHandler(w http.ResponseWriter, r *http.R
 func (h *Handler) AcceptJoinRequestHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	userID, ok := r.Context().Value(auth.UserIDKey).(int)
+	userID, ok := requestctx.UserID(r.Context())
 	if !ok {
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode(ActionResponse{
@@ -462,7 +489,7 @@ func (h *Handler) AcceptJoinRequestHandler(w http.ResponseWriter, r *http.Reques
 func (h *Handler) RejectJoinRequestHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	userID, ok := r.Context().Value(auth.UserIDKey).(int)
+	userID, ok := requestctx.UserID(r.Context())
 	if !ok {
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode(ActionResponse{
@@ -516,7 +543,7 @@ func (h *Handler) RejectJoinRequestHandler(w http.ResponseWriter, r *http.Reques
 func (h *Handler) CreateGroupInvitationHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	userID, ok := r.Context().Value(auth.UserIDKey).(int)
+	userID, ok := requestctx.UserID(r.Context())
 	if !ok {
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode(CreateGroupInvitationResponse{
@@ -576,7 +603,7 @@ func (h *Handler) CreateGroupInvitationHandler(w http.ResponseWriter, r *http.Re
 func (h *Handler) GetPendingInvitationsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	userID, ok := r.Context().Value(auth.UserIDKey).(int)
+	userID, ok := requestctx.UserID(r.Context())
 	if !ok {
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode(GetGroupInvitationsResponse{
@@ -611,7 +638,7 @@ func (h *Handler) GetPendingInvitationsHandler(w http.ResponseWriter, r *http.Re
 func (h *Handler) AcceptGroupInvitationHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	userID, ok := r.Context().Value(auth.UserIDKey).(int)
+	userID, ok := requestctx.UserID(r.Context())
 	if !ok {
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode(ActionResponse{
@@ -651,7 +678,7 @@ func (h *Handler) AcceptGroupInvitationHandler(w http.ResponseWriter, r *http.Re
 func (h *Handler) DeclineGroupInvitationHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	userID, ok := r.Context().Value(auth.UserIDKey).(int)
+	userID, ok := requestctx.UserID(r.Context())
 	if !ok {
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode(ActionResponse{

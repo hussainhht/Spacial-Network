@@ -22,10 +22,7 @@ type Handlers struct {
 	Websocket     *websocket.Handler
 	Groups        *groups.Handler
 	Notifications *notifications.Handler
-
-	// Future handlers:
-	// TODO: Add Users handler when the users feature exposes one.
-	// Users *users.Handler
+	Users         *users.Handler
 
 	// TODO: Add Comments handler when the comments feature is implemented.
 	// Comments *comments.Handler
@@ -62,6 +59,7 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 
 	usersRepo := users.NewRepository(db)
 	usersService := users.NewService(usersRepo)
+	usersHandler := users.NewHandler(usersService)
 
 	// =========================
 	// Uploads
@@ -164,6 +162,7 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 			Groups:        groupsHandler,
 			Posts:         postsHandler,
 			Notifications: notificationsHandler,
+			Users:         usersHandler,
 			// Comments:      commentsHandler,
 			// Followers:     followersHandler,
 		},
