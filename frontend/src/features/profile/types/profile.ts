@@ -12,3 +12,5 @@ export interface Profile {
   updatedAt: string;
   isPrivate: boolean;
 }
+
+export type ProfileTab = "posts" | "about";

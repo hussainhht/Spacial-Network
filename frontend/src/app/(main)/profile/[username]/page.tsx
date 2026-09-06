@@ -1,4 +1,4 @@
-import ProfilePageContent from "@/features/profile/components/ProfilePageContent";
+import ProfilePage from "@/features/profile/components/ProfilePage";
 
 interface ProfilePageProps {
   params: Promise<{
@@ -6,8 +6,8 @@ interface ProfilePageProps {
   }>;
 }
 
-export default async function ProfilePage({ params }: ProfilePageProps) {
+export default async function Page({ params }: ProfilePageProps) {
   const { username } = await params;
 
-  return <ProfilePageContent username={username} />;
+  return <ProfilePage username={username} />;
 }
