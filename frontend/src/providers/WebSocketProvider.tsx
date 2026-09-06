@@ -167,6 +167,11 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
         socketRef.current.close();
         socketRef.current = null;
       }
+      // Detaching onclose above means its isConnectingRef reset never runs
+      // for the socket being torn down here, so do it ourselves - otherwise
+      // a StrictMode dev remount (mount -> cleanup -> mount) leaves the flag
+      // stuck at true and the next connect() call no-ops forever.
+      isConnectingRef.current = false;
     };
   }, [connect]);
 

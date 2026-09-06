@@ -867,10 +867,97 @@ main:has(form) form > p {
   .group-button { min-height: 44px; }
 }
 
-.group-invite-search h2 {
-  margin: 0 0 1rem;
+.group-members-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.group-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  background: rgba(2, 6, 23, 0.72);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.group-modal {
+  display: flex;
+  flex-direction: column;
+  width: min(92vw, 560px);
+  max-height: 80vh;
+  background: var(--space-bg-elevated);
+  border: 1px solid var(--space-border);
+  border-radius: var(--space-radius-lg);
+  box-shadow: 0 25px 60px -15px rgba(2, 6, 23, 0.8),
+    0 0 0 1px rgba(255, 255, 255, 0.02) inset;
+  overflow: hidden;
+}
+
+.group-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.1rem 1.4rem;
+  border-bottom: 1px solid var(--space-border);
+  flex-shrink: 0;
+}
+
+.group-modal-header h2 {
+  margin: 0;
   font-size: 1.05rem;
   color: var(--space-text-heading);
+}
+
+.group-modal-close {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--space-border);
+  border-radius: var(--space-radius-sm);
+  background: transparent;
+  color: var(--space-text-muted);
+  font-size: 1.3rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.group-modal-close:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--space-text-heading);
+}
+
+.group-modal-body {
+  padding: 1.25rem 1.4rem 1.5rem;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+@media (max-width: 480px) {
+  .group-modal-overlay {
+    padding: 0.75rem;
+  }
+
+  .group-modal {
+    width: 100%;
+    max-height: 88vh;
+  }
+
+  .group-modal-header,
+  .group-modal-body {
+    padding-left: 1.1rem;
+    padding-right: 1.1rem;
+  }
 }
 
 .group-invite-status {

@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useCallback, useState } from "react";
 import { avatarUrl } from "../api/groups";
 import {
   useGroupMembers,
@@ -9,7 +10,7 @@ import {
   usePendingInvitations,
   usePendingJoinRequests,
 } from "../hooks/useGroupData";
-import GroupInviteSearch from "./GroupInviteSearch";
+import GroupInviteModal from "./GroupInviteModal";
 import GroupJoinButton from "./GroupJoinButton";
 import { InvitationActions, JoinRequestActions } from "./GroupResponseActions";
 
@@ -72,6 +73,13 @@ export function MembersPanel({
   creatorId: number;
 }) {
   const state = useGroupMembers(groupId);
+  // Shares the same cached resource as MembershipPanel's useMembership call,
+  // so this does not trigger a second membership request.
+  const membership = useMembership(groupId);
+  const isCreator = membership.data?.role === "creator";
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const closeInviteModal = useCallback(() => setIsInviteModalOpen(false), []);
+
   return (
     <aside
       className="group-panel group-members"
@@ -81,7 +89,18 @@ export function MembersPanel({
         <h2 id="members-heading">
           Members{state.data && ` · ${state.data.length}`}
         </h2>
-        {state.loading && <span className="group-muted">Loading…</span>}
+        <div className="group-members-header-actions">
+          {state.loading && <span className="group-muted">Loading…</span>}
+          {isCreator && (
+            <button
+              type="button"
+              className="group-button secondary"
+              onClick={() => setIsInviteModalOpen(true)}
+            >
+              + Invite
+            </button>
+          )}
+        </div>
       </div>
       {state.error && (
         <GroupLoadError error={state.error} retry={state.refresh} />
@@ -127,6 +146,11 @@ export function MembersPanel({
       {!state.loading && state.data?.length === 0 && (
         <p className="group-muted">No members to display.</p>
       )}
+      <GroupInviteModal
+        groupId={groupId}
+        open={isInviteModalOpen}
+        onClose={closeInviteModal}
+      />
     </aside>
   );
 }
@@ -253,16 +277,11 @@ export function MembershipPanel({ groupId }: { groupId: number }) {
             />
           ))}
       </section>
-      {!membership.error && membership.data?.isMember && (
-        <>
-          {membership.data.role === "creator" && (
-            <JoinRequestsPanel groupId={groupId} />
-          )}
-          <div className="group-panel">
-            <GroupInviteSearch key={groupId} groupId={groupId} />
-          </div>
-        </>
-      )}
+      {!membership.error &&
+        membership.data?.isMember &&
+        membership.data.role === "creator" && (
+          <JoinRequestsPanel groupId={groupId} />
+        )}
     </>
   );
 }

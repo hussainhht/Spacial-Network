@@ -15,8 +15,6 @@ export default function GroupInviteSearch({ groupId }: GroupInviteSearchProps) {
 
   return (
     <section className="group-invite-search">
-      <h2>Invite people</h2>
-
       {!isConnected && (
         <p className="group-invite-status">Reconnecting to the server...</p>
       )}
