@@ -40,7 +40,10 @@ const (
 	EntityEvent            = "event"
 )
 
-// Notification is a single row in the notifications table.
+// Notification is a single row in the notifications table. It carries only
+// fields common to every notification type; feature-specific display and
+// navigation context (which group, which post, ...) lives in Data instead of
+// growing this struct - see GroupNotificationData for the Groups example.
 type Notification struct {
 	ID         int              `json:"id"`
 	ReceiverID int              `json:"receiver_id"`
@@ -50,19 +53,18 @@ type Notification struct {
 	EntityType *string `json:"entity_type,omitempty"`
 	EntityID   *int    `json:"entity_id,omitempty"`
 
-	// Display/navigation context is derived from the entity relationship, never authorization evidence.
-	GroupID       *int    `json:"group_id,omitempty"`
-	GroupTitle    *string `json:"group_title,omitempty"`
-	ActorUsername *string `json:"actor_username,omitempty"`
-	Message       string  `json:"message"`
+	Message string `json:"message"`
+	Data    any    `json:"data,omitempty"`
 
 	ReadAt    *time.Time `json:"read_at,omitempty"`
 	CreatedAt time.Time  `json:"created_at"`
 }
 
-// CreateNotificationRequest is the input other features pass to
-// Service.Create. It intentionally has no notion of SQL - callers only ever
-// see this struct and the Service methods below.
+type GroupNotificationData struct {
+	GroupID       int     `json:"group_id"`
+	GroupTitle    string  `json:"group_title"`
+	ActorUsername *string `json:"actor_username,omitempty"`
+}
 type CreateNotificationRequest struct {
 	ReceiverID int
 	ActorID    *int
@@ -74,12 +76,10 @@ type CreateNotificationRequest struct {
 	Message string
 }
 
-// UnreadCountResponse is the JSON body for GET /notifications/unread-count.
 type UnreadCountResponse struct {
 	Count int `json:"count"`
 }
 
-// ListNotificationsResponse is the JSON body for GET /notifications.
 type ListNotificationsResponse struct {
 	Notifications []Notification `json:"notifications"`
 }

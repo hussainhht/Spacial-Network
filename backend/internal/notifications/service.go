@@ -7,11 +7,9 @@ type Service struct {
 	sender NotificationSender
 }
 
-
 func NewService(repo *Repository, sender NotificationSender) *Service {
 	return &Service{repo: repo, sender: sender}
 }
-
 
 func (s *Service) Create(req CreateNotificationRequest) (*Notification, error) {
 	if !IsValidNotificationType(req.Type) {
@@ -26,6 +24,12 @@ func (s *Service) Create(req CreateNotificationRequest) (*Notification, error) {
 	s.deliver(*n)
 
 	return n, nil
+}
+
+
+func (s *Service) Notify(req CreateNotificationRequest) error {
+	_, err := s.Create(req)
+	return err
 }
 
 func (s *Service) deliver(n Notification) {

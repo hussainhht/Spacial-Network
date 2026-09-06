@@ -3,6 +3,8 @@ package groups
 import (
 	"errors"
 	"log"
+
+	"social/internal/notifications"
 )
 
 type Service struct {
@@ -18,24 +20,30 @@ func NewService(
 	}
 }
 
+
 type NotificationSender interface {
-	NotifyGroupInvitation(
-		receiverID int,
-		actorID int,
-		invitationID int,
-	) error
+	Notify(notifications.CreateNotificationRequest) error
+}
 
-	NotifyGroupJoinRequest(
-		receiverID int,
-		actorID int,
-		requestID int,
-	) error
 
-	// NotifyGroupEvent(
-	// 	receiverID int,
-	// 	actorID int,
-	// 	eventID int,
-	// ) error
+func (s *Service) notify(receiverID, actorID int, notifType notifications.NotificationType, entityType string, entityID int, message string) {
+	if s.notifier == nil {
+		return
+	}
+
+	actor := actorID
+	et := entityType
+	eid := entityID
+	if err := s.notifier.Notify(notifications.CreateNotificationRequest{
+		ReceiverID: receiverID,
+		ActorID:    &actor,
+		Type:       notifType,
+		EntityType: &et,
+		EntityID:   &eid,
+		Message:    message,
+	}); err != nil {
+		log.Printf("groups: %s notification for entity %d failed: %v", notifType, entityID, err)
+	}
 }
 
 // CreateGroup stores a new group owned by creatorID and returns its ID.
@@ -122,15 +130,14 @@ func (s *Service) RequestToJoin(groupID, userID int) error {
 		return err
 	}
 
-	if s.notifier != nil {
-		if err := s.notifier.NotifyGroupJoinRequest(
-			group.CreatorID, // receiver
-			userID,          // actor
-			int(requestID),  // join request
-		); err != nil {
-			log.Printf("groups: join request %d notification failed: %v", requestID, err)
-		}
-	}
+	s.notify(
+		group.CreatorID, // receiver
+		userID,          // actor
+		notifications.NotificationGroupJoinRequest,
+		notifications.EntityGroupJoinRequest,
+		int(requestID),
+		"requested to join your group",
+	)
 
 	return nil
 }
@@ -203,15 +210,14 @@ func (s *Service) CreateGroupInvitation(groupID, inviterID, invitedUserID int) e
 		return err
 	}
 
-	if s.notifier != nil {
-		if err := s.notifier.NotifyGroupInvitation(
-			invitedUserID,     // receiver
-			inviterID,         // actor
-			int(invitationID), // invitation
-		); err != nil {
-			log.Printf("groups: invitation %d notification failed: %v", invitationID, err)
-		}
-	}
+	s.notify(
+		invitedUserID, // receiver
+		inviterID,     // actor
+		notifications.NotificationGroupInvitation,
+		notifications.EntityGroupInvitation,
+		int(invitationID),
+		"invited you to join a group",
+	)
 
 	return nil
 }

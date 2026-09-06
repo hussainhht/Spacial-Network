@@ -8,7 +8,6 @@ import (
 	"social/internal/config"
 	"social/internal/groups"
 	"social/internal/notifications"
-	"social/internal/notifications/notifiers"
 	"social/internal/posts"
 	"social/internal/upload"
 	"social/internal/users"
@@ -123,8 +122,9 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 	// =========================
 	// Persists notifications to SQLite and pushes them over the existing
 	// websocket hub. Other features (Groups, and Followers once it exists)
-	// depend only on notificationsService.Create(...) - never on this
-	// package's repository or SQL.
+	// depend on notificationsService only through their own generic
+	// NotificationSender interface (Notify(...)) - never on this package's
+	// repository or SQL.
 
 	notificationsRepo := notifications.NewRepository(db)
 	notificationsSender := notifications.NewHubSender(hub)
@@ -136,8 +136,7 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 	// =========================
 
 	groupsRepo := groups.NewRepository(db)
-	groupNotifier := notifiers.NewGroupNotifier(notificationsService)
-	groupsService := groups.NewService(groupsRepo, groupNotifier)
+	groupsService := groups.NewService(groupsRepo, notificationsService)
 	groupsHandler := groups.NewHandler(groupsService)
 	inviteSearchWSHandler := groups.NewInviteSearchWSHandler(groupsService, hub)
 
