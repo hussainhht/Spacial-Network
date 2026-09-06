@@ -28,6 +28,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   const socketRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isConnectingRef = useRef(false);
+  const pendingQueueRef = useRef<Array<{ type: EventType; payload: unknown }>>([]);
 
   const connect = useCallback(() => {
     if (typeof window === "undefined") return;
@@ -55,11 +56,25 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
           clearTimeout(reconnectTimeoutRef.current);
           reconnectTimeoutRef.current = null;
         }
+
+        // Flush any queued events
+        if (pendingQueueRef.current.length > 0) {
+          const queued = [...pendingQueueRef.current];
+          pendingQueueRef.current = [];
+          for (const item of queued) {
+            try {
+              ws.send(JSON.stringify(item));
+            } catch (err) {
+              console.error("Failed to send queued WebSocket event:", err);
+            }
+          }
+        }
       };
 
       ws.onclose = () => {
         isConnectingRef.current = false;
         setIsConnected(false);
+        socketRef.current = null;
         if (reconnectTimeoutRef.current) {
           clearTimeout(reconnectTimeoutRef.current);
         }
@@ -135,19 +150,25 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   // (like a debounced search) would spuriously re-fire on every message.
   const sendEvent = useCallback(
     (type: EventType, payload: unknown) => {
+      const eventItem = { type, payload };
+
       if (!socketRef.current || socketRef.current.readyState !== WebSocket.OPEN) {
-        if (socketRef.current?.readyState === WebSocket.CONNECTING) {
-          // If connecting, retry in 500ms
-          setTimeout(() => sendEvent(type, payload), 500);
-          return;
+        // Queue the event so it is sent as soon as the connection is open
+        pendingQueueRef.current.push(eventItem);
+
+        if (!socketRef.current || socketRef.current.readyState === WebSocket.CLOSED) {
+          connect();
         }
-        console.warn("WebSocket is not connected (readyState:", socketRef.current?.readyState, ")");
-        setErrorMessage("WebSocket is not connected. Reconnecting...");
-        connect();
         return;
       }
-      setErrorMessage(null);
-      socketRef.current.send(JSON.stringify({ type, payload }));
+
+      try {
+        socketRef.current.send(JSON.stringify(eventItem));
+      } catch (err) {
+        console.error("Failed to send WebSocket event:", err);
+        pendingQueueRef.current.push(eventItem);
+        connect();
+      }
     },
     [connect]
   );
