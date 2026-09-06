@@ -61,7 +61,7 @@ Authentication, Docker, and final project-wide integration are not included in t
 ### Frontend
 
 - [X] Add Request to Join button (with pending state)
-- [X]  Pending join requests UI for group creator (with Accept and Reject buttons)
+- [X] Pending join requests UI for group creator (with Accept and Reject buttons)
 - [X] Update UI after accepting or rejecting a request
 
 ---
