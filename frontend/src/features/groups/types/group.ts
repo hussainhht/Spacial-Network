@@ -61,3 +61,25 @@ export interface GroupJoinRequest {
   createdAt: string;
   updatedAt: string;
 }
+
+export type EventResponseStatus = "going" | "not_going";
+
+export interface GroupEvent {
+  id: number;
+  groupId: number;
+  createdBy: number;
+  title: string;
+  description: string;
+  eventTime: string;
+  createdAt: string;
+  updatedAt: string;
+  // Only ever populated by the single-event endpoint; the group events list
+  // does not return it (see backend contract gap in the feature report).
+  currentUserResponse?: EventResponseStatus;
+}
+
+export interface CreateEventInput {
+  title: string;
+  description: string;
+  eventTime: string;
+}

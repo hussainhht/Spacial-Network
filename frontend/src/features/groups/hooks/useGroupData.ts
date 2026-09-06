@@ -3,6 +3,7 @@
 import { useMemo, useSyncExternalStore } from "react";
 import {
   getGroup,
+  getGroupEvents,
   getGroupMembers,
   getMembership,
   getPendingInvitations,
@@ -105,3 +106,5 @@ export const usePendingInvitations = () =>
   useGroupQuery("invitations", getPendingInvitations);
 export const usePendingJoinRequests = (id: number) =>
   useGroupQuery(`group:${id}:requests`, () => getPendingJoinRequests(id));
+export const useGroupEvents = (id: number) =>
+  useGroupQuery(`group:${id}:events`, () => getGroupEvents(id));

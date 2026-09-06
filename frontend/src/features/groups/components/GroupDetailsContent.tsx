@@ -2,18 +2,21 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { useState } from "react";
 import {
   useGroup,
   useGroupMembers,
   useMembership,
   usePendingInvitations,
 } from "../hooks/useGroupData";
+import GroupEvents from "./GroupEvents";
 import {
   GroupLoadError,
   MembersPanel,
   MembershipBadge,
   MembershipPanel,
 } from "./GroupPanels";
+import GroupTabs, { type ActiveGroupTab } from "./GroupTabs";
 
 export default function GroupDetailsContent() {
   const { groupId } = useParams<{ groupId: string }>();
@@ -39,6 +42,7 @@ function GroupDetails({ groupId }: { groupId: number }) {
   const members = useGroupMembers(groupId);
   const membership = useMembership(groupId);
   const invitations = usePendingInvitations();
+  const [activeTab, setActiveTab] = useState<ActiveGroupTab>("overview");
   return (
     <div className="group-details-container">
       <Link href="/groups" className="back-link">
@@ -95,12 +99,36 @@ function GroupDetails({ groupId }: { groupId: number }) {
               )}
             </div>
           </header>
-          <div className="group-details-grid">
-            <div className="group-main-column">
-              <MembershipPanel groupId={groupId} />
+          <GroupTabs activeTab={activeTab} onTabChange={setActiveTab} />
+          {activeTab === "overview" && (
+            <div
+              id="group-tabpanel-overview"
+              role="tabpanel"
+              aria-labelledby="group-tab-overview"
+              className="group-details-grid"
+            >
+              <div className="group-main-column">
+                <MembershipPanel groupId={groupId} />
+              </div>
+              <MembersPanel
+                groupId={groupId}
+                creatorId={group.data.creatorId}
+              />
             </div>
-            <MembersPanel groupId={groupId} creatorId={group.data.creatorId} />
-          </div>
+          )}
+          {activeTab === "events" && (
+            <div
+              id="group-tabpanel-events"
+              role="tabpanel"
+              aria-labelledby="group-tab-events"
+            >
+              <GroupEvents
+                groupId={groupId}
+                isMember={Boolean(membership.data?.isMember)}
+                members={members.data}
+              />
+            </div>
+          )}
         </>
       )}
     </div>

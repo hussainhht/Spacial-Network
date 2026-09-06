@@ -593,6 +593,8 @@ main:has(form) form > p {
 .form-field input[type="number"],
 .form-field input[type="email"],
 .form-field input[type="password"],
+.form-field input[type="date"],
+.form-field input[type="time"],
 .form-field textarea,
 .form-field select {
   width: 100%;
@@ -1444,6 +1446,146 @@ main:has(form) form > p {
   .group-create-buttons {
     justify-content: space-between;
   }
+}
+
+/* ================================================================== */
+/*  Group tabs & Events                                                */
+/* ================================================================== */
+
+.group-tabs {
+  display: flex;
+  align-items: center;
+  gap: .25rem;
+  margin: 1.5rem 0 1.25rem;
+  border-bottom: 1px solid var(--space-border);
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.group-tab {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  padding: .75rem 1rem;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--space-text-muted);
+  font: 600 .9rem inherit;
+  cursor: pointer;
+  transition: color .15s ease, border-color .15s ease;
+}
+
+.group-tab:hover:not(:disabled) { color: var(--space-text-heading); }
+
+.group-tab[data-active="true"] {
+  color: var(--space-text-heading);
+  border-bottom-color: var(--space-accent-indigo);
+}
+
+.group-tab:disabled {
+  color: var(--space-text-placeholder);
+  opacity: .6;
+  cursor: not-allowed;
+}
+
+.group-tab-lock { font-size: .8em; }
+
+@media (max-width: 600px) {
+  .group-tab { padding: .65rem .75rem; font-size: .85rem; }
+}
+
+.group-events-list {
+  list-style: none;
+  margin: 1rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: .85rem;
+}
+
+.group-event-card {
+  padding: 1.1rem 1.25rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--space-border);
+  border-radius: var(--space-radius-md);
+  display: flex;
+  flex-direction: column;
+  gap: .4rem;
+}
+
+.group-event-title {
+  margin: 0;
+  color: var(--space-text-heading);
+  font-size: 1rem;
+  overflow-wrap: anywhere;
+}
+
+.group-event-time {
+  margin: 0;
+  color: var(--space-accent-blue);
+  font-size: .8rem;
+  font-weight: 500;
+}
+
+.group-event-description {
+  margin: .2rem 0 0;
+  color: var(--space-text-body);
+  font-size: .9rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.group-event-creator {
+  margin: 0;
+  color: var(--space-text-muted);
+  font-size: .8rem;
+}
+
+.group-event-response-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  margin-top: .5rem;
+}
+
+.group-response-btn {
+  flex: 1 1 120px;
+  min-height: 40px;
+  padding: .5rem .9rem;
+  border: 1px solid var(--space-border-strong);
+  border-radius: 9px;
+  background: transparent;
+  color: var(--space-text-label);
+  font: 500 .85rem inherit;
+  cursor: pointer;
+  transition: background-color .15s ease, border-color .15s ease, color .15s ease;
+}
+
+.group-response-btn:hover:not(:disabled) { background: rgba(255, 255, 255, 0.06); }
+
+.group-response-btn.is-selected {
+  background: rgba(34, 197, 94, 0.16);
+  border-color: rgba(74, 222, 128, 0.5);
+  color: #86efac;
+}
+
+.group-response-btn:disabled { opacity: .6; cursor: not-allowed; }
+
+.group-event-datetime-row {
+  display: flex;
+  gap: 1rem;
+}
+
+.group-event-datetime-row .form-field {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+@media (max-width: 480px) {
+  .group-event-datetime-row { flex-direction: column; }
 }
 
 /* ================================================================== */

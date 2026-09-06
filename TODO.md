@@ -97,10 +97,10 @@ Authentication, Docker, and final project-wide integration are not included in t
 
 ### Backend
 
-- [ ] Allow group members to create an event (validate title, description, date/time)
-- [ ] Prevent non-members and unauthorized users from accessing/creating events
-- [ ] Get events for a group and get event details
-- [ ] Support event responses (`Going` / `Not Going`, members only, allow changing response)
+- [X] Allow group members to create an event (validate title, description, date/time)
+- [X] Prevent non-members and unauthorized users from accessing/creating events
+- [X] Get events for a group and get event details
+- [X] Support event responses (`Going` / `Not Going`, members only, allow changing response)
 
 ### Frontend
 
