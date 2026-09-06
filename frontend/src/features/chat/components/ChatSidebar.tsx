@@ -25,22 +25,22 @@ export default function ChatSidebar({
   }, [conversations, searchQuery]);
 
   return (
-    <aside style={styles.sidebar}>
-      <div style={styles.header}>
-        <h2 style={styles.title}>Messages</h2>
-        <div style={styles.searchContainer}>
+    <aside className="w-80 flex flex-col border-r border-slate-700/40 bg-[#0b1026]/70 backdrop-blur-md h-full shrink-0">
+      <div className="p-4 border-b border-slate-700/30">
+        <h2 className="m-0 mb-3 text-lg font-bold text-slate-100">Messages</h2>
+        <div className="relative flex items-center">
           <input
             type="text"
             placeholder="Search conversations..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            style={styles.searchInput}
+            className="w-full px-3 py-2 rounded-lg border border-slate-700/60 bg-[#10152f]/80 text-slate-100 placeholder-slate-400 text-sm focus:outline-none focus:border-indigo-500 transition-colors"
           />
           {searchQuery && (
             <button
               type="button"
               onClick={() => setSearchQuery("")}
-              style={styles.clearSearchBtn}
+              className="absolute right-2 text-slate-400 hover:text-slate-200 text-base cursor-pointer px-1 leading-none"
             >
               &times;
             </button>
@@ -48,11 +48,15 @@ export default function ChatSidebar({
         </div>
       </div>
 
-      <div style={styles.listContainer}>
-        {loading && <p style={styles.emptyText}>Loading conversations...</p>}
+      <div className="flex-1 overflow-y-auto divide-y divide-slate-800/40">
+        {loading && (
+          <p className="py-8 px-4 text-center text-slate-400 text-sm">
+            Loading conversations...
+          </p>
+        )}
 
         {!loading && filteredConversations.length === 0 && (
-          <p style={styles.emptyText}>
+          <p className="py-8 px-4 text-center text-slate-400 text-sm">
             {searchQuery ? "No matching contacts found." : "No conversations yet."}
           </p>
         )}
@@ -76,44 +80,50 @@ export default function ChatSidebar({
               <div
                 key={c.partner_id}
                 onClick={() => onSelectConversation(c.partner_id, c.partner_username)}
-                style={{
-                  ...styles.conversationItem,
-                  ...(isActive ? styles.activeItem : {}),
-                }}
+                className={`flex items-center px-3.5 py-2.5 gap-3 cursor-pointer transition-colors border-l-[3px] ${
+                  isActive
+                    ? "bg-indigo-500/15 border-indigo-500"
+                    : "border-transparent hover:bg-slate-800/40"
+                }`}
               >
-                <div style={styles.avatarWrapper}>
+                <div className="relative shrink-0 w-11 h-11">
                   {c.partner_avatar ? (
                     <img
                       src={c.partner_avatar}
                       alt={displayName}
-                      style={styles.avatarImg}
+                      className="w-11 h-11 rounded-full object-cover"
                     />
                   ) : (
-                    <div style={styles.avatarPlaceholder}>{initials}</div>
+                    <div className="w-11 h-11 rounded-full bg-gradient-to-br from-indigo-500 to-blue-500 text-white flex items-center justify-center font-semibold text-sm">
+                      {initials}
+                    </div>
                   )}
                   <span
-                    style={{
-                      ...styles.statusDot,
-                      background: isOnline ? "#22c55e" : "#94a3b8",
-                    }}
+                    className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full ring-2 ring-[#0b1026] ${
+                      isOnline ? "bg-emerald-500" : "bg-slate-400"
+                    }`}
                     title={isOnline ? "Online" : "Offline"}
                   />
                 </div>
 
-                <div style={styles.details}>
-                  <div style={styles.topRow}>
-                    <span style={styles.name}>{displayName}</span>
-                    <span style={styles.time}>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-baseline justify-between mb-1">
+                    <span className="font-semibold text-sm text-slate-100 truncate">
+                      {displayName}
+                    </span>
+                    <span className="text-xs text-slate-400 shrink-0 ml-2">
                       {formatConversationDate(c.last_message_at)}
                     </span>
                   </div>
 
-                  <div style={styles.bottomRow}>
-                    <span style={styles.snippet}>
+                  <div className="flex items-center justify-between gap-1.5">
+                    <span className="text-xs text-slate-400 truncate">
                       {c.last_message || "No messages yet"}
                     </span>
                     {c.unread_count > 0 && (
-                      <span style={styles.unreadBadge}>{c.unread_count}</span>
+                      <span className="bg-indigo-500 text-white text-[11px] font-bold px-1.5 py-0.5 rounded-full shrink-0">
+                        {c.unread_count}
+                      </span>
                     )}
                   </div>
                 </div>
@@ -124,152 +134,3 @@ export default function ChatSidebar({
     </aside>
   );
 }
-
-
-const styles: Record<string, React.CSSProperties> = {
-  sidebar: {
-    width: "320px",
-    display: "flex",
-    flexDirection: "column",
-    borderRight: "1px solid rgba(148, 163, 184, 0.2)",
-    background: "rgba(11, 16, 38, 0.7)",
-    backdropFilter: "blur(8px)",
-    height: "100%",
-  },
-  header: {
-    padding: "1.25rem 1rem",
-    borderBottom: "1px solid rgba(148, 163, 184, 0.15)",
-  },
-  title: {
-    margin: "0 0 0.75rem 0",
-    fontSize: "1.25rem",
-    fontWeight: 700,
-    color: "#f8fafc",
-  },
-  searchContainer: {
-    position: "relative",
-    display: "flex",
-    alignItems: "center",
-  },
-  searchInput: {
-    width: "100%",
-    padding: "8px 12px",
-    borderRadius: "8px",
-    border: "1px solid rgba(148, 163, 184, 0.25)",
-    background: "rgba(16, 21, 47, 0.8)",
-    color: "#f8fafc",
-    fontSize: "0.875rem",
-    outline: "none",
-  },
-  clearSearchBtn: {
-    position: "absolute",
-    right: "8px",
-    background: "none",
-    border: "none",
-    color: "#94a3b8",
-    fontSize: "1rem",
-    cursor: "pointer",
-  },
-  listContainer: {
-    flex: 1,
-    overflowY: "auto",
-  },
-  emptyText: {
-    padding: "2rem 1rem",
-    textAlign: "center",
-    color: "#94a3b8",
-    fontSize: "0.875rem",
-  },
-  conversationItem: {
-    display: "flex",
-    alignItems: "center",
-    padding: "10px 14px",
-    gap: "12px",
-    cursor: "pointer",
-    transition: "background 0.15s ease",
-    borderBottom: "1px solid rgba(148, 163, 184, 0.08)",
-  },
-  activeItem: {
-    background: "rgba(99, 102, 241, 0.15)",
-    borderLeft: "3px solid #6366f1",
-  },
-  avatarWrapper: {
-    position: "relative",
-    flexShrink: 0,
-    width: "44px",
-    height: "44px",
-  },
-  avatarImg: {
-    width: "44px",
-    height: "44px",
-    borderRadius: "50%",
-    objectFit: "cover",
-  },
-  avatarPlaceholder: {
-    width: "44px",
-    height: "44px",
-    borderRadius: "50%",
-    background: "linear-gradient(135deg, #6366f1, #3b82f6)",
-    color: "#ffffff",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontWeight: 600,
-    fontSize: "0.875rem",
-  },
-  statusDot: {
-    position: "absolute",
-    bottom: "1px",
-    right: "1px",
-    width: "11px",
-    height: "11px",
-    borderRadius: "50%",
-    border: "2px solid #0b1026",
-  },
-  details: {
-    flex: 1,
-    minWidth: 0,
-  },
-  topRow: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "baseline",
-    marginBottom: "4px",
-  },
-  name: {
-    fontWeight: 600,
-    fontSize: "0.92rem",
-    color: "#f1f5f9",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    whiteSpace: "nowrap",
-  },
-  time: {
-    fontSize: "0.75rem",
-    color: "#94a3b8",
-    flexShrink: 0,
-    marginLeft: "8px",
-  },
-  bottomRow: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: "6px",
-  },
-  snippet: {
-    fontSize: "0.8rem",
-    color: "#94a3b8",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    whiteSpace: "nowrap",
-  },
-  unreadBadge: {
-    background: "#6366f1",
-    color: "#ffffff",
-    fontSize: "0.72rem",
-    fontWeight: 700,
-    padding: "2px 6px",
-    borderRadius: "999px",
-    flexShrink: 0,
-  },
-};

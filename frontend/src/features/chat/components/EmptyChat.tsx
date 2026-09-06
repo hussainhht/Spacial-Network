@@ -2,50 +2,16 @@
 
 export default function EmptyChat() {
   return (
-    <div style={styles.container}>
-      <div style={styles.iconCircle}>💬</div>
-      <h2 style={styles.heading}>Your Messages</h2>
-      <p style={styles.text}>
+    <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-[#080b1a]/95 text-slate-400 min-w-0">
+      <div className="w-18 h-18 rounded-full bg-indigo-500/15 flex items-center justify-center text-3xl mb-4">
+        💬
+      </div>
+      <h2 className="m-0 mb-2 text-slate-100 text-xl font-semibold">
+        Your Messages
+      </h2>
+      <p className="max-w-[340px] m-0 text-sm leading-relaxed text-slate-500">
         Select a conversation from the sidebar to view chat history and start messaging in real time.
       </p>
     </div>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    flex: 1,
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: "2rem",
-    textAlign: "center",
-    background: "rgba(8, 11, 26, 0.95)",
-    color: "#94a3b8",
-  },
-  iconCircle: {
-    width: "72px",
-    height: "72px",
-    borderRadius: "50%",
-    background: "rgba(99, 102, 241, 0.12)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: "2rem",
-    marginBottom: "1rem",
-  },
-  heading: {
-    margin: "0 0 0.5rem 0",
-    color: "#f8fafc",
-    fontSize: "1.25rem",
-    fontWeight: 600,
-  },
-  text: {
-    maxWidth: "340px",
-    margin: 0,
-    fontSize: "0.9rem",
-    lineHeight: 1.5,
-    color: "#64748b",
-  },
-};

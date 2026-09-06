@@ -1,11 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import { useChat } from "../hooks/useChat";
 import ChatSidebar from "./ChatSidebar";
 import ChatWindow from "./ChatWindow";
 import EmptyChat from "./EmptyChat";
 
 export default function ChatPageContent() {
+  const [dismissedError, setDismissedError] = useState<string | null>(null);
   const {
     errorMessage,
     myUserId,
@@ -26,15 +28,25 @@ export default function ChatPageContent() {
     sendTyping,
   } = useChat();
 
+  const activeError = errorMessage && errorMessage !== dismissedError ? errorMessage : null;
+
   return (
-    <main style={styles.pageShell}>
-      {errorMessage && (
-        <div style={styles.errorAlert}>
-          ⚠️ <strong>Notice:</strong> {errorMessage}
+    <main className="chat-main flex flex-col h-screen h-[100dvh] w-full min-w-0 overflow-hidden bg-[#050816] text-slate-100 font-sans">
+      {activeError && (
+        <div className="px-4 py-2.5 bg-red-500/15 border-b border-red-500/30 text-red-300 text-sm flex items-center justify-between shrink-0">
+          <span>⚠️ <strong>Notice:</strong> {activeError}</span>
+          <button
+            type="button"
+            onClick={() => setDismissedError(activeError)}
+            className="text-red-300 hover:text-red-100 text-lg cursor-pointer px-1 leading-none ml-3"
+            aria-label="Dismiss notice"
+          >
+            &times;
+          </button>
         </div>
       )}
 
-      <div style={styles.layout}>
+      <div className="flex-1 flex overflow-hidden min-w-0">
         <ChatSidebar
           conversations={conversations}
           activeUserId={activePartnerId}
@@ -65,28 +77,3 @@ export default function ChatPageContent() {
     </main>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  pageShell: {
-    display: "flex",
-    flexDirection: "column",
-    height: "calc(100vh - 60px)",
-    minHeight: "500px",
-    background: "#050816",
-    color: "#f8fafc",
-    fontFamily:
-      '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif',
-  },
-  errorAlert: {
-    padding: "10px 16px",
-    background: "rgba(239, 68, 68, 0.15)",
-    borderBottom: "1px solid rgba(239, 68, 68, 0.3)",
-    color: "#fca5a5",
-    fontSize: "0.85rem",
-  },
-  layout: {
-    flex: 1,
-    display: "flex",
-    overflow: "hidden",
-  },
-};
