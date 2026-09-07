@@ -50,13 +50,19 @@ func (s *Service) notify(receiverID, actorID int, notifType notifications.Notifi
 }
 
 // CreateGroup stores a new group owned by creatorID and returns its ID.
-func (s *Service) CreateGroup(creatorID int, title, description string) (int64, error) {
-	return s.repo.InsertGroup(creatorID, title, description)
+func (s *Service) CreateGroup(creatorID int, title, description, photoPath string) (int64, error) {
+	return s.repo.InsertGroup(creatorID, title, description, photoPath)
 }
 
 // GetAllGroups returns a page of groups, most recently created first.
 func (s *Service) GetAllGroups(limit, offset, userID int) ([]Group, error) {
 	return s.repo.GetAllGroups(limit, offset, userID)
+}
+
+// GetUserGroups returns a page of groups the given user actually belongs to
+// (creator or member), most recently created first.
+func (s *Service) GetUserGroups(userID, limit, offset int) ([]Group, error) {
+	return s.repo.GetGroupsForUser(userID, limit, offset)
 }
 
 // GetGroupByID returns the group with the given ID.

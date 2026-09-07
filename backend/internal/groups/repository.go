@@ -17,7 +17,7 @@ func NewRepository(db *sql.DB) *Repository {
 	}
 }
 
-func (r *Repository) InsertGroup(creatorID int, title, description string) (int64, error) {
+func (r *Repository) InsertGroup(creatorID int, title, description, photoPath string) (int64, error) {
 	tx, err := r.db.Begin()
 	if err != nil {
 		return 0, err
@@ -25,10 +25,11 @@ func (r *Repository) InsertGroup(creatorID int, title, description string) (int6
 	defer tx.Rollback()
 
 	result, err := tx.Exec(
-		`INSERT INTO groups (creator_id, title, description) VALUES (?, ?, ?)`,
+		`INSERT INTO groups (creator_id, title, description, group_photo) VALUES (?, ?, ?, NULLIF(?, ''))`,
 		creatorID,
 		title,
 		description,
+		photoPath,
 	)
 	if err != nil {
 		return 0, err
@@ -56,7 +57,7 @@ func (r *Repository) InsertGroup(creatorID int, title, description string) (int6
 
 func (r *Repository) GetAllGroups(limit, offset, userID int) ([]Group, error) {
 	rows, err := r.db.Query(
-		`SELECT g.id, g.creator_id, g.title, g.description, g.created_at, g.updated_at,
+		`SELECT g.id, g.creator_id, g.title, g.description, COALESCE(g.group_photo, ''), g.created_at, g.updated_at,
          u.username, (SELECT COUNT(*) FROM group_members WHERE group_id = g.id),
          COALESCE((SELECT role FROM group_members WHERE group_id = g.id AND user_id = ?), ''),
          EXISTS(SELECT 1 FROM group_join_requests WHERE group_id = g.id AND user_id = ? AND status = 'pending'),
@@ -76,7 +77,41 @@ func (r *Repository) GetAllGroups(limit, offset, userID int) ([]Group, error) {
 	result := make([]Group, 0)
 	for rows.Next() {
 		var g Group
-		if err := rows.Scan(&g.ID, &g.CreatorID, &g.Title, &g.Description, &g.CreatedAt, &g.UpdatedAt, &g.CreatorUsername, &g.MemberCount, &g.MembershipRole, &g.HasPendingJoinRequest, &g.HasPendingInvitation); err != nil {
+		if err := rows.Scan(&g.ID, &g.CreatorID, &g.Title, &g.Description, &g.GroupPhoto, &g.CreatedAt, &g.UpdatedAt, &g.CreatorUsername, &g.MemberCount, &g.MembershipRole, &g.HasPendingJoinRequest, &g.HasPendingInvitation); err != nil {
+			return nil, err
+		}
+		result = append(result, g)
+	}
+
+	return result, rows.Err()
+}
+
+// GetGroupsForUser returns groups the given user actually belongs to
+// (creator or member), most recently created first. Membership is
+// determined strictly from group_members - pending invitations and join
+// requests never appear here.
+func (r *Repository) GetGroupsForUser(userID, limit, offset int) ([]Group, error) {
+	rows, err := r.db.Query(
+		`SELECT g.id, g.creator_id, g.title, g.description, COALESCE(g.group_photo, ''), g.created_at, g.updated_at,
+         u.username, (SELECT COUNT(*) FROM group_members WHERE group_id = g.id), gm.role
+         FROM groups g
+         JOIN users u ON u.id = g.creator_id
+         JOIN group_members gm ON gm.group_id = g.id AND gm.user_id = ?
+         ORDER BY g.created_at DESC, g.id DESC
+         LIMIT ? OFFSET ?`,
+		userID,
+		limit,
+		offset,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	result := make([]Group, 0)
+	for rows.Next() {
+		var g Group
+		if err := rows.Scan(&g.ID, &g.CreatorID, &g.Title, &g.Description, &g.GroupPhoto, &g.CreatedAt, &g.UpdatedAt, &g.CreatorUsername, &g.MemberCount, &g.MembershipRole); err != nil {
 			return nil, err
 		}
 		result = append(result, g)
@@ -127,11 +162,11 @@ func (r *Repository) GetGroupByID(id int) (*Group, error) {
 	var g Group
 
 	err := r.db.QueryRow(
-		`SELECT g.id, g.creator_id, g.title, g.description, g.created_at, g.updated_at,
+		`SELECT g.id, g.creator_id, g.title, g.description, COALESCE(g.group_photo, ''), g.created_at, g.updated_at,
          u.username, (SELECT COUNT(*) FROM group_members WHERE group_id = g.id)
          FROM groups g JOIN users u ON u.id = g.creator_id WHERE g.id = ?`,
 		id,
-	).Scan(&g.ID, &g.CreatorID, &g.Title, &g.Description, &g.CreatedAt, &g.UpdatedAt, &g.CreatorUsername, &g.MemberCount)
+	).Scan(&g.ID, &g.CreatorID, &g.Title, &g.Description, &g.GroupPhoto, &g.CreatedAt, &g.UpdatedAt, &g.CreatorUsername, &g.MemberCount)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, ErrGroupNotFound

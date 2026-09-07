@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"social/internal/requestctx"
+	"social/internal/upload"
 )
 
 func toGroupResponse(g *Group) GroupResponse {
@@ -16,6 +17,7 @@ func toGroupResponse(g *Group) GroupResponse {
 		CreatorID:   g.CreatorID,
 		Title:       g.Title,
 		Description: g.Description,
+		GroupPhoto:  g.GroupPhoto,
 		CreatedAt:   g.CreatedAt.Format(time.RFC3339),
 		UpdatedAt:   g.UpdatedAt.Format(time.RFC3339),
 	}
@@ -63,9 +65,15 @@ func toInviteCandidateResponse(c InviteCandidate) InviteCandidateResponse {
 	}
 }
 
-func NewHandler(service *Service) *Handler {
+// maxCreateGroupRequestSize bounds the total size of a create-group request
+// body (form fields plus one optional group photo) accepted before it is
+// rejected.
+const maxCreateGroupRequestSize = 8 << 20 // 8 MiB
+
+func NewHandler(service *Service, photoStorage *upload.AvatarStorage) *Handler {
 	return &Handler{
-		service: service,
+		service:      service,
+		photoStorage: photoStorage,
 	}
 }
 
@@ -82,17 +90,17 @@ func (h *Handler) CreateGroupHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var req CreateGroupRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	r.Body = http.MaxBytesReader(w, r.Body, maxCreateGroupRequestSize)
+	if err := r.ParseMultipartForm(maxCreateGroupRequestSize); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(CreateGroupResponse{
 			Success: false,
-			Message: "Invalid request payload",
+			Message: "Invalid request payload or body",
 		})
 		return
 	}
 
-	title, err := ValidateTitle(req.Title)
+	title, err := ValidateTitle(r.FormValue("title"))
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(CreateGroupResponse{
@@ -102,7 +110,7 @@ func (h *Handler) CreateGroupHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	description, err := ValidateDescription(req.Description)
+	description, err := ValidateDescription(r.FormValue("description"))
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(CreateGroupResponse{
@@ -112,8 +120,37 @@ func (h *Handler) CreateGroupHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	groupID, err := h.service.CreateGroup(userID, title, description)
+	// Handle the optional group photo upload.
+	var photoPath string
+	file, header, err := r.FormFile("groupPhoto")
+	if err != nil && !errors.Is(err, http.ErrMissingFile) {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(CreateGroupResponse{
+			Success: false,
+			Message: "Invalid group photo upload",
+		})
+		return
+	}
+	if err == nil {
+		photoPath, err = h.photoStorage.Save(file, header)
+		file.Close()
+		if err != nil {
+			status := http.StatusBadRequest
+			if !errors.Is(err, upload.ErrInvalidFileType) && !errors.Is(err, upload.ErrFileTooLarge) {
+				status = http.StatusInternalServerError
+			}
+			w.WriteHeader(status)
+			json.NewEncoder(w).Encode(CreateGroupResponse{
+				Success: false,
+				Message: err.Error(),
+			})
+			return
+		}
+	}
+
+	groupID, err := h.service.CreateGroup(userID, title, description, photoPath)
 	if err != nil {
+		h.photoStorage.Remove(photoPath)
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(CreateGroupResponse{
 			Success: false,
@@ -154,6 +191,53 @@ func (h *Handler) ListGroupsHandler(w http.ResponseWriter, r *http.Request) {
 
 	userID, _ := requestctx.UserID(r.Context())
 	groupsList, err := h.service.GetAllGroups(limit, offset, userID)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(ListGroupsResponse{
+			Success: false,
+			Message: "Failed to get groups",
+		})
+		return
+	}
+
+	resp := make([]GroupResponse, len(groupsList))
+	for i, g := range groupsList {
+		resp[i] = toGroupResponse(&g)
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(ListGroupsResponse{
+		Success: true,
+		Groups:  resp,
+	})
+}
+
+// GetMyGroupsHandler returns the groups the current session's user actually
+// belongs to (creator or member), for the "My Groups" section.
+func (h *Handler) GetMyGroupsHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	userID, ok := requestctx.UserID(r.Context())
+	if !ok {
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(ListGroupsResponse{
+			Success: false,
+			Message: "Not logged in",
+		})
+		return
+	}
+
+	limit, offset, err := ValidatePagination(r.URL.Query().Get("limit"), r.URL.Query().Get("offset"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(ListGroupsResponse{
+			Success: false,
+			Message: err.Error(),
+		})
+		return
+	}
+
+	groupsList, err := h.service.GetUserGroups(userID, limit, offset)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(ListGroupsResponse{
