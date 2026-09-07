@@ -9,6 +9,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"social/internal/notifications"
 	"social/internal/websocket"
 )
 
@@ -23,15 +24,21 @@ var (
 	ErrSelfMessage     = errors.New("cannot send a message to yourself")
 )
 
-type Service struct {
-	repo *Repository
-	hub  *websocket.Hub
+type NotificationSender interface {
+	Notify(notifications.CreateNotificationRequest) error
 }
 
-func NewService(repo *Repository, hub *websocket.Hub) *Service {
+type Service struct {
+	repo     *Repository
+	hub      *websocket.Hub
+	notifier NotificationSender
+}
+
+func NewService(repo *Repository, hub *websocket.Hub, notifier NotificationSender) *Service {
 	return &Service{
-		repo: repo,
-		hub:  hub,
+		repo:     repo,
+		hub:      hub,
+		notifier: notifier,
 	}
 }
 
@@ -125,6 +132,27 @@ func (s *Service) HandlePrivateMessage(senderID int64, rawPayload json.RawMessag
 
 	s.hub.SendToUser(savedMsg.RecipientID, outEvent)
 	s.hub.SendToUser(savedMsg.SenderID, outEvent)
+
+	if s.notifier != nil {
+		actorID := int(senderID)
+		msgID := int(savedMsg.ID)
+		entityType := notifications.EntityPrivateMessage
+		preview := content
+		if utf8.RuneCountInString(preview) > 60 {
+			runes := []rune(preview)
+			preview = string(runes[:60]) + "..."
+		}
+		if err := s.notifier.Notify(notifications.CreateNotificationRequest{
+			ReceiverID: int(savedMsg.RecipientID),
+			ActorID:    &actorID,
+			Type:       notifications.NotificationPrivateMessage,
+			EntityType: &entityType,
+			EntityID:   &msgID,
+			Message:    preview,
+		}); err != nil {
+			log.Printf("chat: failed to create notification for user %d: %v", savedMsg.RecipientID, err)
+		}
+	}
 }
 
 func (s *Service) HandleTyping(senderID int64, rawPayload json.RawMessage) {

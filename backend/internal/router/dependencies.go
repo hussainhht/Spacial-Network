@@ -46,12 +46,32 @@ type Dependencies struct {
 
 func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 	hub := websocket.NewHub()
-	chatRepo := chat.NewRepository(db)
-	chatService := chat.NewService(chatRepo, hub)
-	chatHandler := chat.NewHandler(chatService)
 	wsHandler := websocket.NewHandler(hub)
+
+	// =========================
+	// Notifications
+	// =========================
+	// Persists notifications to SQLite and pushes them over the existing
+	// websocket hub. Other features (Chat, Groups, and Followers once it exists)
+	// depend on notificationsService only through their own generic
+	// NotificationSender interface (Notify(...)) - never on this package's
+	// repository or SQL.
+
+	notificationsRepo := notifications.NewRepository(db)
+	notificationsSender := notifications.NewHubSender(hub)
+	notificationsService := notifications.NewService(notificationsRepo, notificationsSender)
+	notificationsHandler := notifications.NewHandler(notificationsService)
+
+	// =========================
+	// Chat
+	// =========================
+
+	chatRepo := chat.NewRepository(db)
+	chatService := chat.NewService(chatRepo, hub, notificationsService)
+	chatHandler := chat.NewHandler(chatService)
 	// Message routing is finished further down, once every feature that
 	// handles inbound WebSocket events (chat, groups) has been constructed.
+
 	// =========================
 	// Users
 	// =========================
@@ -96,40 +116,6 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 		cfg.CookieSecure,
 		cfg.SessionLifetime,
 	)
-
-	// =========================
-	// Comments - Future
-	// =========================
-
-	// TODO: Enable when the comments package is implemented.
-	//
-	// commentsRepo := comments.NewRepository(db)
-	// commentsService := comments.NewService(commentsRepo)
-	// commentsHandler := comments.NewHandler(commentsService)
-
-	// =========================
-	// Followers - Future
-	// =========================
-
-	// TODO: Enable when the followers package is implemented.
-	//
-	// followersRepo := followers.NewRepository(db)
-	// followersService := followers.NewService(followersRepo)
-	// followersHandler := followers.NewHandler(followersService)
-
-	// =========================
-	// Notifications
-	// =========================
-	// Persists notifications to SQLite and pushes them over the existing
-	// websocket hub. Other features (Groups, and Followers once it exists)
-	// depend on notificationsService only through their own generic
-	// NotificationSender interface (Notify(...)) - never on this package's
-	// repository or SQL.
-
-	notificationsRepo := notifications.NewRepository(db)
-	notificationsSender := notifications.NewHubSender(hub)
-	notificationsService := notifications.NewService(notificationsRepo, notificationsSender)
-	notificationsHandler := notifications.NewHandler(notificationsService)
 
 	// =========================
 	// Groups

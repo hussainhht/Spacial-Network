@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useWebSocket } from "@/providers/WebSocketProvider";
 import { getCurrentUser } from "@/features/auth/api/getCurrentUser";
 import { getConversations, getChatHistory } from "@/features/chat/api/chat";
@@ -12,6 +12,7 @@ const HISTORY_PAGE_SIZE = 20;
 
 export function useChat() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const {
     isConnected,
     onlineUserIDs,
@@ -114,6 +115,17 @@ export function useChat() {
     },
     [router, sendEvent]
   );
+
+  const searchPartnerId = searchParams.get("partnerId");
+  useEffect(() => {
+    if (!searchPartnerId || loadingConversations) return;
+    const pid = parseInt(searchPartnerId, 10);
+    if (!isNaN(pid) && pid > 0 && pid !== activePartnerId) {
+      const found = conversationsRef.current.find((c) => c.partner_id === pid);
+      const username = found ? found.partner_username : `User ${pid}`;
+      selectConversation(pid, username);
+    }
+  }, [searchPartnerId, loadingConversations, activePartnerId, selectConversation]);
 
   const loadMoreHistory = useCallback(async () => {
     if (!activePartnerId || loadingHistory || !hasMoreHistory) return;

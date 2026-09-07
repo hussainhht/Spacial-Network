@@ -7,14 +7,16 @@ import {
 } from "@/features/groups/components/GroupResponseActions";
 import { useNotifications } from "../context/NotificationProvider";
 import { useNotificationNavigate } from "../hooks/useNotificationNavigate";
-import type {
-  Notification,
-  SupportedNotificationType,
+import {
+  isGroupNotification,
+  type Notification,
+  type SupportedNotificationType,
 } from "../types/notification";
 
 const TYPE_LABELS: Record<SupportedNotificationType, string> = {
   group_invitation: "Group invitation",
   group_join_request: "Join request",
+  private_message: "Direct message",
 };
 
 //! remove it after we have a proper date formatting  utility function in the frontend
@@ -97,39 +99,41 @@ export default function NotificationItem({
           </span>
         </span>
       </button>
-      <div className="notification-actions">
-        {groupData &&
-        notification.entityId &&
-        notification.entityType === notification.type ? (
-          notification.type === "group_invitation" ? (
-            <InvitationActions
-              groupId={groupData.group_id}
-              entityId={notification.entityId}
-              onSuccess={afterAction}
-            />
+      {isGroupNotification(notification) && (
+        <div className="notification-actions">
+          {groupData &&
+          notification.entityId &&
+          notification.entityType === notification.type ? (
+            notification.type === "group_invitation" ? (
+              <InvitationActions
+                groupId={groupData.group_id}
+                entityId={notification.entityId}
+                onSuccess={afterAction}
+              />
+            ) : (
+              <JoinRequestActions
+                groupId={groupData.group_id}
+                entityId={notification.entityId}
+                onSuccess={afterAction}
+              />
+            )
           ) : (
-            <JoinRequestActions
-              groupId={groupData.group_id}
-              entityId={notification.entityId}
-              onSuccess={afterAction}
-            />
-          )
-        ) : (
-          <span className="group-muted">Group context unavailable</span>
-        )}
-        {readError && (
-          <p className="form-error" role="alert">
-            {readError}{" "}
-            <button
-              type="button"
-              className="group-button secondary"
-              onClick={() => void markRead()}
-            >
-              Retry mark read
-            </button>
-          </p>
-        )}
-      </div>
+            <span className="group-muted">Group context unavailable</span>
+          )}
+          {readError && (
+            <p className="form-error" role="alert">
+              {readError}{" "}
+              <button
+                type="button"
+                className="group-button secondary"
+                onClick={() => void markRead()}
+              >
+                Retry mark read
+              </button>
+            </p>
+          )}
+        </div>
+      )}
     </li>
   );
 }

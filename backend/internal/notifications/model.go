@@ -12,6 +12,7 @@ const (
 	NotificationGroupInvitation  NotificationType = "group_invitation"
 	NotificationGroupJoinRequest NotificationType = "group_join_request"
 	NotificationGroupEvent       NotificationType = "group_event"
+	NotificationPrivateMessage   NotificationType = "private_message"
 )
 
 // validNotificationTypes is the single source of truth for which types are
@@ -23,6 +24,7 @@ var validNotificationTypes = map[NotificationType]bool{
 	NotificationGroupInvitation:  true,
 	NotificationGroupJoinRequest: true,
 	NotificationGroupEvent:       true,
+	NotificationPrivateMessage:   true,
 }
 
 // IsValidNotificationType reports whether t is a known notification type.
@@ -38,6 +40,7 @@ const (
 	EntityGroupInvitation  = "group_invitation"
 	EntityGroupJoinRequest = "group_join_request"
 	EntityEvent            = "event"
+	EntityPrivateMessage   = "private_message"
 )
 
 // Notification is a single row in the notifications table. It carries only
