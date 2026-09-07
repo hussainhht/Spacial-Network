@@ -94,6 +94,16 @@ func ValidateInvitationID(idParam string) (int, error) {
 	return id, nil
 }
 
+// ValidateMemberID parses and validates a group member's user ID taken
+// from a URL path.
+func ValidateMemberID(idParam string) (int, error) {
+	id, err := strconv.Atoi(idParam)
+	if err != nil || id <= 0 {
+		return 0, errors.New("member id must be a positive integer")
+	}
+	return id, nil
+}
+
 // ValidateInvitedUserID validates the invited user's ID from a group
 // invitation request body.
 func ValidateInvitedUserID(id int) (int, error) {

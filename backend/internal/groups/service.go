@@ -136,6 +136,33 @@ func (s *Service) AddMember(groupID, userID int) error {
 	return s.repo.AddMember(groupID, userID)
 }
 
+// RemoveMember removes memberID's membership from groupID, on behalf of
+// actorID. Only the group's creator may remove another member, and the
+// creator can never be removed through this operation.
+func (s *Service) RemoveMember(groupID, actorID, memberID int) error {
+	group, err := s.repo.GetGroupByID(groupID)
+	if err != nil {
+		return err
+	}
+	if group.CreatorID != actorID {
+		return ErrNotGroupCreator
+	}
+
+	member, err := s.repo.GetMembership(groupID, memberID)
+	if err != nil {
+		return err
+	}
+	if member == nil {
+		return ErrMemberNotFound
+	}
+
+	if memberID == group.CreatorID {
+		return ErrCannotRemoveCreator
+	}
+
+	return s.repo.RemoveMember(groupID, memberID)
+}
+
 func (s *Service) RequestToJoin(groupID, userID int) error {
 	group, err := s.repo.GetGroupByID(groupID)
 	if err != nil {

@@ -133,6 +133,10 @@ func NewRouter(db *sql.DB, cfg config.Config) (http.Handler, error) {
 		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.GetMembershipHandler)),
 	)
 	apiMux.Handle(
+		"DELETE /groups/{id}/members/{memberID}",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.RemoveMemberHandler)),
+	)
+	apiMux.Handle(
 		"POST /groups/{id}/join-requests",
 		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.CreateJoinRequestHandler)),
 	)

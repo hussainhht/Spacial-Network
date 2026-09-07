@@ -164,6 +164,31 @@ func (r *Repository) AddMember(groupID, userID int) error {
 	return err
 }
 
+// RemoveMember deletes a single group_members row, leaving every other
+// membership, the group, and the user untouched. Business rules (creator
+// permission, protecting the creator's own membership) live in the service
+// layer - this is a plain, scoped delete.
+func (r *Repository) RemoveMember(groupID, memberID int) error {
+	result, err := r.db.Exec(
+		`DELETE FROM group_members WHERE group_id = ? AND user_id = ?`,
+		groupID,
+		memberID,
+	)
+	if err != nil {
+		return err
+	}
+
+	n, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return ErrMemberNotFound
+	}
+
+	return nil
+}
+
 func (r *Repository) GetGroupByID(id int) (*Group, error) {
 	var g Group
 

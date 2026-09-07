@@ -771,6 +771,58 @@ func (h *Handler) RejectJoinRequestHandler(w http.ResponseWriter, r *http.Reques
 	})
 }
 
+// RemoveMemberHandler lets the group's creator remove another member.
+// The actor is always taken from the session, never from the request body.
+func (h *Handler) RemoveMemberHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	userID, ok := requestctx.UserID(r.Context())
+	if !ok {
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(ActionResponse{
+			Success: false,
+			Message: "Not logged in",
+		})
+		return
+	}
+
+	groupID, err := ValidateGroupID(r.PathValue("id"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(ActionResponse{
+			Success: false,
+			Message: err.Error(),
+		})
+		return
+	}
+
+	memberID, err := ValidateMemberID(r.PathValue("memberID"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(ActionResponse{
+			Success: false,
+			Message: err.Error(),
+		})
+		return
+	}
+
+	if err := h.service.RemoveMember(groupID, userID, memberID); err != nil {
+		status, message := removeMemberErrorResponse(err)
+		w.WriteHeader(status)
+		json.NewEncoder(w).Encode(ActionResponse{
+			Success: false,
+			Message: message,
+		})
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(ActionResponse{
+		Success: true,
+		Message: "Member removed",
+	})
+}
+
 // =========================
 // Group Invitations
 // =========================
