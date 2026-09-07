@@ -6,6 +6,7 @@ import (
 	"social/internal/auth"
 	"social/internal/chat"
 	"social/internal/config"
+	"social/internal/followers"
 	"social/internal/groups"
 	"social/internal/notifications"
 	"social/internal/notifications/notifiers"
@@ -23,11 +24,10 @@ type Handlers struct {
 	Groups        *groups.Handler
 	Notifications *notifications.Handler
 	Users         *users.Handler
+	Followers     *followers.Handler
 
 	// TODO: Add Comments handler when the comments feature is implemented.
 	// Comments *comments.Handler
-	// TODO: Add Followers handler when the followers feature is implemented.
-	// Followers *followers.Handler
 	// TODO: Add Chat handler when the chat feature is implemented.
 	// Chat *chat.Handler
 }
@@ -38,6 +38,7 @@ type Dependencies struct {
 	AuthService          *auth.Service
 	GroupsService        *groups.Service
 	NotificationsService *notifications.Service
+	FollowersService     *followers.Service
 
 	// Future shared services:
 	PostsService *posts.Service
@@ -109,14 +110,12 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 	// commentsHandler := comments.NewHandler(commentsService)
 
 	// =========================
-	// Followers - Future
+	// Followers
 	// =========================
 
-	// TODO: Enable when the followers package is implemented.
-	//
-	// followersRepo := followers.NewRepository(db)
-	// followersService := followers.NewService(followersRepo)
-	// followersHandler := followers.NewHandler(followersService)
+	followersRepo := followers.NewRepository(db)
+	followersService := followers.NewService(followersRepo)
+	followersHandler := followers.NewHandler(followersService, usersService)
 
 	// =========================
 	// Notifications
@@ -172,12 +171,13 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 			Posts:         postsHandler,
 			Notifications: notificationsHandler,
 			Users:         usersHandler,
+			Followers:     followersHandler,
 			// Comments:      commentsHandler,
-			// Followers:     followersHandler,
 		},
 		AuthService:          authService,
 		GroupsService:        groupsService,
 		NotificationsService: notificationsService,
+		FollowersService:     followersService,
 
 		// PostsService: postsService,
 	}, nil

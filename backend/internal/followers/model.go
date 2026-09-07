@@ -22,3 +22,14 @@ type FollowListResponse struct {
 	Message string        `json:"message,omitempty"`
 	Users   []UserSummary `json:"users"`
 }
+
+type FollowResponse struct {
+	Success bool   `json:"success"`
+	Message string `json:"message,omitempty"`
+}
+
+type FollowStatusResponse struct {
+	Success     bool   `json:"success"`
+	Message     string `json:"message,omitempty"`
+	IsFollowing bool   `json:"is_following"`
+}
