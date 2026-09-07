@@ -96,6 +96,25 @@ func (s *Service) UpdateGroup(groupID, userID int, title, description string, ph
 	return updated, oldPhoto, nil
 }
 
+// DeleteGroup permanently deletes groupID on behalf of actorID. Only the
+// group's creator may delete it. On success it returns the group's photo
+// path (possibly empty) so the caller can clean up the stored file.
+func (s *Service) DeleteGroup(groupID, actorID int) (string, error) {
+	group, err := s.repo.GetGroupByID(groupID)
+	if err != nil {
+		return "", err
+	}
+	if group.CreatorID != actorID {
+		return "", ErrNotGroupCreator
+	}
+
+	if err := s.repo.DeleteGroup(groupID); err != nil {
+		return "", err
+	}
+
+	return group.GroupPhoto, nil
+}
+
 func (s *Service) GetGroupMembers(groupID int) ([]GroupMember, error) {
 	if _, err := s.repo.GetGroupByID(groupID); err != nil {
 		return nil, err

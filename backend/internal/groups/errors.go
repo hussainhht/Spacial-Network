@@ -121,6 +121,19 @@ func updateGroupErrorResponse(err error) (int, string) {
 	}
 }
 
+// deleteGroupErrorResponse maps a delete-group service error to an HTTP
+// status code and a user-facing message.
+func deleteGroupErrorResponse(err error) (int, string) {
+	switch {
+	case errors.Is(err, ErrGroupNotFound):
+		return http.StatusNotFound, "Group not found"
+	case errors.Is(err, ErrNotGroupCreator):
+		return http.StatusForbidden, "Only the group creator can do this"
+	default:
+		return http.StatusInternalServerError, "Failed to delete group"
+	}
+}
+
 // removeMemberErrorResponse maps a remove-member service error to an HTTP
 // status code and a user-facing message.
 func removeMemberErrorResponse(err error) (int, string) {

@@ -232,6 +232,26 @@ func (r *Repository) UpdateGroup(groupID int, title, description string, photoPa
 	return err
 }
 
+// DeleteGroup deletes a group by ID. Related rows (members, invitations,
+// join requests, events, event responses, ...) are removed by the
+// database's ON DELETE CASCADE foreign keys - see the groups migrations.
+func (r *Repository) DeleteGroup(groupID int) error {
+	result, err := r.db.Exec(`DELETE FROM groups WHERE id = ?`, groupID)
+	if err != nil {
+		return err
+	}
+
+	n, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return ErrGroupNotFound
+	}
+
+	return nil
+}
+
 func (r *Repository) GetGroupMembers(groupID int) ([]GroupMember, error) {
 	rows, err := r.db.Query(
 		`SELECT gm.user_id, u.username, gm.role, gm.joined_at, COALESCE(u.profile_photo, '')
