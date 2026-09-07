@@ -93,19 +93,19 @@ Authentication, Docker, and final project-wide integration are not included in t
 
 ### Backend
 
-- [ ] Follow another user
-- [ ] Unfollow another user
-- [ ] Get followers list
-- [ ] Get following list
-- [ ] Check whether User A follows User B
+- [X] Follow another user
+- [X] Unfollow another user
+- [X] Get followers list
+- [X] Get following list
+- [X] Check whether User A follows User B
 - [ ] Check whether at least one user follows the other when needed by chat
-- [ ] Handle invalid follow operations safely
+- [X] Handle invalid follow operations safely
 
 ### Public Profile Follow Flow
 
-- [ ] Follow immediately when the target profile is Public
-- [ ] Create follower relationship directly
-- [ ] Do not require approval
+- [X] Follow immediately when the target profile is Public
+- [X] Create follower relationship directly
+- [X] Do not require approval
 
 ### Frontend
 
