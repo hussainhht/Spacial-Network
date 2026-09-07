@@ -1,13 +1,18 @@
 "use client";
 
-export type ActiveGroupTab = "overview" | "events";
+export type ActiveGroupTab = "overview" | "events" | "edit";
 
 interface GroupTabsProps {
   activeTab: ActiveGroupTab;
   onTabChange: (tab: ActiveGroupTab) => void;
+  canEdit?: boolean;
 }
 
-export default function GroupTabs({ activeTab, onTabChange }: GroupTabsProps) {
+export default function GroupTabs({
+  activeTab,
+  onTabChange,
+  canEdit,
+}: GroupTabsProps) {
   return (
     <div className="group-tabs" role="tablist" aria-label="Group sections">
       <button
@@ -62,6 +67,20 @@ export default function GroupTabs({ activeTab, onTabChange }: GroupTabsProps) {
           🔒
         </span>
       </button>
+      {canEdit && (
+        <button
+          type="button"
+          role="tab"
+          id="group-tab-edit"
+          aria-selected={activeTab === "edit"}
+          aria-controls="group-tabpanel-edit"
+          data-active={activeTab === "edit"}
+          className="group-tab"
+          onClick={() => onTabChange("edit")}
+        >
+          Edit
+        </button>
+      )}
     </div>
   );
 }

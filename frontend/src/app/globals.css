@@ -647,6 +647,29 @@ main:has(form) form > p {
   line-height: 1.4;
 }
 
+.form-success {
+  margin: 0;
+  padding: 0.65rem 0.9rem;
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.35);
+  border-radius: var(--space-radius-md);
+  color: #86efac;
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .post-form button[type="submit"],
 .group-form button[type="submit"] {
   align-self: flex-start;
@@ -1289,6 +1312,11 @@ main:has(form) form > p {
   justify-content: space-between;
   gap: 1rem;
   flex-wrap: wrap;
+}
+
+.group-edit-actions {
+  display: flex;
+  justify-content: flex-end;
 }
 
 .group-create-buttons {

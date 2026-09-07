@@ -3,6 +3,7 @@ import { ApiError } from "@/lib/api/errors";
 import type {
   Group,
   CreateGroupInput,
+  UpdateGroupInput,
   GroupMember,
   Membership,
   InviteCandidate,
@@ -130,6 +131,27 @@ export async function createGroup(input: CreateGroupInput): Promise<Group> {
     "POST",
   );
   return getGroup(data.group_id);
+}
+
+export async function updateGroup(
+  groupId: number,
+  input: UpdateGroupInput,
+): Promise<Group> {
+  const formData = new FormData();
+  formData.append("title", input.title);
+  formData.append("description", input.description);
+  if (input.photo) {
+    formData.append("groupPhoto", input.photo);
+  } else if (input.removePhoto) {
+    formData.append("remove_photo", "true");
+  }
+
+  const data = await groupRequest<Envelope & { group: ApiGroup }>(
+    `/groups/${groupId}`,
+    formData,
+    "PUT",
+  );
+  return toGroup(data.group);
 }
 
 export async function getGroupMembers(groupId: number): Promise<GroupMember[]> {

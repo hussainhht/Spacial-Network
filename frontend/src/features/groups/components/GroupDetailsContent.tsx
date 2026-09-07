@@ -9,6 +9,7 @@ import {
   useMembership,
   usePendingInvitations,
 } from "../hooks/useGroupData";
+import EditGroupForm from "./EditGroupForm";
 import GroupAvatar from "./GroupAvatar";
 import GroupEvents from "./GroupEvents";
 import {
@@ -47,7 +48,8 @@ function GroupDetails({ groupId }: { groupId: number }) {
   const membership = useMembership(groupId);
   const invitations = usePendingInvitations();
   const [activeTab, setActiveTab] = useState<ActiveGroupTab>("overview");
-  
+  const isCreator = membership.data?.role === "creator";
+
   return (
     <div className="group-details-container">
       <Link href="/groups" className="back-link">
@@ -102,7 +104,11 @@ function GroupDetails({ groupId }: { groupId: number }) {
               )}
             </div>
           </header>
-          <GroupTabs activeTab={activeTab} onTabChange={setActiveTab} />
+          <GroupTabs
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            canEdit={isCreator}
+          />
           {activeTab === "overview" && (
             <div
               id="group-tabpanel-overview"
@@ -130,6 +136,15 @@ function GroupDetails({ groupId }: { groupId: number }) {
                 isMember={Boolean(membership.data?.isMember)}
                 members={members.data}
               />
+            </div>
+          )}
+          {activeTab === "edit" && isCreator && (
+            <div
+              id="group-tabpanel-edit"
+              role="tabpanel"
+              aria-labelledby="group-tab-edit"
+            >
+              <EditGroupForm group={group.data} />
             </div>
           )}
         </>

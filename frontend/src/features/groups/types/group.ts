@@ -19,6 +19,13 @@ export interface CreateGroupInput {
   photo?: File | null;
 }
 
+export interface UpdateGroupInput {
+  title: string;
+  description: string;
+  photo?: File | null;
+  removePhoto?: boolean;
+}
+
 export interface GroupMember {
   avatar?: string;
   userId: number;
