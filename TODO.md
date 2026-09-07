@@ -104,9 +104,9 @@ Authentication, Docker, and final project-wide integration are not included in t
 
 ### Frontend
 
-- [ ] Display group events
-- [ ] Create Event form (title, description, date/time)
-- [ ] Event response UI (Going/Not Going buttons, display and change response)
+- [X] Display group events
+- [X] Create Event form (title, description, date/time)
+- [X] Event response UI (Going/Not Going buttons, display and change response)
 
 ---
 
