@@ -89,10 +89,21 @@ func NewRouter(db *sql.DB, cfg config.Config) (http.Handler, error) {
 	)
 
 	// =========================
-	// Comments Routes - Future
+	// Comments Routes
 	// =========================
 
-	// TODO: Register Comments routes here once the Comments handler is implemented.
+	apiMux.Handle(
+		"POST /posts/{id}/comments",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Comments.NewCommentHandler)),
+	)
+	apiMux.Handle(
+		"GET /posts/{id}/comments",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Comments.ListCommentsHandler)),
+	)
+	apiMux.Handle(
+		"DELETE /comments/{commentID}",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Comments.DeleteCommentHandler)),
+	)
 
 	// =========================
 	// Followers Routes - Future

@@ -9,12 +9,16 @@ export { getApiUrl, getApiBaseUrl };
 export async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
   let response: Response;
 
+  // Let the browser set Content-Type (with boundary) for FormData bodies -
+  // forcing application/json here would break multipart parsing server-side.
+  const isFormData = init?.body instanceof FormData;
+
   try {
     response = await fetch(getApiUrl(path), {
       credentials: "include",
       ...init,
       headers: {
-        "Content-Type": "application/json",
+        ...(isFormData ? {} : { "Content-Type": "application/json" }),
         ...init?.headers,
       },
     });

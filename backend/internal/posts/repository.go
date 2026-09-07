@@ -21,9 +21,9 @@ func (r *Repository) CreatePost(post *post) error {
 	post.Updated_At = now
 
 	res, err := r.db.Exec(`
-		INSERT INTO posts (user_id, private, title, content, created_at, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?)
-	`, post.User_ID, post.isPrivate, post.Title, post.Content, post.Created_At, post.Updated_At)
+		INSERT INTO posts (user_id, private, title, content, image_path, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?)
+	`, post.User_ID, post.isPrivate, post.Title, post.Content, post.ImagePath, post.Created_At, post.Updated_At)
 	if err != nil {
 		return err
 	}
@@ -41,10 +41,10 @@ func (r *Repository) GetPostByID(id int) (*post, error) {
 	var p post
 
 	err := r.db.QueryRow(`
-		SELECT id, user_id, private, title, content, created_at, updated_at
+		SELECT id, user_id, private, title, content, image_path, created_at, updated_at
 		FROM posts
 		WHERE id = ?
-	`, id).Scan(&p.ID, &p.User_ID, &p.isPrivate, &p.Title, &p.Content, &p.Created_At, &p.Updated_At)
+	`, id).Scan(&p.ID, &p.User_ID, &p.isPrivate, &p.Title, &p.Content, &p.ImagePath, &p.Created_At, &p.Updated_At)
 	if err == sql.ErrNoRows {
 		return nil, ErrPostNotFound
 	}
@@ -55,15 +55,16 @@ func (r *Repository) GetPostByID(id int) (*post, error) {
 	return &p, nil
 }
 
-// ListPosts returns all posts visible to viewerID: every public post plus
+// ListPosts returns up to limit posts visible to viewerID: public posts plus
 // the viewer's own private posts, newest first.
-func (r *Repository) ListPosts(viewerID int) ([]*post, error) {
+func (r *Repository) ListPosts(viewerID, limit int) ([]*post, error) {
 	rows, err := r.db.Query(`
-		SELECT id, user_id, private, title, content, created_at, updated_at
+		SELECT id, user_id, private, title, content, image_path, created_at, updated_at
 		FROM posts
 		WHERE private = 0 OR user_id = ?
 		ORDER BY created_at DESC
-	`, viewerID)
+		LIMIT ?
+	`, viewerID, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +73,7 @@ func (r *Repository) ListPosts(viewerID int) ([]*post, error) {
 	posts := []*post{}
 	for rows.Next() {
 		var p post
-		if err := rows.Scan(&p.ID, &p.User_ID, &p.isPrivate, &p.Title, &p.Content, &p.Created_At, &p.Updated_At); err != nil {
+		if err := rows.Scan(&p.ID, &p.User_ID, &p.isPrivate, &p.Title, &p.Content, &p.ImagePath, &p.Created_At, &p.Updated_At); err != nil {
 			return nil, err
 		}
 		posts = append(posts, &p)

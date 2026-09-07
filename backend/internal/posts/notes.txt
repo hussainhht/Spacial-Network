@@ -1,7 +1,7 @@
 endpoints - method - purpose :
 
 .../posts       -> POST              -> create a new post
-.../posts       -> GET               -> list posts visible to you (public posts + your own private posts), newest first
+.../posts       -> GET               -> list posts visible to you (public posts + your own private posts), newest first, up to 50 (use ?limit=N to ask for fewer)
 .../posts/{id}  -> GET               -> fetch a single post by id (private posts: 404 unless you're the owner)
 .../posts/{id}  -> PUT or PATCH      -> edit a post (owner only, otherwise 403)
 .../posts/{id}  -> DELETE            -> delete a post (owner only, otherwise 403)
@@ -9,3 +9,4 @@ endpoints - method - purpose :
 notes:
 - all routes are behind sessionMiddleware, so a valid session cookie is required (401 if missing/invalid).
 - any other method on these paths gets an automatic 405 from the router (see internal/router/router.go).
+- GET .../posts is capped at 50 posts per call (posts.MaxListPosts); ?limit=N requests fewer (N must be a positive integer, else 400).
