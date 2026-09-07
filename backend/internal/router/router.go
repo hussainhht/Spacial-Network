@@ -121,6 +121,10 @@ func NewRouter(db *sql.DB, cfg config.Config) (http.Handler, error) {
 		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.GetGroupHandler)),
 	)
 	apiMux.Handle(
+		"PUT /groups/{id}",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.UpdateGroupHandler)),
+	)
+	apiMux.Handle(
 		"GET /groups/{id}/members",
 		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.GetGroupMembersHandler)),
 	)

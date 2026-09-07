@@ -70,8 +70,28 @@ func (s *Service) GetGroupByID(id int) (*Group, error) {
 	return s.repo.GetGroupByID(id)
 }
 
-// GetGroupMembers returns the members of a group, or ErrGroupNotFound if the
-// group doesn't exist.
+
+func (s *Service) UpdateGroup(groupID, userID int, title, description string, photoPath *string) (*Group, string, error) {
+	group, err := s.repo.GetGroupByID(groupID)
+	if err != nil {
+		return nil, "", err
+	}
+	if group.CreatorID != userID {
+		return nil, "", ErrNotGroupCreator
+	}
+	oldPhoto := group.GroupPhoto
+
+	if err := s.repo.UpdateGroup(groupID, title, description, photoPath); err != nil {
+		return nil, "", err
+	}
+
+	updated, err := s.repo.GetGroupByID(groupID)
+	if err != nil {
+		return nil, "", err
+	}
+	return updated, oldPhoto, nil
+}
+
 func (s *Service) GetGroupMembers(groupID int) ([]GroupMember, error) {
 	if _, err := s.repo.GetGroupByID(groupID); err != nil {
 		return nil, err

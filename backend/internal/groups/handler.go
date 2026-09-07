@@ -167,6 +167,129 @@ func (h *Handler) CreateGroupHandler(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// maxUpdateGroupRequestSize bounds the total size of an update-group request
+// body (form fields plus one optional group photo) accepted before it is
+// rejected.
+const maxUpdateGroupRequestSize = 8 << 20 // 8 MiB
+
+func (h *Handler) UpdateGroupHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	userID, ok := requestctx.UserID(r.Context())
+	if !ok {
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(GetGroupResponse{
+			Success: false,
+			Message: "Not logged in",
+		})
+		return
+	}
+
+	groupID, err := ValidateGroupID(r.PathValue("id"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(GetGroupResponse{
+			Success: false,
+			Message: err.Error(),
+		})
+		return
+	}
+
+	r.Body = http.MaxBytesReader(w, r.Body, maxUpdateGroupRequestSize)
+	if err := r.ParseMultipartForm(maxUpdateGroupRequestSize); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(GetGroupResponse{
+			Success: false,
+			Message: "Invalid request payload or body",
+		})
+		return
+	}
+
+	title, err := ValidateTitle(r.FormValue("title"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(GetGroupResponse{
+			Success: false,
+			Message: err.Error(),
+		})
+		return
+	}
+
+	description, err := ValidateDescription(r.FormValue("description"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(GetGroupResponse{
+			Success: false,
+			Message: err.Error(),
+		})
+		return
+	}
+
+	// Photo handling has three outcomes: a new file replaces the photo, an
+	// explicit remove_photo flag clears it, or - the default - it's left
+	// exactly as it is. A nil photoPath means "don't touch the column".
+	var photoPath *string
+	var newSavedPath string
+	file, header, fileErr := r.FormFile("groupPhoto")
+	if fileErr != nil && !errors.Is(fileErr, http.ErrMissingFile) {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(GetGroupResponse{
+			Success: false,
+			Message: "Invalid group photo upload",
+		})
+		return
+	}
+	if fileErr == nil {
+		saved, err := h.photoStorage.Save(file, header)
+		file.Close()
+		if err != nil {
+			status := http.StatusBadRequest
+			if !errors.Is(err, upload.ErrInvalidFileType) && !errors.Is(err, upload.ErrFileTooLarge) {
+				status = http.StatusInternalServerError
+			}
+			w.WriteHeader(status)
+			json.NewEncoder(w).Encode(GetGroupResponse{
+				Success: false,
+				Message: err.Error(),
+			})
+			return
+		}
+		newSavedPath = saved
+		photoPath = &newSavedPath
+	} else if r.FormValue("remove_photo") == "true" {
+		empty := ""
+		photoPath = &empty
+	}
+
+	group, oldPhoto, err := h.service.UpdateGroup(groupID, userID, title, description, photoPath)
+	if err != nil {
+		if newSavedPath != "" {
+			h.photoStorage.Remove(newSavedPath)
+		}
+		status, message := updateGroupErrorResponse(err)
+		w.WriteHeader(status)
+		json.NewEncoder(w).Encode(GetGroupResponse{
+			Success: false,
+			Message: message,
+		})
+		return
+	}
+
+	// The DB write succeeded and no longer references the old file (if the
+	// photo changed or was removed) - safe to delete it now.
+	if photoPath != nil && oldPhoto != "" && oldPhoto != *photoPath {
+		h.photoStorage.Remove(oldPhoto)
+	}
+
+	groupResp := toGroupResponse(group)
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(GetGroupResponse{
+		Success: true,
+		Message: "Group updated successfully",
+		Group:   &groupResp,
+	})
+}
+
 func (h *Handler) ListGroupsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 

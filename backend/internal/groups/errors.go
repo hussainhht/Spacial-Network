@@ -100,6 +100,19 @@ func invitationErrorResponse(err error) (int, string) {
 	}
 }
 
+// updateGroupErrorResponse maps an update-group service error to an HTTP
+// status code and a user-facing message.
+func updateGroupErrorResponse(err error) (int, string) {
+	switch {
+	case errors.Is(err, ErrGroupNotFound):
+		return http.StatusNotFound, "Group not found"
+	case errors.Is(err, ErrNotGroupCreator):
+		return http.StatusForbidden, "Only the group creator can do this"
+	default:
+		return http.StatusInternalServerError, "Failed to update group"
+	}
+}
+
 // inviteCandidateErrorResponse maps a search-invite-candidates service error
 // to an HTTP status code and a user-facing message.
 func inviteCandidateErrorResponse(err error) (int, string) {
