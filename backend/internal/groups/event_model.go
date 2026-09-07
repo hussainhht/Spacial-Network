@@ -2,7 +2,6 @@ package groups
 
 import "time"
 
-
 const (
 	EventResponseGoing    = "going"
 	EventResponseNotGoing = "not_going"
@@ -18,9 +17,10 @@ type Event struct {
 	CreatedAt   time.Time `db:"created_at"`
 	UpdatedAt   time.Time `db:"updated_at"`
 
-	// CurrentUserResponse is populated by the service layer for the event
-	// details endpoint; it is not a column on the events table.
+	// Response summary is read from event_responses, not stored on events.
 	CurrentUserResponse *string
+	GoingCount          int
+	NotGoingCount       int
 }
 
 type CreateEventRequest struct {
@@ -36,7 +36,9 @@ type CreateEventResponse struct {
 }
 
 type EventResponse struct {
-	CurrentUserResponse *string `json:"current_user_response,omitempty"`
+	GoingCount          int     `json:"going_count"`
+	NotGoingCount       int     `json:"not_going_count"`
+	CurrentUserResponse *string `json:"current_user_response"`
 	Title               string  `json:"title"`
 	Description         string  `json:"description"`
 	EventTime           string  `json:"event_time"`
@@ -61,4 +63,18 @@ type GetEventResponse struct {
 
 type RespondToEventRequest struct {
 	Response string `json:"response"`
+}
+
+// EventResponseUser exposes only the public identity needed by attendee lists.
+type EventResponseUser struct {
+	UserID   int    `json:"user_id"`
+	Username string `json:"username"`
+	Avatar   string `json:"avatar,omitempty"`
+	Response string `json:"response"`
+}
+
+type ListEventResponsesResponse struct {
+	Success   bool                `json:"success"`
+	Message   string              `json:"message,omitempty"`
+	Responses []EventResponseUser `json:"responses"`
 }

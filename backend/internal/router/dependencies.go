@@ -136,7 +136,7 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 	// =========================
 
 	groupsRepo := groups.NewRepository(db)
-	groupsService := groups.NewService(groupsRepo, notificationsService)
+	groupsService := groups.NewService(groupsRepo, notificationsService, hub)
 	groupsHandler := groups.NewHandler(groupsService)
 	inviteSearchWSHandler := groups.NewInviteSearchWSHandler(groupsService, hub)
 

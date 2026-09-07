@@ -17,6 +17,7 @@ func toEventResponse(e *Event) EventResponse {
 		CreatedAt:           e.CreatedAt.Format(time.RFC3339),
 		UpdatedAt:           e.UpdatedAt.Format(time.RFC3339),
 		CurrentUserResponse: e.CurrentUserResponse,
+		GoingCount:          e.GoingCount, NotGoingCount: e.NotGoingCount,
 	}
 }
 
@@ -281,9 +282,44 @@ func (h *Handler) RespondToEventHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	event, err := h.service.GetEventDetails(groupID, eventID, userID)
+	if err != nil {
+		status, message := eventErrorResponse(err)
+		w.WriteHeader(status)
+		json.NewEncoder(w).Encode(GetEventResponse{Success: false, Message: message})
+		return
+	}
+	eventResp := toEventResponse(event)
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(ActionResponse{
-		Success: true,
-		Message: "Response saved",
-	})
+	json.NewEncoder(w).Encode(GetEventResponse{Success: true, Message: "Response saved", Event: &eventResp})
+}
+
+func (h *Handler) GetEventResponsesHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	fail := func(status int, message string) {
+		w.WriteHeader(status)
+		json.NewEncoder(w).Encode(ListEventResponsesResponse{Success: false, Message: message})
+	}
+	userID, ok := requestctx.UserID(r.Context())
+	if !ok {
+		fail(http.StatusUnauthorized, "Not logged in")
+		return
+	}
+	groupID, err := ValidateGroupID(r.PathValue("id"))
+	if err != nil {
+		fail(http.StatusBadRequest, err.Error())
+		return
+	}
+	eventID, err := ValidateEventID(r.PathValue("eventID"))
+	if err != nil {
+		fail(http.StatusBadRequest, err.Error())
+		return
+	}
+	responses, err := h.service.GetEventResponses(groupID, eventID, userID)
+	if err != nil {
+		status, message := eventErrorResponse(err)
+		fail(status, message)
+		return
+	}
+	json.NewEncoder(w).Encode(ListEventResponsesResponse{Success: true, Responses: responses})
 }

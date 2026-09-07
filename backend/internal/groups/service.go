@@ -5,18 +5,21 @@ import (
 	"log"
 
 	"social/internal/notifications"
+	"social/internal/websocket"
 )
 
 type Service struct {
 	repo     *Repository
 	notifier NotificationSender
+	hub      *websocket.Hub
 }
 
 func NewService(
-	repo *Repository, notifier NotificationSender) *Service {
+	repo *Repository, notifier NotificationSender, hub *websocket.Hub) *Service {
 	return &Service{
 		repo:     repo,
 		notifier: notifier,
+		hub:      hub,
 	}
 }
 

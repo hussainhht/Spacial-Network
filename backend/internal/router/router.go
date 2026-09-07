@@ -174,6 +174,10 @@ func NewRouter(db *sql.DB, cfg config.Config) (http.Handler, error) {
 		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.GetEventHandler)),
 	)
 	apiMux.Handle(
+		"GET /groups/{id}/events/{eventID}/responses",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.GetEventResponsesHandler)),
+	)
+	apiMux.Handle(
 		"PUT /groups/{id}/events/{eventID}/response",
 		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.RespondToEventHandler)),
 	)

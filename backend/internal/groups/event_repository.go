@@ -20,13 +20,19 @@ func (r *Repository) InsertEvent(groupID, createdBy int, title, description stri
 	return result.LastInsertId()
 }
 
-func (r *Repository) GetEventsByGroup(groupID int) ([]Event, error) {
+// The existing unique (event_id, user_id) index supports both the current
+// user's lookup and counts. All event summaries are read in one SQL query.
+const eventSummarySelect = `SELECT e.id, e.group_id, e.created_by, e.title, e.description,
+ e.event_time, e.created_at, e.updated_at, mine.response,
+ (SELECT COUNT(*) FROM event_responses er WHERE er.event_id = e.id AND er.response = 'going'),
+ (SELECT COUNT(*) FROM event_responses er WHERE er.event_id = e.id AND er.response = 'not_going')
+ FROM events e
+ LEFT JOIN event_responses mine ON mine.event_id = e.id AND mine.user_id = ? `
+
+func (r *Repository) GetEventsByGroup(groupID, userID int) ([]Event, error) {
 	rows, err := r.db.Query(
-		`SELECT id, group_id, created_by, title, description, event_time, created_at, updated_at
-		 FROM events
-		 WHERE group_id = ?
-		 ORDER BY event_time ASC, id ASC`,
-		groupID,
+		eventSummarySelect+`WHERE e.group_id = ? ORDER BY e.event_time ASC, e.id ASC`,
+		userID, groupID,
 	)
 	if err != nil {
 		return nil, err
@@ -36,7 +42,7 @@ func (r *Repository) GetEventsByGroup(groupID int) ([]Event, error) {
 	result := make([]Event, 0)
 	for rows.Next() {
 		var e Event
-		if err := rows.Scan(&e.ID, &e.GroupID, &e.CreatedBy, &e.Title, &e.Description, &e.EventTime, &e.CreatedAt, &e.UpdatedAt); err != nil {
+		if err := rows.Scan(&e.ID, &e.GroupID, &e.CreatedBy, &e.Title, &e.Description, &e.EventTime, &e.CreatedAt, &e.UpdatedAt, &e.CurrentUserResponse, &e.GoingCount, &e.NotGoingCount); err != nil {
 			return nil, err
 		}
 		result = append(result, e)
@@ -45,15 +51,13 @@ func (r *Repository) GetEventsByGroup(groupID int) ([]Event, error) {
 	return result, rows.Err()
 }
 
-func (r *Repository) GetEventByID(eventID int) (*Event, error) {
+func (r *Repository) GetEventByID(eventID, userID int) (*Event, error) {
 	var e Event
 
 	err := r.db.QueryRow(
-		`SELECT id, group_id, created_by, title, description, event_time, created_at, updated_at
-		 FROM events
-		 WHERE id = ?`,
-		eventID,
-	).Scan(&e.ID, &e.GroupID, &e.CreatedBy, &e.Title, &e.Description, &e.EventTime, &e.CreatedAt, &e.UpdatedAt)
+		eventSummarySelect+`WHERE e.id = ?`,
+		userID, eventID,
+	).Scan(&e.ID, &e.GroupID, &e.CreatedBy, &e.Title, &e.Description, &e.EventTime, &e.CreatedAt, &e.UpdatedAt, &e.CurrentUserResponse, &e.GoingCount, &e.NotGoingCount)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, ErrEventNotFound
@@ -97,4 +101,23 @@ func (r *Repository) UpsertEventResponse(eventID, userID int, response string) e
 		response,
 	)
 	return err
+}
+
+func (r *Repository) GetEventResponses(eventID int) ([]EventResponseUser, error) {
+	rows, err := r.db.Query(`SELECT er.user_id, u.username, COALESCE(u.profile_photo, ''), er.response
+ FROM event_responses er JOIN users u ON u.id = er.user_id
+ WHERE er.event_id = ? ORDER BY u.username ASC, er.user_id ASC`, eventID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	users := make([]EventResponseUser, 0)
+	for rows.Next() {
+		var user EventResponseUser
+		if err := rows.Scan(&user.UserID, &user.Username, &user.Avatar, &user.Response); err != nil {
+			return nil, err
+		}
+		users = append(users, user)
+	}
+	return users, rows.Err()
 }
