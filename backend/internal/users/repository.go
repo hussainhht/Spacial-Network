@@ -45,14 +45,22 @@ func (r *Repository) EmailExists(email string) (bool, error) {
 	return err == nil, err
 }
 
-func (r *Repository) InsertUser(uuid, username string, age int, gender, firstName, lastName, email, passwordHash, profilePhoto string) error {
+func (r *Repository) InsertUser(uuid, username string, age int, gender, firstName, lastName, email, passwordHash, profilePhoto, aboutMe, nickname string) error {
 	query := `
-		INSERT INTO users (uuid, username, age, gender, first_name, last_name, email, password_hash, profile_photo)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+		INSERT INTO users (uuid, username, age, gender, first_name, last_name, email, password_hash, profile_photo, about_me, nickname)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`
 	var photo sql.NullString
 	if profilePhoto != "" {
 		photo = sql.NullString{String: profilePhoto, Valid: true}
+	}
+	var about sql.NullString
+	if aboutMe != "" {
+		about = sql.NullString{String: aboutMe, Valid: true}
+	}
+	var nick sql.NullString
+	if nickname != "" {
+		nick = sql.NullString{String: nickname, Valid: true}
 	}
 	_, err := r.db.Exec(
 		query,
@@ -65,6 +73,8 @@ func (r *Repository) InsertUser(uuid, username string, age int, gender, firstNam
 		email,
 		passwordHash,
 		photo,
+		about,
+		nick,
 	)
 	return err
 }
@@ -126,7 +136,7 @@ func (r *Repository) GetProfileByID(userID int) (*Profile, error) {
 	profile := &Profile{}
 
 	err := r.db.QueryRow(`
-		SELECT id, uuid, username, age, gender, first_name, last_name, email, profile_photo, created_at, updated_at, is_private
+		SELECT id, uuid, username, age, gender, first_name, last_name, email, profile_photo, about_me, nickname, created_at, updated_at, is_private
 		FROM users
 		WHERE id = ?
 	`, userID).Scan(
@@ -139,6 +149,8 @@ func (r *Repository) GetProfileByID(userID int) (*Profile, error) {
 		&profile.LastName,
 		&profile.Email,
 		&profile.ProfilePhoto,
+		&profile.AboutMe,
+		&profile.Nickname,
 		&profile.CreatedAt,
 		&profile.UpdatedAt,
 		&profile.IsPrivate,
@@ -156,7 +168,7 @@ func (r *Repository) GetProfileByUsername(username string) (*Profile, error) {
 	profile := &Profile{}
 
 	err := r.db.QueryRow(`
-		SELECT id, uuid, username, age, gender, first_name, last_name, email, profile_photo, created_at, updated_at, is_private
+		SELECT id, uuid, username, age, gender, first_name, last_name, email, profile_photo, about_me, nickname, created_at, updated_at, is_private
 		FROM users
 		WHERE username = ?
 	`, username).Scan(
@@ -169,6 +181,8 @@ func (r *Repository) GetProfileByUsername(username string) (*Profile, error) {
 		&profile.LastName,
 		&profile.Email,
 		&profile.ProfilePhoto,
+		&profile.AboutMe,
+		&profile.Nickname,
 		&profile.CreatedAt,
 		&profile.UpdatedAt,
 		&profile.IsPrivate,

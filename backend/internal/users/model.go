@@ -16,6 +16,8 @@ type User struct {
 	Email        string         `db:"email"`
 	PasswordHash string         `db:"password_hash"`
 	ProfilePhoto sql.NullString `db:"profile_photo"` //* sql.NullString is Go’s way to represent a database column that can contain either a string or a NULL
+	AboutMe      sql.NullString `db:"about_me"`
+	Nickname     sql.NullString `db:"nickname"`
 	CreatedAt    time.Time      `db:"created_at"`
 	UpdatedAt    time.Time      `db:"updated_at"`
 	IsPrivate    bool           `db:"is_private"`
@@ -31,6 +33,8 @@ type Profile struct {
 	LastName     string         `db:"last_name"`
 	Email        string         `db:"email"`
 	ProfilePhoto sql.NullString `db:"profile_photo"`
+	AboutMe      sql.NullString `db:"about_me"`
+	Nickname     sql.NullString `db:"nickname"`
 	CreatedAt    time.Time      `db:"created_at"`
 	UpdatedAt    time.Time      `db:"updated_at"`
 	IsPrivate    bool           `db:"is_private"`
@@ -47,6 +51,8 @@ type ProfileResponse struct {
 	LastName     string `json:"last_name"`
 	Email        string `json:"email"`
 	ProfilePhoto string `json:"profile_photo,omitempty"`
+	AboutMe      string `json:"about_me,omitempty"`
+	Nickname     string `json:"nickname,omitempty"`
 	CreatedAt    string `json:"created_at"`
 	UpdatedAt    string `json:"updated_at"`
 	IsPrivate    bool   `json:"is_private"`

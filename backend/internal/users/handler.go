@@ -35,6 +35,14 @@ func toProfileResponse(profile *Profile) ProfileResponse {
 		resp.ProfilePhoto = "/uploads/" + profile.ProfilePhoto.String
 	}
 
+	if profile.AboutMe.Valid {
+		resp.AboutMe = profile.AboutMe.String
+	}
+
+	if profile.Nickname.Valid {
+		resp.Nickname = profile.Nickname.String
+	}
+
 	return resp
 }
 

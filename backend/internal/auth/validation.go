@@ -113,5 +113,15 @@ func ValidateRegisterRequest(register *RegisterRequest) error {
 		return err
 	}
 
+	register.AboutMe, err = users.ValidateAboutMe(register.AboutMe)
+	if err != nil {
+		return err
+	}
+
+	register.Nickname, err = users.ValidateNickname(register.Nickname)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

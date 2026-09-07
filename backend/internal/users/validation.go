@@ -30,6 +30,25 @@ func ValidateName(field, name string) (string, error) {
 	})
 }
 
+// ValidateAboutMe validates an optional free-text "about me" profile field.
+func ValidateAboutMe(aboutMe string) (string, error) {
+	return validation.SanitizeText(aboutMe, validation.TextRules{
+		Field:          "about me",
+		Required:       false,
+		Max:            validation.MaxGenericInputLength,
+		AllowMultiline: true,
+	})
+}
+
+// ValidateNickname validates an optional single-line nickname profile field.
+func ValidateNickname(nickname string) (string, error) {
+	return validation.SanitizeText(nickname, validation.TextRules{
+		Field:    "nickname",
+		Required: false,
+		Max:      validation.MaxGenericInputLength,
+	})
+}
+
 func ValidateGender(gender string) (string, error) {
 	sanitized, err := validation.SanitizeText(gender, validation.TextRules{
 		Field:    "gender",

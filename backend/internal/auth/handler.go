@@ -28,6 +28,8 @@ type RegisterRequest struct {
 	Password  string `json:"password"`
 	Gender    string `json:"gender"`
 	Age       int    `json:"age"`
+	AboutMe   string `json:"aboutMe"`
+	Nickname  string `json:"nickname"`
 }
 
 type Response struct {
@@ -210,6 +212,8 @@ func (h *Handler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		Password:  r.FormValue("password"),
 		Gender:    r.FormValue("gender"),
 		Age:       age,
+		AboutMe:   r.FormValue("about_me"),
+		Nickname:  r.FormValue("nickname"),
 	}
 
 	if err := ValidateRegisterRequest(&payload); err != nil {
@@ -301,6 +305,8 @@ func (h *Handler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		payload.Email,
 		payload.Password,
 		profilePhotoPath,
+		payload.AboutMe,
+		payload.Nickname,
 	)
 
 	if err != nil {
