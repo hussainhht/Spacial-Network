@@ -22,11 +22,6 @@ function formatRemaining(ms: number): string {
   return `${minutes}m ${String(seconds).padStart(2, "0")}s`;
 }
 
-// A small, self-contained countdown for one event card. `now` is read from
-// the platform clock only inside the interval's callback (never directly
-// during render), then `remainingMs` is derived from it each render. Nothing
-// is fetched or written to the backend for this, and the interval is cleaned
-// up on unmount so cards that scroll away don't leak timers.
 export default function EventCountdown({ eventTime }: EventCountdownProps) {
   const target = useMemo(() => new Date(eventTime).getTime(), [eventTime]);
   const [now, setNow] = useState(Date.now);
@@ -49,6 +44,8 @@ export default function EventCountdown({ eventTime }: EventCountdownProps) {
   }
 
   return (
-    <p className="group-event-countdown">Starts in {formatRemaining(remainingMs)}</p>
+    <p className="group-event-countdown">
+      Starts in {formatRemaining(remainingMs)}
+    </p>
   );
 }

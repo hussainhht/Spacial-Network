@@ -21,6 +21,7 @@ import GroupTabs, { type ActiveGroupTab } from "./GroupTabs";
 export default function GroupDetailsContent() {
   const { groupId } = useParams<{ groupId: string }>();
   const id = Number(groupId);
+
   if (!/^[1-9]\d*$/.test(groupId) || !Number.isSafeInteger(id))
     return (
       <div className="group-details-container">
@@ -32,10 +33,12 @@ export default function GroupDetailsContent() {
         </p>
       </div>
     );
+
   // A route change unmounts all transient action/search state. Query revisions
   // also prevent older in-flight responses from replacing the new group's data.
   return <GroupDetails key={id} groupId={id} />;
 }
+
 function GroupDetails({ groupId }: { groupId: number }) {
   // Independent subscriptions start these three requests concurrently.
   const group = useGroup(groupId);
@@ -43,6 +46,7 @@ function GroupDetails({ groupId }: { groupId: number }) {
   const membership = useMembership(groupId);
   const invitations = usePendingInvitations();
   const [activeTab, setActiveTab] = useState<ActiveGroupTab>("overview");
+  
   return (
     <div className="group-details-container">
       <Link href="/groups" className="back-link">

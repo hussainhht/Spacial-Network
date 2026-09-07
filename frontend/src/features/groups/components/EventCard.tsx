@@ -81,10 +81,19 @@ export default function EventCard({
             ))}
           </div>
           {openList && (
-            <EventAttendees groupId={groupId} eventId={event.id} status={openList} />
+            <EventAttendees
+              groupId={groupId}
+              eventId={event.id}
+              status={openList}
+            />
           )}
-          <p className="group-muted group-event-response-label">Your response</p>
-          <div className="group-event-response-actions" aria-busy={Boolean(busy)}>
+          <p className="group-muted group-event-response-label">
+            Your response
+          </p>
+          <div
+            className="group-event-response-actions"
+            aria-busy={Boolean(busy)}
+          >
             <button
               type="button"
               className={`group-response-btn${currentResponse === "going" ? " is-selected" : ""}`}
