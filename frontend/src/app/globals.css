@@ -1528,6 +1528,72 @@ main:has(form) form > p {
   .group-tab { padding: .65rem .75rem; font-size: .85rem; }
 }
 
+.group-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  max-width: 420px;
+  margin-bottom: .25rem;
+}
+
+.group-search-icon {
+  position: absolute;
+  left: .85rem;
+  color: var(--space-text-muted);
+  pointer-events: none;
+}
+
+.group-search-input {
+  width: 100%;
+  padding: .6rem .95rem .6rem 2.35rem;
+  border-radius: var(--space-radius-md);
+  border: 1px solid var(--space-border);
+  background: var(--space-input-bg);
+  color: var(--space-text-heading);
+  font-size: .9rem;
+  font-family: inherit;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3);
+  transition: border-color .2s ease, box-shadow .2s ease, background-color .2s ease;
+}
+
+.group-search-input::placeholder { color: var(--space-text-placeholder); }
+
+.group-search-input:focus {
+  outline: none;
+  border-color: var(--space-accent-indigo);
+  background: var(--space-input-bg-focus);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25), 0 0 20px rgba(59, 130, 246, 0.35);
+}
+
+.group-search-input::-webkit-search-cancel-button,
+.group-search-input::-webkit-search-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.group-search-clear {
+  position: absolute;
+  right: .5rem;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--space-text-muted);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.group-search-clear:hover { background: rgba(99, 102, 241, .15); color: var(--space-text-heading); }
+
+@media (max-width: 600px) {
+  .group-search { max-width: 100%; }
+}
+
 .group-events-list {
   list-style: none;
   margin: 1rem 0 0;

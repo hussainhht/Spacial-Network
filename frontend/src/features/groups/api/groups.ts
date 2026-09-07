@@ -101,18 +101,35 @@ export async function getGroup(groupId: number): Promise<Group> {
   return toGroup(data.group);
 }
 
-export async function getGroups(limit = 20, offset = 0): Promise<Group[]> {
+function groupsQuery(limit: number, offset: number, search: string): string {
+  const params = new URLSearchParams({
+    limit: String(limit),
+    offset: String(offset),
+  });
+  if (search) params.set("search", search);
+  return params.toString();
+}
+
+export async function getGroups(
+  limit = 20,
+  offset = 0,
+  search = "",
+): Promise<Group[]> {
   const data = await groupRequest<Envelope & { groups?: ApiGroup[] }>(
-    `/groups?limit=${limit}&offset=${offset}`,
+    `/groups?${groupsQuery(limit, offset, search)}`,
   );
   return (data.groups ?? []).map(toGroup);
 }
 
 // Groups the current session's user actually belongs to (creator or
 // member) - backs the "My Groups" section on /groups.
-export async function getMyGroups(limit = 20, offset = 0): Promise<Group[]> {
+export async function getMyGroups(
+  limit = 20,
+  offset = 0,
+  search = "",
+): Promise<Group[]> {
   const data = await groupRequest<Envelope & { groups?: ApiGroup[] }>(
-    `/groups/mine?limit=${limit}&offset=${offset}`,
+    `/groups/mine?${groupsQuery(limit, offset, search)}`,
   );
   return (data.groups ?? []).map(toGroup);
 }

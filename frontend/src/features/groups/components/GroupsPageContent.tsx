@@ -3,16 +3,21 @@
 import Link from "next/link";
 import { useState } from "react";
 import { getGroups } from "../api/groups";
+import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { useGroupQuery, useMyGroups } from "../hooks/useGroupData";
 import { GroupLoadError, InvitationsPanel } from "./GroupPanels";
 import GroupCard from "./GroupCard";
+import GroupSearchInput from "./GroupSearchInput";
 import GroupsFilterTabs, { type GroupsTab } from "./GroupsFilterTabs";
 
 const PAGE_SIZE = 20;
 const MY_GROUPS_LIMIT = 100;
+const SEARCH_DEBOUNCE_MS = 300;
 
 export default function GroupsPageContent() {
   const [activeTab, setActiveTab] = useState<GroupsTab>("mine");
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebouncedValue(search.trim(), SEARCH_DEBOUNCE_MS);
   return (
     <main className="groups-page space-shell">
       <div className="groups-container">
@@ -30,6 +35,7 @@ export default function GroupsPageContent() {
         </header>
         <InvitationsPanel />
         <GroupsFilterTabs activeTab={activeTab} onTabChange={setActiveTab} />
+        <GroupSearchInput value={search} onChange={setSearch} />
         {activeTab === "mine" && (
           <section
             id="groups-tabpanel-mine"
@@ -38,7 +44,10 @@ export default function GroupsPageContent() {
             tabIndex={0}
           >
             <p className="group-muted">Groups you&apos;re already part of.</p>
-            <MyGroupsSection onBrowseAll={() => setActiveTab("all")} />
+            <MyGroupsSection
+              onBrowseAll={() => setActiveTab("all")}
+              search={debouncedSearch}
+            />
           </section>
         )}
         {activeTab === "all" && (
@@ -49,7 +58,7 @@ export default function GroupsPageContent() {
             tabIndex={0}
           >
             <p className="group-muted">Discover communities.</p>
-            <AllGroupsSection />
+            <AllGroupsSection key={debouncedSearch} search={debouncedSearch} />
           </section>
         )}
       </div>
@@ -57,8 +66,15 @@ export default function GroupsPageContent() {
   );
 }
 
-function MyGroupsSection({ onBrowseAll }: { onBrowseAll: () => void }) {
-  const state = useMyGroups(MY_GROUPS_LIMIT, 0);
+function MyGroupsSection({
+  onBrowseAll,
+  search,
+}: {
+  onBrowseAll: () => void;
+  search: string;
+}) {
+  const state = useMyGroups(MY_GROUPS_LIMIT, 0, search);
+  const isSearching = search.length > 0;
   return (
     <>
       {state.loading && (
@@ -71,23 +87,32 @@ function MyGroupsSection({ onBrowseAll }: { onBrowseAll: () => void }) {
       )}
       {!state.loading && !state.error && state.data?.length === 0 && (
         <div className="group-panel group-empty">
-          <h3>No groups yet</h3>
-          <p>
-            You haven&apos;t joined any groups yet. Explore available
-            communities or create your own group.
-          </p>
-          <div className="group-buttons">
-            <button
-              type="button"
-              className="group-button secondary"
-              onClick={onBrowseAll}
-            >
-              Browse All Groups
-            </button>
-            <Link href="/groups/create" className="group-button">
-              + Create Group
-            </Link>
-          </div>
+          {isSearching ? (
+            <>
+              <h3>No groups found</h3>
+              <p>No groups found in My Groups. Try searching with another name.</p>
+            </>
+          ) : (
+            <>
+              <h3>No groups yet</h3>
+              <p>
+                You haven&apos;t joined any groups yet. Explore available
+                communities or create your own group.
+              </p>
+              <div className="group-buttons">
+                <button
+                  type="button"
+                  className="group-button secondary"
+                  onClick={onBrowseAll}
+                >
+                  Browse All Groups
+                </button>
+                <Link href="/groups/create" className="group-button">
+                  + Create Group
+                </Link>
+              </div>
+            </>
+          )}
         </div>
       )}
       {!!state.data?.length && (
@@ -101,7 +126,7 @@ function MyGroupsSection({ onBrowseAll }: { onBrowseAll: () => void }) {
   );
 }
 
-function AllGroupsSection() {
+function AllGroupsSection({ search }: { search: string }) {
   const [pages, setPages] = useState(1);
   return (
     <>
@@ -109,6 +134,7 @@ function AllGroupsSection() {
         <GroupsPage
           key={page}
           page={page}
+          search={search}
           last={page === pages - 1}
           loadMore={() => setPages((p) => p + 1)}
         />
@@ -119,16 +145,19 @@ function AllGroupsSection() {
 
 function GroupsPage({
   page,
+  search,
   last,
   loadMore,
 }: {
   page: number;
+  search: string;
   last: boolean;
   loadMore: () => void;
 }) {
-  const state = useGroupQuery(`groups:${page}`, () =>
-    getGroups(PAGE_SIZE, page * PAGE_SIZE),
+  const state = useGroupQuery(`groups:${search}:${page}`, () =>
+    getGroups(PAGE_SIZE, page * PAGE_SIZE, search),
   );
+  const isSearching = search.length > 0;
   return (
     <>
       {state.loading && (
@@ -141,10 +170,20 @@ function GroupsPage({
       )}
       {!state.loading && !state.error && !state.data?.length && page === 0 && (
         <div className="group-panel group-empty">
-          <h3>No groups available yet</h3>
-          <p>
-            Create the first group and invite people who share your interests.
-          </p>
+          {isSearching ? (
+            <>
+              <h3>No groups found</h3>
+              <p>Try searching with another name.</p>
+            </>
+          ) : (
+            <>
+              <h3>No groups available yet</h3>
+              <p>
+                Create the first group and invite people who share your
+                interests.
+              </p>
+            </>
+          )}
         </div>
       )}
       <div className="groups-list">

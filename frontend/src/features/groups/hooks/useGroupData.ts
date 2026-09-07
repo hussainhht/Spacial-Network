@@ -115,8 +115,10 @@ export async function refreshGroupData(groupId?: number): Promise<void> {
 }
 export const useGroup = (id: number) =>
   useGroupQuery(`group:${id}:details`, () => getGroup(id));
-export const useMyGroups = (limit: number, offset: number) =>
-  useGroupQuery(`my-groups:${offset}`, () => getMyGroups(limit, offset));
+export const useMyGroups = (limit: number, offset: number, search = "") =>
+  useGroupQuery(`my-groups:${search}:${offset}`, () =>
+    getMyGroups(limit, offset, search),
+  );
 export const useGroupMembers = (id: number) =>
   useGroupQuery(`group:${id}:members`, () => getGroupMembers(id));
 export const useMembership = (id: number) =>
