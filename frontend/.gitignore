@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Keep the development lab route despite the repository-wide dev/ ignore rule.
+!/src/app/(main)/dev/
