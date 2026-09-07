@@ -84,12 +84,12 @@ Authentication, Docker, and final project-wide integration are not included in t
 
 ### Database
 
-- [ ] Create `followers` table migration
-- [ ] Store follower user ID
-- [ ] Store followed user ID
-- [ ] Prevent duplicate follow relationships
-- [ ] Prevent a user from following themselves
-- [ ] Create matching `.down.sql` migration
+- [X] Create `followers` table migration
+- [X] Store follower user ID
+- [X] Store followed user ID
+- [X] Prevent duplicate follow relationships
+- [X] Prevent a user from following themselves
+- [X] Create matching `.down.sql` migration
 
 ### Backend
 
