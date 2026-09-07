@@ -2,6 +2,7 @@
 
 import { useMemo, useSyncExternalStore } from "react";
 import {
+  getEventResponses,
   getGroup,
   getGroupEvents,
   getGroupMembers,
@@ -9,6 +10,8 @@ import {
   getPendingInvitations,
   getPendingJoinRequests,
 } from "../api/groups";
+
+import type { GroupEvent } from "../types/group";
 
 type Snapshot<T> = {
   data: T | undefined;
@@ -21,6 +24,7 @@ interface Resource<T> {
   subscribe: (listener: () => void) => () => void;
   read: () => Snapshot<T>;
   reload: () => Promise<void>;
+  update: (transform: (data: T) => T) => void;
 }
 
 const resources = new Map<string, Resource<unknown>>();
@@ -46,6 +50,17 @@ function resourceFor<T>(key: string, fetcher: () => Promise<T>): Resource<T> {
           if (resources.get(key) === resource) resources.delete(key);
         }
       };
+    },
+    update(transform) {
+      if (resource.snapshot.data === undefined) return;
+      // A successful mutation supersedes any GET started before it.
+      revision++;
+      resource.snapshot = {
+        data: transform(resource.snapshot.data),
+        loading: false,
+        error: null,
+      };
+      emit();
     },
     async reload() {
       const current = ++revision;
@@ -108,3 +123,18 @@ export const usePendingJoinRequests = (id: number) =>
   useGroupQuery(`group:${id}:requests`, () => getPendingJoinRequests(id));
 export const useGroupEvents = (id: number) =>
   useGroupQuery(`group:${id}:events`, () => getGroupEvents(id));
+
+export const useEventResponses = (groupId: number, eventId: number) =>
+  useGroupQuery(`group:${groupId}:event:${eventId}:responses`, () =>
+    getEventResponses(groupId, eventId),
+  );
+
+// Cache only the server's saved result; every remount/refetch reads SQLite again.
+export function updateGroupEvent(event: GroupEvent) {
+  const resource = resources.get(`group:${event.groupId}:events`) as
+    | Resource<GroupEvent[]>
+    | undefined;
+  resource?.update((events) =>
+    events.map((existing) => (existing.id === event.id ? event : existing)),
+  );
+}

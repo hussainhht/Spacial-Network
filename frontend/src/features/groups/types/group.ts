@@ -73,13 +73,20 @@ export interface GroupEvent {
   eventTime: string;
   createdAt: string;
   updatedAt: string;
-  // Only ever populated by the single-event endpoint; the group events list
-  // does not return it (see backend contract gap in the feature report).
-  currentUserResponse?: EventResponseStatus;
+  currentUserResponse: EventResponseStatus | null;
+  goingCount: number;
+  notGoingCount: number;
 }
 
 export interface CreateEventInput {
   title: string;
   description: string;
   eventTime: string;
+}
+
+export interface EventResponseUser {
+  userId: number;
+  username: string;
+  avatar?: string;
+  response: EventResponseStatus;
 }

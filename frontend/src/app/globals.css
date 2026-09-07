@@ -1529,6 +1529,18 @@ main:has(form) form > p {
   font-weight: 500;
 }
 
+.group-event-countdown {
+  margin: 0;
+  color: var(--space-text-muted);
+  font-size: .75rem;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+
+.group-event-countdown-started {
+  font-style: italic;
+}
+
 .group-event-description {
   margin: .2rem 0 0;
   color: var(--space-text-body);
@@ -1817,3 +1829,27 @@ main:has(form) form > p {
 .notification-group-title { color: var(--space-text-heading); font-size: .9rem; font-weight: 600; overflow-wrap: anywhere; }
 .notification-actions .group-muted { font-size: .8rem; }
 .notification-actions .group-button { font-size: .8rem; }
+
+.group-event-attendee-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.group-event-response-label {
+  margin: 1rem 0 0.5rem;
+}
+
+.group-event-attendees {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid var(--space-border);
+  border-radius: 0.5rem;
+  max-height: 14rem;
+  overflow-y: auto;
+}
+
+.group-event-attendees h4 { margin: 0 0 0.5rem; }
+.group-event-attendees ul { list-style: none; padding: 0; margin: 0; }
+.group-event-attendees li { padding: 0.25rem 0; overflow-wrap: anywhere; }

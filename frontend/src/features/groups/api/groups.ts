@@ -1,6 +1,6 @@
 import { getApiBaseUrl, getUploadsBaseUrl } from "@/lib/api";
 import { ApiError } from "@/lib/api/errors";
-import type { Group, CreateGroupInput, GroupMember, Membership, InviteCandidate, GroupInvitation, GroupJoinRequest, GroupEvent, CreateEventInput, EventResponseStatus } from "../types/group";
+import type { Group, CreateGroupInput, GroupMember, Membership, InviteCandidate, GroupInvitation, GroupJoinRequest, GroupEvent, CreateEventInput, EventResponseStatus, EventResponseUser } from "../types/group";
 
 interface Envelope { success: boolean; message?: string }
 interface ApiGroup {
@@ -19,7 +19,7 @@ interface ApiGroupJoinRequest {
 }
 interface ApiEvent {
   id: number; group_id: number; created_by: number; title: string; description: string;
-  event_time: string; created_at: string; updated_at: string; current_user_response?: EventResponseStatus;
+  event_time: string; created_at: string; updated_at: string; current_user_response: EventResponseStatus | null; going_count: number; not_going_count: number;
 }
 
 // Groups uses {success,message}, unlike the shared client's {error} envelope.
@@ -76,7 +76,7 @@ export async function getPendingJoinRequests(groupId: number): Promise<GroupJoin
 }
 function toGroupEvent(e: ApiEvent): GroupEvent {
   return { id: e.id, groupId: e.group_id, createdBy: e.created_by, title: e.title, description: e.description,
-    eventTime: e.event_time, createdAt: e.created_at, updatedAt: e.updated_at, currentUserResponse: e.current_user_response };
+    eventTime: e.event_time, createdAt: e.created_at, updatedAt: e.updated_at, currentUserResponse: e.current_user_response ?? null, goingCount: e.going_count, notGoingCount: e.not_going_count };
 }
 export async function getGroupEvents(groupId: number): Promise<GroupEvent[]> {
   const data = await groupRequest<Envelope & { events?: ApiEvent[] }>(`/groups/${groupId}/events`);
@@ -86,8 +86,9 @@ export async function createGroupEvent(groupId: number, input: CreateEventInput)
   await groupRequest<Envelope & { event_id?: number }>(`/groups/${groupId}/events`,
     { title: input.title, description: input.description, event_time: input.eventTime }, "POST");
 }
-export async function respondToGroupEvent(groupId: number, eventId: number, response: EventResponseStatus): Promise<void> {
-  await groupRequest<Envelope>(`/groups/${groupId}/events/${eventId}/response`, { response }, "PUT");
+export async function respondToGroupEvent(groupId: number, eventId: number, response: EventResponseStatus): Promise<GroupEvent> {
+  const data = await groupRequest<Envelope & { event: ApiEvent }>(`/groups/${groupId}/events/${eventId}/response`, { response }, "PUT");
+  return toGroupEvent(data.event);
 }
 export const createJoinRequest = (id: number) => post(`/groups/${id}/join-requests`);
 export const createGroupInvitation = (groupId: number, userId: number) => post(`/groups/${groupId}/invitations`, { invited_user_id: userId });
@@ -102,4 +103,9 @@ export function toInviteCandidate(user: ApiInviteCandidate): InviteCandidate {
 export function avatarUrl(photo?: string): string | undefined {
   if (!photo) return undefined;
   return /^https?:\/\//.test(photo) ? photo : `${getUploadsBaseUrl()}/${photo}`;
+}
+
+export async function getEventResponses(groupId: number, eventId: number): Promise<EventResponseUser[]> {
+  const data = await groupRequest<Envelope & { responses: { user_id: number; username: string; avatar?: string; response: EventResponseStatus }[] }>(`/groups/${groupId}/events/${eventId}/responses`);
+  return data.responses.map(user => ({ userId: user.user_id, username: user.username, avatar: user.avatar, response: user.response }));
 }

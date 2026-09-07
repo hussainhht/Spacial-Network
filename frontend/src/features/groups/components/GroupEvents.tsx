@@ -1,12 +1,8 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useGroupEvents } from "../hooks/useGroupData";
-import type {
-  EventResponseStatus,
-  GroupEvent,
-  GroupMember,
-} from "../types/group";
+import type { GroupEvent, GroupMember } from "../types/group";
 import CreateEventModal from "./CreateEventModal";
 import EventCard from "./EventCard";
 import { GroupLoadError } from "./GroupPanels";
@@ -24,27 +20,11 @@ export default function GroupEvents({
 }: GroupEventsProps) {
   const events = useGroupEvents(groupId);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-
-  // The events list does not return the authenticated user's saved response
-  // (only the single-event endpoint does — see the feature report's backend
-  // contract gap), so a response the user just submitted successfully is
-  // tracked here to reflect it immediately without an extra request.
-  const [responseOverrides, setResponseOverrides] = useState<
-    Record<number, EventResponseStatus>
-  >({});
-
   const usernameById = useMemo(() => {
     const map = new Map<number, string>();
     members?.forEach((member) => map.set(member.userId, member.username));
     return map;
   }, [members]);
-
-  const handleResponded = useCallback(
-    (eventId: number, response: EventResponseStatus) => {
-      setResponseOverrides((prev) => ({ ...prev, [eventId]: response }));
-    },
-    [],
-  );
 
   return (
     <section
@@ -91,10 +71,6 @@ export default function GroupEvents({
                 groupId={groupId}
                 isMember={isMember}
                 creatorUsername={usernameById.get(event.createdBy)}
-                currentResponse={
-                  responseOverrides[event.id] ?? event.currentUserResponse
-                }
-                onResponded={handleResponded}
               />
             </li>
           ))}

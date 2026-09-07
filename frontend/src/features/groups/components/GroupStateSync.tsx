@@ -5,7 +5,11 @@ import { getGroupNotificationData } from "@/features/notifications/types/notific
 import { refreshGroupData } from "../hooks/useGroupData";
 
 export default function GroupStateSync() {
-  const { isConnected, subscribeNotifications } = useWebSocket();
+  const { isConnected, subscribeNotifications, subscribeEventResponses } = useWebSocket();
+  useEffect(() => subscribeEventResponses(event => {
+    // Refresh summaries and only attendee lists that are currently open.
+    void refreshGroupData(event.group_id);
+  }), [subscribeEventResponses]);
   useEffect(
     () =>
       subscribeNotifications((event) => {

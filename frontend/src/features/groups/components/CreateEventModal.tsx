@@ -81,6 +81,13 @@ export default function CreateEventModal({
       setFormError("Enter a valid date and time.");
       return;
     }
+    // UX-only guard — the backend re-validates event_time against its own
+    // clock and is the authoritative check (see ValidateEventTime/CreateEvent
+    // in backend/internal/groups).
+    if (new Date(eventTime).getTime() <= Date.now()) {
+      setFormError("Event time must be in the future.");
+      return;
+    }
 
     setFormError(null);
     const ok = await run("Creating…", () =>
@@ -147,6 +154,7 @@ export default function CreateEventModal({
                   type="date"
                   value={date}
                   onChange={(event) => setDate(event.target.value)}
+                  min={new Date().toISOString().slice(0, 10)}
                   required
                 />
               </div>
