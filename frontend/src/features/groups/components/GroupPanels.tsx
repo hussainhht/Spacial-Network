@@ -76,7 +76,7 @@ export function MembersPanel({
   // Shares the same cached resource as MembershipPanel's useMembership call,
   // so this does not trigger a second membership request.
   const membership = useMembership(groupId);
-  const isCreator = membership.data?.role === "creator";
+  const isMember = Boolean(membership.data?.isMember);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const closeInviteModal = useCallback(() => setIsInviteModalOpen(false), []);
 
@@ -91,7 +91,7 @@ export function MembersPanel({
         </h2>
         <div className="group-members-header-actions">
           {state.loading && <span className="group-muted">Loading…</span>}
-          {isCreator && (
+          {isMember && (
             <button
               type="button"
               className="group-button secondary"
