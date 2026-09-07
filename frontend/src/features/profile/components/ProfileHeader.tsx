@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useState } from "react";
 import { getBackendBaseUrl } from "@/lib/api";
+import { getDisplayName, getInitials } from "@/lib/utils";
 import type { Profile, ProfileTab } from "../types/profile";
 import styles from "./Profile.module.css";
 
@@ -32,10 +33,7 @@ function ProfileAvatar({
 }: ProfileAvatarProps) {
   const [imageError, setImageError] = useState(false);
 
-  const initials =
-    `${firstName ? firstName[0] : ""}${lastName ? lastName[0] : ""}`
-      .trim()
-      .toUpperCase() || username.slice(0, 2).toUpperCase();
+  const initials = getInitials(firstName, lastName, username);
 
   const getFullPhotoUrl = (path: string) => {
     if (/^https?:\/\//i.test(path)) return path;
@@ -62,7 +60,7 @@ function ProfileAvatar({
         ) : (
           <div
             className={styles.avatarFallback}
-            aria-label={`${firstName} ${lastName}`}
+            aria-label={getDisplayName(firstName, lastName, username)}
           >
             {initials}
           </div>
@@ -120,7 +118,11 @@ export default function ProfileHeader({
   postsCount,
   onSelectTab,
 }: ProfileHeaderProps) {
-  const fullName = `${profile.firstName} ${profile.lastName}`.trim();
+  const displayName = getDisplayName(
+    profile.firstName,
+    profile.lastName,
+    profile.username,
+  );
 
   return (
     <header className={styles.headerCard}>
@@ -152,7 +154,7 @@ export default function ProfileHeader({
 
         <div className={styles.identity}>
           <div className={styles.nameRow}>
-            <h1 className={styles.fullName}>{fullName || profile.username}</h1>
+            <h1 className={styles.fullName}>{displayName}</h1>
             <span
               className={styles.privacyPill}
               data-private={profile.isPrivate}

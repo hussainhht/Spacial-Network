@@ -2,6 +2,7 @@
 
 import PostCard from "@/features/posts/components/PostCard";
 import type { Post } from "@/features/posts/types/post";
+import { parseDate } from "@/lib/utils";
 import type { Profile, ProfileTab } from "../types/profile";
 import ProfilePrivacy from "./ProfilePrivacy";
 import styles from "./Profile.module.css";
@@ -107,8 +108,9 @@ function AboutTab({
   privacyUpdating = false,
   privacyError = null,
 }: AboutTabProps) {
-  const memberSince = profile.createdAt
-    ? new Date(profile.createdAt).toLocaleDateString(undefined, {
+  const createdDate = parseDate(profile.createdAt);
+  const memberSince = createdDate
+    ? createdDate.toLocaleDateString(undefined, {
         year: "numeric",
         month: "long",
         day: "numeric",

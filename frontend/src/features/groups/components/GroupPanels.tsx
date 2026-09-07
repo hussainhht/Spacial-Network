@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useState } from "react";
+import { getInitials } from "@/lib/utils";
 import { avatarUrl } from "../api/groups";
 import {
   useGroupMembers,
@@ -127,7 +128,7 @@ export function MembersPanel({
                   className="group-member-avatar fallback"
                   aria-hidden="true"
                 >
-                  {member.username.charAt(0).toUpperCase()}
+                  {getInitials("", "", member.username)}
                 </span>
               )}
               <Link
@@ -185,7 +186,7 @@ export function JoinRequestsPanel({ groupId }: { groupId: number }) {
           <li key={request.id} className="group-attempt-row">
             <div className="group-person">
               <span className="group-member-avatar fallback" aria-hidden="true">
-                {request.username.charAt(0).toUpperCase()}
+                {getInitials("", "", request.username)}
               </span>
               <span>@{request.username}</span>
             </div>
