@@ -109,11 +109,11 @@ Authentication, Docker, and final project-wide integration are not included in t
 
 ### Frontend
 
-- [ ] Add Follow button
-- [ ] Add Unfollow button
-- [ ] Display Followers list
-- [ ] Display Following list
-- [ ] Update button state after follow/unfollow
+- [X] Add Follow button
+- [X] Add Unfollow button
+- [X] Display Followers list
+- [X] Display Following list
+- [X] Update button state after follow/unfollow
 
 ---
 

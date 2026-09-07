@@ -12,3 +12,11 @@ export interface Profile {
   updatedAt: string;
   isPrivate: boolean;
 }
+
+export interface ProfileUserSummary {
+  id: number;
+  username: string;
+  firstName: string;
+  lastName: string;
+  profilePhoto?: string;
+}

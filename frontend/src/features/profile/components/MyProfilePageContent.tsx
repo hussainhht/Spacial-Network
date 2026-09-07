@@ -2,11 +2,19 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { getMyProfile, updateMyProfilePrivacy } from "../api/profiles";
-import type { Profile } from "../types/profile";
+import {
+  getFollowers,
+  getFollowing,
+  getMyProfile,
+  updateMyProfilePrivacy,
+} from "../api/profiles";
+import type { Profile, ProfileUserSummary } from "../types/profile";
+import ProfileUserList from "./ProfileUserList";
 
 export default function MyProfilePageContent() {
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [followers, setFollowers] = useState<ProfileUserSummary[]>([]);
+  const [following, setFollowing] = useState<ProfileUserSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [privacyError, setPrivacyError] = useState<string | null>(null);
@@ -16,7 +24,14 @@ export default function MyProfilePageContent() {
     async function loadProfile() {
       try {
         const result = await getMyProfile();
+        const [followersResult, followingResult] = await Promise.all([
+          getFollowers(result.username),
+          getFollowing(result.username),
+        ]);
+
         setProfile(result);
+        setFollowers(followersResult);
+        setFollowing(followingResult);
       } catch (error) {
         setError(
           error instanceof Error
@@ -113,15 +128,17 @@ export default function MyProfilePageContent() {
         {privacyError && <p>{privacyError}</p>}
       </section>
 
-      <section>
-        <h2>Followers</h2>
-        <p>Followers list will appear here later.</p>
-      </section>
+      <ProfileUserList
+        title="Followers"
+        users={followers}
+        emptyMessage="No followers yet."
+      />
 
-      <section>
-        <h2>Following</h2>
-        <p>Following list will appear here later.</p>
-      </section>
+      <ProfileUserList
+        title="Following"
+        users={following}
+        emptyMessage="You are not following anyone yet."
+      />
 
       <section>
         <h2>Posts</h2>

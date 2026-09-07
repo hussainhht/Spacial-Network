@@ -1,4 +1,4 @@
-import type { Profile } from "../types/profile";
+import type { Profile, ProfileUserSummary } from "../types/profile";
 
 const API_BASE_URL = "http://localhost:8080/api";
 
@@ -21,6 +21,31 @@ interface ProfileResponse {
   success: boolean;
   message?: string;
   profile?: ApiProfile;
+}
+
+interface ApiUserSummary {
+  id: number;
+  username: string;
+  first_name: string;
+  last_name: string;
+  profile_photo?: string;
+}
+
+interface FollowListResponse {
+  success: boolean;
+  message?: string;
+  users: ApiUserSummary[];
+}
+
+interface FollowResponse {
+  success: boolean;
+  message?: string;
+}
+
+interface FollowStatusResponse {
+  success: boolean;
+  message?: string;
+  is_following: boolean;
 }
 
 interface UpdateProfilePrivacyResponse {
@@ -46,6 +71,16 @@ function toProfile(profile: ApiProfile): Profile {
   };
 }
 
+function toProfileUserSummary(user: ApiUserSummary): ProfileUserSummary {
+  return {
+    id: user.id,
+    username: user.username,
+    firstName: user.first_name,
+    lastName: user.last_name,
+    profilePhoto: user.profile_photo,
+  };
+}
+
 export async function getProfileByUsername(username: string): Promise<Profile> {
   const response = await fetch(`${API_BASE_URL}/profiles/${username}`, {
     method: "GET",
@@ -59,6 +94,90 @@ export async function getProfileByUsername(username: string): Promise<Profile> {
   }
 
   return toProfile(data.profile);
+}
+
+export async function followUser(username: string): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/profiles/${username}/follow`, {
+    method: "POST",
+    credentials: "include",
+  });
+
+  const data: FollowResponse = await response.json();
+
+  if (!response.ok || !data.success) {
+    throw new Error(data.message ?? "Failed to follow user");
+  }
+}
+
+export async function unfollowUser(username: string): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/profiles/${username}/follow`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+
+  const data: FollowResponse = await response.json();
+
+  if (!response.ok || !data.success) {
+    throw new Error(data.message ?? "Failed to unfollow user");
+  }
+}
+
+export async function getFollowStatus(username: string): Promise<boolean> {
+  const response = await fetch(
+    `${API_BASE_URL}/profiles/${username}/follow-status`,
+    {
+      method: "GET",
+      credentials: "include",
+    },
+  );
+
+  const data: FollowStatusResponse = await response.json();
+
+  if (!response.ok || !data.success) {
+    throw new Error(data.message ?? "Failed to load follow status");
+  }
+
+  return data.is_following;
+}
+
+export async function getFollowers(
+  username: string,
+): Promise<ProfileUserSummary[]> {
+  const response = await fetch(
+    `${API_BASE_URL}/profiles/${username}/followers`,
+    {
+      method: "GET",
+      credentials: "include",
+    },
+  );
+
+  const data: FollowListResponse = await response.json();
+
+  if (!response.ok || !data.success) {
+    throw new Error(data.message ?? "Failed to load followers");
+  }
+
+  return data.users.map(toProfileUserSummary);
+}
+
+export async function getFollowing(
+  username: string,
+): Promise<ProfileUserSummary[]> {
+  const response = await fetch(
+    `${API_BASE_URL}/profiles/${username}/following`,
+    {
+      method: "GET",
+      credentials: "include",
+    },
+  );
+
+  const data: FollowListResponse = await response.json();
+
+  if (!response.ok || !data.success) {
+    throw new Error(data.message ?? "Failed to load following");
+  }
+
+  return data.users.map(toProfileUserSummary);
 }
 
 export async function updateMyProfilePrivacy(

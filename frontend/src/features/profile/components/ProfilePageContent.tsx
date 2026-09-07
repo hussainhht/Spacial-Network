@@ -1,9 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getProfileByUsername } from "../api/profiles";
-import type { Profile } from "../types/profile";
+import {
+  followUser,
+  getFollowers,
+  getFollowing,
+  getFollowStatus,
+  getMyProfile,
+  getProfileByUsername,
+  unfollowUser,
+} from "../api/profiles";
+import type { Profile, ProfileUserSummary } from "../types/profile";
 import Image from "next/image";
+import ProfileUserList from "./ProfileUserList";
 
 interface ProfilePageContentProps {
   username: string;
@@ -13,14 +22,37 @@ export default function ProfilePageContent({
   username,
 }: ProfilePageContentProps) {
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [currentUser, setCurrentUser] = useState<Profile | null>(null);
+  const [followers, setFollowers] = useState<ProfileUserSummary[]>([]);
+  const [following, setFollowing] = useState<ProfileUserSummary[]>([]);
+  const [isFollowing, setIsFollowing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [followError, setFollowError] = useState<string | null>(null);
+  const [followLoading, setFollowLoading] = useState(false);
 
   useEffect(() => {
     async function loadProfile() {
       try {
-        const result = await getProfileByUsername(username);
-        setProfile(result);
+        const [
+          profileResult,
+          currentUserResult,
+          followersResult,
+          followingResult,
+          followStatusResult,
+        ] = await Promise.all([
+          getProfileByUsername(username),
+          getMyProfile(),
+          getFollowers(username),
+          getFollowing(username),
+          getFollowStatus(username),
+        ]);
+
+        setProfile(profileResult);
+        setCurrentUser(currentUserResult);
+        setFollowers(followersResult);
+        setFollowing(followingResult);
+        setIsFollowing(followStatusResult);
       } catch (error) {
         setError(
           error instanceof Error ? error.message : "Failed to load profile",
@@ -33,6 +65,44 @@ export default function ProfilePageContent({
     loadProfile();
   }, [username]);
 
+  async function reloadFollowData(profileUsername: string) {
+    const [followersResult, followingResult, followStatusResult] =
+      await Promise.all([
+        getFollowers(profileUsername),
+        getFollowing(profileUsername),
+        getFollowStatus(profileUsername),
+      ]);
+
+    setFollowers(followersResult);
+    setFollowing(followingResult);
+    setIsFollowing(followStatusResult);
+  }
+
+  async function handleFollowToggle() {
+    if (!profile) {
+      return;
+    }
+
+    setFollowError(null);
+    setFollowLoading(true);
+
+    try {
+      if (isFollowing) {
+        await unfollowUser(profile.username);
+      } else {
+        await followUser(profile.username);
+      }
+
+      await reloadFollowData(profile.username);
+    } catch (error) {
+      setFollowError(
+        error instanceof Error ? error.message : "Failed to update follow",
+      );
+    } finally {
+      setFollowLoading(false);
+    }
+  }
+
   if (loading) {
     return <p>Loading profile...</p>;
   }
@@ -44,6 +114,8 @@ export default function ProfilePageContent({
   if (!profile) {
     return <p>Profile not found.</p>;
   }
+
+  const isOwnProfile = currentUser?.id === profile.id;
 
   return (
     <main>
@@ -72,15 +144,39 @@ export default function ProfilePageContent({
         <p>Gender: {profile.gender}</p>
       </section>
 
-      <section>
-        <h2>Followers</h2>
-        <p>Followers list will appear here later.</p>
-      </section>
+      {!isOwnProfile && (
+        <section>
+          <h2>Follow</h2>
+          {profile.isPrivate ? (
+            <p>Follow requests for private profiles will be added later.</p>
+          ) : (
+            <button
+              type="button"
+              onClick={handleFollowToggle}
+              disabled={followLoading}
+            >
+              {followLoading
+                ? "Saving..."
+                : isFollowing
+                  ? "Unfollow"
+                  : "Follow"}
+            </button>
+          )}
+          {followError && <p>{followError}</p>}
+        </section>
+      )}
 
-      <section>
-        <h2>Following</h2>
-        <p>Following list will appear here later.</p>
-      </section>
+      <ProfileUserList
+        title="Followers"
+        users={followers}
+        emptyMessage="No followers yet."
+      />
+
+      <ProfileUserList
+        title="Following"
+        users={following}
+        emptyMessage="Not following anyone yet."
+      />
 
       <section>
         <h2>Posts</h2>
