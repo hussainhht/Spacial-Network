@@ -200,8 +200,9 @@ func (h *Handler) GetPostByIDHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(newPostResponse(p, userID))
 }
 
-// ListPostsHandler returns every post visible to the logged-in user: all
-// public posts plus their own private posts, newest first.
+// ListPostsHandler returns up to 50 posts visible to the logged-in user: all
+// public posts plus their own private posts, newest first. The optional
+// "limit" query parameter requests fewer posts (capped at 50).
 func (h *Handler) ListPostsHandler(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requestctx.UserID(r.Context())
 	if !ok {
@@ -210,7 +211,18 @@ func (h *Handler) ListPostsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	posts, err := h.service.ListPosts(userID)
+	limit := MaxListPosts
+	if raw := r.URL.Query().Get("limit"); raw != "" {
+		parsed, err := strconv.Atoi(raw)
+		if err != nil || parsed <= 0 {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(Response{Error: "Invalid limit"})
+			return
+		}
+		limit = parsed
+	}
+
+	posts, err := h.service.ListPosts(userID, limit)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(Response{Error: "Server error"})

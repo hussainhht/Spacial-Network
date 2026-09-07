@@ -55,15 +55,16 @@ func (r *Repository) GetPostByID(id int) (*post, error) {
 	return &p, nil
 }
 
-// ListPosts returns all posts visible to viewerID: every public post plus
+// ListPosts returns up to limit posts visible to viewerID: public posts plus
 // the viewer's own private posts, newest first.
-func (r *Repository) ListPosts(viewerID int) ([]*post, error) {
+func (r *Repository) ListPosts(viewerID, limit int) ([]*post, error) {
 	rows, err := r.db.Query(`
 		SELECT id, user_id, private, title, content, image_path, created_at, updated_at
 		FROM posts
 		WHERE private = 0 OR user_id = ?
 		ORDER BY created_at DESC
-	`, viewerID)
+		LIMIT ?
+	`, viewerID, limit)
 	if err != nil {
 		return nil, err
 	}

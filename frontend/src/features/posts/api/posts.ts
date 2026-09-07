@@ -3,8 +3,9 @@
 import { apiRequest } from "@/lib/api/client";
 import type { NewPostInput, Post, PostInput } from "../types/post";
 
-export function listPosts(): Promise<Post[]> {
-  return apiRequest<Post[]>("/posts");
+export function listPosts(limit?: number): Promise<Post[]> {
+  const query = limit != null ? `?limit=${encodeURIComponent(limit)}` : "";
+  return apiRequest<Post[]>(`/posts${query}`);
 }
 
 export function getPost(id: number): Promise<Post> {

@@ -18,9 +18,17 @@ func (s *Service) GetPostByID(id int) (*post, error) {
 	return s.repo.GetPostByID(id)
 }
 
-// ListPosts returns every post visible to viewerID.
-func (s *Service) ListPosts(viewerID int) ([]*post, error) {
-	return s.repo.ListPosts(viewerID)
+// MaxListPosts is the most posts ListPosts will ever return in one call.
+const MaxListPosts = 50
+
+// ListPosts returns up to limit posts visible to viewerID, newest first.
+// limit is clamped to the range [1, MaxListPosts]; a limit <= 0 defaults to
+// MaxListPosts.
+func (s *Service) ListPosts(viewerID, limit int) ([]*post, error) {
+	if limit <= 0 || limit > MaxListPosts {
+		limit = MaxListPosts
+	}
+	return s.repo.ListPosts(viewerID, limit)
 }
 
 // UpdatePost updates a post's editable fields, provided userID owns it.
