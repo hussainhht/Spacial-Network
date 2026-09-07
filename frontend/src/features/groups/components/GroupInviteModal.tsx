@@ -26,11 +26,12 @@ export default function GroupInviteModal({
     previouslyFocusedRef.current = document.activeElement as HTMLElement | null;
     closeButtonRef.current?.focus();
 
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    const scrollContainer = document.getElementById("page-content");
+    const previousOverflow = scrollContainer?.style.overflow ?? "";
+    if (scrollContainer) scrollContainer.style.overflow = "hidden";
 
     return () => {
-      document.body.style.overflow = previousOverflow;
+      if (scrollContainer) scrollContainer.style.overflow = previousOverflow;
       previouslyFocusedRef.current?.focus();
     };
   }, [open]);

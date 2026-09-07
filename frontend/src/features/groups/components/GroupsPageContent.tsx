@@ -6,12 +6,13 @@ import { getGroups } from "../api/groups";
 import { useGroupQuery, useMyGroups } from "../hooks/useGroupData";
 import { GroupLoadError, InvitationsPanel } from "./GroupPanels";
 import GroupCard from "./GroupCard";
+import GroupsFilterTabs, { type GroupsTab } from "./GroupsFilterTabs";
 
 const PAGE_SIZE = 20;
 const MY_GROUPS_LIMIT = 100;
 
 export default function GroupsPageContent() {
-  const [pages, setPages] = useState(1);
+  const [activeTab, setActiveTab] = useState<GroupsTab>("mine");
   return (
     <main className="groups-page space-shell">
       <div className="groups-container">
@@ -28,32 +29,35 @@ export default function GroupsPageContent() {
           </Link>
         </header>
         <InvitationsPanel />
-        <section aria-labelledby="my-groups-heading">
-          <div className="group-section-heading">
-            <h2 id="my-groups-heading">My Groups</h2>
-          </div>
-          <p className="group-muted">Groups you&apos;re already part of.</p>
-          <MyGroupsSection />
-        </section>
-        <section aria-labelledby="browse-heading">
-          <div className="group-section-heading">
-            <h2 id="browse-heading">Explore communities</h2>
-          </div>
-          {Array.from({ length: pages }, (_, page) => (
-            <GroupsPage
-              key={page}
-              page={page}
-              last={page === pages - 1}
-              loadMore={() => setPages((p) => p + 1)}
-            />
-          ))}
-        </section>
+        <GroupsFilterTabs activeTab={activeTab} onTabChange={setActiveTab} />
+        {activeTab === "mine" && (
+          <section
+            id="groups-tabpanel-mine"
+            role="tabpanel"
+            aria-labelledby="groups-tab-mine"
+            tabIndex={0}
+          >
+            <p className="group-muted">Groups you&apos;re already part of.</p>
+            <MyGroupsSection onBrowseAll={() => setActiveTab("all")} />
+          </section>
+        )}
+        {activeTab === "all" && (
+          <section
+            id="groups-tabpanel-all"
+            role="tabpanel"
+            aria-labelledby="groups-tab-all"
+            tabIndex={0}
+          >
+            <p className="group-muted">Discover communities.</p>
+            <AllGroupsSection />
+          </section>
+        )}
       </div>
     </main>
   );
 }
 
-function MyGroupsSection() {
+function MyGroupsSection({ onBrowseAll }: { onBrowseAll: () => void }) {
   const state = useMyGroups(MY_GROUPS_LIMIT, 0);
   return (
     <>
@@ -69,9 +73,21 @@ function MyGroupsSection() {
         <div className="group-panel group-empty">
           <h3>No groups yet</h3>
           <p>
-            You haven&apos;t joined any groups yet. Explore communities below
-            or create your own.
+            You haven&apos;t joined any groups yet. Explore available
+            communities or create your own group.
           </p>
+          <div className="group-buttons">
+            <button
+              type="button"
+              className="group-button secondary"
+              onClick={onBrowseAll}
+            >
+              Browse All Groups
+            </button>
+            <Link href="/groups/create" className="group-button">
+              + Create Group
+            </Link>
+          </div>
         </div>
       )}
       {!!state.data?.length && (
@@ -84,6 +100,23 @@ function MyGroupsSection() {
     </>
   );
 }
+
+function AllGroupsSection() {
+  const [pages, setPages] = useState(1);
+  return (
+    <>
+      {Array.from({ length: pages }, (_, page) => (
+        <GroupsPage
+          key={page}
+          page={page}
+          last={page === pages - 1}
+          loadMore={() => setPages((p) => p + 1)}
+        />
+      ))}
+    </>
+  );
+}
+
 function GroupsPage({
   page,
   last,
@@ -108,7 +141,7 @@ function GroupsPage({
       )}
       {!state.loading && !state.error && !state.data?.length && page === 0 && (
         <div className="group-panel group-empty">
-          <h3>A community starts with you</h3>
+          <h3>No groups available yet</h3>
           <p>
             Create the first group and invite people who share your interests.
           </p>
