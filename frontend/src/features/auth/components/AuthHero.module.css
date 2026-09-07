@@ -1,0 +1,86 @@
+.hero {
+  max-width: 480px;
+}
+
+.title {
+  margin: 0 0 1rem;
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  font-size: clamp(2.25rem, 1.6rem + 3vw, 3.4rem);
+}
+
+.titlePrefix {
+  display: block;
+  color: var(--space-text-heading);
+}
+
+.titleAccent {
+  display: block;
+  background: linear-gradient(120deg, var(--space-accent-blue), var(--space-accent-violet));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.subtitle {
+  margin: 0;
+  max-width: 38ch;
+  color: var(--space-text-muted);
+  font-size: clamp(0.95rem, 0.85rem + 0.3vw, 1.05rem);
+  line-height: 1.6;
+}
+
+.benefits {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem 1.5rem;
+  margin: 1.75rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.benefit {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: var(--space-text-body);
+  font-size: 0.9rem;
+}
+
+.benefitIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  background: rgba(99, 102, 241, 0.15);
+  color: #c7d2fe;
+}
+
+@media (max-width: 899px) {
+  .hero {
+    max-width: 560px;
+    margin: 0 auto;
+  }
+
+  .titlePrefix,
+  .titleAccent {
+    display: inline;
+  }
+
+  .title {
+    text-align: center;
+  }
+
+  .subtitle {
+    margin: 0 auto;
+    text-align: center;
+  }
+
+  .benefits {
+    display: none;
+  }
+}

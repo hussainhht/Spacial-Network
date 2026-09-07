@@ -12,6 +12,8 @@ interface ApiProfile {
   last_name: string;
   email: string;
   profile_photo?: string;
+  about_me?: string;
+  nickname?: string;
   created_at: string;
   updated_at: string;
   is_private: boolean;
@@ -40,6 +42,8 @@ function toProfile(profile: ApiProfile): Profile {
     lastName: profile.last_name,
     email: profile.email,
     profilePhoto: profile.profile_photo,
+    aboutMe: profile.about_me,
+    nickname: profile.nickname,
     createdAt: profile.created_at,
     updatedAt: profile.updated_at,
     isPrivate: profile.is_private,

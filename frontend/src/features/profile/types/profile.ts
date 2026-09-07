@@ -8,6 +8,8 @@ export interface Profile {
   lastName: string;
   email: string;
   profilePhoto?: string;
+  aboutMe?: string;
+  nickname?: string;
   createdAt: string;
   updatedAt: string;
   isPrivate: boolean;

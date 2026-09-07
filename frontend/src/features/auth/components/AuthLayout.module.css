@@ -1,0 +1,138 @@
+.shell {
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 1240px);
+  margin: 0 auto;
+  padding-block: 0.25rem;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: var(--space-text-heading);
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+}
+
+.brand:hover {
+  color: #ffffff;
+}
+
+.brandMark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--space-accent-indigo), var(--space-accent-violet));
+  color: #f8fafc;
+  box-shadow: 0 0 24px rgba(99, 102, 241, 0.45);
+}
+
+.content {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-areas: "hero" "card";
+  justify-items: center;
+  align-content: center;
+  gap: clamp(1.5rem, 4vw, 3rem);
+  width: min(100%, 1240px);
+  margin: 0 auto;
+  padding: clamp(1.25rem, 4vw, 2.5rem) 0 clamp(2rem, 6vw, 3.5rem);
+}
+
+.heroSlot {
+  width: 100%;
+  grid-area: hero;
+}
+
+.cardSlot {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  grid-area: card;
+}
+
+.cardFrame {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  padding: clamp(1.75rem, 4vw, 2.75rem);
+  background: var(--space-card-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--space-border);
+  border-radius: var(--space-radius-lg);
+  box-shadow: 0 25px 60px -15px rgba(2, 6, 23, 0.7),
+    0 0 0 1px rgba(255, 255, 255, 0.02) inset, 0 0 40px rgba(99, 102, 241, 0.14);
+  animation: cardIn 0.5s ease both;
+}
+
+.cardFrameSm {
+  max-width: 440px;
+}
+
+.cardFrameLg {
+  max-width: 620px;
+}
+
+@keyframes cardIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 639px) {
+  .heroSlot {
+    display: none;
+  }
+
+  .content {
+    grid-template-areas: "card";
+  }
+
+  .cardFrame {
+    padding: 1.5rem 1.25rem;
+    border-radius: 16px;
+  }
+}
+
+@media (min-width: 900px) {
+  .content {
+    grid-template-columns: minmax(0, 1fr) minmax(420px, auto);
+    grid-template-areas: "hero card";
+    align-items: center;
+    justify-items: stretch;
+  }
+
+  .heroSlot {
+    justify-self: start;
+  }
+
+  .cardSlot {
+    justify-self: end;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cardFrame {
+    animation: none;
+  }
+}

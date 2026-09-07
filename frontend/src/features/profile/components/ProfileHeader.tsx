@@ -162,6 +162,10 @@ export default function ProfileHeader({
           </div>
 
           <p className={styles.username}>@{profile.username}</p>
+
+          {profile.aboutMe && (
+            <p className={styles.aboutMe}>{profile.aboutMe}</p>
+          )}
         </div>
 
         <ProfileStats
