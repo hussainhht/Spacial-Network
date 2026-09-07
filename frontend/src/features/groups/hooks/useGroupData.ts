@@ -7,6 +7,7 @@ import {
   getGroupEvents,
   getGroupMembers,
   getMembership,
+  getMyGroups,
   getPendingInvitations,
   getPendingJoinRequests,
 } from "../api/groups";
@@ -106,6 +107,7 @@ export async function refreshGroupData(groupId?: number): Promise<void> {
         (groupId === undefined ||
           key === "invitations" ||
           key.startsWith("groups:") ||
+          key.startsWith("my-groups:") ||
           key.startsWith(`group:${groupId}:`)),
     )
     .map(([, resource]) => resource.reload());
@@ -113,6 +115,8 @@ export async function refreshGroupData(groupId?: number): Promise<void> {
 }
 export const useGroup = (id: number) =>
   useGroupQuery(`group:${id}:details`, () => getGroup(id));
+export const useMyGroups = (limit: number, offset: number) =>
+  useGroupQuery(`my-groups:${offset}`, () => getMyGroups(limit, offset));
 export const useGroupMembers = (id: number) =>
   useGroupQuery(`group:${id}:members`, () => getGroupMembers(id));
 export const useMembership = (id: number) =>

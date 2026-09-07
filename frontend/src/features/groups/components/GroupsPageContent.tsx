@@ -3,11 +3,13 @@
 import Link from "next/link";
 import { useState } from "react";
 import { getGroups } from "../api/groups";
-import { useGroupQuery } from "../hooks/useGroupData";
+import { useGroupQuery, useMyGroups } from "../hooks/useGroupData";
 import { GroupLoadError, InvitationsPanel } from "./GroupPanels";
 import GroupCard from "./GroupCard";
 
 const PAGE_SIZE = 20;
+const MY_GROUPS_LIMIT = 100;
+
 export default function GroupsPageContent() {
   const [pages, setPages] = useState(1);
   return (
@@ -26,6 +28,13 @@ export default function GroupsPageContent() {
           </Link>
         </header>
         <InvitationsPanel />
+        <section aria-labelledby="my-groups-heading">
+          <div className="group-section-heading">
+            <h2 id="my-groups-heading">My Groups</h2>
+          </div>
+          <p className="group-muted">Groups you&apos;re already part of.</p>
+          <MyGroupsSection />
+        </section>
         <section aria-labelledby="browse-heading">
           <div className="group-section-heading">
             <h2 id="browse-heading">Explore communities</h2>
@@ -41,6 +50,38 @@ export default function GroupsPageContent() {
         </section>
       </div>
     </main>
+  );
+}
+
+function MyGroupsSection() {
+  const state = useMyGroups(MY_GROUPS_LIMIT, 0);
+  return (
+    <>
+      {state.loading && (
+        <p className="group-muted" role="status">
+          Loading your groups…
+        </p>
+      )}
+      {state.error && (
+        <GroupLoadError error={state.error} retry={state.refresh} />
+      )}
+      {!state.loading && !state.error && state.data?.length === 0 && (
+        <div className="group-panel group-empty">
+          <h3>No groups yet</h3>
+          <p>
+            You haven&apos;t joined any groups yet. Explore communities below
+            or create your own.
+          </p>
+        </div>
+      )}
+      {!!state.data?.length && (
+        <div className="groups-list">
+          {state.data.map((group) => (
+            <GroupCard key={group.id} group={group} />
+          ))}
+        </div>
+      )}
+    </>
   );
 }
 function GroupsPage({

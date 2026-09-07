@@ -819,6 +819,10 @@ main:has(form) form > p {
 .group-card-footer { margin-top: auto; padding-top: 1rem; color: var(--space-text-muted); font-size: .85rem; border-top: 1px solid var(--space-border); }
 .group-card-footer a { color: var(--space-accent-blue); font-weight: 600; text-decoration: none; }
 .group-emblem { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 14px; background: rgba(139,92,246,.16); border: 1px solid var(--space-border-strong); color: #ddd6fe; font-size: 1.4rem; font-weight: 700; flex-shrink: 0; }
+.group-emblem-photo { object-fit: cover; background: var(--space-card-bg); }
+.group-photo-picker { display: flex; align-items: center; gap: 1rem; }
+.group-photo-preview { width: 64px; height: 64px; border-radius: 14px; object-fit: cover; border: 1px solid var(--space-border-strong); flex-shrink: 0; }
+.group-photo-preview-empty { display: grid; place-items: center; width: 64px; height: 64px; border-radius: 14px; border: 1px dashed var(--space-border-strong); color: var(--space-text-muted); font-size: .7rem; text-align: center; flex-shrink: 0; }
 .group-eyebrow { color: var(--space-accent-blue); font-size: .72rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; margin: 0 0 .4rem; }
 .group-badge { display: inline-flex; align-items: center; padding: .25rem .65rem; border-radius: 999px; color: var(--space-text-muted); border: 1px solid var(--space-border); font-size: .75rem; white-space: nowrap; }
 .group-badge[data-state="creator"], .group-badge[data-state="member"] { background: rgba(139,92,246,.12); color: #ddd6fe; border-color: rgba(167,139,250,.3); }

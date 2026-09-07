@@ -9,6 +9,7 @@ import {
   useMembership,
   usePendingInvitations,
 } from "../hooks/useGroupData";
+import GroupAvatar from "./GroupAvatar";
 import GroupEvents from "./GroupEvents";
 import {
   GroupLoadError,
@@ -64,9 +65,7 @@ function GroupDetails({ groupId }: { groupId: number }) {
         <>
           <header className="group-detail-card">
             <div className="group-header-top">
-              <span className="group-emblem" aria-hidden="true">
-                {group.data.title.charAt(0).toUpperCase()}
-              </span>
+              <GroupAvatar group={group.data} size={64} />
               <span className="group-eyebrow">Community</span>
             </div>
             <h1>{group.data.title}</h1>

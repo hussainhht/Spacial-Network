@@ -5,6 +5,7 @@ export interface ApiGroup {
   creator_id: number;
   title: string;
   description: string;
+  group_photo?: string;
   created_at: string;
   updated_at: string;
   creator_username: string;

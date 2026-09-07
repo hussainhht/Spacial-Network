@@ -8,6 +8,7 @@ export interface Group {
   creatorId: number;
   title: string;
   description: string;
+  groupPhoto?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -15,6 +16,7 @@ export interface Group {
 export interface CreateGroupInput {
   title: string;
   description: string;
+  photo?: File | null;
 }
 
 export interface GroupMember {

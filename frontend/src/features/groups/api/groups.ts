@@ -43,10 +43,12 @@ async function groupRequest<T extends Envelope>(
       cache: "no-store",
       ...(body === undefined
         ? {}
-        : {
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(body),
-          }),
+        : body instanceof FormData
+          ? { body }
+          : {
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(body),
+            }),
     });
   } catch {
     throw new ApiError(
@@ -80,6 +82,7 @@ function toGroup(g: ApiGroup): Group {
     creatorId: g.creator_id,
     title: g.title,
     description: g.description,
+    groupPhoto: g.group_photo,
     createdAt: g.created_at,
     updatedAt: g.updated_at,
     creatorUsername: g.creator_username,
@@ -104,10 +107,26 @@ export async function getGroups(limit = 20, offset = 0): Promise<Group[]> {
   return (data.groups ?? []).map(toGroup);
 }
 
+// Groups the current session's user actually belongs to (creator or
+// member) - backs the "My Groups" section on /groups.
+export async function getMyGroups(limit = 20, offset = 0): Promise<Group[]> {
+  const data = await groupRequest<Envelope & { groups?: ApiGroup[] }>(
+    `/groups/mine?limit=${limit}&offset=${offset}`,
+  );
+  return (data.groups ?? []).map(toGroup);
+}
+
 export async function createGroup(input: CreateGroupInput): Promise<Group> {
+  const formData = new FormData();
+  formData.append("title", input.title);
+  formData.append("description", input.description);
+  if (input.photo) {
+    formData.append("groupPhoto", input.photo);
+  }
+
   const data = await groupRequest<Envelope & { group_id: number }>(
     "/groups",
-    input,
+    formData,
     "POST",
   );
   return getGroup(data.group_id);
