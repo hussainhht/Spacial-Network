@@ -17,6 +17,8 @@ const (
 	MaxInviteSearchQueryLength  = 100
 	DefaultInviteCandidateLimit = 10
 	MaxInviteCandidateLimit     = 25
+
+	MaxGroupSearchQueryLength = 100
 )
 
 func ValidateTitle(title string) (string, error) {
@@ -108,5 +110,15 @@ func ValidateInviteSearchQuery(query string) (string, error) {
 		Field:    "search query",
 		Required: true,
 		Max:      MaxInviteSearchQueryLength,
+	})
+}
+
+// ValidateGroupSearchQuery sanitizes the optional `search` query param used
+// to filter the groups list by title/description. Blank is valid and means
+// "no filter".
+func ValidateGroupSearchQuery(query string) (string, error) {
+	return validation.SanitizeText(query, validation.TextRules{
+		Field: "search",
+		Max:   MaxGroupSearchQueryLength,
 	})
 }

@@ -55,7 +55,8 @@ func (r *Repository) InsertGroup(creatorID int, title, description, photoPath st
 	return groupID, nil
 }
 
-func (r *Repository) GetAllGroups(limit, offset, userID int) ([]Group, error) {
+func (r *Repository) GetAllGroups(limit, offset, userID int, search string) ([]Group, error) {
+	like := "%" + escapeLikePattern(search) + "%"
 	rows, err := r.db.Query(
 		`SELECT g.id, g.creator_id, g.title, g.description, COALESCE(g.group_photo, ''), g.created_at, g.updated_at,
          u.username, (SELECT COUNT(*) FROM group_members WHERE group_id = g.id),
@@ -63,9 +64,11 @@ func (r *Repository) GetAllGroups(limit, offset, userID int) ([]Group, error) {
          EXISTS(SELECT 1 FROM group_join_requests WHERE group_id = g.id AND user_id = ? AND status = 'pending'),
          EXISTS(SELECT 1 FROM group_invitations WHERE group_id = g.id AND invited_user_id = ? AND status = 'pending')
          FROM groups g JOIN users u ON u.id = g.creator_id
+         WHERE (? = '' OR LOWER(g.title) LIKE LOWER(?) ESCAPE '\' OR LOWER(g.description) LIKE LOWER(?) ESCAPE '\')
          ORDER BY g.created_at DESC, g.id DESC
 		 LIMIT ? OFFSET ?`,
 		userID, userID, userID,
+		search, like, like,
 		limit,
 		offset,
 	)
@@ -90,16 +93,19 @@ func (r *Repository) GetAllGroups(limit, offset, userID int) ([]Group, error) {
 // (creator or member), most recently created first. Membership is
 // determined strictly from group_members - pending invitations and join
 // requests never appear here.
-func (r *Repository) GetGroupsForUser(userID, limit, offset int) ([]Group, error) {
+func (r *Repository) GetGroupsForUser(userID, limit, offset int, search string) ([]Group, error) {
+	like := "%" + escapeLikePattern(search) + "%"
 	rows, err := r.db.Query(
 		`SELECT g.id, g.creator_id, g.title, g.description, COALESCE(g.group_photo, ''), g.created_at, g.updated_at,
          u.username, (SELECT COUNT(*) FROM group_members WHERE group_id = g.id), gm.role
          FROM groups g
          JOIN users u ON u.id = g.creator_id
          JOIN group_members gm ON gm.group_id = g.id AND gm.user_id = ?
+         WHERE (? = '' OR LOWER(g.title) LIKE LOWER(?) ESCAPE '\' OR LOWER(g.description) LIKE LOWER(?) ESCAPE '\')
          ORDER BY g.created_at DESC, g.id DESC
          LIMIT ? OFFSET ?`,
 		userID,
+		search, like, like,
 		limit,
 		offset,
 	)

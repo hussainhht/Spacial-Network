@@ -55,14 +55,18 @@ func (s *Service) CreateGroup(creatorID int, title, description, photoPath strin
 }
 
 // GetAllGroups returns a page of groups, most recently created first.
-func (s *Service) GetAllGroups(limit, offset, userID int) ([]Group, error) {
-	return s.repo.GetAllGroups(limit, offset, userID)
+// search, when non-empty, filters to groups whose title or description
+// contains it (case-insensitive).
+func (s *Service) GetAllGroups(limit, offset, userID int, search string) ([]Group, error) {
+	return s.repo.GetAllGroups(limit, offset, userID, search)
 }
 
 // GetUserGroups returns a page of groups the given user actually belongs to
-// (creator or member), most recently created first.
-func (s *Service) GetUserGroups(userID, limit, offset int) ([]Group, error) {
-	return s.repo.GetGroupsForUser(userID, limit, offset)
+// (creator or member), most recently created first. search, when non-empty,
+// filters to groups whose title or description contains it
+// (case-insensitive).
+func (s *Service) GetUserGroups(userID, limit, offset int, search string) ([]Group, error) {
+	return s.repo.GetGroupsForUser(userID, limit, offset, search)
 }
 
 // GetGroupByID returns the group with the given ID.

@@ -312,8 +312,18 @@ func (h *Handler) ListGroupsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	search, err := ValidateGroupSearchQuery(r.URL.Query().Get("search"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(ListGroupsResponse{
+			Success: false,
+			Message: err.Error(),
+		})
+		return
+	}
+
 	userID, _ := requestctx.UserID(r.Context())
-	groupsList, err := h.service.GetAllGroups(limit, offset, userID)
+	groupsList, err := h.service.GetAllGroups(limit, offset, userID, search)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(ListGroupsResponse{
@@ -360,7 +370,17 @@ func (h *Handler) GetMyGroupsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	groupsList, err := h.service.GetUserGroups(userID, limit, offset)
+	search, err := ValidateGroupSearchQuery(r.URL.Query().Get("search"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(ListGroupsResponse{
+			Success: false,
+			Message: err.Error(),
+		})
+		return
+	}
+
+	groupsList, err := h.service.GetUserGroups(userID, limit, offset, search)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(ListGroupsResponse{
