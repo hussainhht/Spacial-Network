@@ -5,6 +5,7 @@ import (
 
 	"social/internal/auth"
 	"social/internal/chat"
+	"social/internal/comments"
 	"social/internal/config"
 	"social/internal/groups"
 	"social/internal/notifications"
@@ -22,9 +23,8 @@ type Handlers struct {
 	Groups        *groups.Handler
 	Notifications *notifications.Handler
 	Users         *users.Handler
+	Comments      *comments.Handler
 
-	// TODO: Add Comments handler when the comments feature is implemented.
-	// Comments *comments.Handler
 	// TODO: Add Followers handler when the followers feature is implemented.
 	// Followers *followers.Handler
 	// TODO: Add Chat handler when the chat feature is implemented.
@@ -74,6 +74,16 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 		return nil, err
 	}
 
+	postMediaStorage, err := upload.NewMediaStorage(cfg.UploadsDir, upload.PostsSubdir, cfg.MaxMediaSize)
+	if err != nil {
+		return nil, err
+	}
+
+	commentMediaStorage, err := upload.NewMediaStorage(cfg.UploadsDir, upload.CommentsSubdir, cfg.MaxMediaSize)
+	if err != nil {
+		return nil, err
+	}
+
 	// =========================
 	// Authentication
 	// =========================
@@ -97,20 +107,19 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 	postsService := posts.NewService(postsRepo)
 	postsHandler := posts.NewHandler(
 		postsService,
+		postMediaStorage,
 		cfg.SessionCookieName,
 		cfg.CookieSecure,
 		cfg.SessionLifetime,
 	)
 
 	// =========================
-	// Comments - Future
+	// Comments
 	// =========================
 
-	// TODO: Enable when the comments package is implemented.
-	//
-	// commentsRepo := comments.NewRepository(db)
-	// commentsService := comments.NewService(commentsRepo)
-	// commentsHandler := comments.NewHandler(commentsService)
+	commentsRepo := comments.NewRepository(db)
+	commentsService := comments.NewService(commentsRepo, postsService)
+	commentsHandler := comments.NewHandler(commentsService, commentMediaStorage)
 
 	// =========================
 	// Followers - Future
@@ -176,7 +185,7 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 			Posts:         postsHandler,
 			Notifications: notificationsHandler,
 			Users:         usersHandler,
-			// Comments:      commentsHandler,
+			Comments:      commentsHandler,
 			// Followers:     followersHandler,
 		},
 		AuthService:          authService,

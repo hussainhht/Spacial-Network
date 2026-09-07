@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState } from "react";
 import { deletePost } from "@/features/posts/api/posts";
 import type { Post } from "@/features/posts/types/post";
+import { getBackendBaseUrl } from "@/lib/api";
 
 interface PostCardProps {
   post: Post;
@@ -41,6 +43,17 @@ export default function PostCard({ post, onDeleted }: PostCardProps) {
       </header>
 
       <p className="post-card-content">{post.content}</p>
+
+      {post.image_url && (
+        <Image
+          className="post-card-image"
+          src={`${getBackendBaseUrl()}${post.image_url}`}
+          alt=""
+          width={800}
+          height={450}
+          style={{ width: "100%", height: "auto" }}
+        />
+      )}
 
       <footer className="post-card-footer">
         <time dateTime={post.created_at}>
