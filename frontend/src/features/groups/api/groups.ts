@@ -14,69 +14,18 @@ import type {
   EventResponseUser,
 } from "../types/group";
 
+import type {
+  ApiGroup,
+  ApiGroupMember,
+  ApiInviteCandidate,
+  ApiGroupInvitation,
+  ApiGroupJoinRequest,
+  ApiEvent,
+} from "../types/api";
+
 interface Envelope {
   success: boolean;
   message?: string;
-}
-interface ApiGroup {
-  id: number;
-  creator_id: number;
-  title: string;
-  description: string;
-  created_at: string;
-  updated_at: string;
-  creator_username: string;
-  member_count: number;
-  membership_role?: string;
-  has_pending_join_request: boolean;
-  has_pending_invitation: boolean;
-}
-interface ApiGroupMember {
-  user_id: number;
-  username: string;
-  role: string;
-  joined_at: string;
-  avatar?: string;
-}
-interface ApiInviteCandidate {
-  id: number;
-  username: string;
-  first_name: string;
-  last_name: string;
-  avatar?: string;
-}
-interface ApiGroupInvitation {
-  id: number;
-  group_id: number;
-  invited_by: number;
-  invited_user_id: number;
-  status: string;
-  created_at: string;
-  updated_at: string;
-  group_title: string;
-  inviter_username: string;
-}
-interface ApiGroupJoinRequest {
-  id: number;
-  group_id: number;
-  user_id: number;
-  username: string;
-  status: string;
-  created_at: string;
-  updated_at: string;
-}
-interface ApiEvent {
-  id: number;
-  group_id: number;
-  created_by: number;
-  title: string;
-  description: string;
-  event_time: string;
-  created_at: string;
-  updated_at: string;
-  current_user_response: EventResponseStatus | null;
-  going_count: number;
-  not_going_count: number;
 }
 
 // Groups uses {success,message}, unlike the shared client's {error} envelope.
@@ -121,8 +70,10 @@ async function groupRequest<T extends Envelope>(
     );
   return data;
 }
+
 const post = (path: string, body?: unknown) =>
   groupRequest<Envelope>(path, body, "POST").then(() => undefined);
+
 function toGroup(g: ApiGroup): Group {
   return {
     id: g.id,
@@ -138,18 +89,21 @@ function toGroup(g: ApiGroup): Group {
     hasPendingInvitation: g.has_pending_invitation,
   };
 }
+
 export async function getGroup(groupId: number): Promise<Group> {
   const data = await groupRequest<Envelope & { group: ApiGroup }>(
     `/groups/${groupId}`,
   );
   return toGroup(data.group);
 }
+
 export async function getGroups(limit = 20, offset = 0): Promise<Group[]> {
   const data = await groupRequest<Envelope & { groups?: ApiGroup[] }>(
     `/groups?limit=${limit}&offset=${offset}`,
   );
   return (data.groups ?? []).map(toGroup);
 }
+
 export async function createGroup(input: CreateGroupInput): Promise<Group> {
   const data = await groupRequest<Envelope & { group_id: number }>(
     "/groups",
@@ -158,6 +112,7 @@ export async function createGroup(input: CreateGroupInput): Promise<Group> {
   );
   return getGroup(data.group_id);
 }
+
 export async function getGroupMembers(groupId: number): Promise<GroupMember[]> {
   const data = await groupRequest<Envelope & { members?: ApiGroupMember[] }>(
     `/groups/${groupId}/members`,
@@ -170,6 +125,7 @@ export async function getGroupMembers(groupId: number): Promise<GroupMember[]> {
     avatar: m.avatar,
   }));
 }
+
 export async function getMembership(groupId: number): Promise<Membership> {
   const data = await groupRequest<
     Envelope & {
@@ -184,6 +140,7 @@ export async function getMembership(groupId: number): Promise<Membership> {
     hasPendingJoinRequest: data.has_pending_join_request,
   };
 }
+
 export async function getPendingInvitations(): Promise<GroupInvitation[]> {
   const data = await groupRequest<
     Envelope & { invitations?: ApiGroupInvitation[] }
@@ -200,6 +157,7 @@ export async function getPendingInvitations(): Promise<GroupInvitation[]> {
     inviterUsername: i.inviter_username,
   }));
 }
+
 export async function getPendingJoinRequests(
   groupId: number,
 ): Promise<GroupJoinRequest[]> {
@@ -216,6 +174,7 @@ export async function getPendingJoinRequests(
     updatedAt: r.updated_at,
   }));
 }
+
 function toGroupEvent(e: ApiEvent): GroupEvent {
   return {
     id: e.id,
@@ -231,12 +190,14 @@ function toGroupEvent(e: ApiEvent): GroupEvent {
     notGoingCount: e.not_going_count,
   };
 }
+
 export async function getGroupEvents(groupId: number): Promise<GroupEvent[]> {
   const data = await groupRequest<Envelope & { events?: ApiEvent[] }>(
     `/groups/${groupId}/events`,
   );
   return (data.events ?? []).map(toGroupEvent);
 }
+
 export async function createGroupEvent(
   groupId: number,
   input: CreateEventInput,
@@ -251,6 +212,7 @@ export async function createGroupEvent(
     "POST",
   );
 }
+
 export async function respondToGroupEvent(
   groupId: number,
   eventId: number,
@@ -263,6 +225,7 @@ export async function respondToGroupEvent(
   );
   return toGroupEvent(data.event);
 }
+
 export const createJoinRequest = (id: number) =>
   post(`/groups/${id}/join-requests`);
 export const createGroupInvitation = (groupId: number, userId: number) =>
@@ -285,6 +248,7 @@ export function toInviteCandidate(user: ApiInviteCandidate): InviteCandidate {
     avatar: user.avatar,
   };
 }
+
 export function avatarUrl(photo?: string): string | undefined {
   if (!photo) return undefined;
   return /^https?:\/\//.test(photo) ? photo : `${getUploadsBaseUrl()}/${photo}`;
