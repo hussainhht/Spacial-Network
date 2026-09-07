@@ -872,6 +872,9 @@ main:has(form) form > p {
 .group-member-name { color: var(--space-text-heading); font-size: .85rem; text-decoration: none; overflow: hidden; text-overflow: ellipsis; }
 .group-member-name:hover { text-decoration: underline; }
 .group-member-role { margin-left: auto; flex-shrink: 0; font-size: .65rem; color: #c4b5fd; padding: .2rem .45rem; background: rgba(139,92,246,.12); border-radius: 999px; }
+.group-member-remove { margin-left: auto; flex-shrink: 0; border: 1px solid var(--space-border-strong); background: transparent; color: #fca5a5; font-size: .75rem; padding: .3rem .65rem; border-radius: 999px; cursor: pointer; }
+.group-member-remove:hover:not(:disabled) { background: rgba(239,68,68,.12); border-color: #ef4444; }
+.group-member-remove:disabled { opacity: .6; cursor: not-allowed; }
 .group-attempt-list { max-height: 480px; overflow-y: auto; scrollbar-width: thin; }
 .group-attempt-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: .8rem; border-top: 1px solid var(--space-border); padding-top: 1rem; }
 .group-attempt-row > div { min-width: 0; overflow-wrap: anywhere; }
@@ -882,6 +885,8 @@ main:has(form) form > p {
 .group-button:hover:not(:disabled) { background: #6156ce; }
 .group-button.secondary:hover:not(:disabled) { background: rgba(99,102,241,.15); }
 .group-button:disabled { opacity: .6; cursor: not-allowed; }
+.group-button.danger { background: #dc2626; border-color: #dc2626; }
+.group-button.danger:hover:not(:disabled) { background: #ef4444; }
 .group-response { min-width: 0; }
 .group-response .form-error { max-width: 320px; font-size: .8rem; }
 .group-verification-error { display: flex; align-items: center; flex-wrap: wrap; gap: .65rem; color: #fca5a5; font-size: .85rem; line-height: 1.6; margin: .5rem 0; }

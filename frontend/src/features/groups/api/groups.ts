@@ -296,6 +296,12 @@ export const acceptGroupInvitation = (id: number) =>
   post(`/group-invitations/${id}/accept`);
 export const declineGroupInvitation = (id: number) =>
   post(`/group-invitations/${id}/decline`);
+export const removeMember = (groupId: number, memberId: number) =>
+  groupRequest<Envelope>(
+    `/groups/${groupId}/members/${memberId}`,
+    undefined,
+    "DELETE",
+  ).then(() => undefined);
 
 export function toInviteCandidate(user: ApiInviteCandidate): InviteCandidate {
   return {
