@@ -1324,6 +1324,22 @@ main:has(form) form > p {
   justify-content: flex-end;
 }
 
+.group-danger-zone {
+  margin-top: 1.5rem;
+  border-color: rgba(220, 38, 38, 0.4);
+  background: rgba(220, 38, 38, 0.06);
+}
+
+.group-danger-zone h2 {
+  color: #ef4444;
+}
+
+.group-danger-zone-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
 .group-create-buttons {
   display: flex;
   align-items: center;

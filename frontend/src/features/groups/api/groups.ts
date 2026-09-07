@@ -302,6 +302,10 @@ export const removeMember = (groupId: number, memberId: number) =>
     undefined,
     "DELETE",
   ).then(() => undefined);
+export const deleteGroup = (groupId: number) =>
+  groupRequest<Envelope>(`/groups/${groupId}`, undefined, "DELETE").then(
+    () => undefined,
+  );
 
 export function toInviteCandidate(user: ApiInviteCandidate): InviteCandidate {
   return {

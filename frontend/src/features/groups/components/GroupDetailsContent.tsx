@@ -11,6 +11,7 @@ import {
 } from "../hooks/useGroupData";
 import EditGroupForm from "./EditGroupForm";
 import GroupAvatar from "./GroupAvatar";
+import GroupDangerZone from "./GroupDangerZone";
 import GroupEvents from "./GroupEvents";
 import {
   GroupLoadError,
@@ -145,6 +146,7 @@ function GroupDetails({ groupId }: { groupId: number }) {
               aria-labelledby="group-tab-edit"
             >
               <EditGroupForm group={group.data} />
+              <GroupDangerZone group={group.data} />
             </div>
           )}
         </>
