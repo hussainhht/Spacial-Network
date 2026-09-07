@@ -12,11 +12,7 @@ interface InviteUserSearchProps {
   autoFocus?: boolean;
 }
 
-// Reusable search core shared by GroupInviteSearch (sends a real invitation
-// immediately, used from the Group Details members panel) and the Create
-// Group flow (adds to a local selection first, invitations are only sent
-// once the group has been created). Callers decide what happens on a result
-// row via `renderAction` - this component only owns the query/results.
+
 export default function InviteUserSearch({
   groupId,
   renderAction,

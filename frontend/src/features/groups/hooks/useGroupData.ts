@@ -2,12 +2,17 @@
 
 import { useMemo, useSyncExternalStore } from "react";
 import {
+  getEventResponses,
   getGroup,
+  getGroupEvents,
   getGroupMembers,
   getMembership,
+  getMyGroups,
   getPendingInvitations,
   getPendingJoinRequests,
 } from "../api/groups";
+
+import type { GroupEvent } from "../types/group";
 
 type Snapshot<T> = {
   data: T | undefined;
@@ -20,6 +25,7 @@ interface Resource<T> {
   subscribe: (listener: () => void) => () => void;
   read: () => Snapshot<T>;
   reload: () => Promise<void>;
+  update: (transform: (data: T) => T) => void;
 }
 
 const resources = new Map<string, Resource<unknown>>();
@@ -45,6 +51,17 @@ function resourceFor<T>(key: string, fetcher: () => Promise<T>): Resource<T> {
           if (resources.get(key) === resource) resources.delete(key);
         }
       };
+    },
+    update(transform) {
+      if (resource.snapshot.data === undefined) return;
+      // A successful mutation supersedes any GET started before it.
+      revision++;
+      resource.snapshot = {
+        data: transform(resource.snapshot.data),
+        loading: false,
+        error: null,
+      };
+      emit();
     },
     async reload() {
       const current = ++revision;
@@ -90,6 +107,7 @@ export async function refreshGroupData(groupId?: number): Promise<void> {
         (groupId === undefined ||
           key === "invitations" ||
           key.startsWith("groups:") ||
+          key.startsWith("my-groups:") ||
           key.startsWith(`group:${groupId}:`)),
     )
     .map(([, resource]) => resource.reload());
@@ -97,6 +115,10 @@ export async function refreshGroupData(groupId?: number): Promise<void> {
 }
 export const useGroup = (id: number) =>
   useGroupQuery(`group:${id}:details`, () => getGroup(id));
+export const useMyGroups = (limit: number, offset: number, search = "") =>
+  useGroupQuery(`my-groups:${search}:${offset}`, () =>
+    getMyGroups(limit, offset, search),
+  );
 export const useGroupMembers = (id: number) =>
   useGroupQuery(`group:${id}:members`, () => getGroupMembers(id));
 export const useMembership = (id: number) =>
@@ -105,3 +127,20 @@ export const usePendingInvitations = () =>
   useGroupQuery("invitations", getPendingInvitations);
 export const usePendingJoinRequests = (id: number) =>
   useGroupQuery(`group:${id}:requests`, () => getPendingJoinRequests(id));
+export const useGroupEvents = (id: number) =>
+  useGroupQuery(`group:${id}:events`, () => getGroupEvents(id));
+
+export const useEventResponses = (groupId: number, eventId: number) =>
+  useGroupQuery(`group:${groupId}:event:${eventId}:responses`, () =>
+    getEventResponses(groupId, eventId),
+  );
+
+// Cache only the server's saved result; every remount/refetch reads SQLite again.
+export function updateGroupEvent(event: GroupEvent) {
+  const resource = resources.get(`group:${event.groupId}:events`) as
+    | Resource<GroupEvent[]>
+    | undefined;
+  resource?.update((events) =>
+    events.map((existing) => (existing.id === event.id ? event : existing)),
+  );
+}

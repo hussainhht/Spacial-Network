@@ -14,7 +14,10 @@ import (
 	"github.com/google/uuid"
 )
 
-const AvatarSubdir = "avatars"
+const (
+	AvatarSubdir     = "avatars"
+	GroupPhotoSubdir = "groups"
+)
 
 var (
 	ErrInvalidFileType = errors.New("unsupported image file type")
@@ -27,22 +30,25 @@ var allowedAvatarTypes = map[string]string{
 	"image/gif":  ".gif",
 }
 
+// AvatarStorage saves validated images (user avatars, group photos, ...)
+// to a subdirectory of the shared uploads root.
 type AvatarStorage struct {
 	root    string
+	subdir  string
 	maxSize int64
 }
 
-func NewAvatarStorage(uploadsRoot string, maxSize int64) (*AvatarStorage, error) {
-	dir := filepath.Join(uploadsRoot, AvatarSubdir)
+func NewAvatarStorage(uploadsRoot, subdir string, maxSize int64) (*AvatarStorage, error) {
+	dir := filepath.Join(uploadsRoot, subdir)
 	if err := os.MkdirAll(dir, 0o755); err != nil {
-		return nil, fmt.Errorf("create avatar upload dir: %w", err)
+		return nil, fmt.Errorf("create upload dir: %w", err)
 	}
 
-	return &AvatarStorage{root: uploadsRoot, maxSize: maxSize}, nil
+	return &AvatarStorage{root: uploadsRoot, subdir: subdir, maxSize: maxSize}, nil
 }
 
 func (s *AvatarStorage) Save(file multipart.File, header *multipart.FileHeader) (string, error) {
-	return saveUpload(s.root, AvatarSubdir, allowedAvatarTypes, s.maxSize, file, header)
+	return saveUpload(s.root, s.subdir, allowedAvatarTypes, s.maxSize, file, header)
 }
 
 func (s *AvatarStorage) Remove(relPath string) error {

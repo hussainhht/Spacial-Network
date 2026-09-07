@@ -61,7 +61,7 @@ Authentication, Docker, and final project-wide integration are not included in t
 ### Frontend
 
 - [X] Add Request to Join button (with pending state)
-- [X]  Pending join requests UI for group creator (with Accept and Reject buttons)
+- [X] Pending join requests UI for group creator (with Accept and Reject buttons)
 - [X] Update UI after accepting or rejecting a request
 
 ---
@@ -92,21 +92,21 @@ Authentication, Docker, and final project-wide integration are not included in t
 
 ### Database
 
-- [ ] Create `events` table migration (group ID, creator ID, title, description, date/time, and `.down.sql`)
-- [ ] Create `event_responses` table migration (event ID, user ID, response status, unique constraint, and `.down.sql`)
+- [X] Create `events` table migration (group ID, creator ID, title, description, date/time, and `.down.sql`)
+- [X] Create `event_responses` table migration (event ID, user ID, response status, unique constraint, and `.down.sql`)
 
 ### Backend
 
-- [ ] Allow group members to create an event (validate title, description, date/time)
-- [ ] Prevent non-members and unauthorized users from accessing/creating events
-- [ ] Get events for a group and get event details
-- [ ] Support event responses (`Going` / `Not Going`, members only, allow changing response)
+- [X] Allow group members to create an event (validate title, description, date/time)
+- [X] Prevent non-members and unauthorized users from accessing/creating events
+- [X] Get events for a group and get event details
+- [X] Support event responses (`Going` / `Not Going`, members only, allow changing response)
 
 ### Frontend
 
-- [ ] Display group events
-- [ ] Create Event form (title, description, date/time)
-- [ ] Event response UI (Going/Not Going buttons, display and change response)
+- [X] Display group events
+- [X] Create Event form (title, description, date/time)
+- [X] Event response UI (Going/Not Going buttons, display and change response)
 
 ---
 

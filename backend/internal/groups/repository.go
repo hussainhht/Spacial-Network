@@ -17,7 +17,7 @@ func NewRepository(db *sql.DB) *Repository {
 	}
 }
 
-func (r *Repository) InsertGroup(creatorID int, title, description string) (int64, error) {
+func (r *Repository) InsertGroup(creatorID int, title, description, photoPath string) (int64, error) {
 	tx, err := r.db.Begin()
 	if err != nil {
 		return 0, err
@@ -25,10 +25,11 @@ func (r *Repository) InsertGroup(creatorID int, title, description string) (int6
 	defer tx.Rollback()
 
 	result, err := tx.Exec(
-		`INSERT INTO groups (creator_id, title, description) VALUES (?, ?, ?)`,
+		`INSERT INTO groups (creator_id, title, description, group_photo) VALUES (?, ?, ?, NULLIF(?, ''))`,
 		creatorID,
 		title,
 		description,
+		photoPath,
 	)
 	if err != nil {
 		return 0, err
@@ -54,17 +55,20 @@ func (r *Repository) InsertGroup(creatorID int, title, description string) (int6
 	return groupID, nil
 }
 
-func (r *Repository) GetAllGroups(limit, offset, userID int) ([]Group, error) {
+func (r *Repository) GetAllGroups(limit, offset, userID int, search string) ([]Group, error) {
+	like := "%" + escapeLikePattern(search) + "%"
 	rows, err := r.db.Query(
-		`SELECT g.id, g.creator_id, g.title, g.description, g.created_at, g.updated_at,
+		`SELECT g.id, g.creator_id, g.title, g.description, COALESCE(g.group_photo, ''), g.created_at, g.updated_at,
          u.username, (SELECT COUNT(*) FROM group_members WHERE group_id = g.id),
          COALESCE((SELECT role FROM group_members WHERE group_id = g.id AND user_id = ?), ''),
          EXISTS(SELECT 1 FROM group_join_requests WHERE group_id = g.id AND user_id = ? AND status = 'pending'),
          EXISTS(SELECT 1 FROM group_invitations WHERE group_id = g.id AND invited_user_id = ? AND status = 'pending')
          FROM groups g JOIN users u ON u.id = g.creator_id
+         WHERE (? = '' OR LOWER(g.title) LIKE LOWER(?) ESCAPE '\' OR LOWER(g.description) LIKE LOWER(?) ESCAPE '\')
          ORDER BY g.created_at DESC, g.id DESC
 		 LIMIT ? OFFSET ?`,
 		userID, userID, userID,
+		search, like, like,
 		limit,
 		offset,
 	)
@@ -76,7 +80,44 @@ func (r *Repository) GetAllGroups(limit, offset, userID int) ([]Group, error) {
 	result := make([]Group, 0)
 	for rows.Next() {
 		var g Group
-		if err := rows.Scan(&g.ID, &g.CreatorID, &g.Title, &g.Description, &g.CreatedAt, &g.UpdatedAt, &g.CreatorUsername, &g.MemberCount, &g.MembershipRole, &g.HasPendingJoinRequest, &g.HasPendingInvitation); err != nil {
+		if err := rows.Scan(&g.ID, &g.CreatorID, &g.Title, &g.Description, &g.GroupPhoto, &g.CreatedAt, &g.UpdatedAt, &g.CreatorUsername, &g.MemberCount, &g.MembershipRole, &g.HasPendingJoinRequest, &g.HasPendingInvitation); err != nil {
+			return nil, err
+		}
+		result = append(result, g)
+	}
+
+	return result, rows.Err()
+}
+
+// GetGroupsForUser returns groups the given user actually belongs to
+// (creator or member), most recently created first. Membership is
+// determined strictly from group_members - pending invitations and join
+// requests never appear here.
+func (r *Repository) GetGroupsForUser(userID, limit, offset int, search string) ([]Group, error) {
+	like := "%" + escapeLikePattern(search) + "%"
+	rows, err := r.db.Query(
+		`SELECT g.id, g.creator_id, g.title, g.description, COALESCE(g.group_photo, ''), g.created_at, g.updated_at,
+         u.username, (SELECT COUNT(*) FROM group_members WHERE group_id = g.id), gm.role
+         FROM groups g
+         JOIN users u ON u.id = g.creator_id
+         JOIN group_members gm ON gm.group_id = g.id AND gm.user_id = ?
+         WHERE (? = '' OR LOWER(g.title) LIKE LOWER(?) ESCAPE '\' OR LOWER(g.description) LIKE LOWER(?) ESCAPE '\')
+         ORDER BY g.created_at DESC, g.id DESC
+         LIMIT ? OFFSET ?`,
+		userID,
+		search, like, like,
+		limit,
+		offset,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	result := make([]Group, 0)
+	for rows.Next() {
+		var g Group
+		if err := rows.Scan(&g.ID, &g.CreatorID, &g.Title, &g.Description, &g.GroupPhoto, &g.CreatedAt, &g.UpdatedAt, &g.CreatorUsername, &g.MemberCount, &g.MembershipRole); err != nil {
 			return nil, err
 		}
 		result = append(result, g)
@@ -123,15 +164,40 @@ func (r *Repository) AddMember(groupID, userID int) error {
 	return err
 }
 
+// RemoveMember deletes a single group_members row, leaving every other
+// membership, the group, and the user untouched. Business rules (creator
+// permission, protecting the creator's own membership) live in the service
+// layer - this is a plain, scoped delete.
+func (r *Repository) RemoveMember(groupID, memberID int) error {
+	result, err := r.db.Exec(
+		`DELETE FROM group_members WHERE group_id = ? AND user_id = ?`,
+		groupID,
+		memberID,
+	)
+	if err != nil {
+		return err
+	}
+
+	n, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return ErrMemberNotFound
+	}
+
+	return nil
+}
+
 func (r *Repository) GetGroupByID(id int) (*Group, error) {
 	var g Group
 
 	err := r.db.QueryRow(
-		`SELECT g.id, g.creator_id, g.title, g.description, g.created_at, g.updated_at,
+		`SELECT g.id, g.creator_id, g.title, g.description, COALESCE(g.group_photo, ''), g.created_at, g.updated_at,
          u.username, (SELECT COUNT(*) FROM group_members WHERE group_id = g.id)
          FROM groups g JOIN users u ON u.id = g.creator_id WHERE g.id = ?`,
 		id,
-	).Scan(&g.ID, &g.CreatorID, &g.Title, &g.Description, &g.CreatedAt, &g.UpdatedAt, &g.CreatorUsername, &g.MemberCount)
+	).Scan(&g.ID, &g.CreatorID, &g.Title, &g.Description, &g.GroupPhoto, &g.CreatedAt, &g.UpdatedAt, &g.CreatorUsername, &g.MemberCount)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, ErrGroupNotFound
@@ -140,6 +206,50 @@ func (r *Repository) GetGroupByID(id int) (*Group, error) {
 	}
 
 	return &g, nil
+}
+
+// UpdateGroup updates a group's title and description. A nil photoPath
+// leaves the existing photo untouched; a non-nil pointer replaces it (an
+// empty string clears it, matching the "remove photo" behavior).
+func (r *Repository) UpdateGroup(groupID int, title, description string, photoPath *string) error {
+	if photoPath == nil {
+		_, err := r.db.Exec(
+			`UPDATE groups SET title = ?, description = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+			title,
+			description,
+			groupID,
+		)
+		return err
+	}
+
+	_, err := r.db.Exec(
+		`UPDATE groups SET title = ?, description = ?, group_photo = NULLIF(?, ''), updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+		title,
+		description,
+		*photoPath,
+		groupID,
+	)
+	return err
+}
+
+// DeleteGroup deletes a group by ID. Related rows (members, invitations,
+// join requests, events, event responses, ...) are removed by the
+// database's ON DELETE CASCADE foreign keys - see the groups migrations.
+func (r *Repository) DeleteGroup(groupID int) error {
+	result, err := r.db.Exec(`DELETE FROM groups WHERE id = ?`, groupID)
+	if err != nil {
+		return err
+	}
+
+	n, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return ErrGroupNotFound
+	}
+
+	return nil
 }
 
 func (r *Repository) GetGroupMembers(groupID int) ([]GroupMember, error) {

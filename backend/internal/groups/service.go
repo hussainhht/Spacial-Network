@@ -5,18 +5,21 @@ import (
 	"log"
 
 	"social/internal/notifications"
+	"social/internal/websocket"
 )
 
 type Service struct {
 	repo     *Repository
 	notifier NotificationSender
+	hub      *websocket.Hub
 }
 
 func NewService(
-	repo *Repository, notifier NotificationSender) *Service {
+	repo *Repository, notifier NotificationSender, hub *websocket.Hub) *Service {
 	return &Service{
 		repo:     repo,
 		notifier: notifier,
+		hub:      hub,
 	}
 }
 
@@ -47,13 +50,23 @@ func (s *Service) notify(receiverID, actorID int, notifType notifications.Notifi
 }
 
 // CreateGroup stores a new group owned by creatorID and returns its ID.
-func (s *Service) CreateGroup(creatorID int, title, description string) (int64, error) {
-	return s.repo.InsertGroup(creatorID, title, description)
+func (s *Service) CreateGroup(creatorID int, title, description, photoPath string) (int64, error) {
+	return s.repo.InsertGroup(creatorID, title, description, photoPath)
 }
 
 // GetAllGroups returns a page of groups, most recently created first.
-func (s *Service) GetAllGroups(limit, offset, userID int) ([]Group, error) {
-	return s.repo.GetAllGroups(limit, offset, userID)
+// search, when non-empty, filters to groups whose title or description
+// contains it (case-insensitive).
+func (s *Service) GetAllGroups(limit, offset, userID int, search string) ([]Group, error) {
+	return s.repo.GetAllGroups(limit, offset, userID, search)
+}
+
+// GetUserGroups returns a page of groups the given user actually belongs to
+// (creator or member), most recently created first. search, when non-empty,
+// filters to groups whose title or description contains it
+// (case-insensitive).
+func (s *Service) GetUserGroups(userID, limit, offset int, search string) ([]Group, error) {
+	return s.repo.GetGroupsForUser(userID, limit, offset, search)
 }
 
 // GetGroupByID returns the group with the given ID.
@@ -61,8 +74,47 @@ func (s *Service) GetGroupByID(id int) (*Group, error) {
 	return s.repo.GetGroupByID(id)
 }
 
-// GetGroupMembers returns the members of a group, or ErrGroupNotFound if the
-// group doesn't exist.
+
+func (s *Service) UpdateGroup(groupID, userID int, title, description string, photoPath *string) (*Group, string, error) {
+	group, err := s.repo.GetGroupByID(groupID)
+	if err != nil {
+		return nil, "", err
+	}
+	if group.CreatorID != userID {
+		return nil, "", ErrNotGroupCreator
+	}
+	oldPhoto := group.GroupPhoto
+
+	if err := s.repo.UpdateGroup(groupID, title, description, photoPath); err != nil {
+		return nil, "", err
+	}
+
+	updated, err := s.repo.GetGroupByID(groupID)
+	if err != nil {
+		return nil, "", err
+	}
+	return updated, oldPhoto, nil
+}
+
+// DeleteGroup permanently deletes groupID on behalf of actorID. Only the
+// group's creator may delete it. On success it returns the group's photo
+// path (possibly empty) so the caller can clean up the stored file.
+func (s *Service) DeleteGroup(groupID, actorID int) (string, error) {
+	group, err := s.repo.GetGroupByID(groupID)
+	if err != nil {
+		return "", err
+	}
+	if group.CreatorID != actorID {
+		return "", ErrNotGroupCreator
+	}
+
+	if err := s.repo.DeleteGroup(groupID); err != nil {
+		return "", err
+	}
+
+	return group.GroupPhoto, nil
+}
+
 func (s *Service) GetGroupMembers(groupID int) ([]GroupMember, error) {
 	if _, err := s.repo.GetGroupByID(groupID); err != nil {
 		return nil, err
@@ -101,6 +153,33 @@ func (s *Service) AddMember(groupID, userID int) error {
 		return err
 	}
 	return s.repo.AddMember(groupID, userID)
+}
+
+// RemoveMember removes memberID's membership from groupID, on behalf of
+// actorID. Only the group's creator may remove another member, and the
+// creator can never be removed through this operation.
+func (s *Service) RemoveMember(groupID, actorID, memberID int) error {
+	group, err := s.repo.GetGroupByID(groupID)
+	if err != nil {
+		return err
+	}
+	if group.CreatorID != actorID {
+		return ErrNotGroupCreator
+	}
+
+	member, err := s.repo.GetMembership(groupID, memberID)
+	if err != nil {
+		return err
+	}
+	if member == nil {
+		return ErrMemberNotFound
+	}
+
+	if memberID == group.CreatorID {
+		return ErrCannotRemoveCreator
+	}
+
+	return s.repo.RemoveMember(groupID, memberID)
 }
 
 func (s *Service) RequestToJoin(groupID, userID int) error {

@@ -7,7 +7,8 @@ export type EventType =
   | "error"
   | "invite_user_search"
   | "invite_user_search_results"
-  | "notification";
+  | "notification"
+  | "group_event_response_updated";
 
 export interface WSEvent<T = unknown> {
   type: EventType;
@@ -83,6 +84,19 @@ export interface NotificationEventPayload {
   created_at: string;
 }
 
+// GroupEventResponseUpdatedPayload mirrors the "group_event_response_updated"
+// websocket event the backend broadcasts after a group event RSVP
+// (Going/Not Going) is persisted — see
+// backend/internal/groups/event_ws.go. It's kept separate from
+// NotificationEventPayload on purpose: an RSVP change is ephemeral realtime
+// sync for one Event card, not a persisted, per-user notification.
+export interface GroupEventResponseUpdatedPayload {
+  group_id: number;
+  event_id: number;
+  user_id: number;
+  response: "going" | "not_going";
+}
+
 export interface WebSocketContextType {
   isConnected: boolean;
   onlineUserIDs: number[];
@@ -91,6 +105,8 @@ export interface WebSocketContextType {
   errorMessage: string | null;
   inviteSearchResults: InviteUserSearchResultsPayload | null;
   lastNotification: NotificationEventPayload | null;
+  lastEventResponseUpdate: GroupEventResponseUpdatedPayload | null;
+  subscribeEventResponses: (listener: (event: GroupEventResponseUpdatedPayload) => void) => () => void;
   subscribeNotifications: (
     listener: (notification: NotificationEventPayload) => void,
   ) => () => void;

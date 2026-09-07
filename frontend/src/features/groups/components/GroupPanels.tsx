@@ -2,8 +2,10 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useState } from "react";
-import { avatarUrl } from "../api/groups";
+import { useCallback, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
+import { avatarUrl, removeMember } from "../api/groups";
+import { useGroupAction } from "../hooks/useGroupAction";
 import {
   useGroupMembers,
   useMembership,
@@ -76,9 +78,15 @@ export function MembersPanel({
   // Shares the same cached resource as MembershipPanel's useMembership call,
   // so this does not trigger a second membership request.
   const membership = useMembership(groupId);
+  const isMember = Boolean(membership.data?.isMember);
   const isCreator = membership.data?.role === "creator";
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const closeInviteModal = useCallback(() => setIsInviteModalOpen(false), []);
+  const [removeTarget, setRemoveTarget] = useState<{
+    userId: number;
+    username: string;
+  } | null>(null);
+  const closeRemoveDialog = useCallback(() => setRemoveTarget(null), []);
 
   return (
     <aside
@@ -91,7 +99,7 @@ export function MembersPanel({
         </h2>
         <div className="group-members-header-actions">
           {state.loading && <span className="group-muted">Loading…</span>}
-          {isCreator && (
+          {isMember && (
             <button
               type="button"
               className="group-button secondary"
@@ -136,8 +144,23 @@ export function MembersPanel({
               >
                 @{member.username}
               </Link>
-              {member.userId === creatorId && (
+              {member.userId === creatorId ? (
                 <span className="group-member-role">Creator</span>
+              ) : (
+                isCreator && (
+                  <button
+                    type="button"
+                    className="group-member-remove"
+                    onClick={() =>
+                      setRemoveTarget({
+                        userId: member.userId,
+                        username: member.username,
+                      })
+                    }
+                  >
+                    Remove
+                  </button>
+                )
               )}
             </li>
           ))}
@@ -151,7 +174,102 @@ export function MembersPanel({
         open={isInviteModalOpen}
         onClose={closeInviteModal}
       />
+      <RemoveMemberDialog
+        groupId={groupId}
+        target={removeTarget}
+        onClose={closeRemoveDialog}
+      />
     </aside>
+  );
+}
+
+function RemoveMemberDialog({
+  groupId,
+  target,
+  onClose,
+}: {
+  groupId: number;
+  target: { userId: number; username: string } | null;
+  onClose: () => void;
+}) {
+  const { busy, error, run } = useGroupAction(
+    `remove-member:${target?.userId ?? 0}`,
+    groupId,
+  );
+
+  useEffect(() => {
+    if (!target) return;
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape" && !busy) onClose();
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [target, busy, onClose]);
+
+  if (!target) return null;
+
+  async function handleRemove() {
+    if (!target) return;
+    if (await run("Removing…", () => removeMember(groupId, target.userId)))
+      onClose();
+  }
+
+  return createPortal(
+    <div
+      className="group-modal-overlay"
+      onClick={() => !busy && onClose()}
+    >
+      <div
+        className="group-modal"
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="remove-member-title"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="group-modal-header">
+          <h2 id="remove-member-title">Remove member?</h2>
+          <button
+            type="button"
+            className="group-modal-close"
+            aria-label="Cancel"
+            disabled={Boolean(busy)}
+            onClick={onClose}
+          >
+            ×
+          </button>
+        </div>
+        <div className="group-modal-body">
+          <p className="group-muted">
+            Are you sure you want to remove @{target.username} from this
+            group? They will lose access to group-only content and chat.
+          </p>
+          {error && (
+            <p className="form-error" role="alert">
+              {error}
+            </p>
+          )}
+          <div className="group-buttons">
+            <button
+              type="button"
+              className="group-button secondary"
+              disabled={Boolean(busy)}
+              onClick={onClose}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="group-button danger"
+              disabled={Boolean(busy)}
+              onClick={() => void handleRemove()}
+            >
+              {busy ?? "Remove Member"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>,
+    document.body,
   );
 }
 

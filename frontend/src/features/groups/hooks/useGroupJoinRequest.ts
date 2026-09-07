@@ -9,10 +9,23 @@ export function useGroupJoinRequest(groupId: number) {
   const invitations = usePendingInvitations();
   const action = useGroupAction(`join:${groupId}`, groupId);
   const pending = membership.data?.hasPendingJoinRequest ?? false;
-  const canRequest = !membership.loading && !invitations.loading && !membership.error && !invitations.error && membership.data && !membership.data.isMember && !pending && !invitations.data?.some(i => i.groupId === groupId);
+  const canRequest =
+    !membership.loading &&
+    !invitations.loading &&
+    !membership.error &&
+    !invitations.error &&
+    membership.data &&
+    !membership.data.isMember &&
+    !pending &&
+    !invitations.data?.some((i) => i.groupId === groupId);
   return {
-    pending, busy: action.busy, error: action.error,
+    pending,
+    busy: action.busy,
+    error: action.error,
     disabled: !canRequest || Boolean(action.busy),
-    handleRequestToJoin: () => { if (canRequest) void action.run("Sending…", () => createJoinRequest(groupId)); },
+    handleRequestToJoin: () => {
+      if (canRequest)
+        void action.run("Sending…", () => createJoinRequest(groupId));
+    },
   };
 }

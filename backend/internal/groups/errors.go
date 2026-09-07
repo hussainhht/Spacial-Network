@@ -54,6 +54,14 @@ var ErrInvitationNotPending = errors.New("invitation is not pending")
 // fails validation (e.g. empty or too long).
 var ErrInvalidSearchQuery = errors.New("search query is invalid")
 
+// ErrMemberNotFound is returned when the target user of a member-removal
+// request is not currently a member of the group.
+var ErrMemberNotFound = errors.New("member not found in this group")
+
+// ErrCannotRemoveCreator is returned when a removal request targets the
+// group's creator, who can never be removed via this operation.
+var ErrCannotRemoveCreator = errors.New("cannot remove group creator")
+
 // joinRequestErrorResponse maps a group join request service error to an
 // HTTP status code and a user-facing message.
 func joinRequestErrorResponse(err error) (int, string) {
@@ -97,6 +105,49 @@ func invitationErrorResponse(err error) (int, string) {
 		return http.StatusConflict, "Invitation has already been processed"
 	default:
 		return http.StatusInternalServerError, "Failed to process invitation"
+	}
+}
+
+// updateGroupErrorResponse maps an update-group service error to an HTTP
+// status code and a user-facing message.
+func updateGroupErrorResponse(err error) (int, string) {
+	switch {
+	case errors.Is(err, ErrGroupNotFound):
+		return http.StatusNotFound, "Group not found"
+	case errors.Is(err, ErrNotGroupCreator):
+		return http.StatusForbidden, "Only the group creator can do this"
+	default:
+		return http.StatusInternalServerError, "Failed to update group"
+	}
+}
+
+// deleteGroupErrorResponse maps a delete-group service error to an HTTP
+// status code and a user-facing message.
+func deleteGroupErrorResponse(err error) (int, string) {
+	switch {
+	case errors.Is(err, ErrGroupNotFound):
+		return http.StatusNotFound, "Group not found"
+	case errors.Is(err, ErrNotGroupCreator):
+		return http.StatusForbidden, "Only the group creator can do this"
+	default:
+		return http.StatusInternalServerError, "Failed to delete group"
+	}
+}
+
+// removeMemberErrorResponse maps a remove-member service error to an HTTP
+// status code and a user-facing message.
+func removeMemberErrorResponse(err error) (int, string) {
+	switch {
+	case errors.Is(err, ErrGroupNotFound):
+		return http.StatusNotFound, "Group not found"
+	case errors.Is(err, ErrNotGroupCreator):
+		return http.StatusForbidden, "Only the group creator can do this"
+	case errors.Is(err, ErrMemberNotFound):
+		return http.StatusNotFound, "Member not found in this group"
+	case errors.Is(err, ErrCannotRemoveCreator):
+		return http.StatusForbidden, "cannot remove group creator"
+	default:
+		return http.StatusInternalServerError, "Failed to remove member"
 	}
 }
 
