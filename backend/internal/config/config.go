@@ -32,7 +32,7 @@ func Load() Config {
 		DBFile: "social-network.db",
 
 		SessionCookieName: "session_token",
-		SessionLifetime:   30 * time.Minute,
+		SessionLifetime:   24 * time.Hour,
 		CookieSecure:      false,
 
 		UploadsDir:    "data/uploads",

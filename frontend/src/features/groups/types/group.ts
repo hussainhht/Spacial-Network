@@ -1,4 +1,9 @@
 export interface Group {
+  creatorUsername: string;
+  memberCount: number;
+  membershipRole?: string;
+  hasPendingJoinRequest: boolean;
+  hasPendingInvitation: boolean;
   id: number;
   creatorId: number;
   title: string;
@@ -13,6 +18,7 @@ export interface CreateGroupInput {
 }
 
 export interface GroupMember {
+  avatar?: string;
   userId: number;
   username: string;
   role: string;
@@ -20,6 +26,7 @@ export interface GroupMember {
 }
 
 export interface Membership {
+  hasPendingJoinRequest: boolean;
   isMember: boolean;
   role?: string;
 }
@@ -32,11 +39,9 @@ export interface InviteCandidate {
   avatar?: string;
 }
 
-// A pending invitation for the current user to join a group (GET
-// /group-invitations). Used by the notifications feature to resolve a group
-// invitation notification's entity_id (the invitation ID) to the group it
-// refers to, since the notification itself only carries the invitation ID.
 export interface GroupInvitation {
+  groupTitle: string;
+  inviterUsername: string;
   id: number;
   groupId: number;
   invitedBy: number;
@@ -46,3 +51,13 @@ export interface GroupInvitation {
   updatedAt: string;
 }
 
+
+export interface GroupJoinRequest {
+  id: number;
+  groupId: number;
+  userId: number;
+  username: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}

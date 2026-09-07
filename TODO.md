@@ -20,26 +20,26 @@ Authentication, Docker, and final project-wide integration are not included in t
 
 ### Database
 
-- [x] Create `groups` table migration
-- [x] Create `group_members` table migration
-- [x] Add proper foreign keys, constraints, and `.down.sql` migrations
+- [X] Create `groups` table migration
+- [X] Create `group_members` table migration
+- [X] Add proper foreign keys, constraints, and `.down.sql` migrations
 
 ### Backend
 
-- [x] Create a group (title, description, creator, auto-add creator as member)
-- [x] Get all groups (with pagination)
-- [x] Get a group by ID
-- [x] Get group members
-- [x] Check whether a user is a group member / creator
-- [x] Prevent invalid or duplicate membership records
-- [x] Validate required group data and return proper HTTP errors
+- [X] Create a group (title, description, creator, auto-add creator as member)
+- [X] Get all groups (with pagination)
+- [X] Get a group by ID
+- [X] Get group members
+- [X] Check whether a user is a group member / creator
+- [X] Prevent invalid or duplicate membership records
+- [X] Validate required group data and return proper HTTP errors
 
 ### Frontend
 
-- [x] Create Groups page (browse all groups)
-- [x] Create Group form
-- [x] Group details page (title, description, creator, members)
-- [x] Show correct actions depending on membership state
+- [X] Create Groups page (browse all groups)
+- [X] Create Group form
+- [X] Group details page (title, description, creator, members)
+- [X] Show correct actions depending on membership state
 
 ---
 
@@ -47,22 +47,22 @@ Authentication, Docker, and final project-wide integration are not included in t
 
 ### Database
 
-- [x] Create `group_join_requests` table migration (with constraints and `.down.sql`)
+- [X] Create `group_join_requests` table migration (with constraints and `.down.sql`)
 
 ### Backend
 
-- [x] Allow a user to request to join a group
-- [x] Prevent members from sending another join request
-- [x] Prevent duplicate pending requests
-- [x] Get pending join requests for a group (creator only)
-- [x] Accept a join request (adds user to `group_members` and updates status)
-- [x] Reject a join request (updates status)
+- [X] Allow a user to request to join a group
+- [X] Prevent members from sending another join request
+- [X] Prevent duplicate pending requests
+- [X] Get pending join requests for a group (creator only)
+- [X] Accept a join request (adds user to `group_members` and updates status)
+- [X] Reject a join request (updates status)
 
 ### Frontend
 
-- [ ] Add Request to Join button (with pending state)
-- [ ] Pending join requests UI for group creator (with Accept and Reject buttons)
-- [ ] Update UI after accepting or rejecting a request
+- [X] Add Request to Join button (with pending state)
+- [X]  Pending join requests UI for group creator (with Accept and Reject buttons)
+- [X] Update UI after accepting or rejecting a request
 
 ---
 
@@ -70,21 +70,21 @@ Authentication, Docker, and final project-wide integration are not included in t
 
 ### Database
 
-- [x] Create `group_invitations` table migration (with constraints and `.down.sql`)
+- [X] Create `group_invitations` table migration (with constraints and `.down.sql`)
 
 ### Backend
 
-- [x] Allow group creator and existing members to invite users
-- [x] Prevent inviting an existing member or sending duplicate pending invitations
-- [x] Get pending invitations for a user
-- [x] Accept invitation (adds user to group and updates status)
-- [x] Decline invitation (updates status)
+- [X] Allow group creator and existing members to invite users
+- [X] Prevent inviting an existing member or sending duplicate pending invitations
+- [X] Get pending invitations for a user
+- [X] Accept invitation (adds user to group and updates status)
+- [X] Decline invitation (updates status)
 
 ### Frontend
 
-- [ ] Create Invite User UI
-- [ ] Display pending invitations (with Accept and Decline buttons)
-- [ ] Update group membership UI after accepting
+- [X] Create Invite User UI
+- [X] Display pending invitations (with Accept and Decline buttons)
+- [X] Update group membership UI after accepting
 
 ---
 

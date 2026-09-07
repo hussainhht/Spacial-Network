@@ -6,6 +6,8 @@ import (
 )
 
 // ErrGroupNotFound is returned when a group with the given ID does not exist.
+var ErrInviteeNotFound = errors.New("invited user not found")
+
 var ErrGroupNotFound = errors.New("group not found")
 
 // ErrAlreadyMember is returned when trying to add a user to a group they
@@ -77,6 +79,8 @@ func joinRequestErrorResponse(err error) (int, string) {
 // status code and a user-facing message.
 func invitationErrorResponse(err error) (int, string) {
 	switch {
+	case errors.Is(err, ErrInviteeNotFound):
+		return http.StatusNotFound, "Invited user not found"
 	case errors.Is(err, ErrGroupNotFound):
 		return http.StatusNotFound, "Group not found"
 	case errors.Is(err, ErrInvitationNotFound):
