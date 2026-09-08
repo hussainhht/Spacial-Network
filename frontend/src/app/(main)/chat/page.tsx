@@ -34,32 +34,73 @@ export default function ChatPage() {
     });
   }
 
+  const cardStyle: React.CSSProperties = {
+    marginBottom: "1.5rem",
+    padding: "1.25rem",
+    background: "rgba(13, 17, 38, 0.7)",
+    backdropFilter: "blur(14px)",
+    WebkitBackdropFilter: "blur(14px)",
+    border: "1px solid rgba(148, 163, 184, 0.15)",
+    borderRadius: "14px",
+    boxShadow: "0 8px 32px rgba(0, 0, 0, 0.25)",
+  };
+
   return (
     <main
       style={{
-        padding: "2rem",
-        fontFamily: "sans-serif",
-        maxWidth: "800px",
+        padding: "clamp(1.5rem, 4vw, 3rem) 1rem",
+        maxWidth: "860px",
         margin: "0 auto",
+        color: "var(--space-text-body, #d8def0)",
+        fontFamily: "ui-sans-serif, system-ui, -apple-system, sans-serif",
       }}
     >
-      <h1>💬 Real-Time Chat</h1>
+      <h1
+        style={{
+          margin: "0 0 1.5rem",
+          fontSize: "clamp(24px, 3vw, 32px)",
+          fontWeight: 600,
+          color: "var(--space-text-heading, #f8fafc)",
+          letterSpacing: "-0.5px",
+        }}
+      >
+        💬 Real-Time Chat
+      </h1>
 
       {/* 1. Connection Status */}
-      <div style={{ marginBottom: "1.5rem" }}>
-        <h3>
+      <div style={cardStyle}>
+        <h3
+          style={{
+            margin: "0 0 0.5rem",
+            fontSize: "1rem",
+            color: "var(--space-text-heading, #f8fafc)",
+          }}
+        >
           Connection Status:{" "}
-          <span style={{ color: isConnected ? "#16a34a" : "#dc2626" }}>
+          <span style={{ color: isConnected ? "#4ade80" : "#f87171" }}>
             {isConnected
               ? "🟢 Connected to /api/ws"
               : "🔴 Disconnected (Log in first)"}
           </span>
         </h3>
-        <p>
-          <a href="/login" style={{ color: "#2563eb", marginRight: "1rem" }}>
+        <p style={{ margin: "0.5rem 0 0", fontSize: "0.875rem" }}>
+          <a
+            href="/login"
+            style={{
+              color: "var(--space-accent-indigo, #818cf8)",
+              marginRight: "1rem",
+              textDecoration: "underline",
+            }}
+          >
             Login
           </a>
-          <a href="/register" style={{ color: "#2563eb" }}>
+          <a
+            href="/register"
+            style={{
+              color: "var(--space-accent-indigo, #818cf8)",
+              textDecoration: "underline",
+            }}
+          >
             Register
           </a>
         </p>
@@ -69,12 +110,13 @@ export default function ChatPage() {
       {errorMessage && (
         <div
           style={{
-            padding: "12px",
-            background: "#fee2e2",
-            border: "1px solid #ef4444",
-            borderRadius: "6px",
-            color: "#b91c1c",
+            padding: "12px 16px",
+            background: "rgba(239, 68, 68, 0.15)",
+            border: "1px solid rgba(239, 68, 68, 0.35)",
+            borderRadius: "10px",
+            color: "#fca5a5",
             marginBottom: "1.5rem",
+            fontSize: "0.9rem",
           }}
         >
           ⚠️ <strong>Notice:</strong> {errorMessage}
@@ -82,20 +124,22 @@ export default function ChatPage() {
       )}
 
       {/* 2. Online Users */}
-      <div
-        style={{
-          marginBottom: "1.5rem",
-          padding: "1rem",
-          border: "1px solid #e5e7eb",
-          borderRadius: "8px",
-        }}
-      >
-        <h3>👥 Online User IDs:</h3>
+      <div style={cardStyle}>
+        <h3
+          style={{
+            margin: "0 0 0.5rem",
+            fontSize: "1rem",
+            color: "var(--space-text-heading, #f8fafc)",
+          }}
+        >
+          👥 Online User IDs:
+        </h3>
         <p
           style={{
-            fontWeight: "bold",
-            fontSize: "1.2rem",
-            color: "#16a34a",
+            margin: "0",
+            fontWeight: 600,
+            fontSize: "1.1rem",
+            color: "#4ade80",
           }}
         >
           {onlineUserIDs.length > 0
@@ -105,17 +149,25 @@ export default function ChatPage() {
       </div>
 
       {/* 3. Send Message */}
-      <div
-        style={{
-          marginBottom: "1.5rem",
-          padding: "1rem",
-          border: "1px solid #e5e7eb",
-          borderRadius: "8px",
-        }}
-      >
-        <h3>✉️ Send Message:</h3>
-        <div style={{ marginBottom: "10px" }}>
-          <label style={{ display: "block", marginBottom: "5px" }}>
+      <div style={cardStyle}>
+        <h3
+          style={{
+            margin: "0 0 0.75rem",
+            fontSize: "1rem",
+            color: "var(--space-text-heading, #f8fafc)",
+          }}
+        >
+          ✉️ Send Message:
+        </h3>
+        <div style={{ marginBottom: "12px" }}>
+          <label
+            style={{
+              display: "block",
+              marginBottom: "6px",
+              fontSize: "0.85rem",
+              color: "var(--space-text-muted, #94a3b8)",
+            }}
+          >
             Recipient User ID:
           </label>
           <input
@@ -123,10 +175,14 @@ export default function ChatPage() {
             value={recipientID}
             onChange={(e) => setRecipientID(e.target.value)}
             style={{
-              padding: "8px",
-              width: "120px",
-              border: "1px solid #ccc",
-              borderRadius: "4px",
+              padding: "8px 12px",
+              width: "140px",
+              background: "rgba(10, 15, 35, 0.75)",
+              border: "1px solid rgba(148, 163, 184, 0.25)",
+              borderRadius: "8px",
+              color: "#f8fafc",
+              fontSize: "0.95rem",
+              outline: "none",
             }}
           />
         </div>
@@ -146,10 +202,14 @@ export default function ChatPage() {
               }
             }}
             style={{
-              padding: "8px 12px",
+              padding: "10px 14px",
               flex: 1,
-              border: "1px solid #ccc",
-              borderRadius: "4px",
+              background: "rgba(10, 15, 35, 0.75)",
+              border: "1px solid rgba(148, 163, 184, 0.25)",
+              borderRadius: "8px",
+              color: "#f8fafc",
+              fontSize: "0.95rem",
+              outline: "none",
             }}
           />
           <button
@@ -158,12 +218,16 @@ export default function ChatPage() {
               handleTyping(false);
             }}
             style={{
-              padding: "8px 20px",
-              background: "#2563eb",
+              padding: "10px 22px",
+              background:
+                "linear-gradient(135deg, var(--space-accent-indigo, #6366f1), var(--space-accent-blue, #3b82f6))",
               color: "white",
               border: "none",
-              borderRadius: "4px",
+              borderRadius: "8px",
               cursor: "pointer",
+              fontWeight: 600,
+              fontSize: "0.9rem",
+              boxShadow: "0 4px 14px rgba(99, 102, 241, 0.35)",
             }}
           >
             Send
@@ -172,22 +236,26 @@ export default function ChatPage() {
       </div>
 
       {/* 4. Live Received Events */}
-      <div
-        style={{
-          padding: "1rem",
-          border: "1px solid #e5e7eb",
-          borderRadius: "8px",
-          background: "#f9fafb",
-        }}
-      >
-        <h3>📥 Latest Message Stream:</h3>
+      <div style={cardStyle}>
+        <h3
+          style={{
+            margin: "0 0 0.75rem",
+            fontSize: "1rem",
+            color: "var(--space-text-heading, #f8fafc)",
+          }}
+        >
+          📥 Latest Message Stream:
+        </h3>
         <pre
           style={{
-            background: "#1e293b",
-            color: "#f8fafc",
+            background: "rgba(8, 12, 28, 0.85)",
+            border: "1px solid rgba(148, 163, 184, 0.12)",
+            color: "#e2e8f0",
             padding: "1rem",
-            borderRadius: "6px",
+            borderRadius: "8px",
             overflowX: "auto",
+            fontSize: "0.85rem",
+            lineHeight: 1.5,
           }}
         >
           {lastMessage
@@ -198,9 +266,10 @@ export default function ChatPage() {
         {typingStatus?.is_typing && (
           <p
             style={{
-              color: "#2563eb",
+              color: "var(--space-accent-indigo, #818cf8)",
               fontStyle: "italic",
               marginTop: "10px",
+              fontSize: "0.875rem",
             }}
           >
             ✍️ User {typingStatus.sender_id} is typing...

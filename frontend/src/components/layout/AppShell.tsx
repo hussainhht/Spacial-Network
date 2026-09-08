@@ -1,4 +1,5 @@
 import UniverseTransitionProvider from "@/features/universe-transition/UniverseTransitionProvider";
+import SpaceBackground from "@/components/space/SpaceBackground";
 import AppSidebar from "./AppSidebar";
 import styles from "./AppShell.module.css";
 
@@ -6,6 +7,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <UniverseTransitionProvider>
       <div className={styles.shell}>
+        <SpaceBackground />
         <a href="#page-content" className={styles.skipLink}>
           Skip to content
         </a>

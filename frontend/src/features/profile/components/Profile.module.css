@@ -18,38 +18,12 @@
     sans-serif;
   line-height: 1.5;
   color-scheme: dark;
-  background: linear-gradient(
-    180deg,
-    var(--space-bg-deep) 0%,
-    var(--space-bg-mid) 45%,
-    var(--space-bg-soft) 85%,
-    var(--space-bg-elevated) 100%
-  );
+  background: transparent;
 }
 
 .profilePage::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -2;
-  pointer-events: none;
-  background:
-    radial-gradient(
-      45% 35% at 20% 15%,
-      rgba(99, 102, 241, 0.2),
-      transparent 70%
-    ),
-    radial-gradient(
-      35% 30% at 85% 25%,
-      rgba(139, 92, 246, 0.16),
-      transparent 70%
-    ),
-    radial-gradient(
-      40% 35% at 50% 80%,
-      rgba(59, 130, 246, 0.12),
-      transparent 70%
-    );
-  filter: blur(60px);
+  content: none;
+  display: none;
 }
 
 .container {

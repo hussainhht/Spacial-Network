@@ -1,12 +1,6 @@
 .page {
   padding: clamp(24px, 4vw, 48px) clamp(16px, 3vw, 44px);
 }
-.page::before {
-  opacity: 0.45;
-}
-.page::after {
-  opacity: 0.4;
-}
 .page :global(.groups-container) {
   width: min(100%, 1400px);
   gap: 28px;

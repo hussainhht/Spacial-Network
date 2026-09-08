@@ -1,13 +1,23 @@
 .lab {
   min-height: 100%;
   padding: clamp(20px, 4vw, 48px);
-  background: var(--space-bg-deep);
+  background: transparent;
   color: var(--space-text-body);
-  font: 14px/1.6 ui-sans-serif, system-ui, sans-serif;
+  font:
+    14px/1.6 ui-sans-serif,
+    system-ui,
+    sans-serif;
   color-scheme: dark;
 }
-.lab h1 { margin: 0; color: var(--space-text-heading); font-size: clamp(24px, 3vw, 32px); }
-.lab header p, .hint { color: var(--space-text-muted); }
+.lab h1 {
+  margin: 0;
+  color: var(--space-text-heading);
+  font-size: clamp(24px, 3vw, 32px);
+}
+.lab header p,
+.hint {
+  color: var(--space-text-muted);
+}
 .preview {
   position: relative;
   height: clamp(320px, 62dvh, 720px);
@@ -17,10 +27,44 @@
   border-radius: var(--space-radius-lg);
   background: #050816;
 }
-.preview canvas { touch-action: none; }
-.message { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; text-align: center; }
-.message button { padding: 10px 16px; border: 1px solid var(--space-border); border-radius: var(--space-radius-sm); background: var(--space-bg-elevated); color: var(--space-text-heading); cursor: pointer; }
-.hint { font-size: 12px; }
-.info { display: flex; flex-wrap: wrap; gap: 20px 48px; padding: 20px; border: 1px solid var(--space-border); border-radius: var(--space-radius-md); background: var(--space-card-bg); }
-.info dt { color: var(--space-text-muted); font-size: 12px; }
-.info dd { margin: 4px 0 0; overflow-wrap: anywhere; }
+.preview canvas {
+  touch-action: none;
+}
+.message {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
+}
+.message button {
+  padding: 10px 16px;
+  border: 1px solid var(--space-border);
+  border-radius: var(--space-radius-sm);
+  background: var(--space-bg-elevated);
+  color: var(--space-text-heading);
+  cursor: pointer;
+}
+.hint {
+  font-size: 12px;
+}
+.info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px 48px;
+  padding: 20px;
+  border: 1px solid var(--space-border);
+  border-radius: var(--space-radius-md);
+  background: var(--space-card-bg);
+}
+.info dt {
+  color: var(--space-text-muted);
+  font-size: 12px;
+}
+.info dd {
+  margin: 4px 0 0;
+  overflow-wrap: anywhere;
+}
