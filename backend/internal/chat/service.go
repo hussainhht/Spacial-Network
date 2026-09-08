@@ -9,6 +9,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"social/internal/followers"
 	"social/internal/notifications"
 	"social/internal/websocket"
 )
@@ -28,17 +29,24 @@ type NotificationSender interface {
 	Notify(notifications.CreateNotificationRequest) error
 }
 
-type Service struct {
-	repo     *Repository
-	hub      *websocket.Hub
-	notifier NotificationSender
+type FollowPermissionChecker interface {
+	CanMessage(userA, userB int) (bool, error)
+	GetEligibleChatContacts(userID int) ([]followers.UserSummary, error)
 }
 
-func NewService(repo *Repository, hub *websocket.Hub, notifier NotificationSender) *Service {
+type Service struct {
+	repo          *Repository
+	hub           *websocket.Hub
+	notifier      NotificationSender
+	followChecker FollowPermissionChecker
+}
+
+func NewService(repo *Repository, hub *websocket.Hub, notifier NotificationSender, followChecker FollowPermissionChecker) *Service {
 	return &Service{
-		repo:     repo,
-		hub:      hub,
-		notifier: notifier,
+		repo:          repo,
+		hub:           hub,
+		notifier:      notifier,
+		followChecker: followChecker,
 	}
 }
 
@@ -105,6 +113,19 @@ func (s *Service) HandlePrivateMessage(senderID int64, rawPayload json.RawMessag
 		}
 		if !exists {
 			s.sendError(senderID, "Recipient does not exist")
+			return
+		}
+	}
+
+	if s.followChecker != nil {
+		canMessage, err := s.followChecker.CanMessage(int(senderID), int(req.RecipientID))
+		if err != nil {
+			log.Printf("failed to check follow relationship between %d and %d: %v", senderID, req.RecipientID, err)
+			s.sendError(senderID, "Internal server error")
+			return
+		}
+		if !canMessage {
+			s.sendError(senderID, "You can only message users you follow or who follow you")
 			return
 		}
 	}
@@ -229,6 +250,13 @@ func (s *Service) GetHistory(userA, userB int64, limit, offset int) ([]PrivateMe
 
 func (s *Service) GetRecentConversations(userID int64) ([]ConversationSummary, error) {
 	return s.repo.GetRecentConversations(userID)
+}
+
+func (s *Service) GetEligibleContacts(userID int64) ([]followers.UserSummary, error) {
+	if s.followChecker == nil {
+		return []followers.UserSummary{}, nil
+	}
+	return s.followChecker.GetEligibleChatContacts(int(userID))
 }
 
 func (s *Service) sendError(userID int64, message string) {

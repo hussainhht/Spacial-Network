@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"social/internal/followers"
 	"social/internal/requestctx"
 )
 
@@ -95,4 +96,35 @@ func (h *Handler) GetConversationsHandler(w http.ResponseWriter, r *http.Request
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(conversations)
+}
+
+func (h *Handler) GetEligibleContactsHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Method not allowed"})
+		return
+	}
+
+	userID, ok := requestctx.UserID(r.Context())
+	if !ok || userID <= 0 {
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Unauthorized"})
+		return
+	}
+
+	contacts, err := h.service.GetEligibleContacts(int64(userID))
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to load contacts"})
+		return
+	}
+
+	if contacts == nil {
+		contacts = []followers.UserSummary{}
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(contacts)
 }

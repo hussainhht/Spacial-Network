@@ -43,6 +43,7 @@ func NewRouter(db *sql.DB, cfg config.Config) (http.Handler, error) {
 	apiMux.Handle("GET /ws", sessionMiddleware(http.HandlerFunc(deps.Handlers.Websocket.ServeWS)))
 	apiMux.Handle("GET /chat/history", sessionMiddleware(http.HandlerFunc(deps.Handlers.Chat.GetHistoryHandler)))
 	apiMux.Handle("GET /chat/conversations", sessionMiddleware(http.HandlerFunc(deps.Handlers.Chat.GetConversationsHandler)))
+	apiMux.Handle("GET /chat/eligible-contacts", sessionMiddleware(http.HandlerFunc(deps.Handlers.Chat.GetEligibleContactsHandler)))
 
 	apiMux.Handle(
 		"/users/me",

@@ -64,22 +64,30 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 	notificationsHandler := notifications.NewHandler(notificationsService)
 
 	// =========================
-	// Chat
-	// =========================
-
-	chatRepo := chat.NewRepository(db)
-	chatService := chat.NewService(chatRepo, hub, notificationsService)
-	chatHandler := chat.NewHandler(chatService)
-	// Message routing is finished further down, once every feature that
-	// handles inbound WebSocket events (chat, groups) has been constructed.
-
-	// =========================
 	// Users
 	// =========================
 
 	usersRepo := users.NewRepository(db)
 	usersService := users.NewService(usersRepo)
 	usersHandler := users.NewHandler(usersService)
+
+	// =========================
+	// Followers
+	// =========================
+
+	followersRepo := followers.NewRepository(db)
+	followersService := followers.NewService(followersRepo)
+	followersHandler := followers.NewHandler(followersService, usersService)
+
+	// =========================
+	// Chat
+	// =========================
+
+	chatRepo := chat.NewRepository(db)
+	chatService := chat.NewService(chatRepo, hub, notificationsService, followersService)
+	chatHandler := chat.NewHandler(chatService)
+	// Message routing is finished further down, once every feature that
+	// handles inbound WebSocket events (chat, groups) has been constructed.
 
 	// =========================
 	// Uploads
@@ -141,14 +149,6 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 	commentsRepo := comments.NewRepository(db)
 	commentsService := comments.NewService(commentsRepo, postsService)
 	commentsHandler := comments.NewHandler(commentsService, commentMediaStorage)
-
-	// =========================
-	// Followers
-	// =========================
-
-	followersRepo := followers.NewRepository(db)
-	followersService := followers.NewService(followersRepo)
-	followersHandler := followers.NewHandler(followersService, usersService)
 
 	// =========================
 	// Groups
