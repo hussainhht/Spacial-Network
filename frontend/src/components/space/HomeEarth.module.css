@@ -2,9 +2,9 @@
   position: absolute;
   right: 0;
   bottom: 0;
-  width: clamp(700px, 88vh, 1150px);
+  width: clamp(900px, 125vh, 1600px);
   aspect-ratio: 1 / 1;
-  transform: translate(34%, 24%);
+  transform: translate(38%, 30%);
   pointer-events: none;
 }
 
@@ -21,21 +21,21 @@
 
 @media (max-width: 1024px) {
   .stage {
-    width: clamp(580px, 82vh, 850px);
-    transform: translate(32%, 22%);
+    width: clamp(750px, 110vh, 1100px);
+    transform: translate(36%, 28%);
   }
 }
 
 @media (max-width: 760px) {
   .stage {
-    width: clamp(460px, 75vh, 650px);
-    transform: translate(30%, 20%);
+    width: clamp(580px, 95vh, 850px);
+    transform: translate(34%, 26%);
   }
 }
 
 @media (max-width: 480px) {
   .stage {
-    width: clamp(340px, 70vh, 480px);
-    transform: translate(28%, 18%);
+    width: clamp(440px, 85vh, 600px);
+    transform: translate(32%, 24%);
   }
 }
