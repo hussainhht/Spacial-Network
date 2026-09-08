@@ -93,6 +93,45 @@ func (r *Repository) GetFollowing(userID int) ([]UserSummary, error) {
 	return scanUserSummaries(rows)
 }
 
+func (r *Repository) HasFollowRelationship(userA, userB int) (bool, error) {
+	var exists int
+
+	err := r.db.QueryRow(`
+		SELECT 1
+		FROM followers
+		WHERE (follower_id = ? AND followed_id = ?)
+		   OR (follower_id = ? AND followed_id = ?)
+		LIMIT 1
+	`, userA, userB, userB, userA).Scan(&exists)
+	if err == sql.ErrNoRows {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
+}
+
+func (r *Repository) GetEligibleChatContacts(userID int) ([]UserSummary, error) {
+	rows, err := r.db.Query(`
+		SELECT DISTINCT u.id, u.username, u.first_name, u.last_name, COALESCE(u.profile_photo, '')
+		FROM users u
+		WHERE u.id != ? AND (
+			u.id IN (SELECT followed_id FROM followers WHERE follower_id = ?)
+			OR
+			u.id IN (SELECT follower_id FROM followers WHERE followed_id = ?)
+		)
+		ORDER BY u.first_name ASC, u.last_name ASC
+	`, userID, userID, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	return scanUserSummaries(rows)
+}
+
 func scanUserSummaries(rows *sql.Rows) ([]UserSummary, error) {
 	users := []UserSummary{}
 
