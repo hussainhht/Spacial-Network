@@ -54,6 +54,14 @@ func (s *Service) GetPendingFollowRequests(targetID int) ([]FollowRequestWithReq
 	return s.repo.GetPendingFollowRequests(targetID)
 }
 
+func (s *Service) AcceptFollowRequest(requestID, targetID int) error {
+	return s.repo.AcceptFollowRequest(requestID, targetID)
+}
+
+func (s *Service) DeclineFollowRequest(requestID, targetID int) error {
+	return s.repo.DeclineFollowRequest(requestID, targetID)
+}
+
 func (s *Service) GetFollowers(userID int) ([]UserSummary, error) {
 	return s.repo.GetFollowers(userID)
 }
