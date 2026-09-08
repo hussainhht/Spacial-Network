@@ -121,12 +121,12 @@ Authentication, Docker, and final project-wide integration are not included in t
 
 ### Database
 
-- [ ] Create `follow_requests` table migration
-- [ ] Store requester user ID
-- [ ] Store target user ID
-- [ ] Store request status if needed
-- [ ] Prevent duplicate active requests
-- [ ] Create matching `.down.sql` migration
+- [X] Create `follow_requests` table migration
+- [X] Store requester user ID
+- [X] Store target user ID
+- [X] Store request status if needed
+- [X] Prevent duplicate active requests
+- [X] Create matching `.down.sql` migration
 
 ### Backend
 
