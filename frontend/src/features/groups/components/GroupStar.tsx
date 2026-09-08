@@ -8,10 +8,14 @@ import styles from "./GroupGalaxy.module.css";
 export default function GroupStar({
   position: { group, ring, angle },
   selected,
+  dimmed = false,
+  matching = true,
   onSelect,
 }: {
   position: OrbitPosition;
   selected: boolean;
+  dimmed?: boolean;
+  matching?: boolean;
   onSelect: () => void;
 }) {
   return (
@@ -24,6 +28,8 @@ export default function GroupStar({
         } as CSSProperties
       }
       data-selected={selected}
+      data-dimmed={dimmed}
+      data-matching={matching}
     >
       <div className={styles.anchor}>
         <div className={styles.angleCorrection}>
@@ -40,7 +46,7 @@ export default function GroupStar({
               onClick={onSelect}
             >
               <span className={styles.planet}>
-                <GroupAvatar group={group} size={48} />
+                <GroupAvatar group={group} size={56} />
               </span>
               <span className={styles.starName}>{group.title}</span>
               <span className={styles.tooltip} id={`group-status-${group.id}`}>

@@ -1,4 +1,7 @@
+"use client";
+
 import { memo } from "react";
+import { usePathname } from "next/navigation";
 import { STAR_FIELD, type StarPoint } from "./starData";
 import styles from "./SpaceBackground.module.css";
 
@@ -58,6 +61,8 @@ function renderBrightStar(star: StarPoint) {
 }
 
 function SpaceBackground() {
+  const pathname = usePathname();
+  const isGroups = pathname === "/groups";
   const { distantStars, mediumStars, brightStars } = STAR_FIELD;
 
   // Group distant stars
@@ -79,6 +84,7 @@ function SpaceBackground() {
   return (
     <div
       data-universe-background
+      data-scene={isGroups ? "groups" : undefined}
       className={styles.spaceContainer}
       aria-hidden="true"
     >

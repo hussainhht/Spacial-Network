@@ -357,3 +357,55 @@
     transform: none !important;
   }
 }
+
+/* ==========================================================================
+   Groups Galaxy Scene Refinement
+   Reduces decorative star density by 40-50%, eliminates harsh spikes and halos,
+   and creates a deep, quiet background so group stars stand out as heroes.
+   ========================================================================== */
+
+.spaceContainer[data-scene="groups"] {
+  background-color: #030514;
+}
+
+/* Faint, atmospheric cosmic haze */
+.spaceContainer[data-scene="groups"] .dustCloud1 {
+  opacity: 0.6;
+}
+.spaceContainer[data-scene="groups"] .dustCloud2 {
+  opacity: 0.5;
+}
+.spaceContainer[data-scene="groups"] .dustCloud3,
+.spaceContainer[data-scene="groups"] .dustCloud4 {
+  opacity: 0.35;
+}
+
+/* Drop decorative star density by ~45% */
+.spaceContainer[data-scene="groups"] .twinkleFarB,
+.spaceContainer[data-scene="groups"] .twinkleFarC,
+.spaceContainer[data-scene="groups"] .twinkleMidB,
+.spaceContainer[data-scene="groups"] .twinkleMidD {
+  display: none;
+}
+
+/* Subdue remaining distant and medium stars to tiny, low-opacity particles */
+.spaceContainer[data-scene="groups"] .layerDistant {
+  opacity: 0.45;
+}
+.spaceContainer[data-scene="groups"] .layerMedium {
+  opacity: 0.38;
+}
+
+/* Remove pulsing bright stars, diffraction spikes, and excessive blurred glow */
+.spaceContainer[data-scene="groups"] .pulseBright {
+  display: none;
+}
+.spaceContainer[data-scene="groups"] .starburstLine {
+  display: none;
+}
+.spaceContainer[data-scene="groups"] .starGlowHalo {
+  display: none;
+}
+.spaceContainer[data-scene="groups"] .layerBright {
+  opacity: 0.25;
+}

@@ -24,12 +24,14 @@ export default function GroupGalaxy({
   state,
   scope,
   search,
+  rawSearch = "",
   mine,
   onBrowseAll,
 }: {
   state: GalaxyQueryState;
   scope: string;
   search: string;
+  rawSearch?: string;
   mine: boolean;
   onBrowseAll: () => void;
 }) {
@@ -59,6 +61,32 @@ export default function GroupGalaxy({
   ) {
     setSelection(null);
   }
+
+  // Smoothly shift the galaxy scene left when a group star is selected, and return to center on close
+  useLayoutEffect(() => {
+    const media = gsap.matchMedia();
+    media.add(
+      "(min-width: 1000px) and (prefers-reduced-motion: no-preference)",
+      () => {
+        const root = rootRef.current;
+        if (!root) return;
+        if (selected) {
+          gsap.to(root, {
+            xPercent: -6,
+            duration: 0.45,
+            ease: "power2.out",
+          });
+        } else {
+          gsap.to(root, {
+            xPercent: 0,
+            duration: 0.4,
+            ease: "power2.out",
+          });
+        }
+      },
+    );
+    return () => media.revert();
+  }, [Boolean(selected)]);
 
   useLayoutEffect(() => {
     const media = gsap.matchMedia();
@@ -99,7 +127,7 @@ export default function GroupGalaxy({
         const sync = () => {
           timeline.paused(
             universePaused.current ||
-            pausedRef.current ||
+              pausedRef.current ||
               document.hidden ||
               root.matches(":hover") ||
               root.contains(document.activeElement),
@@ -131,13 +159,19 @@ export default function GroupGalaxy({
   }, [paused]);
 
   useLayoutEffect(() => {
-    const root = rootRef.current?.closest<HTMLElement>('[data-universe-scene]');
+    const root = rootRef.current?.closest<HTMLElement>("[data-universe-scene]");
     if (!root) return;
     root.dataset.universeReady = String(!state.loading);
-    return register('/groups', {
+    return register("/groups", {
       root,
-      pause: () => { universePaused.current = true; syncMotionRef.current?.(); },
-      resume: () => { universePaused.current = false; syncMotionRef.current?.(); },
+      pause: () => {
+        universePaused.current = true;
+        syncMotionRef.current?.();
+      },
+      resume: () => {
+        universePaused.current = false;
+        syncMotionRef.current?.();
+      },
     });
   }, [register, state.loading, layoutKey]);
 
@@ -149,7 +183,9 @@ export default function GroupGalaxy({
     setSelection(null);
   }
 
+  const query = (rawSearch || search).trim().toLowerCase();
   const empty = !state.loading && !state.error && groups.length === 0;
+
   return (
     <div
       className={styles.galaxy}
@@ -160,22 +196,39 @@ export default function GroupGalaxy({
         }
       }}
     >
-      <div data-universe-ui className={styles.sceneHeader}>
-        <div>
-          <p className="group-eyebrow">Your community galaxy</p>
-          <p className={styles.hint}>
-            A shared interest. A new connection. Select a star to explore.
-          </p>
-        </div>
-        <button
-          type="button"
-          className={`${styles.motionButton} group-button secondary`}
-          aria-pressed={paused}
-          onClick={() => setPaused(!paused)}
-        >
-          {paused ? "Resume orbits" : "Pause orbits"}
-        </button>
-      </div>
+      {/* Compact galaxy control cluster (Pause / Resume orbits) */}
+      <button
+        type="button"
+        className={styles.galaxyControlBtn}
+        aria-label={paused ? "Resume orbits" : "Pause orbits"}
+        aria-pressed={paused}
+        title={paused ? "Resume orbits" : "Pause orbits"}
+        onClick={() => setPaused(!paused)}
+      >
+        {paused ? (
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            aria-hidden="true"
+          >
+            <polygon points="6 4 20 12 6 20 6 4" />
+          </svg>
+        ) : (
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            aria-hidden="true"
+          >
+            <rect x="6" y="4" width="4" height="16" rx="1" />
+            <rect x="14" y="4" width="4" height="16" rx="1" />
+          </svg>
+        )}
+      </button>
+
       {state.error && (
         <GroupLoadError error={state.error} retry={state.refresh} />
       )}
@@ -197,7 +250,11 @@ export default function GroupGalaxy({
             ))}
           </div>
           <div data-universe-you className={styles.currentUser}>
-            <span data-universe-core className={styles.userCore} aria-hidden="true">
+            <span
+              data-universe-core
+              className={styles.userCore}
+              aria-hidden="true"
+            >
               ✦
             </span>
             <strong>You</strong>
@@ -213,16 +270,27 @@ export default function GroupGalaxy({
               >
                 {layout
                   .filter((position) => position.ring === ring)
-                  .map((position) => (
-                    <GroupStar
-                      key={position.group.id}
-                      position={position}
-                      selected={selected?.id === position.group.id}
-                      onSelect={() =>
-                        setSelection({ id: position.group.id, scope })
-                      }
-                    />
-                  ))}
+                  .map((position) => {
+                    const isMatching =
+                      !query ||
+                      position.group.title.toLowerCase().includes(query) ||
+                      position.group.description.toLowerCase().includes(query);
+                    const isSelected = selected?.id === position.group.id;
+                    const isDimmed = Boolean(selected && !isSelected);
+
+                    return (
+                      <GroupStar
+                        key={position.group.id}
+                        position={position}
+                        selected={isSelected}
+                        dimmed={isDimmed}
+                        matching={isMatching}
+                        onSelect={() =>
+                          setSelection({ id: position.group.id, scope })
+                        }
+                      />
+                    );
+                  })}
               </ul>
             ))}
           </div>
@@ -274,28 +342,22 @@ export default function GroupGalaxy({
             </div>
           )}
         </div>
-        <div data-universe-ui className={styles.previewSlot}>
-          {selected ? (
+        {selected && (
+          <div data-universe-ui className={styles.previewSlot}>
             <GroupPreviewPanel group={selected} onClose={closePreview} />
-          ) : (
-            <div className={styles.previewHint}>
-              <span aria-hidden="true">✧</span>
-              <h2>Find your next connection</h2>
-              <p>Select a group to get a little closer.</p>
-              <p>
-                Use Tab to explore, Enter to select, and Escape to close a
-                preview.
-              </p>
-            </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
       <p className={styles.announcement} role="status">
         {selected
           ? `${selected.title} preview open. View Group follows the stars in the tab order.`
           : ""}
       </p>
-      <div data-universe-ui className={styles.legend} aria-label="Group relationships">
+      <div
+        data-universe-ui
+        className={styles.legend}
+        aria-label="Group relationships"
+      >
         <span data-role="creator">Creator</span>
         <span data-role="member">Member</span>
         <span data-role="invited">Invited</span>

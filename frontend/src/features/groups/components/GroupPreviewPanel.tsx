@@ -16,24 +16,48 @@ export default function GroupPreviewPanel({
   onClose: () => void;
 }) {
   const panelRef = useRef<HTMLElement>(null);
+  const closingRef = useRef(false);
 
   useEffect(() => {
+    closingRef.current = false;
     const media = gsap.matchMedia();
     media.add("(prefers-reduced-motion: no-preference)", () => {
+      if (!panelRef.current) return;
       gsap.fromTo(
         panelRef.current,
-        { opacity: 0, y: 10, scale: 0.98 },
+        { opacity: 0, x: 24, scale: 0.98 },
         {
           opacity: 1,
-          y: 0,
+          x: 0,
           scale: 1,
-          duration: 0.25,
+          duration: 0.4,
           ease: "power2.out",
         },
       );
     });
     return () => media.revert();
   }, [group.id]);
+
+  function handleClose() {
+    if (closingRef.current) return;
+    closingRef.current = true;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      onClose();
+      return;
+    }
+    if (!panelRef.current) {
+      onClose();
+      return;
+    }
+    gsap.to(panelRef.current, {
+      opacity: 0,
+      x: 20,
+      scale: 0.98,
+      duration: 0.28,
+      ease: "power2.in",
+      onComplete: onClose,
+    });
+  }
 
   return (
     <aside
@@ -48,7 +72,7 @@ export default function GroupPreviewPanel({
           type="button"
           className={styles.close}
           aria-label="Close group preview"
-          onClick={onClose}
+          onClick={handleClose}
         >
           ×
         </button>

@@ -33,6 +33,7 @@ export default function GroupsPageContent() {
   }
   const collectionProps = {
     search: debouncedSearch,
+    rawSearch: search,
     page,
     onBrowseAll: () => changeTab("all"),
     onPageChange: (page: number) =>
@@ -40,30 +41,38 @@ export default function GroupsPageContent() {
   };
 
   return (
-    <main data-universe-scene="groups" className={`groups-page space-shell ${styles.page}`}>
+    <main
+      data-universe-scene="groups"
+      className={`groups-page space-shell ${styles.page}`}
+    >
       <div className="groups-container">
-        <header data-universe-ui className="groups-page-header">
-          <div>
-            <p className="group-eyebrow">Find your people</p>
-            <h1>Groups</h1>
-            <p className="group-muted">
-              Discover communities. Share an interest. Make a connection.
-            </p>
+        <header data-universe-ui className={styles.header}>
+          <div className={styles.headerTop}>
+            <div className={styles.headerTitleGroup}>
+              <p className="group-eyebrow">Find your people</p>
+              <h1>Groups</h1>
+              <p className="group-muted">
+                Discover communities. Share an interest. Make a connection.
+              </p>
+            </div>
+            <div className={styles.headerControls}>
+              <GroupSearchInput value={search} onChange={setSearch} />
+              <Link href="/groups/create" className="group-button">
+                + Create Group
+              </Link>
+            </div>
           </div>
-          <Link href="/groups/create" className="group-button">
-            + Create Group
-          </Link>
+          <div className={styles.headerTabs}>
+            <GroupsFilterTabs activeTab={activeTab} onTabChange={changeTab} />
+          </div>
         </header>
         <InvitationsPanel />
-        <div data-universe-ui className={styles.toolbar}>
-          <GroupsFilterTabs activeTab={activeTab} onTabChange={changeTab} />
-          <GroupSearchInput value={search} onChange={setSearch} />
-        </div>
         <section
           id={`groups-tabpanel-${activeTab}`}
           role="tabpanel"
           aria-labelledby={`groups-tab-${activeTab}`}
           tabIndex={0}
+          className={styles.tabPanel}
         >
           {activeTab === "mine" ? (
             <MyGroupsSection {...collectionProps} />
@@ -78,6 +87,7 @@ export default function GroupsPageContent() {
 
 type CollectionProps = {
   search: string;
+  rawSearch: string;
   page: number;
   onBrowseAll: () => void;
   onPageChange: (page: number) => void;
@@ -99,6 +109,7 @@ function GroupCollection({
   state,
   mine,
   search,
+  rawSearch,
   page,
   onBrowseAll,
   onPageChange,
@@ -109,6 +120,7 @@ function GroupCollection({
         state={state}
         mine={mine}
         search={search}
+        rawSearch={rawSearch}
         onBrowseAll={onBrowseAll}
         scope={`${mine}:${page}`}
       />
