@@ -19,6 +19,7 @@ const paths = {
   send: "m22 2-11 11 M22 2-7 20-4-9-9-4 20-7z",
   x: "M18 6 6 18 M6 6l12 12",
   dots: "M5 12h.01 M12 12h.01 M19 12h.01",
+  chevronDown: "m6 9 6 6 6-6",
 } satisfies Record<string, string>;
 
 export type AppIconName = keyof typeof paths;

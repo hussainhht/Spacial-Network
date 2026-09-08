@@ -1,8 +1,13 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Flip } from "gsap/Flip";
@@ -57,7 +62,10 @@ export default function HomeOrbitalFeed() {
     const scroller = scrollerRef.current;
     if (!scroller) return;
     const observer = new ResizeObserver(() => {
-      scroller.style.setProperty("--focus-height", `${scroller.clientHeight}px`);
+      scroller.style.setProperty(
+        "--focus-height",
+        `${scroller.clientHeight}px`,
+      );
     });
     observer.observe(scroller);
     return () => observer.disconnect();
@@ -303,21 +311,34 @@ export default function HomeOrbitalFeed() {
   const focusPost = useCallback((id: number, view: PostView) => {
     const surface = surfaceRefs.current.get(id);
     const target = surface?.querySelector<HTMLElement>(
-      view === "comments" ? "[data-post-comments]" : view === "edit" ? "[data-edit-post] input" : "[data-close-post]",
+      view === "comments"
+        ? "[data-post-comments]"
+        : view === "edit"
+          ? "[data-edit-post] input"
+          : "[data-close-post]",
     );
     target?.focus({ preventScroll: true });
     const scroll = surface?.querySelector<HTMLElement>("[data-post-scroll]");
     if (scroll && target) {
-      scroll.scrollTop = view === "post" ? 0 : scroll.scrollTop + target.getBoundingClientRect().top - scroll.getBoundingClientRect().top;
+      scroll.scrollTop =
+        view === "post"
+          ? 0
+          : scroll.scrollTop +
+            target.getBoundingClientRect().top -
+            scroll.getBoundingClientRect().top;
     }
   }, []);
 
-  const scheduleFocus = useCallback((id: number, view: PostView) => {
-    cancelAnimationFrame(focusFrameRef.current);
-    focusFrameRef.current = requestAnimationFrame(() => {
-      if (selectionRef.current?.id === id && selectionRef.current.expanded) focusPost(id, view);
-    });
-  }, [focusPost]);
+  const scheduleFocus = useCallback(
+    (id: number, view: PostView) => {
+      cancelAnimationFrame(focusFrameRef.current);
+      focusFrameRef.current = requestAnimationFrame(() => {
+        if (selectionRef.current?.id === id && selectionRef.current.expanded)
+          focusPost(id, view);
+      });
+    },
+    [focusPost],
+  );
 
   function openPost(id: number, view: PostView) {
     if (transitioningRef.current) return;
@@ -335,11 +356,21 @@ export default function HomeOrbitalFeed() {
     orbitControlRef.current.pause();
     frozenRef.current = true;
     savedScrollRef.current = scroller.scrollTop;
-    returnFocusRef.current = document.activeElement instanceof HTMLElement && surface.contains(document.activeElement)
-      ? document.activeElement : surface.querySelector("button");
-    const offset = Math.max(0, scroller.getBoundingClientRect().top - (sceneRef.current?.getBoundingClientRect().top ?? 0));
+    returnFocusRef.current =
+      document.activeElement instanceof HTMLElement &&
+      surface.contains(document.activeElement)
+        ? document.activeElement
+        : surface.querySelector("button");
+    const offset = Math.max(
+      0,
+      scroller.getBoundingClientRect().top -
+        (sceneRef.current?.getBoundingClientRect().top ?? 0),
+    );
     scroller.style.setProperty("--focus-offset", `${offset}px`);
-    scroller.style.setProperty("--selected-orbit-height", `${surface.offsetHeight}px`);
+    scroller.style.setProperty(
+      "--selected-orbit-height",
+      `${surface.offsetHeight}px`,
+    );
     flipStateRef.current = Flip.getState(surface);
     const next = { id, expanded: true, view };
     selectionRef.current = next;
@@ -364,12 +395,14 @@ export default function HomeOrbitalFeed() {
   useLayoutEffect(() => {
     if (!selection) {
       if (frozenRef.current) {
-        if (scrollerRef.current) scrollerRef.current.scrollTop = savedScrollRef.current;
+        if (scrollerRef.current)
+          scrollerRef.current.scrollTop = savedScrollRef.current;
         orbitControlRef.current.resume();
         frozenRef.current = false;
         scrollerRef.current?.style.removeProperty("--focus-offset");
         const target = returnFocusRef.current;
-        if (target?.isConnected && !target.closest("[inert]")) target.focus({ preventScroll: true });
+        if (target?.isConnected && !target.closest("[inert]"))
+          target.focus({ preventScroll: true });
         else scrollerRef.current?.focus({ preventScroll: true });
       }
       return;
@@ -381,11 +414,17 @@ export default function HomeOrbitalFeed() {
     const surface = surfaceRefs.current.get(selection.id);
     // Reset the panel's single scroll container before restoring orbital sizing.
     if (!selection.expanded) {
-      surface?.querySelectorAll<HTMLElement>("div, article").forEach((element) => { element.scrollTop = 0; });
+      surface
+        ?.querySelectorAll<HTMLElement>("div, article")
+        .forEach((element) => {
+          element.scrollTop = 0;
+        });
     }
     flipContextRef.current = gsap.context(() => {
       Flip.from(state, {
-        duration: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 0.65,
+        duration: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? 0
+          : 0.65,
         ease: "power3.inOut",
         scale: true,
         onComplete: () => {
@@ -406,9 +445,15 @@ export default function HomeOrbitalFeed() {
   useEffect(() => {
     if (!selection) return;
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key !== "Escape" || event.defaultPrevented || event.isComposing) return;
+      if (event.key !== "Escape" || event.defaultPrevented || event.isComposing)
+        return;
       const target = event.target as HTMLElement;
-      if (target.closest("input, textarea, select, [contenteditable=true], [role=dialog], [role=menu]")) return;
+      if (
+        target.closest(
+          "input, textarea, select, [contenteditable=true], [role=dialog], [role=menu]",
+        )
+      )
+        return;
       if (!sceneRef.current?.contains(target)) return;
       event.preventDefault();
       closePost();
@@ -417,10 +462,13 @@ export default function HomeOrbitalFeed() {
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [selection, closePost]);
 
-  useEffect(() => () => {
-    cancelAnimationFrame(focusFrameRef.current);
-    flipContextRef.current?.revert();
-  }, []);
+  useEffect(
+    () => () => {
+      cancelAnimationFrame(focusFrameRef.current);
+      flipContextRef.current?.revert();
+    },
+    [],
+  );
 
   function handleDeleted(id: number) {
     if (selectionRef.current?.id === id) {
@@ -447,7 +495,11 @@ export default function HomeOrbitalFeed() {
       className={styles.scroller}
       data-focused={selection !== null}
       onScroll={(event) => {
-        if (event.target === event.currentTarget && frozenRef.current && event.currentTarget.scrollTop !== savedScrollRef.current) {
+        if (
+          event.target === event.currentTarget &&
+          frozenRef.current &&
+          event.currentTarget.scrollTop !== savedScrollRef.current
+        ) {
           event.currentTarget.scrollTop = savedScrollRef.current;
         }
       }}
@@ -461,15 +513,6 @@ export default function HomeOrbitalFeed() {
           <div className={styles.earthLayer}>
             <HomeEarth ref={earthRef} />
           </div>
-          <header className={styles.heading} inert={selection !== null}>
-            <div>
-              <p>Your orbit</p>
-              <h1>Home</h1>
-            </div>
-            <Link href="/posts/new" className={styles.newPost}>
-              New post
-            </Link>
-          </header>
 
           {loading && (
             <p className={styles.status} role="status">
@@ -505,14 +548,24 @@ export default function HomeOrbitalFeed() {
               post={post}
               onDeleted={handleDeleted}
               onUpdated={(updated) => {
-                setPosts((current) => current.map((item) => item.id === updated.id ? updated : item));
-                if (selectionRef.current?.id === updated.id && selectionRef.current.expanded) {
+                setPosts((current) =>
+                  current.map((item) =>
+                    item.id === updated.id ? updated : item,
+                  ),
+                );
+                if (
+                  selectionRef.current?.id === updated.id &&
+                  selectionRef.current.expanded
+                ) {
                   openPost(updated.id, "post");
                 }
               }}
               selected={selection?.id === post.id}
               expanded={selection?.id === post.id && selection.expanded}
-              inactive={selection !== null && (selection.id !== post.id || transitioning)}
+              inactive={
+                selection !== null &&
+                (selection.id !== post.id || transitioning)
+              }
               view={selection?.id === post.id ? selection.view : "post"}
               onOpen={(view) => openPost(post.id, view)}
               onClose={closePost}
@@ -528,7 +581,11 @@ export default function HomeOrbitalFeed() {
           ))}
 
           {posts.length > 0 && (
-            <nav className={styles.controls} aria-label="Browse orbital posts" inert={selection !== null}>
+            <nav
+              className={styles.controls}
+              aria-label="Browse orbital posts"
+              inert={selection !== null}
+            >
               <button
                 ref={previousRef}
                 type="button"
