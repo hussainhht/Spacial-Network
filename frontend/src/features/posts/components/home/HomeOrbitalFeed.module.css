@@ -1,0 +1,201 @@
+.scroller {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  isolation: isolate;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(167, 139, 250, 0.35) transparent;
+}
+
+.track {
+  height: 100%;
+  min-height: 100%;
+}
+
+.scene {
+  display: flow-root;
+  position: sticky;
+  top: 0;
+  height: var(--scene-height, 100%);
+  isolation: isolate;
+  overflow: clip;
+}
+
+.earthLayer {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.heading {
+  position: absolute;
+  inset: 24px 32px auto;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  pointer-events: none;
+}
+
+.heading p {
+  margin: 0;
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--space-text-muted);
+}
+
+.heading h1 {
+  margin: 2px 0 0;
+  font-size: 26px;
+  font-weight: 550;
+  color: var(--space-text-heading);
+}
+
+.newPost {
+  pointer-events: auto;
+  padding: 8px 14px;
+  border: 1px solid rgba(167, 139, 250, 0.3);
+  border-radius: 9px;
+  background: rgba(35, 24, 62, 0.9);
+  color: var(--space-text-heading);
+  text-decoration: none;
+  font-size: 12px;
+}
+
+.post {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: min(360px, calc(100% - 32px));
+  visibility: hidden;
+  transform-origin: center;
+}
+
+.post :global(.post-card) {
+  max-height: min(410px, calc(var(--scene-height, 100dvh) * 0.5), max(120px, calc(var(--scene-height, 100dvh) * 0.8 - 192px)));
+  overflow-y: auto;
+  overflow-wrap: anywhere;
+  padding: 20px;
+  border-color: rgba(167, 139, 250, 0.25);
+  border-radius: 16px;
+  background: rgba(13, 18, 39, 0.94);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.25);
+  scrollbar-width: thin;
+}
+
+.post[data-active="true"] :global(.post-card) {
+  border-color: rgba(183, 161, 255, 0.55);
+}
+
+.post :global(.post-card-header) {
+  align-items: flex-start;
+}
+
+.post :global(.post-card-header) h2 {
+  font-size: 17px;
+  line-height: 1.4;
+}
+
+.post :global(.post-card-content) {
+  font-size: 13px;
+  line-height: 1.75;
+}
+
+.post :global(.post-card-image) {
+  flex-shrink: 0;
+  max-height: 180px;
+  object-fit: contain;
+}
+
+.post :global(.post-card-footer) {
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--space-border);
+  font-size: 11px;
+}
+
+.controls {
+  position: absolute;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 8px 14px;
+  border: 1px solid var(--space-border);
+  border-radius: 999px;
+  background: rgba(9, 13, 30, 0.92);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.controls span {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--space-text-heading);
+}
+
+.controls p {
+  margin: 0;
+  font-size: 10px;
+  color: var(--space-text-muted);
+}
+
+.controls button,
+.status button {
+  min-width: 36px;
+  min-height: 36px;
+  border: 1px solid var(--space-border);
+  border-radius: 50%;
+  background: rgba(139, 92, 246, 0.12);
+  color: var(--space-text-heading);
+  cursor: pointer;
+}
+
+.controls button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.status {
+  position: relative;
+  z-index: 40;
+  width: min(360px, calc(100% - 48px));
+  margin: 140px 24px 0;
+  padding: 24px;
+  border: 1px solid var(--space-border);
+  border-radius: 16px;
+  background: rgba(13, 18, 39, 0.94);
+  color: var(--space-text-body);
+}
+
+.status p { margin: 0 0 12px; }
+.status button { border-radius: 8px; padding: 6px 12px; }
+.status[role="alert"] { color: var(--space-error-text); }
+
+@media (max-width: 760px) {
+  .heading { inset: 18px 16px auto; }
+  .heading h1 { font-size: 22px; }
+  .newPost { padding: 7px 10px; }
+  .post :global(.post-card) { padding: 16px; }
+  .post :global(.post-card-header) { flex-wrap: wrap; }
+  .controls { gap: 10px; bottom: 12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .track { height: auto; }
+  .scene { position: relative; height: auto; min-height: 100%; padding: 112px 16px 32px; }
+  .post { position: relative; z-index: 30; width: min(100%, 440px); margin: 0 auto 20px; visibility: visible; }
+  .post :global(.post-card) { max-height: none; }
+  .controls { display: none; }
+  .status { margin-top: 24px; }
+}

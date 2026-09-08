@@ -1,5 +1,5 @@
 import AppHeader from "@/components/layout/AppHeader";
-import HomeEarth from "@/components/space/HomeEarth";
+import HomeOrbitalFeed from "@/features/posts/components/home/HomeOrbitalFeed";
 import styles from "@/components/layout/AppShell.module.css";
 
 export default function Home() {
@@ -7,7 +7,7 @@ export default function Home() {
     <div className={styles.home}>
       <AppHeader />
       <main className={styles.homeContent} aria-label="Home page">
-        <HomeEarth />
+        <HomeOrbitalFeed />
       </main>
     </div>
   );

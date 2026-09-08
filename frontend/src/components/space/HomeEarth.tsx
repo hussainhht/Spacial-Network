@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Component, type ReactNode } from "react";
+import { Component, type ReactNode, type Ref } from "react";
 import styles from "./HomeEarth.module.css";
 
 const Earth3D = dynamic(() => import("./Earth3D"), {
@@ -29,9 +29,9 @@ class EarthErrorBoundary extends Component<
   }
 }
 
-export default function HomeEarth() {
+export default function HomeEarth({ ref }: { ref?: Ref<HTMLDivElement> }) {
   return (
-    <div className={styles.stage} aria-label="3D Earth">
+    <div ref={ref} className={styles.stage} aria-label="3D Earth">
       <EarthErrorBoundary>
         <Earth3D
           autoRotate
