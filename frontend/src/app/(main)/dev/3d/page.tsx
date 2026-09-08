@@ -14,7 +14,6 @@ export default function ModelLabPage() {
   return (
     <main className={styles.lab}>
       <header>
-        <h1>3D Model Lab</h1>
         <p>A development workspace for previewing and testing 3D models.</p>
       </header>
       <ModelPreview />

@@ -21,7 +21,6 @@ export default function NotificationInbox() {
   return (
     <div className="notifications-container">
       <header className="notifications-page-header">
-        <h1>Notifications</h1>
         {unreadCount > 0 && (
           <button type="button" className="notification-mark-all" disabled={marking} onClick={() => void markAll()}>
             {marking ? "Marking…" : "Mark all as read"}

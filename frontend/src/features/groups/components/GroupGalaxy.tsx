@@ -1,7 +1,6 @@
 "use client";
 
 import { useUniverseTransition } from "@/features/universe-transition/UniverseTransitionProvider";
-import Link from "next/link";
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { gsap } from "gsap";
 import type { Group } from "../types/group";
@@ -62,6 +61,8 @@ export default function GroupGalaxy({
     setSelection(null);
   }
 
+  const hasSelection = Boolean(selected);
+
   // Smoothly shift the galaxy scene left when a group star is selected, and return to center on close
   useLayoutEffect(() => {
     const media = gsap.matchMedia();
@@ -70,7 +71,7 @@ export default function GroupGalaxy({
       () => {
         const root = rootRef.current;
         if (!root) return;
-        if (selected) {
+        if (hasSelection) {
           gsap.to(root, {
             xPercent: -6,
             duration: 0.45,
@@ -86,7 +87,7 @@ export default function GroupGalaxy({
       },
     );
     return () => media.revert();
-  }, [Boolean(selected)]);
+  }, [hasSelection]);
 
   useLayoutEffect(() => {
     const media = gsap.matchMedia();
@@ -323,7 +324,7 @@ export default function GroupGalaxy({
                   ? "No groups match this search. Try another name."
                   : "Discover a community or create your first group."}
               </p>
-              {!search && (
+              {!search && mine && (
                 <div className="group-buttons">
                   {mine && (
                     <button
@@ -334,9 +335,6 @@ export default function GroupGalaxy({
                       Discover Groups
                     </button>
                   )}
-                  <Link href="/groups/create" className="group-button">
-                    + Create Group
-                  </Link>
                 </div>
               )}
             </div>
@@ -353,7 +351,6 @@ export default function GroupGalaxy({
           ? `${selected.title} preview open. View Group follows the stars in the tab order.`
           : ""}
       </p>
-
     </div>
   );
 }

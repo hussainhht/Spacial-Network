@@ -1,13 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 import { getGroups } from "../api/groups";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { useGroupQuery, useMyGroups } from "../hooks/useGroupData";
 import { InvitationsPanel } from "./GroupPanels";
 import GroupGalaxy, { type GalaxyQueryState } from "./GroupGalaxy";
-import GroupSearchInput from "./GroupSearchInput";
+import { useGroupsSearch } from "../context/GroupsSearchProvider";
 import GroupsFilterTabs, { type GroupsTab } from "./GroupsFilterTabs";
 import styles from "./GroupGalaxy.module.css";
 
@@ -17,7 +16,7 @@ const SEARCH_DEBOUNCE_MS = 300;
 
 export default function GroupsPageContent() {
   const [activeTab, setActiveTab] = useState<GroupsTab>("mine");
-  const [search, setSearch] = useState("");
+  const { search } = useGroupsSearch();
   const debouncedSearch = useDebouncedValue(search.trim(), SEARCH_DEBOUNCE_MS);
   const [pagination, setPagination] = useState({
     search: debouncedSearch,
@@ -46,26 +45,9 @@ export default function GroupsPageContent() {
       className={`groups-page space-shell ${styles.page}`}
     >
       <div className="groups-container">
-        <header data-universe-ui className={styles.header}>
-          <div className={styles.headerTop}>
-            <div className={styles.headerTitleGroup}>
-              <p className="group-eyebrow">Find your people</p>
-              <h1>Groups</h1>
-              <p className="group-muted">
-                Discover communities. Share an interest. Make a connection.
-              </p>
-            </div>
-            <div className={styles.headerControls}>
-              <GroupSearchInput value={search} onChange={setSearch} />
-              <Link href="/groups/create" className="group-button">
-                + Create Group
-              </Link>
-            </div>
-          </div>
-          <div className={styles.headerTabs}>
-            <GroupsFilterTabs activeTab={activeTab} onTabChange={changeTab} />
-          </div>
-        </header>
+        <div data-universe-ui className={styles.filters}>
+          <GroupsFilterTabs activeTab={activeTab} onTabChange={changeTab} />
+        </div>
         <InvitationsPanel />
         <section
           id={`groups-tabpanel-${activeTab}`}

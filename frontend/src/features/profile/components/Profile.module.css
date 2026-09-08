@@ -3,8 +3,7 @@
 .profilePage {
   position: relative;
   isolation: isolate;
-  min-height: 100vh;
-  min-height: 100dvh;
+  min-height: 100%;
   padding: clamp(1.5rem, 3vw, 2.5rem) 1rem 3rem;
   color: var(--space-text-body);
   font-family:

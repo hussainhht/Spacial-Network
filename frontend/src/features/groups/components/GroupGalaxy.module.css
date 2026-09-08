@@ -5,56 +5,45 @@
   width: min(100%, 1400px);
   gap: 16px;
 }
-.header {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+.filters {
+  align-self: flex-end;
+  width: fit-content;
+  max-width: 100%;
+  margin-left: auto;
 }
-.headerTop {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-  flex-wrap: wrap;
-}
-.headerTitleGroup p:first-child {
+.filters :global(.group-tabs) {
+  display: inline-flex;
+  gap: 3px;
+  padding: 3px;
   margin: 0;
+  border: 1px solid var(--space-border);
+  border-radius: 999px;
+  background: rgba(15, 20, 45, 0.65);
 }
-.headerTitleGroup h1 {
-  margin: 4px 0 0;
-  font-size: clamp(28px, 2.5vw, 36px);
-  letter-spacing: -0.8px;
-  text-shadow: none;
-}
-.headerTitleGroup :global(.group-muted) {
-  margin: 4px 0 0;
-  font-size: 13px;
-}
-.headerControls {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.headerControls :global(.group-search) {
-  width: clamp(180px, 20vw, 280px);
-  margin: 0;
-}
-.headerTabs {
-  display: flex;
-  align-items: center;
-}
-.headerTabs :global(.group-tabs) {
-  margin: 0;
+.filters :global(.group-tab) {
+  padding: 6px 14px;
   border: 0;
+  border-radius: 999px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+.filters :global(.group-tab[data-active="true"]) {
+  background: rgba(139, 92, 246, 0.22);
+  box-shadow: inset 0 0 0 1px rgba(167, 139, 250, 0.22);
+}
+.filters :global(.group-tab)::after {
+  display: none;
 }
 .tabPanel {
   min-height: 0;
 }
 .galaxy {
   position: relative;
-  border-block: 1px solid var(--space-border);
-  margin-top: 8px;
-  padding: 10px 0 0;
+  /* Rotating square orbit containers have larger bounds than their visible
+     circular paths. Clip that horizontal overflow, not the scrollable page. */
+  overflow-x: clip;
+  margin-top: 0;
+  padding: 0;
 }
 .galaxyControlBtn {
   position: absolute;
@@ -95,13 +84,13 @@
 .scene {
   position: relative;
   --galaxy-size: clamp(
-    380px,
+    280px,
     min(
-      calc(100dvh - 235px),
-      calc(100vw - var(--sidebar-width, 244px) - 64px),
-      640px
+      calc(100dvh - var(--app-navbar-height, 64px) - 150px),
+      calc(100vw - var(--sidebar-width, 244px) - 80px),
+      780px
     ),
-    680px
+    780px
   );
   width: var(--galaxy-size);
   height: var(--galaxy-size);
@@ -739,19 +728,6 @@
   }
 }
 @media (max-width: 600px) {
-  .headerTop {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 14px;
-  }
-  .headerControls {
-    width: 100%;
-    justify-content: space-between;
-  }
-  .headerControls :global(.group-search) {
-    width: 100%;
-    max-width: none;
-  }
   .nodes {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 30px 12px;

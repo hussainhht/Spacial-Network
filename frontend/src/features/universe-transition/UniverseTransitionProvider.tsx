@@ -247,9 +247,9 @@ export default function UniverseTransitionProvider({
       onComplete: () => {
         finishRef.current();
         const destination = scenes.current.get(href);
-        const focus = destination?.root.querySelector<HTMLElement>(
-          'h1, [role="region"]',
-        );
+        const focus =
+          destination?.root.querySelector<HTMLElement>('h1, [role="region"]') ??
+          document.getElementById("app-page-title");
         if (focus) {
           if (!focus.hasAttribute("tabindex"))
             focus.setAttribute("tabindex", "-1");

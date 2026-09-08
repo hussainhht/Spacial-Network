@@ -55,17 +55,7 @@ export default function ChatPage() {
         fontFamily: "ui-sans-serif, system-ui, -apple-system, sans-serif",
       }}
     >
-      <h1
-        style={{
-          margin: "0 0 1.5rem",
-          fontSize: "clamp(24px, 3vw, 32px)",
-          fontWeight: 600,
-          color: "var(--space-text-heading, #f8fafc)",
-          letterSpacing: "-0.5px",
-        }}
-      >
-        💬 Real-Time Chat
-      </h1>
+
 
       {/* 1. Connection Status */}
       <div style={cardStyle}>

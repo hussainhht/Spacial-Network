@@ -1,12 +1,20 @@
 .navbar {
+  font:
+    14px/1.4 ui-sans-serif,
+    system-ui,
+    -apple-system,
+    sans-serif;
+  color-scheme: dark;
   position: sticky;
   top: 0;
-  z-index: 40;
+  z-index: 3;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-  min-height: 64px;
+  height: var(--app-navbar-height, 64px);
+  flex-shrink: 0;
+  box-sizing: border-box;
   padding: 10px clamp(16px, 3vw, 36px);
   background: rgba(6, 8, 24, 0.6);
   backdrop-filter: blur(14px);
@@ -426,6 +434,10 @@
 
 /* ================= Responsive Design ================= */
 @media (max-width: 900px) {
+  .contextEyebrow,
+  .userName {
+    display: none;
+  }
   .searchSection {
     max-width: 280px;
     margin: 0 8px;
@@ -468,5 +480,80 @@
   }
   .navbar {
     padding-inline: 12px;
+  }
+}
+
+/* The same navbar remains mounted in the shell across every main route. */
+.contextSection {
+  min-width: 0;
+}
+.contextTitle {
+  white-space: nowrap;
+}
+.searchSection {
+  min-width: 0;
+}
+.searchSection :global(.group-search) {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  min-width: 0;
+}
+.searchSection :global(.group-search-input) {
+  width: 100%;
+  min-width: 0;
+  font-size: 13px;
+}
+@media (max-width: 1100px) {
+  .actionsSection {
+    gap: 8px;
+  }
+  .searchSection {
+    margin-inline: 0;
+  }
+  .newPostButton {
+    white-space: nowrap;
+    padding-inline: 10px;
+  }
+}
+@media (max-width: 760px) {
+  .navbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: 36px 36px;
+    gap: 8px 10px;
+    padding-block: 12px;
+  }
+  .searchSection {
+    display: flex;
+    grid-column: 1 / -1;
+    grid-row: 2;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+  }
+  .actionsSection {
+    grid-column: 2;
+    grid-row: 1;
+    gap: 6px;
+  }
+  .contextTitle {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .chevronIcon {
+    display: none;
+  }
+  .searchBar {
+    padding-block: 7px;
+  }
+  .searchSection :global(.group-search) {
+    height: 36px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .userDropdown,
+  .bellWrapper :global(.notification-dropdown) {
+    animation: none;
   }
 }
