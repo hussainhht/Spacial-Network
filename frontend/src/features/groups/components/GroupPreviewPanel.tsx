@@ -6,7 +6,7 @@ import { gsap } from "gsap";
 import type { Group } from "../types/group";
 import GroupAvatar from "./GroupAvatar";
 import { MembershipBadge } from "./GroupPanels";
-import styles from "./GroupGalaxy.module.css";
+import styles from "./galaxy/GroupGalaxy.module.css";
 
 export default function GroupPreviewPanel({
   group,

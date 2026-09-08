@@ -78,8 +78,8 @@ Modified integration points:
 - `src/components/space/SpaceBackground.tsx`
 - `src/features/posts/components/home/HomeOrbitalFeed.tsx`
 - `src/features/groups/components/GroupsPageContent.tsx`
-- `src/features/groups/components/GroupGalaxy.tsx`
-- `src/features/groups/components/GroupStar.tsx`
+- `src/features/groups/components/galaxy/GroupGalaxy.tsx`
+- `src/features/groups/components/galaxy/GroupStar.tsx`
 - `src/features/groups/components/GroupPanels.tsx` (invitation animation hook only)
 
 Existing uncommitted Groups styling and preview changes were preserved.

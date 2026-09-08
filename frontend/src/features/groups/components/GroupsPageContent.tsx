@@ -5,10 +5,10 @@ import { getGroups } from "../api/groups";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { useGroupQuery, useMyGroups } from "../hooks/useGroupData";
 import { InvitationsPanel } from "./GroupPanels";
-import GroupGalaxy, { type GalaxyQueryState } from "./GroupGalaxy";
+import GroupGalaxy, { type GalaxyQueryState } from "./galaxy/GroupGalaxy";
 import { useGroupsSearch } from "../context/GroupsSearchProvider";
 import GroupsFilterTabs, { type GroupsTab } from "./GroupsFilterTabs";
-import styles from "./GroupGalaxy.module.css";
+import styles from "./galaxy/GroupGalaxy.module.css";
 
 // Use the API's existing offset pagination to keep every galaxy readable.
 const PAGE_SIZE = 12;

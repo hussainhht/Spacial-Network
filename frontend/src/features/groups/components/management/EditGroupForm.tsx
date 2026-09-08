@@ -2,16 +2,19 @@
 
 import { type SubmitEvent, useEffect, useMemo, useState } from "react";
 
-import { avatarUrl, updateGroup } from "../api/groups";
-import { useGroupAction } from "../hooks/useGroupAction";
-import type { Group } from "../types/group";
+import { avatarUrl, updateGroup } from "../../api/groups";
+import { useGroupAction } from "../../hooks/useGroupAction";
+import type { Group } from "../../types/group";
 
 const TITLE_MIN_LENGTH = 3;
 const TITLE_MAX_LENGTH = 100;
 const DESCRIPTION_MAX_LENGTH = 500;
 
 export default function EditGroupForm({ group }: { group: Group }) {
-  const { busy, error, run } = useGroupAction(`edit-group:${group.id}`, group.id);
+  const { busy, error, run } = useGroupAction(
+    `edit-group:${group.id}`,
+    group.id,
+  );
 
   const [title, setTitle] = useState(group.title);
   const [description, setDescription] = useState(group.description);
@@ -69,7 +72,10 @@ export default function EditGroupForm({ group }: { group: Group }) {
   }
 
   return (
-    <section className="group-panel group-edit-panel" aria-labelledby="edit-group-heading">
+    <section
+      className="group-panel group-edit-panel"
+      aria-labelledby="edit-group-heading"
+    >
       <div className="group-section-heading">
         <h2 id="edit-group-heading">Edit Group</h2>
       </div>
@@ -79,14 +85,21 @@ export default function EditGroupForm({ group }: { group: Group }) {
           <div className="group-photo-picker">
             {displayedPhoto ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={displayedPhoto} alt="" className="group-photo-preview" />
+              <img
+                src={displayedPhoto}
+                alt=""
+                className="group-photo-preview"
+              />
             ) : (
               <span className="group-photo-preview-empty" aria-hidden="true">
                 {trimmedTitle.charAt(0).toUpperCase() || "?"}
               </span>
             )}
             <div className="group-buttons">
-              <label className="group-button secondary" htmlFor="edit-group-photo">
+              <label
+                className="group-button secondary"
+                htmlFor="edit-group-photo"
+              >
                 Change photo
               </label>
               <input

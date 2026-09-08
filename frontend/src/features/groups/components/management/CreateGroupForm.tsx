@@ -4,10 +4,10 @@ import { type SubmitEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-import { createGroup, createGroupInvitation } from "../api/groups";
+import { createGroup, createGroupInvitation } from "../../api/groups";
 import InviteUserSearch from "./InviteUserSearch";
 import SelectedInviteList from "./SelectedInviteList";
-import type { Group, InviteCandidate } from "../types/group";
+import type { Group, InviteCandidate } from "../../types/group";
 
 const TITLE_MIN_LENGTH = 3;
 const TITLE_MAX_LENGTH = 100;
@@ -194,7 +194,9 @@ export default function CreateGroupForm() {
                 }}
               />
             </div>
-            <p className="group-field-hint">JPEG, PNG, or GIF. Fully optional.</p>
+            <p className="group-field-hint">
+              JPEG, PNG, or GIF. Fully optional.
+            </p>
           </div>
 
           <div className="form-field">

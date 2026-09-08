@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { updateGroupEvent } from "../hooks/useGroupData";
+import { updateGroupEvent } from "../../hooks/useGroupData";
 import EventAttendees from "./EventAttendees";
-import { respondToGroupEvent } from "../api/groups";
-import { useGroupAction } from "../hooks/useGroupAction";
-import type { EventResponseStatus, GroupEvent } from "../types/group";
+import { respondToGroupEvent } from "../../api/groups";
+import { useGroupAction } from "../../hooks/useGroupAction";
+import type { EventResponseStatus, GroupEvent } from "../../types/group";
 import EventCountdown from "./EventCountdown";
 
 interface EventCardProps {

@@ -3,9 +3,9 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { deleteGroup } from "../api/groups";
-import { useGroupAction } from "../hooks/useGroupAction";
-import type { Group } from "../types/group";
+import { deleteGroup } from "../../api/groups";
+import { useGroupAction } from "../../hooks/useGroupAction";
+import type { Group } from "../../types/group";
 
 export default function GroupDangerZone({ group }: { group: Group }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -19,8 +19,7 @@ export default function GroupDangerZone({ group }: { group: Group }) {
         <h2 id="danger-zone-heading">Danger Zone</h2>
       </div>
       <p className="group-muted">
-        Deleting this group permanently removes the group and its related
-        data.
+        Deleting this group permanently removes the group and its related data.
       </p>
       <div className="group-danger-zone-actions">
         <button
@@ -98,8 +97,8 @@ function DeleteGroupDialog({
         </div>
         <div className="group-modal-body">
           <p className="group-muted">
-            This action cannot be undone. The group and its related data may
-            be permanently removed.
+            This action cannot be undone. The group and its related data may be
+            permanently removed.
           </p>
           <div className="form-field">
             <label htmlFor="delete-group-confirm">

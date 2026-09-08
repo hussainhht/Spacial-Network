@@ -3,11 +3,11 @@
 import { useUniverseTransition } from "@/features/universe-transition/UniverseTransitionProvider";
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { gsap } from "gsap";
-import type { Group } from "../types/group";
-import { createOrbitLayout, ORBITS } from "../utils/orbitLayout";
-import { GroupLoadError } from "./GroupPanels";
+import type { Group } from "../../types/group";
+import { createOrbitLayout, ORBITS } from "../../utils/orbitLayout";
+import { GroupLoadError } from "../GroupPanels";
 import GroupStar from "./GroupStar";
-import GroupPreviewPanel from "./GroupPreviewPanel";
+import GroupPreviewPanel from "../GroupPreviewPanel";
 import styles from "./GroupGalaxy.module.css";
 
 const EMPTY_GROUPS: Group[] = [];

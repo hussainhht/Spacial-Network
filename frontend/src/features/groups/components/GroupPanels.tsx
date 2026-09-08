@@ -12,7 +12,7 @@ import {
   usePendingInvitations,
   usePendingJoinRequests,
 } from "../hooks/useGroupData";
-import GroupInviteModal from "./GroupInviteModal";
+import GroupInviteModal from "./management/GroupInviteModal";
 import GroupJoinButton from "./GroupJoinButton";
 import { InvitationActions, JoinRequestActions } from "./GroupResponseActions";
 
@@ -215,10 +215,7 @@ function RemoveMemberDialog({
   }
 
   return createPortal(
-    <div
-      className="group-modal-overlay"
-      onClick={() => !busy && onClose()}
-    >
+    <div className="group-modal-overlay" onClick={() => !busy && onClose()}>
       <div
         className="group-modal"
         role="alertdialog"
@@ -240,8 +237,8 @@ function RemoveMemberDialog({
         </div>
         <div className="group-modal-body">
           <p className="group-muted">
-            Are you sure you want to remove @{target.username} from this
-            group? They will lose access to group-only content and chat.
+            Are you sure you want to remove @{target.username} from this group?
+            They will lose access to group-only content and chat.
           </p>
           {error && (
             <p className="form-error" role="alert">

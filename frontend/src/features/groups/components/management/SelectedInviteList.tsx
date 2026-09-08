@@ -1,7 +1,7 @@
 "use client";
 
-import { avatarUrl } from "../api/groups";
-import type { InviteCandidate } from "../types/group";
+import { avatarUrl } from "../../api/groups";
+import type { InviteCandidate } from "../../types/group";
 
 interface SelectedInviteListProps {
   users: InviteCandidate[];

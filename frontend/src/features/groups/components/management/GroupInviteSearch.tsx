@@ -1,6 +1,6 @@
 "use client";
 
-import { useGroupInvitation } from "../hooks/useGroupInvitation";
+import { useGroupInvitation } from "../../hooks/useGroupInvitation";
 import InviteUserSearch from "./InviteUserSearch";
 
 interface GroupInviteSearchProps {

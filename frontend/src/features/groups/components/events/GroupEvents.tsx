@@ -1,11 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useGroupEvents } from "../hooks/useGroupData";
-import type { GroupEvent, GroupMember } from "../types/group";
+import { useGroupEvents } from "../../hooks/useGroupData";
+import type { GroupEvent, GroupMember } from "../../types/group";
 import CreateEventModal from "./CreateEventModal";
 import EventCard from "./EventCard";
-import { GroupLoadError } from "./GroupPanels";
+import { GroupLoadError } from "../GroupPanels";
 
 interface GroupEventsProps {
   groupId: number;

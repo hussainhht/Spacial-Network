@@ -1,8 +1,8 @@
 "use client";
 
-import { useEventResponses } from "../hooks/useGroupData";
-import type { EventResponseStatus } from "../types/group";
-import { GroupLoadError } from "./GroupPanels";
+import { useEventResponses } from "../../hooks/useGroupData";
+import type { EventResponseStatus } from "../../types/group";
+import { GroupLoadError } from "../GroupPanels";
 
 export default function EventAttendees({
   groupId,

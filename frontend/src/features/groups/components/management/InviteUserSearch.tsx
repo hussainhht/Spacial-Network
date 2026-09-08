@@ -2,16 +2,15 @@
 
 import type { ReactNode } from "react";
 
-import { avatarUrl } from "../api/groups";
-import { useInviteUserSearch } from "../hooks/useInviteUserSearch";
-import type { InviteCandidate } from "../types/group";
+import { avatarUrl } from "../../api/groups";
+import { useInviteUserSearch } from "../../hooks/useInviteUserSearch";
+import type { InviteCandidate } from "../../types/group";
 
 interface InviteUserSearchProps {
   groupId: number;
   renderAction: (user: InviteCandidate) => ReactNode;
   autoFocus?: boolean;
 }
-
 
 export default function InviteUserSearch({
   groupId,

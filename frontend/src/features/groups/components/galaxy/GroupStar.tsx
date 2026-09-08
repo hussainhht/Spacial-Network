@@ -1,8 +1,8 @@
 import type { CSSProperties } from "react";
-import type { OrbitPosition } from "../utils/orbitLayout";
-import { ORBITS } from "../utils/orbitLayout";
-import GroupAvatar from "./GroupAvatar";
-import { MembershipBadge } from "./GroupPanels";
+import type { OrbitPosition } from "../../utils/orbitLayout";
+import { ORBITS } from "../../utils/orbitLayout";
+import GroupAvatar from "../GroupAvatar";
+import { MembershipBadge } from "../GroupPanels";
 import styles from "./GroupGalaxy.module.css";
 
 export default function GroupStar({

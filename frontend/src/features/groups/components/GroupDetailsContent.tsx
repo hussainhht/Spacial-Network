@@ -9,10 +9,10 @@ import {
   useMembership,
   usePendingInvitations,
 } from "../hooks/useGroupData";
-import EditGroupForm from "./EditGroupForm";
+import EditGroupForm from "./management/EditGroupForm";
 import GroupAvatar from "./GroupAvatar";
-import GroupDangerZone from "./GroupDangerZone";
-import GroupEvents from "./GroupEvents";
+import GroupDangerZone from "./management/GroupDangerZone";
+import GroupEvents from "./events/GroupEvents";
 import {
   GroupLoadError,
   MembersPanel,

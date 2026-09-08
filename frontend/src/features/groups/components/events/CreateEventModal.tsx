@@ -2,8 +2,8 @@
 
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { createGroupEvent } from "../api/groups";
-import { useGroupAction } from "../hooks/useGroupAction";
+import { createGroupEvent } from "../../api/groups";
+import { useGroupAction } from "../../hooks/useGroupAction";
 
 interface CreateEventModalProps {
   groupId: number;
