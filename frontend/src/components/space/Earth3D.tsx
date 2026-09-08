@@ -1,10 +1,19 @@
 "use client";
 
-import { Suspense, useLayoutEffect, useMemo } from "react";
-import { Canvas } from "@react-three/fiber";
+import { Suspense, useLayoutEffect, useMemo, useRef } from "react";
+import { Canvas, useFrame } from "@react-three/fiber";
 import { Bounds, Html, OrbitControls, useGLTF } from "@react-three/drei";
-import { Box3, Mesh, MeshStandardMaterial, Vector3 } from "three";
+import { Box3, Group, Mesh, MeshStandardMaterial, Vector3 } from "three";
 import { createEarthMaterials, SUN_POSITION } from "./earthMaterials";
+
+export interface Earth3DProps {
+  autoRotate?: boolean;
+  rotationSpeed?: number;
+  interactive?: boolean;
+  background?: string | null;
+  boundsMargin?: number;
+  ariaLabel?: string;
+}
 
 function EarthModel() {
   const { scene } = useGLTF("/models/earth-final.glb");
@@ -69,31 +78,61 @@ function EarthModel() {
   );
 }
 
-export default function Earth3D() {
+function RotatingEarthGroup({
+  autoRotate,
+  rotationSpeed = 0.04,
+  children,
+}: {
+  autoRotate?: boolean;
+  rotationSpeed?: number;
+  children: React.ReactNode;
+}) {
+  const groupRef = useRef<Group>(null);
+
+  useFrame((_, delta) => {
+    if (autoRotate && groupRef.current) {
+      groupRef.current.rotation.y += delta * rotationSpeed;
+    }
+  });
+
+  return <group ref={groupRef}>{children}</group>;
+}
+
+export default function Earth3D({
+  autoRotate = false,
+  rotationSpeed = 0.04,
+  interactive = true,
+  background = "#050816",
+  boundsMargin = 1.3,
+  ariaLabel = "Interactive Earth model",
+}: Earth3DProps = {}) {
   return (
     <Canvas
       camera={{ position: [0, 0, 4], fov: 45, near: 0.01, far: 100 }}
       dpr={[1, 2]}
-      frameloop="demand"
+      frameloop={autoRotate ? "always" : "demand"}
+      gl={{ alpha: !background, antialias: true }}
       fallback={
         <p role="alert">
           WebGL is unavailable. Enable hardware acceleration or use a
           WebGL-capable browser.
         </p>
       }
-      aria-label="Interactive Earth model"
+      aria-label={ariaLabel}
     >
-      <color attach="background" args={["#050816"]} />
+      {background && <color attach="background" args={[background]} />}
       <ambientLight intensity={0.12} />
       <directionalLight position={SUN_POSITION} intensity={3} />
-      <OrbitControls
-        makeDefault
-        enablePan={false}
-        enableRotate
-        enableZoom
-        minDistance={1.5}
-        maxDistance={12}
-      />
+      {interactive && (
+        <OrbitControls
+          makeDefault
+          enablePan={false}
+          enableRotate
+          enableZoom
+          minDistance={1.5}
+          maxDistance={12}
+        />
+      )}
       <Suspense
         fallback={
           <Html center>
@@ -103,8 +142,13 @@ export default function Earth3D() {
           </Html>
         }
       >
-        <Bounds fit observe margin={1.3} maxDuration={0}>
-          <EarthModel />
+        <Bounds fit observe margin={boundsMargin} maxDuration={0}>
+          <RotatingEarthGroup
+            autoRotate={autoRotate}
+            rotationSpeed={rotationSpeed}
+          >
+            <EarthModel />
+          </RotatingEarthGroup>
         </Bounds>
       </Suspense>
     </Canvas>
