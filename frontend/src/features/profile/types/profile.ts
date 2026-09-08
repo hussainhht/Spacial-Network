@@ -14,3 +14,11 @@ export interface Profile {
 }
 
 export type ProfileTab = "posts" | "about";
+
+export interface ProfileUserSummary {
+  id: number;
+  username: string;
+  firstName: string;
+  lastName: string;
+  profilePhoto?: string;
+}
