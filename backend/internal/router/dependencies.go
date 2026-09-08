@@ -7,6 +7,7 @@ import (
 	"social/internal/chat"
 	"social/internal/comments"
 	"social/internal/config"
+	"social/internal/followers"
 	"social/internal/groups"
 	"social/internal/notifications"
 	"social/internal/posts"
@@ -24,9 +25,8 @@ type Handlers struct {
 	Notifications *notifications.Handler
 	Users         *users.Handler
 	Comments      *comments.Handler
+	Followers     *followers.Handler
 
-	// TODO: Add Followers handler when the followers feature is implemented.
-	// Followers *followers.Handler
 	// TODO: Add Chat handler when the chat feature is implemented.
 	// Chat *chat.Handler
 }
@@ -37,6 +37,7 @@ type Dependencies struct {
 	AuthService          *auth.Service
 	GroupsService        *groups.Service
 	NotificationsService *notifications.Service
+	FollowersService     *followers.Service
 
 	// Future shared services:
 	PostsService *posts.Service
@@ -122,14 +123,12 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 	commentsHandler := comments.NewHandler(commentsService, commentMediaStorage)
 
 	// =========================
-	// Followers - Future
+	// Followers
 	// =========================
 
-	// TODO: Enable when the followers package is implemented.
-	//
-	// followersRepo := followers.NewRepository(db)
-	// followersService := followers.NewService(followersRepo)
-	// followersHandler := followers.NewHandler(followersService)
+	followersRepo := followers.NewRepository(db)
+	followersService := followers.NewService(followersRepo)
+	followersHandler := followers.NewHandler(followersService, usersService)
 
 	// =========================
 	// Notifications
@@ -186,11 +185,12 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 			Notifications: notificationsHandler,
 			Users:         usersHandler,
 			Comments:      commentsHandler,
-			// Followers:     followersHandler,
+			Followers:     followersHandler,
 		},
 		AuthService:          authService,
 		GroupsService:        groupsService,
 		NotificationsService: notificationsService,
+		FollowersService:     followersService,
 
 		// PostsService: postsService,
 	}, nil

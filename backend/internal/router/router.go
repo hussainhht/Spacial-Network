@@ -106,10 +106,29 @@ func NewRouter(db *sql.DB, cfg config.Config) (http.Handler, error) {
 	)
 
 	// =========================
-	// Followers Routes - Future
+	// Followers Routes
 	// =========================
 
-	// TODO: Register Followers routes here once the Followers handler is implemented.
+	apiMux.Handle(
+		"POST /profiles/{username}/follow",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Followers.FollowUserHandler)),
+	)
+	apiMux.Handle(
+		"DELETE /profiles/{username}/follow",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Followers.UnfollowUserHandler)),
+	)
+	apiMux.Handle(
+		"GET /profiles/{username}/followers",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Followers.GetFollowersHandler)),
+	)
+	apiMux.Handle(
+		"GET /profiles/{username}/following",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Followers.GetFollowingHandler)),
+	)
+	apiMux.Handle(
+		"GET /profiles/{username}/follow-status",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Followers.FollowStatusHandler)),
+	)
 
 	// =========================
 	// Groups Routes

@@ -567,6 +567,57 @@
 }
 
 /* ================================================================== */
+/*  Follow Lists                                                      */
+/* ================================================================== */
+
+.userList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.userListItem {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.userListAvatar {
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.userListAvatarFallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(139, 92, 246, 0.15);
+  color: #c4b5fd;
+  font-size: 0.8rem;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.userListLink {
+  color: var(--space-text-heading);
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.userListLink:hover {
+  color: var(--space-accent-violet);
+  text-decoration: underline;
+}
+
+/* ================================================================== */
 /*  Privacy Settings Card                                             */
 /* ================================================================== */
 
