@@ -93,6 +93,152 @@ func (r *Repository) GetFollowing(userID int) ([]UserSummary, error) {
 	return scanUserSummaries(rows)
 }
 
+func (r *Repository) CreateFollowRequest(requesterID, targetID int) error {
+	result, err := r.db.Exec(`
+		INSERT INTO follow_requests (requester_id, target_id, status)
+		VALUES (?, ?, ?)
+		ON CONFLICT(requester_id, target_id) DO UPDATE SET
+			status = excluded.status, 
+			updated_at = CURRENT_TIMESTAMP, 
+			created_at = CURRENT_TIMESTAMP
+		WHERE follow_requests.status != ?
+		`, requesterID, targetID, FollowRequestStatusPending, FollowRequestStatusPending)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return ErrFollowRequestAlreadyPending
+	}
+
+	return nil
+}
+
+func (r *Repository) GetPendingFollowRequests(targetID int) ([]FollowRequestWithRequester, error) {
+	rows, err := r.db.Query(`
+		select fr.id, u.id, u.username, u.first_name, u.last_name, COALESCE(u.profile_photo, ''), fr.status, fr.created_at, fr.updated_at
+		from follow_requests fr
+		join users u ON u.id = fr.requester_id
+		where fr.target_id = ? and fr.status = ?
+		order by fr.created_at DESC, fr.id DESC
+	`, targetID, FollowRequestStatusPending)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	requests := []FollowRequestWithRequester{}
+
+	for rows.Next() {
+		var req FollowRequestWithRequester
+		var profilePhoto string
+
+		if err := rows.Scan(
+			&req.ID,
+			&req.Requester.ID,
+			&req.Requester.Username,
+			&req.Requester.FirstName,
+			&req.Requester.LastName,
+			&profilePhoto,
+			&req.Status,
+			&req.CreatedAt,
+			&req.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+
+		if profilePhoto != "" {
+			req.Requester.ProfilePhoto = "/uploads/" + profilePhoto
+		}
+		requests = append(requests, req)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return requests, nil
+}
+
+func (r *Repository) AcceptFollowRequest(requestID, targetID int) error {
+	tx, err := r.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	var requesterID int
+	var status string
+
+	err = tx.QueryRow(`
+		SELECT requester_id, status
+		FROM follow_requests
+		WHERE id = ? AND target_id = ?
+	`, requestID, targetID).Scan(&requesterID, &status)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return ErrFollowRequestNotFound
+		}
+		return err
+	}
+
+	if status != FollowRequestStatusPending {
+		return ErrFollowRequestNotPending
+	}
+
+	_, err = tx.Exec(`
+		UPDATE follow_requests
+		SET status = ?, updated_at = CURRENT_TIMESTAMP
+		WHERE id = ?
+	`, FollowRequestStatusAccepted, requestID)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.Exec(`
+		INSERT INTO followers (follower_id, followed_id)
+		VALUES (?, ?)
+		ON CONFLICT(follower_id, followed_id) DO NOTHING
+	`, requesterID, targetID)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit()
+}
+
+func (r *Repository) DeclineFollowRequest(requestID, targetID int) error {
+	var status string
+
+	err := r.db.QueryRow(`
+		SELECT status
+		FROM follow_requests
+		WHERE id = ? AND target_id = ?
+	`, requestID, targetID).Scan(&status)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return ErrFollowRequestNotFound
+		}
+		return err
+	}
+
+	if status != FollowRequestStatusPending {
+		return ErrFollowRequestNotPending
+	}
+
+	_, err = r.db.Exec(`
+		UPDATE follow_requests
+		SET status = ?, updated_at = CURRENT_TIMESTAMP
+		WHERE id = ?
+	`, FollowRequestStatusDeclined, requestID)
+	return err
+}
+
 func scanUserSummaries(rows *sql.Rows) ([]UserSummary, error) {
 	users := []UserSummary{}
 
