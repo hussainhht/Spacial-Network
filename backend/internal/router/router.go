@@ -129,6 +129,10 @@ func NewRouter(db *sql.DB, cfg config.Config) (http.Handler, error) {
 		"GET /profiles/{username}/follow-status",
 		sessionMiddleware(http.HandlerFunc(deps.Handlers.Followers.FollowStatusHandler)),
 	)
+	apiMux.Handle(
+		"GET /follow-requests",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Followers.GetPendingFollowRequestsHandler)),
+	)
 
 	// =========================
 	// Groups Routes

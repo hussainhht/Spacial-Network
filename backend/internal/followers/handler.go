@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"time"
 
 	"social/internal/requestctx"
 	"social/internal/users"
@@ -19,6 +20,16 @@ func NewHandler(service *Service, usersService *users.Service) *Handler {
 	return &Handler{
 		service:      service,
 		usersService: usersService,
+	}
+}
+
+func toFollowRequestResponse(request FollowRequestWithRequester) FollowRequestResponse {
+	return FollowRequestResponse{
+		ID:        request.ID,
+		Requester: request.Requester,
+		Status:    request.Status,
+		CreatedAt: request.CreatedAt.Format(time.RFC3339),
+		UpdatedAt: request.UpdatedAt.Format(time.RFC3339),
 	}
 }
 
@@ -41,10 +52,31 @@ func (h *Handler) FollowUserHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if currentUserID != targetProfile.ID && targetProfile.IsPrivate {
-		w.WriteHeader(http.StatusForbidden)
+		if err := h.service.CreateFollowRequest(currentUserID, targetProfile.ID); err != nil {
+			status := http.StatusInternalServerError
+			message := "Failed to create follow request"
+
+			switch {
+			case errors.Is(err, ErrCannotFollowSelf):
+				status = http.StatusBadRequest
+				message = err.Error()
+			case errors.Is(err, ErrAlreadyFollowing), errors.Is(err, ErrFollowRequestAlreadyPending):
+				status = http.StatusConflict
+				message = err.Error()
+			}
+
+			w.WriteHeader(status)
+			json.NewEncoder(w).Encode(FollowResponse{
+				Success: false,
+				Message: message,
+			})
+			return
+		}
+
+		w.WriteHeader(http.StatusCreated)
 		json.NewEncoder(w).Encode(FollowResponse{
-			Success: false,
-			Message: ErrPrivateProfile.Error(),
+			Success: true,
+			Message: "Follow request sent successfully",
 		})
 		return
 	}
@@ -219,6 +251,41 @@ func (h *Handler) FollowStatusHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(FollowStatusResponse{
 		Success:     true,
 		IsFollowing: isFollowing,
+	})
+}
+
+func (h *Handler) GetPendingFollowRequestsHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	currentUserID, ok := requestctx.UserID(r.Context())
+	if !ok {
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(FollowRequestsResponse{
+			Success: false,
+			Message: "Not logged in",
+		})
+		return
+	}
+
+	requests, err := h.service.GetPendingFollowRequests(currentUserID)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(FollowRequestsResponse{
+			Success: false,
+			Message: "Failed to get follow requests",
+		})
+		return
+	}
+
+	responseRequests := make([]FollowRequestResponse, len(requests))
+	for i, request := range requests {
+		responseRequests[i] = toFollowRequestResponse(request)
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(FollowRequestsResponse{
+		Success:  true,
+		Requests: responseRequests,
 	})
 }
 
