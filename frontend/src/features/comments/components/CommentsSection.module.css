@@ -37,8 +37,7 @@
   border: 1px solid rgba(167, 139, 250, 0.18);
 }
 
-.loading,
-.statusText {
+.loading {
   font-size: 13px;
   color: var(--space-text-muted);
   margin: 12px 0;

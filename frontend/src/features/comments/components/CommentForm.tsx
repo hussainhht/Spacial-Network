@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import AppIcon from "@/components/layout/AppIcon";
-import { ACCEPTED_IMAGE_TYPES, validateImageFile } from "@/lib/upload";
+import { validateImageFile } from "@/lib/upload";
 import styles from "./CommentForm.module.css";
 
 interface CommentFormProps {
