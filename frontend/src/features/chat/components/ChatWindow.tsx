@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import type { ChatWindowProps } from "../types/chat";
 import { formatMessageDateTime, getInitials } from "@/lib/utils";
 
@@ -13,6 +14,7 @@ export default function ChatWindow({
   partnerAvatar,
   isPartnerOnline,
   isPartnerTyping,
+  isEligible = true,
   myUserId,
   messages,
   loadingHistory,
@@ -177,52 +179,69 @@ export default function ChatWindow({
         <div ref={messagesEndRef} />
       </div>
 
-      <form onSubmit={handleSubmit} className="flex items-center gap-2.5 px-6 py-4 border-t border-slate-700/30 bg-[#0b1026]/90 min-w-0 shrink-0">
-        <div className="flex-1 relative flex items-center min-w-0">
-          <input
-            type="text"
-            placeholder={`Message ${partnerUsername}...`}
-            value={inputText}
-            onChange={handleInputChange}
-            className={`w-full min-w-0 py-2.5 rounded-full border bg-[#10152f]/80 text-slate-100 placeholder-slate-400 text-sm focus:outline-none transition-colors ${
-              isNearLimit ? "pr-20" : "pr-4"
-            } pl-4.5 ${
-              isOverLimit
-                ? "border-red-500 focus:border-red-500"
-                : isNearLimit
-                ? "border-amber-500 focus:border-amber-500"
-                : "border-slate-700/60 focus:border-indigo-500"
-            }`}
-          />
-          {isNearLimit && (
-            <span
-              className={`absolute right-3.5 text-xs font-semibold pointer-events-none select-none bg-[#0b1026]/90 px-1.5 py-0.5 rounded-md shrink-0 ${
-                isOverLimit ? "text-red-400" : "text-amber-400"
-              }`}
-              title={
-                isOverLimit
-                  ? `${charCount - MAX_MESSAGE_LENGTH} characters over limit`
-                  : `${MAX_MESSAGE_LENGTH - charCount} characters remaining`
-              }
-            >
-              {isOverLimit
-                ? `-${charCount - MAX_MESSAGE_LENGTH}`
-                : `${charCount}/${MAX_MESSAGE_LENGTH}`}
+      {!isEligible ? (
+        <div className="p-4 border-t border-slate-700/30 bg-[#0b1026]/90 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left min-w-0 shrink-0">
+          <div className="flex items-center gap-2 text-slate-300 text-sm min-w-0">
+            <span className="text-base shrink-0">🔒</span>
+            <span className="truncate">
+              You can only message users you follow or who follow you.
             </span>
-          )}
+          </div>
+          <Link
+            href={`/profile/${partnerUsername}`}
+            className="shrink-0 px-4 py-2 rounded-full font-semibold text-xs bg-indigo-600 hover:bg-indigo-500 text-white transition-colors shadow-sm"
+          >
+            Follow @{partnerUsername}
+          </Link>
         </div>
-        <button
-          type="submit"
-          disabled={!inputText.trim() || isOverLimit}
-          className={`shrink-0 px-5 py-2.5 rounded-full font-semibold text-sm transition-all duration-200 ${
-            !inputText.trim() || isOverLimit
-              ? "bg-slate-700 text-slate-400 opacity-50 cursor-not-allowed"
-              : "bg-indigo-600 hover:bg-indigo-500 text-white cursor-pointer shadow-sm"
-          }`}
-        >
-          Send
-        </button>
-      </form>
+      ) : (
+        <form onSubmit={handleSubmit} className="flex items-center gap-2.5 px-6 py-4 border-t border-slate-700/30 bg-[#0b1026]/90 min-w-0 shrink-0">
+          <div className="flex-1 relative flex items-center min-w-0">
+            <input
+              type="text"
+              placeholder={`Message ${partnerUsername}...`}
+              value={inputText}
+              onChange={handleInputChange}
+              className={`w-full min-w-0 py-2.5 rounded-full border bg-[#10152f]/80 text-slate-100 placeholder-slate-400 text-sm focus:outline-none transition-colors ${
+                isNearLimit ? "pr-20" : "pr-4"
+              } pl-4.5 ${
+                isOverLimit
+                  ? "border-red-500 focus:border-red-500"
+                  : isNearLimit
+                  ? "border-amber-500 focus:border-amber-500"
+                  : "border-slate-700/60 focus:border-indigo-500"
+              }`}
+            />
+            {isNearLimit && (
+              <span
+                className={`absolute right-3.5 text-xs font-semibold pointer-events-none select-none bg-[#0b1026]/90 px-1.5 py-0.5 rounded-md shrink-0 ${
+                  isOverLimit ? "text-red-400" : "text-amber-400"
+                }`}
+                title={
+                  isOverLimit
+                    ? `${charCount - MAX_MESSAGE_LENGTH} characters over limit`
+                    : `${MAX_MESSAGE_LENGTH - charCount} characters remaining`
+                }
+              >
+                {isOverLimit
+                  ? `-${charCount - MAX_MESSAGE_LENGTH}`
+                  : `${charCount}/${MAX_MESSAGE_LENGTH}`}
+              </span>
+            )}
+          </div>
+          <button
+            type="submit"
+            disabled={!inputText.trim() || isOverLimit}
+            className={`shrink-0 px-5 py-2.5 rounded-full font-semibold text-sm transition-all duration-200 ${
+              !inputText.trim() || isOverLimit
+                ? "bg-slate-700 text-slate-400 opacity-50 cursor-not-allowed"
+                : "bg-indigo-600 hover:bg-indigo-500 text-white cursor-pointer shadow-sm"
+            }`}
+          >
+            Send
+          </button>
+        </form>
+      )}
     </div>
   );
 }

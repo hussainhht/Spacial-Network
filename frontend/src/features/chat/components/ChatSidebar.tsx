@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import type { ChatSidebarProps } from "../types/chat";
 import { formatConversationDate, getDisplayName, getInitials } from "@/lib/utils";
+import NewChatModal from "./NewChatModal";
 
 export default function ChatSidebar({
   conversations,
@@ -12,6 +13,7 @@ export default function ChatSidebar({
   onSelectConversation,
 }: ChatSidebarProps) {
   const [searchQuery, setSearchQuery] = useState("");
+  const [isNewChatOpen, setIsNewChatOpen] = useState(false);
 
   const filteredConversations = useMemo(() => {
     if (!searchQuery.trim()) return conversations;
@@ -27,7 +29,17 @@ export default function ChatSidebar({
   return (
     <aside className="w-80 flex flex-col border-r border-slate-700/40 bg-[#0b1026]/70 backdrop-blur-md h-full shrink-0">
       <div className="p-4 border-b border-slate-700/30">
-        <h2 className="m-0 mb-3 text-lg font-bold text-slate-100">Messages</h2>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="m-0 text-lg font-bold text-slate-100">Messages</h2>
+          <button
+            type="button"
+            onClick={() => setIsNewChatOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-indigo-600/90 hover:bg-indigo-600 text-white shadow-sm transition-colors cursor-pointer"
+            title="Start a new chat"
+          >
+            <span>+</span> New Chat
+          </button>
+        </div>
         <div className="relative flex items-center">
           <input
             type="text"
@@ -131,6 +143,16 @@ export default function ChatSidebar({
             );
           })}
       </div>
+
+      <NewChatModal
+        isOpen={isNewChatOpen}
+        onClose={() => setIsNewChatOpen(false)}
+        onSelectContact={(contact) => {
+          onSelectConversation(contact.id, contact.username, contact.profile_photo);
+          setIsNewChatOpen(false);
+        }}
+        onlineUserIDs={onlineUserIDs}
+      />
     </aside>
   );
 }

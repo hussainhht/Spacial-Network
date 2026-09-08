@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useState } from "react";
 import { getBackendBaseUrl } from "@/lib/api";
 import { getDisplayName, getInitials } from "@/lib/utils";
@@ -143,6 +144,7 @@ interface ProfileHeaderProps {
   followersCount: number;
   followingCount: number;
   isFollowing: boolean;
+  canMessage?: boolean;
   followLoading: boolean;
   onSelectTab: (tab: ProfileTab) => void;
   onToggleFollow: () => void;
@@ -155,6 +157,7 @@ export default function ProfileHeader({
   followersCount,
   followingCount,
   isFollowing,
+  canMessage = false,
   followLoading,
   onSelectTab,
   onToggleFollow,
@@ -190,23 +193,33 @@ export default function ProfileHeader({
                 Privacy Settings
               </button>
             </div>
-          ) : profile.isPrivate ? (
-            <div className={styles.actionsRow}>
-              <span className={styles.statLabel}>
-                Follow requests for private profiles will be added later.
-              </span>
-            </div>
           ) : (
             <div className={styles.actionsRow}>
-              <button
-                type="button"
-                onClick={onToggleFollow}
-                disabled={followLoading}
-                className={isFollowing ? styles.btnSecondary : styles.btnPrimary}
-                title={isFollowing ? "Unfollow" : "Follow"}
-              >
-                {followLoading ? "Saving..." : isFollowing ? "Unfollow" : "Follow"}
-              </button>
+              {profile.isPrivate ? (
+                <span className={styles.statLabel}>
+                  Follow requests for private profiles will be added later.
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={onToggleFollow}
+                  disabled={followLoading}
+                  className={isFollowing ? styles.btnSecondary : styles.btnPrimary}
+                  title={isFollowing ? "Unfollow" : "Follow"}
+                >
+                  {followLoading ? "Saving..." : isFollowing ? "Unfollow" : "Follow"}
+                </button>
+              )}
+
+              {canMessage && (
+                <Link
+                  href={`/chat?partnerId=${profile.id}`}
+                  className={styles.btnSecondary}
+                  title={`Message @${profile.username}`}
+                >
+                  💬 Message
+                </Link>
+              )}
             </div>
           )}
         </div>

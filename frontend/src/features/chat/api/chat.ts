@@ -1,18 +1,14 @@
-// Client for the Go backend's Chat API (/api/chat/conversations and /api/chat/history).
-
 import { apiRequest } from "@/lib/api/client";
-import type { ConversationSummary, PrivateMessage } from "../types/chat";
+import type { ConversationSummary, EligibleContact, PrivateMessage } from "../types/chat";
 
-/**
- * Fetches all recent conversations for the current user.
- */
 export function getConversations(): Promise<ConversationSummary[]> {
   return apiRequest<ConversationSummary[]>("/chat/conversations");
 }
 
-/**
- * Fetches paginated chat history between the current user and a target user.
- */
+export function getEligibleContacts(): Promise<EligibleContact[]> {
+  return apiRequest<EligibleContact[]>("/chat/eligible-contacts");
+}
+
 export function getChatHistory(
   userId: number,
   limit: number = 10,

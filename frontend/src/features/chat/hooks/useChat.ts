@@ -4,9 +4,9 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useWebSocket } from "@/providers/WebSocketProvider";
 import { getCurrentUser } from "@/features/auth/api/getCurrentUser";
-import { getConversations, getChatHistory } from "@/features/chat/api/chat";
+import { getConversations, getChatHistory, getEligibleContacts } from "@/features/chat/api/chat";
 import { ApiError } from "@/lib/api/errors";
-import type { ConversationSummary, PrivateMessage } from "@/features/chat/types/chat";
+import type { ConversationSummary, EligibleContact, PrivateMessage } from "@/features/chat/types/chat";
 
 const HISTORY_PAGE_SIZE = 20;
 
@@ -26,6 +26,8 @@ export function useChat() {
   const [myUserId, setMyUserId] = useState<number | null>(null);
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [loadingConversations, setLoadingConversations] = useState(true);
+  const [eligibleContacts, setEligibleContacts] = useState<EligibleContact[]>([]);
+  const [loadingEligible, setLoadingEligible] = useState(true);
 
   const [activePartnerId, setActivePartnerId] = useState<number | null>(null);
   const [activePartnerUsername, setActivePartnerUsername] = useState<string>("");
@@ -56,9 +58,14 @@ export function useChat() {
           setMyUserId(user.user_id);
         }
 
-        const convos = await getConversations();
+        const [convos, eligible] = await Promise.all([
+          getConversations().catch(() => []),
+          getEligibleContacts().catch(() => []),
+        ]);
+
         if (isMounted) {
           setConversations(convos);
+          setEligibleContacts(eligible);
         }
       } catch (err) {
         if (err instanceof ApiError && err.status === 401) {
@@ -69,6 +76,7 @@ export function useChat() {
       } finally {
         if (isMounted) {
           setLoadingConversations(false);
+          setLoadingEligible(false);
         }
       }
     }
@@ -81,7 +89,7 @@ export function useChat() {
   }, [router]);
 
   const selectConversation = useCallback(
-    async (partnerId: number, partnerUsername: string) => {
+    async (partnerId: number, partnerUsername: string, partnerAvatar?: string) => {
       setActivePartnerId(partnerId);
       setActivePartnerUsername(partnerUsername);
       setMessages([]);
@@ -89,7 +97,7 @@ export function useChat() {
       setLoadingHistory(true);
 
       const convo = conversationsRef.current.find((c) => c.partner_id === partnerId);
-      setActivePartnerAvatar(convo?.partner_avatar);
+      setActivePartnerAvatar(partnerAvatar || convo?.partner_avatar);
 
       setConversations((prev) =>
         prev.map((c) =>
@@ -118,14 +126,16 @@ export function useChat() {
 
   const searchPartnerId = searchParams.get("partnerId");
   useEffect(() => {
-    if (!searchPartnerId || loadingConversations) return;
+    if (!searchPartnerId || loadingConversations || loadingEligible) return;
     const pid = parseInt(searchPartnerId, 10);
     if (!isNaN(pid) && pid > 0 && pid !== activePartnerId) {
       const found = conversationsRef.current.find((c) => c.partner_id === pid);
-      const username = found ? found.partner_username : `User ${pid}`;
-      selectConversation(pid, username);
+      const foundEligible = eligibleContacts.find((c) => c.id === pid);
+      const username = found ? found.partner_username : foundEligible ? foundEligible.username : `User ${pid}`;
+      const avatar = found ? found.partner_avatar : foundEligible?.profile_photo;
+      selectConversation(pid, username, avatar);
     }
-  }, [searchPartnerId, loadingConversations, activePartnerId, selectConversation]);
+  }, [searchPartnerId, loadingConversations, loadingEligible, eligibleContacts, activePartnerId, selectConversation]);
 
   const loadMoreHistory = useCallback(async () => {
     if (!activePartnerId || loadingHistory || !hasMoreHistory) return;
@@ -272,15 +282,25 @@ export function useChat() {
     activePartnerId && onlineUserIDs.includes(activePartnerId)
   );
 
+  const isPermissionBlocked =
+    (!loadingEligible &&
+      activePartnerId !== null &&
+      !eligibleContacts.some((c) => c.id === activePartnerId)) ||
+    Boolean(errorMessage && errorMessage.toLowerCase().includes("only message users you follow"));
+
+  const isPartnerEligible = !isPermissionBlocked;
+
   return {
     isConnected,
     errorMessage,
     myUserId,
     conversations,
     loadingConversations,
+    eligibleContacts,
     activePartnerId,
     activePartnerUsername,
     activePartnerAvatar,
+    isPartnerEligible,
     messages,
     loadingHistory,
     hasMoreHistory,

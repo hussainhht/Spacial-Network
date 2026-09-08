@@ -9,6 +9,14 @@ export interface ConversationSummary {
   unread_count: number;
 }
 
+export interface EligibleContact {
+  id: number;
+  username: string;
+  first_name: string;
+  last_name: string;
+  profile_photo?: string;
+}
+
 export interface PrivateMessage {
   id: number;
   sender_id: number;
@@ -29,7 +37,7 @@ export interface ChatSidebarProps {
   activeUserId: number | null;
   onlineUserIDs: number[];
   loading: boolean;
-  onSelectConversation: (partnerId: number, partnerUsername: string) => void;
+  onSelectConversation: (partnerId: number, partnerUsername: string, partnerAvatar?: string) => void;
 }
 
 export interface ChatWindowProps {
@@ -38,6 +46,7 @@ export interface ChatWindowProps {
   partnerAvatar?: string;
   isPartnerOnline: boolean;
   isPartnerTyping: boolean;
+  isEligible?: boolean;
   myUserId: number | null;
   messages: PrivateMessage[];
   loadingHistory: boolean;

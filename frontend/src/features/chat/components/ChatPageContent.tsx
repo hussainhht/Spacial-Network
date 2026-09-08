@@ -16,6 +16,7 @@ export default function ChatPageContent() {
     activePartnerId,
     activePartnerUsername,
     activePartnerAvatar,
+    isPartnerEligible,
     messages,
     loadingHistory,
     hasMoreHistory,
@@ -62,6 +63,7 @@ export default function ChatPageContent() {
             partnerAvatar={activePartnerAvatar}
             isPartnerOnline={isPartnerOnline}
             isPartnerTyping={isPartnerTyping}
+            isEligible={isPartnerEligible}
             myUserId={myUserId}
             messages={messages}
             loadingHistory={loadingHistory}
