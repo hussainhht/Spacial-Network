@@ -165,6 +165,80 @@ func (r *Repository) GetPendingFollowRequests(targetID int) ([]FollowRequestWith
 	return requests, nil
 }
 
+func (r *Repository) AcceptFollowRequest(requestID, targetID int) error {
+	tx, err := r.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	var requesterID int
+	var status string
+
+	err = tx.QueryRow(`
+		SELECT requester_id, status
+		FROM follow_requests
+		WHERE id = ? AND target_id = ?
+	`, requestID, targetID).Scan(&requesterID, &status)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return ErrFollowRequestNotFound
+		}
+		return err
+	}
+
+	if status != FollowRequestStatusPending {
+		return ErrFollowRequestNotPending
+	}
+
+	_, err = tx.Exec(`
+		UPDATE follow_requests
+		SET status = ?, updated_at = CURRENT_TIMESTAMP
+		WHERE id = ?
+	`, FollowRequestStatusAccepted, requestID)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.Exec(`
+		INSERT INTO followers (follower_id, followed_id)
+		VALUES (?, ?)
+		ON CONFLICT(follower_id, followed_id) DO NOTHING
+	`, requesterID, targetID)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit()
+}
+
+func (r *Repository) DeclineFollowRequest(requestID, targetID int) error {
+	var status string
+
+	err := r.db.QueryRow(`
+		SELECT status
+		FROM follow_requests
+		WHERE id = ? AND target_id = ?
+	`, requestID, targetID).Scan(&status)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return ErrFollowRequestNotFound
+		}
+		return err
+	}
+
+	if status != FollowRequestStatusPending {
+		return ErrFollowRequestNotPending
+	}
+
+	_, err = r.db.Exec(`
+		UPDATE follow_requests
+		SET status = ?, updated_at = CURRENT_TIMESTAMP
+		WHERE id = ?
+	`, FollowRequestStatusDeclined, requestID)
+	return err
+}
+
 func scanUserSummaries(rows *sql.Rows) ([]UserSummary, error) {
 	users := []UserSummary{}
 
