@@ -61,12 +61,12 @@ type FollowRequestResponse struct {
 	ID        int         `json:"id"`
 	Requester UserSummary `json:"requester"`
 	Status    string      `json:"status"`
-	CreatedAt time.Time   `json:"created_at"`
-	UpdatedAt time.Time   `json:"updated_at"`
+	CreatedAt string   `json:"created_at"`
+	UpdatedAt string   `json:"updated_at"`
 }
 
 type FollowRequestsResponse struct {
-	Success  bool                   `json:"success"`
-	Message  string                 `json:"message,omitempty"`
+	Success  bool                    `json:"success"`
+	Message  string                  `json:"message,omitempty"`
 	Requests []FollowRequestResponse `json:"requests"`
 }

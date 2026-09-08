@@ -93,6 +93,78 @@ func (r *Repository) GetFollowing(userID int) ([]UserSummary, error) {
 	return scanUserSummaries(rows)
 }
 
+func (r *Repository) CreateFollowRequest(requesterID, targetID int) error {
+	result, err := r.db.Exec(`
+		INSERT INTO follow_requests (requester_id, target_id, status)
+		VALUES (?, ?, ?)
+		ON CONFLICT(requester_id, target_id) DO UPDATE SET
+			status = excluded.status, 
+			updated_at = CURRENT_TIMESTAMP, 
+			created_at = CURRENT_TIMESTAMP
+		WHERE follow_requests.status != ?
+		`, requesterID, targetID, FollowRequestStatusPending, FollowRequestStatusPending)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return ErrFollowRequestAlreadyPending
+	}
+
+	return nil
+}
+
+func (r *Repository) GetPendingFollowRequests(targetID int) ([]FollowRequestWithRequester, error) {
+	rows, err := r.db.Query(`
+		select fr.id, u.id, u.username, u.first_name, u.last_name, COALESCE(u.profile_photo, ''), fr.status, fr.created_at, fr.updated_at
+		from follow_requests fr
+		join users u ON u.id = fr.requester_id
+		where fr.target_id = ? and fr.status = ?
+		order by fr.created_at DESC, fr.id DESC
+	`, targetID, FollowRequestStatusPending)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	requests := []FollowRequestWithRequester{}
+
+	for rows.Next() {
+		var req FollowRequestWithRequester
+		var profilePhoto string
+
+		if err := rows.Scan(
+			&req.ID,
+			&req.Requester.ID,
+			&req.Requester.Username,
+			&req.Requester.FirstName,
+			&req.Requester.LastName,
+			&profilePhoto,
+			&req.Status,
+			&req.CreatedAt,
+			&req.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+
+		if profilePhoto != "" {
+			req.Requester.ProfilePhoto = "/uploads/" + profilePhoto
+		}
+		requests = append(requests, req)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return requests, nil
+}
+
 func scanUserSummaries(rows *sql.Rows) ([]UserSummary, error) {
 	users := []UserSummary{}
 
