@@ -11,7 +11,9 @@
   scrollbar-color: rgba(167, 139, 250, 0.35) transparent;
 }
 
-.scroller[data-focused="true"] { overflow-y: hidden; }
+.scroller[data-focused="true"] {
+  overflow-y: hidden;
+}
 
 .postSurface {
   width: 100%;
@@ -19,7 +21,9 @@
   border-radius: calc(var(--space-radius-lg) + 2px);
 }
 
-.postSurface[data-expanded="false"] { cursor: pointer; }
+.postSurface[data-expanded="false"] {
+  cursor: pointer;
+}
 
 .focusWash {
   position: absolute;
@@ -31,13 +35,22 @@
   transition: opacity 220ms ease;
 }
 
-.scroller[data-focused="true"] .focusWash { opacity: 1; pointer-events: auto; }
-.scroller[data-focused="true"] .post:not([data-selected="true"]) .postSurface { opacity: 0.25; }
-.scroller[data-focused="true"] .controls { opacity: 0.35; }
+.scroller[data-focused="true"] .focusWash {
+  opacity: 1;
+  pointer-events: auto;
+}
+.scroller[data-focused="true"] .post:not([data-selected="true"]) .postSurface {
+  opacity: 0.25;
+}
+.scroller[data-focused="true"] .controls {
+  opacity: 0.35;
+}
 
 /* Mask the frozen wrapper's orbit transform without changing its inline GSAP
    coordinates. Flip animates only the child surface in both directions. */
-.post[data-selected="true"] { z-index: 60 !important; }
+.post[data-selected="true"] {
+  z-index: 60 !important;
+}
 .post[data-expanded="true"] {
   top: calc(var(--focus-offset, 0px) + 86px);
   left: clamp(16px, 3%, 40px);
@@ -54,9 +67,14 @@
   height: 100%;
   min-height: 0;
   overflow: hidden;
-  border: 1px solid rgba(183, 161, 255, 0.38);
-  background: rgba(10, 15, 32, 0.96);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(167, 139, 250, 0.28);
+  border-top-color: rgba(196, 181, 253, 0.42);
+  background: rgba(9, 14, 30, 0.96);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow:
+    0 24px 64px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
   color: var(--space-text-body);
 }
 
@@ -66,11 +84,139 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 10px 16px;
-  border-bottom: 1px solid var(--space-border);
+  padding: 8px 18px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+  background: rgba(13, 18, 40, 0.6);
 }
 
-.expandedToolbar button,
+.backButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--space-text-muted);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.backButton:hover {
+  color: var(--space-text-heading);
+  background: rgba(139, 92, 246, 0.1);
+}
+
+.backButton:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.backButton:focus-visible {
+  outline: 2px solid rgba(183, 161, 255, 0.6);
+  outline-offset: 2px;
+}
+
+.backArrow {
+  font-size: 14px;
+  line-height: 1;
+  transition: transform 0.15s ease;
+}
+
+.backButton:hover .backArrow {
+  transform: translateX(-3px);
+}
+
+.toolbarStatus {
+  font-size: 12px;
+  color: var(--space-text-muted);
+}
+
+.toolbarActions {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.toolbarSummary {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--space-text-muted);
+  cursor: pointer;
+  list-style: none;
+  font-size: 14px;
+  letter-spacing: 2px;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.toolbarSummary::-webkit-details-marker {
+  display: none;
+}
+
+.toolbarActions[open] .toolbarSummary,
+.toolbarSummary:hover {
+  border-color: rgba(148, 163, 184, 0.2);
+  background: rgba(148, 163, 184, 0.08);
+  color: var(--space-text-heading);
+}
+
+.actionMenu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 50;
+  display: grid;
+  min-width: 144px;
+  padding: 5px;
+  border: 1px solid var(--space-border-strong);
+  border-radius: 12px;
+  background: var(--space-bg-elevated, #10162e);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+
+.actionMenu button {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--space-text-body);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: left;
+  cursor: pointer;
+}
+
+.actionMenu button:hover,
+.actionMenu button:focus-visible {
+  background: rgba(139, 92, 246, 0.15);
+  color: var(--space-text-heading);
+  outline: none;
+}
+
+.deleteAction:not(:disabled):hover,
+.deleteAction:focus-visible {
+  background: var(--space-error-bg, rgba(239, 68, 68, 0.2)) !important;
+  color: var(--space-error-text, #f87171) !important;
+}
+
+.actionMenu button:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
 .cancelEdit {
   border: 1px solid var(--space-border);
   border-radius: 8px;
@@ -82,8 +228,10 @@
   cursor: pointer;
 }
 
-.expandedToolbar > span { font-size: 11px; color: var(--space-text-muted); }
-.postSurface :is(button, [tabindex]):focus-visible { outline: 2px solid #b5a2e8; outline-offset: 3px; }
+.postSurface :is(button, [tabindex]):focus-visible {
+  outline: 2px solid #b5a2e8;
+  outline-offset: 3px;
+}
 
 .postSurface[data-expanded="true"] .expandedScroll {
   flex: 1;
@@ -96,7 +244,7 @@
 }
 
 .post[data-expanded="true"] :global(.orbital-social-card) {
-  --post-media-max-height: 360px;
+  --post-media-max-height: 420px;
   max-height: none;
   overflow: visible;
   border: 0;
@@ -104,16 +252,38 @@
   background: transparent;
   box-shadow: none;
   backdrop-filter: none;
+  padding: 20px 24px 12px;
 }
 
-.expandedComments { padding: 0 22px 22px; }
-.expandedComments :global(.comments-section) { margin-top: 0; padding-top: 20px; border-top: 1px solid var(--space-border); }
-.expandedComments :global(.comment-author) { display: flex; align-items: center; gap: 8px; color: var(--space-text-heading); font-size: 13px; }
-.expandedComments :global(.comment-author) > span { display: grid; place-items: center; width: 30px; height: 30px; border: 1px solid var(--space-border); border-radius: 50%; background: rgba(139, 92, 246, 0.1); }
-.expandedEditor { padding: 20px 22px; }
-.expandedEditor h2 { margin: 0 0 16px; font-size: 18px; color: var(--space-text-heading); }
-.cancelEdit { margin-top: 12px; }
-.orbitPlaceholder { display: none; }
+.post[data-expanded="true"] :global(.orbital-social-card) :global(details) {
+  display: none;
+}
+
+.expandedComments {
+  padding: 0 24px 20px;
+}
+.expandedComposerDock {
+  flex: 0 0 auto;
+  padding: 10px 22px 14px;
+  border-top: 1px solid rgba(148, 163, 184, 0.12);
+  background: rgba(10, 15, 32, 0.96);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+.expandedEditor {
+  padding: 20px 22px;
+}
+.expandedEditor h2 {
+  margin: 0 0 16px;
+  font-size: 18px;
+  color: var(--space-text-heading);
+}
+.cancelEdit {
+  margin-top: 12px;
+}
+.orbitPlaceholder {
+  display: none;
+}
 
 .track {
   height: 100%;
@@ -184,7 +354,11 @@
 
 .post :global(.orbital-social-card) {
   --post-media-max-height: 180px;
-  max-height: min(410px, calc(var(--scene-height, 100dvh) * 0.5), max(120px, calc(var(--scene-height, 100dvh) * 0.8 - 192px)));
+  max-height: min(
+    410px,
+    calc(var(--scene-height, 100dvh) * 0.5),
+    max(120px, calc(var(--scene-height, 100dvh) * 0.8 - 192px))
+  );
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: rgba(167, 139, 250, 0.25) transparent;
@@ -251,35 +425,90 @@
   color: var(--space-text-body);
 }
 
-.status p { margin: 0 0 12px; }
-.status button { border-radius: 8px; padding: 6px 12px; }
-.status[role="alert"] { color: var(--space-error-text); }
+.status p {
+  margin: 0 0 12px;
+}
+.status button {
+  border-radius: 8px;
+  padding: 6px 12px;
+}
+.status[role="alert"] {
+  color: var(--space-error-text);
+}
 
 @media (max-width: 760px) {
-  .heading { inset: 18px 16px auto; }
-  .heading h1 { font-size: 22px; }
-  .newPost { padding: 7px 10px; }
-  .controls { gap: 10px; bottom: 12px; }
+  .heading {
+    inset: 18px 16px auto;
+  }
+  .heading h1 {
+    font-size: 22px;
+  }
+  .newPost {
+    padding: 7px 10px;
+  }
+  .controls {
+    gap: 10px;
+    bottom: 12px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .track { height: auto; }
-  .scene { position: relative; height: auto; min-height: 100%; padding: 112px 16px 32px; }
-  .post { position: relative; z-index: 30; width: min(100%, 440px); margin: 0 auto 20px; visibility: visible; }
-  .post :global(.orbital-social-card) { max-height: none; }
-  .controls { display: none; }
-  .status { margin-top: 24px; }
-  .focusWash { transition: none; }
-  .post[data-expanded="true"] { position: absolute; margin: 0; }
-  .orbitPlaceholder[data-expanded="true"] { display: block; height: var(--selected-orbit-height); margin-bottom: 20px; }
+  .track {
+    height: auto;
+  }
+  .scene {
+    position: relative;
+    height: auto;
+    min-height: 100%;
+    padding: 112px 16px 32px;
+  }
+  .post {
+    position: relative;
+    z-index: 30;
+    width: min(100%, 440px);
+    margin: 0 auto 20px;
+    visibility: visible;
+  }
+  .post :global(.orbital-social-card) {
+    max-height: none;
+  }
+  .controls {
+    display: none;
+  }
+  .status {
+    margin-top: 24px;
+  }
+  .focusWash {
+    transition: none;
+  }
+  .post[data-expanded="true"] {
+    position: absolute;
+    margin: 0;
+  }
+  .orbitPlaceholder[data-expanded="true"] {
+    display: block;
+    height: var(--selected-orbit-height);
+    margin-bottom: 20px;
+  }
 }
 
 @media (max-width: 900px) {
-  .post[data-expanded="true"] { width: min(620px, calc(100% - 32px)); left: 16px; }
+  .post[data-expanded="true"] {
+    width: min(620px, calc(100% - 32px));
+    left: 16px;
+  }
 }
 
 @media (max-width: 640px) {
-  .post[data-expanded="true"] { top: calc(var(--focus-offset, 0px) + 76px); height: max(120px, calc(var(--focus-height, 100dvh) - 90px)); }
-  .expandedComments, .expandedEditor { padding-inline: 16px; }
-  .expandedToolbar > span { display: none; }
+  .post[data-expanded="true"] {
+    top: calc(var(--focus-offset, 0px) + 76px);
+    height: max(120px, calc(var(--focus-height, 100dvh) - 90px));
+  }
+  .expandedComments,
+  .expandedEditor {
+    padding-inline: 16px;
+  }
+  .expandedToolbar > span {
+    display: none;
+  }
 }
