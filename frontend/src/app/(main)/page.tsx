@@ -5,7 +5,7 @@ import styles from "@/components/layout/AppShell.module.css";
 
 export default function Home() {
   return (
-    <div className={styles.home}>
+    <div className={styles.home} data-universe-scene="home">
       <SpaceBackground />
       <TopNavbar />
       <main className={styles.homeContent} aria-label="Home page">

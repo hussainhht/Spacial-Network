@@ -57,7 +57,7 @@ export default function TopNavbar() {
   }, [userMenuOpen, notificationsOpen]);
 
   return (
-    <nav className={styles.navbar} aria-label="Top navigation">
+    <nav data-universe-ui className={styles.navbar} aria-label="Top navigation">
       {/* 1. Left Section: Current page context */}
       <div className={styles.contextSection}>
         <span className={styles.contextEyebrow}>YOUR ORBIT</span>

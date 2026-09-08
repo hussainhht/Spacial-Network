@@ -17,13 +17,19 @@ export default function GroupStar({
   return (
     <li
       className={styles.arm}
-      style={{ "--angle": `${angle}deg`, "--radius": `${ORBITS[ring].radius}%` } as CSSProperties}
+      style={
+        {
+          "--angle": `${angle}deg`,
+          "--radius": `${ORBITS[ring].radius}%`,
+        } as CSSProperties
+      }
       data-selected={selected}
     >
       <div className={styles.anchor}>
         <div className={styles.angleCorrection}>
           <div className={styles.upright} data-counter-orbit={ring}>
             <button
+              data-universe-node
               type="button"
               id={`group-star-${group.id}`}
               className={styles.star}
@@ -44,7 +50,10 @@ export default function GroupStar({
                   pending={group.hasPendingJoinRequest}
                 />
                 <span>{group.title}</span>
-                <span>{group.memberCount} {group.memberCount === 1 ? "member" : "members"}</span>
+                <span>
+                  {group.memberCount}{" "}
+                  {group.memberCount === 1 ? "member" : "members"}
+                </span>
               </span>
             </button>
           </div>

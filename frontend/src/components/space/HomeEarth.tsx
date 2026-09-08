@@ -1,7 +1,8 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Component, type ReactNode, type Ref } from "react";
+import { memo, Component, type ReactNode, type Ref } from "react";
+import type { EarthHandle } from "@/features/universe-transition/types";
 import styles from "./HomeEarth.module.css";
 
 const Earth3D = dynamic(() => import("./Earth3D"), {
@@ -29,11 +30,24 @@ class EarthErrorBoundary extends Component<
   }
 }
 
-export default function HomeEarth({ ref }: { ref?: Ref<HTMLDivElement> }) {
+function HomeEarth({
+  ref,
+  onTransitionReady,
+  transitionActive,
+  renderActive,
+}: {
+  ref?: Ref<HTMLDivElement>;
+  transitionActive?: boolean;
+  renderActive?: boolean;
+  onTransitionReady?: (handle: EarthHandle | null) => void;
+}) {
   return (
     <div ref={ref} className={styles.stage} aria-label="3D Earth">
       <EarthErrorBoundary>
         <Earth3D
+          onTransitionReady={onTransitionReady}
+          transitionActive={transitionActive}
+          renderActive={renderActive}
           autoRotate
           rotationSpeed={0.04}
           interactive={false}
@@ -45,3 +59,7 @@ export default function HomeEarth({ ref }: { ref?: Ref<HTMLDivElement> }) {
     </div>
   );
 }
+
+// Keep Canvas configuration stable when the route coordinator changes state.
+// Route content updates need not rebuild the scene.
+export default memo(HomeEarth);

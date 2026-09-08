@@ -1,0 +1,66 @@
+.shell {
+  display: contents;
+}
+.layer {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  overflow: hidden;
+}
+.glow {
+  position: absolute;
+  width: 68px;
+  height: 68px;
+  margin: -34px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  opacity: 0;
+  color: #f0f9ff;
+  font-size: 36px;
+  background: radial-gradient(
+    circle,
+    #b9dcf4 0%,
+    #5689bd 18%,
+    #233e6c 55%,
+    transparent 72%
+  );
+  box-shadow:
+    0 0 36px #7dd3fc66,
+    0 0 100px #6366f14d;
+  pointer-events: none;
+}
+.shell[data-waiting="/groups"]
+  [data-universe-scene="groups"]
+  > :not([data-universe-background]),
+.shell[data-waiting="/"]
+  [data-universe-scene="home"]
+  > :not([data-universe-background]) {
+  visibility: hidden;
+}
+.shell[data-running] [data-universe-ui],
+.shell[data-running] [data-universe-post],
+.shell[data-running] [data-universe-node] {
+  pointer-events: none;
+}
+.shell[data-running] [data-universe-scene] * {
+  animation-play-state: paused !important;
+}
+@media (max-width: 760px) {
+  .glow {
+    box-shadow:
+      0 0 28px #7dd3fc55,
+      0 0 65px #6366f133;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .glow {
+    display: none;
+  }
+}
+
+.shell[data-running] [data-universe-node],
+.shell [data-universe-node][data-universe-entered] {
+  animation: none !important;
+}

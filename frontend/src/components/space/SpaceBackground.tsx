@@ -76,7 +76,7 @@ function SpaceBackground() {
   const brightStatic = brightStars.filter((s) => s.group === "static");
 
   return (
-    <div className={styles.spaceContainer} aria-hidden="true">
+    <div data-universe-background className={styles.spaceContainer} aria-hidden="true">
       {/* Distant subtle cosmic haze */}
       <div className={styles.cosmicHazeLayer}>
         <div className={styles.dustCloud1} />

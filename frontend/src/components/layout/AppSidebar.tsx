@@ -1,5 +1,6 @@
 "use client";
 
+import { useUniverseTransition } from "@/features/universe-transition/UniverseTransitionProvider";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useSyncExternalStore } from "react";
@@ -38,6 +39,7 @@ function useHasMounted() {
 }
 
 export default function AppSidebar() {
+  const { navigate } = useUniverseTransition();
   const pathname = usePathname();
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
@@ -72,7 +74,14 @@ export default function AppSidebar() {
 
   return (
     <aside className={styles.sidebar} aria-label="Application sidebar">
-      <Link href="/" className={styles.brand} aria-label="Social Network home">
+      <Link
+        href="/"
+        onNavigate={(event) => {
+          if (navigate("/")) event.preventDefault();
+        }}
+        className={styles.brand}
+        aria-label="Social Network home"
+      >
         <span className={styles.brandIcon}>
           <AppIcon name="orbit" />
         </span>
@@ -93,6 +102,9 @@ export default function AppSidebar() {
               <Link
                 key={href}
                 href={href}
+                onNavigate={(event) => {
+                  if (navigate(href)) event.preventDefault();
+                }}
                 className={styles.navLink}
                 aria-current={active ? "page" : undefined}
                 aria-label={label}

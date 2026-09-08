@@ -12,7 +12,8 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Flip } from "gsap/Flip";
 import type { PostView } from "./ExpandedPost";
-import HomeEarth from "@/components/space/HomeEarth";
+import earthStyles from "@/components/space/HomeEarth.module.css";
+import { useUniverseTransition } from "@/features/universe-transition/UniverseTransitionProvider";
 import { listPosts } from "../../api/posts";
 import type { Post } from "../../types/post";
 import { ApiError } from "@/lib/api/errors";
@@ -28,6 +29,7 @@ gsap.registerPlugin(ScrollTrigger, Flip);
 
 export default function HomeOrbitalFeed() {
   const router = useRouter();
+  const { register, homePosition } = useUniverseTransition();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -56,7 +58,7 @@ export default function HomeOrbitalFeed() {
   const nextRef = useRef<HTMLButtonElement>(null);
   const navigateRef = useRef<(direction: number) => void>(() => {});
   // Keep the same post in view when an earlier/current card is deleted.
-  const positionRef = useRef(0);
+  const positionRef = useRef(homePosition.current);
 
   useLayoutEffect(() => {
     const scroller = scrollerRef.current;
@@ -167,6 +169,7 @@ export default function HomeOrbitalFeed() {
         function render() {
           if (frozenRef.current) return;
           positionRef.current = playhead.position;
+          homePosition.current = playhead.position;
           const active = Math.round(playhead.position);
           for (const card of cards) {
             const offset = card.index - playhead.position;
@@ -306,7 +309,7 @@ export default function HomeOrbitalFeed() {
     );
 
     return () => media.revert();
-  }, [orbitKey]);
+  }, [orbitKey, homePosition]);
 
   const focusPost = useCallback((id: number, view: PostView) => {
     const surface = surfaceRefs.current.get(id);
@@ -470,6 +473,28 @@ export default function HomeOrbitalFeed() {
     [],
   );
 
+  useLayoutEffect(() => {
+    const root = scrollerRef.current?.closest<HTMLElement>(
+      "[data-universe-scene]",
+    );
+    if (!root) return;
+    root.dataset.universeReady = String(!loading);
+    return register("/", {
+      root,
+      pause: () => {
+        savedScrollRef.current = scrollerRef.current?.scrollTop ?? 0;
+        frozenRef.current = true;
+        orbitControlRef.current.pause();
+      },
+      resume: () => {
+        if (!selectionRef.current) {
+          frozenRef.current = false;
+          orbitControlRef.current.resume();
+        }
+      },
+    });
+  }, [register, loading, orbitKey]);
+
   function handleDeleted(id: number) {
     if (selectionRef.current?.id === id) {
       flipContextRef.current?.revert();
@@ -511,16 +536,21 @@ export default function HomeOrbitalFeed() {
       <div ref={trackRef} className={styles.track}>
         <div ref={sceneRef} className={styles.scene}>
           <div className={styles.earthLayer}>
-            <HomeEarth ref={earthRef} />
+            <div
+              ref={earthRef}
+              className={earthStyles.stage}
+              data-universe-earth
+              aria-hidden="true"
+            />
           </div>
 
           {loading && (
-            <p className={styles.status} role="status">
+            <p data-universe-ui className={styles.status} role="status">
               Loading posts…
             </p>
           )}
           {error && (
-            <div className={styles.status} role="alert">
+            <div data-universe-ui className={styles.status} role="alert">
               <p>{error}</p>
               <button
                 type="button"
@@ -535,7 +565,7 @@ export default function HomeOrbitalFeed() {
             </div>
           )}
           {!loading && !error && posts.length === 0 && (
-            <p className={styles.status}>
+            <p data-universe-ui className={styles.status}>
               No posts yet. Share the first one with your world.
             </p>
           )}
@@ -570,8 +600,10 @@ export default function HomeOrbitalFeed() {
               onOpen={(view) => openPost(post.id, view)}
               onClose={closePost}
               surfaceRef={(element) => {
-                if (element) surfaceRefs.current.set(post.id, element);
-                else surfaceRefs.current.delete(post.id);
+                if (element) {
+                  surfaceRefs.current.set(post.id, element);
+                  element.dataset.universePost = "";
+                } else surfaceRefs.current.delete(post.id);
               }}
               ref={(element) => {
                 if (element) postRefs.current.set(post.id, element);
@@ -583,6 +615,7 @@ export default function HomeOrbitalFeed() {
           {posts.length > 0 && (
             <nav
               className={styles.controls}
+              data-universe-ui
               aria-label="Browse orbital posts"
               inert={selection !== null}
             >

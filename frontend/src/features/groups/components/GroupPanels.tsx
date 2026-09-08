@@ -321,6 +321,7 @@ export function InvitationsPanel() {
   return (
     <section
       id="invitations"
+      data-universe-ui
       className="group-panel"
       aria-labelledby="invitations-heading"
     >
