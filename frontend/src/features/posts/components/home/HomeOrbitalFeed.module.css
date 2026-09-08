@@ -77,48 +77,16 @@
   transform-origin: center;
 }
 
-.post :global(.post-card) {
+.post :global(.orbital-social-card) {
+  --post-media-max-height: 180px;
   max-height: min(410px, calc(var(--scene-height, 100dvh) * 0.5), max(120px, calc(var(--scene-height, 100dvh) * 0.8 - 192px)));
   overflow-y: auto;
-  overflow-wrap: anywhere;
-  padding: 20px;
-  border-color: rgba(167, 139, 250, 0.25);
-  border-radius: 16px;
-  background: rgba(13, 18, 39, 0.94);
-  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.25);
   scrollbar-width: thin;
+  scrollbar-color: rgba(167, 139, 250, 0.25) transparent;
 }
 
-.post[data-active="true"] :global(.post-card) {
-  border-color: rgba(183, 161, 255, 0.55);
-}
-
-.post :global(.post-card-header) {
-  align-items: flex-start;
-}
-
-.post :global(.post-card-header) h2 {
-  font-size: 17px;
-  line-height: 1.4;
-}
-
-.post :global(.post-card-content) {
-  font-size: 13px;
-  line-height: 1.75;
-}
-
-.post :global(.post-card-image) {
-  flex-shrink: 0;
-  max-height: 180px;
-  object-fit: contain;
-}
-
-.post :global(.post-card-footer) {
-  flex-wrap: wrap;
-  gap: 8px;
-  padding-top: 12px;
-  border-top: 1px solid var(--space-border);
-  font-size: 11px;
+.post[data-active="true"] :global(.orbital-social-card) {
+  border-top-color: rgba(183, 161, 255, 0.45);
 }
 
 .controls {
@@ -186,8 +154,6 @@
   .heading { inset: 18px 16px auto; }
   .heading h1 { font-size: 22px; }
   .newPost { padding: 7px 10px; }
-  .post :global(.post-card) { padding: 16px; }
-  .post :global(.post-card-header) { flex-wrap: wrap; }
   .controls { gap: 10px; bottom: 12px; }
 }
 
@@ -195,7 +161,7 @@
   .track { height: auto; }
   .scene { position: relative; height: auto; min-height: 100%; padding: 112px 16px 32px; }
   .post { position: relative; z-index: 30; width: min(100%, 440px); margin: 0 auto 20px; visibility: visible; }
-  .post :global(.post-card) { max-height: none; }
+  .post :global(.orbital-social-card) { max-height: none; }
   .controls { display: none; }
   .status { margin-top: 24px; }
 }
