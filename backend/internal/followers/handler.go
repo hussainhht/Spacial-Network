@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strconv"
 	"time"
 
 	"social/internal/requestctx"
@@ -286,6 +287,106 @@ func (h *Handler) GetPendingFollowRequestsHandler(w http.ResponseWriter, r *http
 	json.NewEncoder(w).Encode(FollowRequestsResponse{
 		Success:  true,
 		Requests: responseRequests,
+	})
+}
+
+func validateFollowRequestID(raw string) (int, error) {
+	id, err := strconv.Atoi(raw)
+	if err != nil || id <= 0 {
+		return 0, errors.New("follow request id must be a positive integer")
+	}
+
+	return id, nil
+}
+
+func followRequestErrorResponse(err error) (int, string) {
+	switch {
+	case errors.Is(err, ErrFollowRequestNotFound):
+		return http.StatusNotFound, "Follow request not found"
+	case errors.Is(err, ErrFollowRequestNotPending):
+		return http.StatusConflict, "Follow request has already been processed"
+	default:
+		return http.StatusInternalServerError, "Failed to process follow request"
+	}
+}
+
+func (h *Handler) AcceptFollowRequestHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	currentUserID, ok := requestctx.UserID(r.Context())
+	if !ok {
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(FollowResponse{
+			Success: false,
+			Message: "Not logged in",
+		})
+		return
+	}
+
+	requestID, err := validateFollowRequestID(r.PathValue("requestID"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(FollowResponse{
+			Success: false,
+			Message: err.Error(),
+		})
+		return
+	}
+
+	if err := h.service.AcceptFollowRequest(requestID, currentUserID); err != nil {
+		status, message := followRequestErrorResponse(err)
+		w.WriteHeader(status)
+		json.NewEncoder(w).Encode(FollowResponse{
+			Success: false,
+			Message: message,
+		})
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(FollowResponse{
+		Success: true,
+		Message: "Follow request accepted",
+	})
+}
+
+func (h *Handler) DeclineFollowRequestHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	currentUserID, ok := requestctx.UserID(r.Context())
+	if !ok {
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(FollowResponse{
+			Success: false,
+			Message: "Not logged in",
+		})
+		return
+	}
+
+	requestID, err := validateFollowRequestID(r.PathValue("requestID"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(FollowResponse{
+			Success: false,
+			Message: err.Error(),
+		})
+		return
+	}
+
+	if err := h.service.DeclineFollowRequest(requestID, currentUserID); err != nil {
+		status, message := followRequestErrorResponse(err)
+		w.WriteHeader(status)
+		json.NewEncoder(w).Encode(FollowResponse{
+			Success: false,
+			Message: message,
+		})
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(FollowResponse{
+		Success: true,
+		Message: "Follow request declined",
 	})
 }
 

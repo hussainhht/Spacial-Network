@@ -134,6 +134,15 @@ func NewRouter(db *sql.DB, cfg config.Config) (http.Handler, error) {
 		sessionMiddleware(http.HandlerFunc(deps.Handlers.Followers.GetPendingFollowRequestsHandler)),
 	)
 
+	apiMux.Handle(
+		"POST /follow-requests/{requestID}/accept",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Followers.AcceptFollowRequestHandler)),
+	)
+	apiMux.Handle(
+		"POST /follow-requests/{requestID}/decline",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Followers.DeclineFollowRequestHandler)),
+	)
+
 	// =========================
 	// Groups Routes
 	// =========================
