@@ -1,0 +1,305 @@
+.spaceContainer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+  background-color: var(--space-bg-deep, #050816);
+}
+
+/* Subtle cosmic haze & dust clouds */
+.cosmicHazeLayer {
+  position: absolute;
+  inset: -6%;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.dustCloud1 {
+  position: absolute;
+  top: 5%;
+  left: 3%;
+  width: 55vw;
+  height: 50vh;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(99, 102, 241, 0.055) 0%,
+    rgba(76, 29, 149, 0.035) 45%,
+    transparent 72%
+  );
+  filter: blur(80px);
+  animation: hazeBreathe1 52s ease-in-out infinite alternate;
+}
+
+.dustCloud2 {
+  position: absolute;
+  bottom: 0%;
+  right: 5%;
+  width: 65vw;
+  height: 60vh;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(30, 58, 138, 0.065) 0%,
+    rgba(14, 116, 144, 0.03) 50%,
+    transparent 75%
+  );
+  filter: blur(95px);
+  animation: hazeBreathe2 68s ease-in-out infinite alternate;
+}
+
+.dustCloud3 {
+  position: absolute;
+  bottom: 12%;
+  left: 2%;
+  width: 45vw;
+  height: 40vh;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(67, 56, 202, 0.04) 0%,
+    transparent 68%
+  );
+  filter: blur(75px);
+  animation: hazeBreathe1 44s ease-in-out infinite alternate-reverse;
+}
+
+/* Vector Starfield Layers */
+.starSvg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
+}
+
+/* Autonomous subtle drift layers */
+.layerDistant {
+  position: absolute;
+  inset: -20px;
+  pointer-events: none;
+  animation: driftDistant 75s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+.layerMedium {
+  position: absolute;
+  inset: -20px;
+  pointer-events: none;
+  animation: driftMedium 58s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+.layerBright {
+  position: absolute;
+  inset: -20px;
+  pointer-events: none;
+  animation: driftBright 48s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+/* Twinkle animations with irregular organic keyframe steps */
+.twinkleFarA {
+  animation: twinkleCurveA 21s ease-in-out infinite;
+  animation-delay: -6s;
+}
+
+.twinkleFarB {
+  animation: twinkleCurveB 29s ease-in-out infinite;
+  animation-delay: -14s;
+}
+
+.twinkleMidA {
+  animation: twinkleCurveA 16s ease-in-out infinite;
+  animation-delay: -4s;
+}
+
+.twinkleMidB {
+  animation: twinkleCurveB 24s ease-in-out infinite;
+  animation-delay: -11s;
+}
+
+.twinkleMidC {
+  animation: twinkleCurveC 34s ease-in-out infinite;
+  animation-delay: -19s;
+}
+
+/* Bright stars glow & pulse */
+.pulseBright {
+  animation: brightPulse 22s ease-in-out infinite;
+  animation-delay: -7s;
+}
+
+.brightStatic {
+  filter: drop-shadow(0 0 2px rgba(224, 231, 255, 0.45));
+}
+
+.starburstLine {
+  stroke: #ffffff;
+  stroke-width: 0.55px;
+  opacity: 0.32;
+  vector-effect: non-scaling-stroke;
+}
+
+.starGlowHalo {
+  opacity: 0.18;
+  filter: blur(1.2px);
+}
+
+/* Keyframes */
+
+@keyframes driftDistant {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(1.5px, -1.2px, 0);
+  }
+}
+
+@keyframes driftMedium {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-2.2px, 1.4px, 0);
+  }
+}
+
+@keyframes driftBright {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(0.8px, 0.8px, 0);
+  }
+}
+
+@keyframes hazeBreathe1 {
+  0% {
+    opacity: 0.82;
+    transform: scale(1) translate3d(0, 0, 0);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.025) translate3d(2px, -1px, 0);
+  }
+  100% {
+    opacity: 0.88;
+    transform: scale(0.99) translate3d(-1px, 2px, 0);
+  }
+}
+
+@keyframes hazeBreathe2 {
+  0% {
+    opacity: 0.85;
+    transform: scale(0.99) translate3d(0, 0, 0);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.03) translate3d(-2px, 2px, 0);
+  }
+  100% {
+    opacity: 0.85;
+    transform: scale(0.99) translate3d(0, 0, 0);
+  }
+}
+
+/* Gentle, irregular organic twinkling curves */
+@keyframes twinkleCurveA {
+  0% {
+    opacity: 0.72;
+  }
+  28% {
+    opacity: 0.95;
+  }
+  48% {
+    opacity: 0.78;
+  }
+  74% {
+    opacity: 1.18;
+  }
+  88% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0.72;
+  }
+}
+
+@keyframes twinkleCurveB {
+  0% {
+    opacity: 0.8;
+  }
+  32% {
+    opacity: 1.15;
+  }
+  56% {
+    opacity: 0.72;
+  }
+  78% {
+    opacity: 1.05;
+  }
+  100% {
+    opacity: 0.8;
+  }
+}
+
+@keyframes twinkleCurveC {
+  0% {
+    opacity: 0.75;
+  }
+  22% {
+    opacity: 0.9;
+  }
+  42% {
+    opacity: 1.22;
+  }
+  65% {
+    opacity: 0.84;
+  }
+  85% {
+    opacity: 1.1;
+  }
+  100% {
+    opacity: 0.75;
+  }
+}
+
+@keyframes brightPulse {
+  0% {
+    opacity: 0.82;
+    filter: drop-shadow(0 0 1.5px rgba(224, 231, 255, 0.4));
+  }
+  36% {
+    opacity: 1;
+    filter: drop-shadow(0 0 3.2px rgba(224, 231, 255, 0.7));
+  }
+  64% {
+    opacity: 0.88;
+    filter: drop-shadow(0 0 2px rgba(224, 231, 255, 0.5));
+  }
+  100% {
+    opacity: 0.82;
+    filter: drop-shadow(0 0 1.5px rgba(224, 231, 255, 0.4));
+  }
+}
+
+/* Reduced motion accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .layerDistant,
+  .layerMedium,
+  .layerBright,
+  .dustCloud1,
+  .dustCloud2,
+  .dustCloud3,
+  .twinkleFarA,
+  .twinkleFarB,
+  .twinkleMidA,
+  .twinkleMidB,
+  .twinkleMidC,
+  .pulseBright {
+    animation: none !important;
+    transform: none !important;
+  }
+}

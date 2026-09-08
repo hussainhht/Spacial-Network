@@ -1,4 +1,5 @@
 .scroller {
+  scrollbar-gutter: stable;
   position: absolute;
   inset: 0;
   z-index: 0;
@@ -9,6 +10,110 @@
   scrollbar-width: thin;
   scrollbar-color: rgba(167, 139, 250, 0.35) transparent;
 }
+
+.scroller[data-focused="true"] { overflow-y: hidden; }
+
+.postSurface {
+  width: 100%;
+  transform-origin: top left;
+  border-radius: calc(var(--space-radius-lg) + 2px);
+}
+
+.postSurface[data-expanded="false"] { cursor: pointer; }
+
+.focusWash {
+  position: absolute;
+  inset: 0;
+  z-index: 45;
+  background: linear-gradient(90deg, rgba(5, 8, 23, 0.2), transparent 85%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 220ms ease;
+}
+
+.scroller[data-focused="true"] .focusWash { opacity: 1; pointer-events: auto; }
+.scroller[data-focused="true"] .post:not([data-selected="true"]) .postSurface { opacity: 0.25; }
+.scroller[data-focused="true"] .controls { opacity: 0.35; }
+
+/* Mask the frozen wrapper's orbit transform without changing its inline GSAP
+   coordinates. Flip animates only the child surface in both directions. */
+.post[data-selected="true"] { z-index: 60 !important; }
+.post[data-expanded="true"] {
+  top: calc(var(--focus-offset, 0px) + 86px);
+  left: clamp(16px, 3%, 40px);
+  width: min(720px, 62%, calc(100% - 32px));
+  height: max(120px, calc(var(--focus-height, 100dvh) - 110px));
+  transform: none !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.postSurface[data-expanded="true"] {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid rgba(183, 161, 255, 0.38);
+  background: rgba(10, 15, 32, 0.96);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  color: var(--space-text-body);
+}
+
+.expandedToolbar {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--space-border);
+}
+
+.expandedToolbar button,
+.cancelEdit {
+  border: 1px solid var(--space-border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: rgba(139, 92, 246, 0.1);
+  color: var(--space-text-heading);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.expandedToolbar > span { font-size: 11px; color: var(--space-text-muted); }
+.postSurface :is(button, [tabindex]):focus-visible { outline: 2px solid #b5a2e8; outline-offset: 3px; }
+
+.postSurface[data-expanded="true"] .expandedScroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(167, 139, 250, 0.35) transparent;
+  overflow-wrap: anywhere;
+}
+
+.post[data-expanded="true"] :global(.orbital-social-card) {
+  --post-media-max-height: 360px;
+  max-height: none;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.expandedComments { padding: 0 22px 22px; }
+.expandedComments :global(.comments-section) { margin-top: 0; padding-top: 20px; border-top: 1px solid var(--space-border); }
+.expandedComments :global(.comment-author) { display: flex; align-items: center; gap: 8px; color: var(--space-text-heading); font-size: 13px; }
+.expandedComments :global(.comment-author) > span { display: grid; place-items: center; width: 30px; height: 30px; border: 1px solid var(--space-border); border-radius: 50%; background: rgba(139, 92, 246, 0.1); }
+.expandedEditor { padding: 20px 22px; }
+.expandedEditor h2 { margin: 0 0 16px; font-size: 18px; color: var(--space-text-heading); }
+.cancelEdit { margin-top: 12px; }
+.orbitPlaceholder { display: none; }
 
 .track {
   height: 100%;
@@ -164,4 +269,17 @@
   .post :global(.orbital-social-card) { max-height: none; }
   .controls { display: none; }
   .status { margin-top: 24px; }
+  .focusWash { transition: none; }
+  .post[data-expanded="true"] { position: absolute; margin: 0; }
+  .orbitPlaceholder[data-expanded="true"] { display: block; height: var(--selected-orbit-height); margin-bottom: 20px; }
+}
+
+@media (max-width: 900px) {
+  .post[data-expanded="true"] { width: min(620px, calc(100% - 32px)); left: 16px; }
+}
+
+@media (max-width: 640px) {
+  .post[data-expanded="true"] { top: calc(var(--focus-offset, 0px) + 76px); height: max(120px, calc(var(--focus-height, 100dvh) - 90px)); }
+  .expandedComments, .expandedEditor { padding-inline: 16px; }
+  .expandedToolbar > span { display: none; }
 }

@@ -12,9 +12,12 @@ import styles from "./PostCard.module.css";
 interface PostCardProps {
   post: Post;
   onDeleted: (id: number) => void;
+  onOpen?: () => void;
+  onComments?: () => void;
+  onEdit?: () => void;
 }
 
-export default function PostCard({ post, onDeleted }: PostCardProps) {
+export default function PostCard({ post, onDeleted, onOpen, onComments, onEdit }: PostCardProps) {
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
 
@@ -72,6 +75,7 @@ export default function PostCard({ post, onDeleted }: PostCardProps) {
             }}
             onKeyDown={(event) => {
               if (event.key === "Escape") {
+                event.stopPropagation();
                 event.currentTarget.open = false;
                 event.currentTarget.querySelector("summary")?.focus();
               }
@@ -81,7 +85,12 @@ export default function PostCard({ post, onDeleted }: PostCardProps) {
               <span aria-hidden="true">•••</span>
             </summary>
             <div className={styles.actionMenu}>
-              <Link href={`/posts/${post.id}/edit`}>Edit post</Link>
+              {onEdit ? (
+                <button type="button" onClick={(event) => {
+                  event.currentTarget.closest("details")?.removeAttribute("open");
+                  onEdit();
+                }}>Edit post</button>
+              ) : <Link href={`/posts/${post.id}/edit`}>Edit post</Link>}
               <button
                 className={styles.deleteAction}
                 type="button"
@@ -97,7 +106,11 @@ export default function PostCard({ post, onDeleted }: PostCardProps) {
 
       <div className={styles.body}>
         <h2 className={styles.title}>
-          <Link href={`/posts/${post.id}`}>{post.title}</Link>
+          {onOpen ? (
+            <button className={styles.titleButton} type="button" onClick={onOpen}>
+              {post.title}
+            </button>
+          ) : <Link href={`/posts/${post.id}`}>{post.title}</Link>}
         </h2>
         <p className={styles.content}>{post.content}</p>
       </div>
@@ -114,11 +127,15 @@ export default function PostCard({ post, onDeleted }: PostCardProps) {
       )}
 
       <footer className={styles.footer}>
-        <Link className={styles.comments} href={`/posts/${post.id}`}>
+        {onComments ? <button className={styles.comments} type="button" onClick={onComments}>
           <AppIcon name="chat" width={17} height={17} />
           Comments
           <AppIcon name="arrow" width={15} height={15} />
-        </Link>
+        </button> : <Link className={styles.comments} href={`/posts/${post.id}`}>
+          <AppIcon name="chat" width={17} height={17} />
+          Comments
+          <AppIcon name="arrow" width={15} height={15} />
+        </Link>}
         <span className={styles.privacy}>
           {post.private ? "Private" : "Public"}
         </span>

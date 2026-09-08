@@ -215,40 +215,13 @@
   flex-direction: column;
   overflow: hidden;
   color: var(--space-text-body);
-  background:
-    radial-gradient(
-      ellipse at 85% 10%,
-      rgba(82, 47, 143, 0.2),
-      transparent 44%
-    ),
-    radial-gradient(
-      ellipse at 8% 70%,
-      rgba(26, 66, 106, 0.13),
-      transparent 42%
-    ),
-    var(--space-bg-deep);
+  background: var(--space-bg-deep);
   font:
     14px/1.6 ui-sans-serif,
     system-ui,
     -apple-system,
     sans-serif;
   color-scheme: dark;
-}
-.home::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  opacity: 0.35;
-  background-image:
-    radial-gradient(1px 1px at 35px 54px, #cbd5e1 99%, transparent),
-    radial-gradient(1px 1px at 130px 210px, #a5b4fc 99%, transparent),
-    radial-gradient(1px 1px at 270px 90px, #fff 99%, transparent);
-  background-size:
-    310px 290px,
-    410px 370px,
-    530px 430px;
 }
 .header {
   display: flex;

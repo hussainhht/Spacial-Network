@@ -166,6 +166,16 @@
   text-decoration: none;
 }
 
+.titleButton {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
 .title a:hover {
   text-decoration: underline;
   text-decoration-color: rgba(167, 139, 250, 0.6);
@@ -202,6 +212,10 @@
 }
 
 .comments {
+  border: 0;
+  background: none;
+  font-family: inherit;
+  cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 8px;

@@ -5,13 +5,15 @@ import { useState } from "react";
 import { deleteComment } from "@/features/comments/api/comments";
 import type { Comment } from "@/features/comments/types/comment";
 import { getBackendBaseUrl } from "@/lib/api";
+import AppIcon from "@/components/layout/AppIcon";
 
 interface CommentListProps {
   comments: Comment[];
   onDeleted: (id: number) => void;
+  showAuthors?: boolean;
 }
 
-export default function CommentList({ comments, onDeleted }: CommentListProps) {
+export default function CommentList({ comments, onDeleted, showAuthors = false }: CommentListProps) {
   if (comments.length === 0) {
     return <p className="comment-empty">No comments yet.</p>;
   }
@@ -19,7 +21,7 @@ export default function CommentList({ comments, onDeleted }: CommentListProps) {
   return (
     <ul className="comment-list">
       {comments.map((comment) => (
-        <CommentItem key={comment.id} comment={comment} onDeleted={onDeleted} />
+        <CommentItem key={comment.id} comment={comment} onDeleted={onDeleted} showAuthor={showAuthors} />
       ))}
     </ul>
   );
@@ -28,9 +30,11 @@ export default function CommentList({ comments, onDeleted }: CommentListProps) {
 function CommentItem({
   comment,
   onDeleted,
+  showAuthor,
 }: {
   comment: Comment;
   onDeleted: (id: number) => void;
+  showAuthor: boolean;
 }) {
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
@@ -54,6 +58,12 @@ function CommentItem({
 
   return (
     <li className="comment-item">
+      {showAuthor && (
+        <header className="comment-author">
+          <span aria-hidden="true"><AppIcon name="user" width={18} height={18} /></span>
+          {comment.is_owner ? "You" : `User #${comment.user_id}`}
+        </header>
+      )}
       <p className="comment-content">{comment.content}</p>
 
       {comment.image_url && (

@@ -8,9 +8,10 @@ import CommentList from "./CommentList";
 
 interface CommentsSectionProps {
   postId: number;
+  showAuthors?: boolean;
 }
 
-export default function CommentsSection({ postId }: CommentsSectionProps) {
+export default function CommentsSection({ postId, showAuthors = false }: CommentsSectionProps) {
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -55,7 +56,7 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
       {error && <p className="form-error">{error}</p>}
 
       {!loading && !error && (
-        <CommentList comments={comments} onDeleted={handleDeleted} />
+        <CommentList comments={comments} onDeleted={handleDeleted} showAuthors={showAuthors} />
       )}
 
       <CommentForm onSubmit={handleCreate} />
