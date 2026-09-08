@@ -1,5 +1,5 @@
-import MyProfilePageContent from "@/features/profile/components/MyProfilePageContent";
+import ProfilePage from "@/features/profile/components/ProfilePage";
 
-export default function ProfilePage() {
-  return <MyProfilePageContent />;
+export default function Page() {
+  return <ProfilePage />;
 }

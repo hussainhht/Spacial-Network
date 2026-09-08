@@ -1,127 +1,312 @@
-import type { Group , CreateGroupInput, GroupMember, Membership, InviteCandidate, GroupInvitation } from "../types/group";
 import { getApiBaseUrl, getUploadsBaseUrl } from "@/lib/api";
+import { ApiError } from "@/lib/api/errors";
+import type {
+  Group,
+  CreateGroupInput,
+  UpdateGroupInput,
+  GroupMember,
+  Membership,
+  InviteCandidate,
+  GroupInvitation,
+  GroupJoinRequest,
+  GroupEvent,
+  CreateEventInput,
+  EventResponseStatus,
+  EventResponseUser,
+} from "../types/group";
 
-interface ApiGroup {
-  id: number;
-  creator_id: number;
-  title: string;
-  description: string;
-  created_at: string;
-  updated_at: string;
-}
+import type {
+  ApiGroup,
+  ApiGroupMember,
+  ApiInviteCandidate,
+  ApiGroupInvitation,
+  ApiGroupJoinRequest,
+  ApiEvent,
+} from "../types/api";
 
-
-
-interface ApiGroupMember {
-  user_id: number;
-  username: string;
-  role: string;
-  joined_at: string;
-}
-
-interface GroupMembersResponse {
-  success: boolean;
-  message?: string;
-  members?: ApiGroupMember[];
-}
-
-interface GroupsResponse {
-  success: boolean;
-  message?: string;
-  groups?: ApiGroup[];
-}
-
-interface CreateGroupResponse {
-  success: boolean;
-  message?: string;
-  group_id?: number;
-}
-
-interface GetGroupResponse {
-  success: boolean;
-  message?: string;
-  group?: ApiGroup;
-}
-
-interface MembershipResponse {
-  success: boolean;
-  message?: string;
-  is_member: boolean;
-  role?: string;
-}
-
-interface ApiInviteCandidate {
-  id: number;
-  username: string;
-  first_name: string;
-  last_name: string;
-  avatar?: string;
-}
-
-interface CreateGroupInvitationResponse {
+interface Envelope {
   success: boolean;
   message?: string;
 }
 
-interface CreateJoinRequestResponse {
-  success: boolean;
-  message?: string;
+// Groups uses {success,message}, unlike the shared client's {error} envelope.
+// Keep status and the server's domain message, including conflicts and authorization.
+async function groupRequest<T extends Envelope>(
+  path: string,
+  body?: unknown,
+  method = "GET",
+): Promise<T> {
+  let response: Response;
+  try {
+    response = await fetch(`${getApiBaseUrl()}${path}`, {
+      method,
+      credentials: "include",
+      cache: "no-store",
+      ...(body === undefined
+        ? {}
+        : body instanceof FormData
+          ? { body }
+          : {
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(body),
+            }),
+    });
+  } catch {
+    throw new ApiError(
+      "Could not connect to server. Checking the latest group state…",
+      0,
+    );
+  }
+  let data: T;
+  try {
+    data = await response.json();
+  } catch {
+    throw new ApiError(
+      "The server returned an unreadable response. Check the latest group state before retrying.",
+      response.status,
+    );
+  }
+  if (!response.ok || !data.success)
+    throw new ApiError(
+      data.message ?? "Unable to complete the group request",
+      response.status,
+    );
+  return data;
 }
 
-interface ApiGroupInvitation {
-  id: number;
-  group_id: number;
-  invited_by: number;
-  invited_user_id: number;
-  status: string;
-  created_at: string;
-  updated_at: string;
-}
+const post = (path: string, body?: unknown) =>
+  groupRequest<Envelope>(path, body, "POST").then(() => undefined);
 
-interface GetGroupInvitationsResponse {
-  success: boolean;
-  message?: string;
-  invitations?: ApiGroupInvitation[];
-}
-
-function toGroupInvitation(invitation: ApiGroupInvitation): GroupInvitation {
+function toGroup(g: ApiGroup): Group {
   return {
-    id: invitation.id,
-    groupId: invitation.group_id,
-    invitedBy: invitation.invited_by,
-    invitedUserId: invitation.invited_user_id,
-    status: invitation.status,
-    createdAt: invitation.created_at,
-    updatedAt: invitation.updated_at,
+    id: g.id,
+    creatorId: g.creator_id,
+    title: g.title,
+    description: g.description,
+    groupPhoto: g.group_photo,
+    createdAt: g.created_at,
+    updatedAt: g.updated_at,
+    creatorUsername: g.creator_username,
+    memberCount: g.member_count,
+    membershipRole: g.membership_role,
+    hasPendingJoinRequest: g.has_pending_join_request,
+    hasPendingInvitation: g.has_pending_invitation,
   };
 }
 
 export async function getGroup(groupId: number): Promise<Group> {
-  const response = await fetch(`${getApiBaseUrl()}/groups/${groupId}`, {
-    method: "GET",
-    credentials: "include",
-  });
-
-  const data: GetGroupResponse = await response.json();
-
-  if (!response.ok || !data.success || !data.group) {
-    throw new Error(data.message ?? "Failed to load group");
-  }
-
+  const data = await groupRequest<Envelope & { group: ApiGroup }>(
+    `/groups/${groupId}`,
+  );
   return toGroup(data.group);
 }
 
-function toGroupMember(member: ApiGroupMember): GroupMember {
+function groupsQuery(limit: number, offset: number, search: string): string {
+  const params = new URLSearchParams({
+    limit: String(limit),
+    offset: String(offset),
+  });
+  if (search) params.set("search", search);
+  return params.toString();
+}
+
+export async function getGroups(
+  limit = 20,
+  offset = 0,
+  search = "",
+): Promise<Group[]> {
+  const data = await groupRequest<Envelope & { groups?: ApiGroup[] }>(
+    `/groups?${groupsQuery(limit, offset, search)}`,
+  );
+  return (data.groups ?? []).map(toGroup);
+}
+
+// Groups the current session's user actually belongs to (creator or
+// member) - backs the "My Groups" section on /groups.
+export async function getMyGroups(
+  limit = 20,
+  offset = 0,
+  search = "",
+): Promise<Group[]> {
+  const data = await groupRequest<Envelope & { groups?: ApiGroup[] }>(
+    `/groups/mine?${groupsQuery(limit, offset, search)}`,
+  );
+  return (data.groups ?? []).map(toGroup);
+}
+
+export async function createGroup(input: CreateGroupInput): Promise<Group> {
+  const formData = new FormData();
+  formData.append("title", input.title);
+  formData.append("description", input.description);
+  if (input.photo) {
+    formData.append("groupPhoto", input.photo);
+  }
+
+  const data = await groupRequest<Envelope & { group_id: number }>(
+    "/groups",
+    formData,
+    "POST",
+  );
+  return getGroup(data.group_id);
+}
+
+export async function updateGroup(
+  groupId: number,
+  input: UpdateGroupInput,
+): Promise<Group> {
+  const formData = new FormData();
+  formData.append("title", input.title);
+  formData.append("description", input.description);
+  if (input.photo) {
+    formData.append("groupPhoto", input.photo);
+  } else if (input.removePhoto) {
+    formData.append("remove_photo", "true");
+  }
+
+  const data = await groupRequest<Envelope & { group: ApiGroup }>(
+    `/groups/${groupId}`,
+    formData,
+    "PUT",
+  );
+  return toGroup(data.group);
+}
+
+export async function getGroupMembers(groupId: number): Promise<GroupMember[]> {
+  const data = await groupRequest<Envelope & { members?: ApiGroupMember[] }>(
+    `/groups/${groupId}/members`,
+  );
+  return (data.members ?? []).map((m) => ({
+    userId: m.user_id,
+    username: m.username,
+    role: m.role,
+    joinedAt: m.joined_at,
+    avatar: m.avatar,
+  }));
+}
+
+export async function getMembership(groupId: number): Promise<Membership> {
+  const data = await groupRequest<
+    Envelope & {
+      is_member: boolean;
+      role?: string;
+      has_pending_join_request: boolean;
+    }
+  >(`/groups/${groupId}/membership`);
   return {
-    userId: member.user_id,
-    username: member.username,
-    role: member.role,
-    joinedAt: member.joined_at,
+    isMember: data.is_member,
+    role: data.role,
+    hasPendingJoinRequest: data.has_pending_join_request,
   };
 }
 
-// Exported so the WebSocket-based search results (same field shape as the
-// HTTP search response's `users`) can go through the same mapping.
+export async function getPendingInvitations(): Promise<GroupInvitation[]> {
+  const data = await groupRequest<
+    Envelope & { invitations?: ApiGroupInvitation[] }
+  >("/group-invitations");
+  return (data.invitations ?? []).map((i) => ({
+    id: i.id,
+    groupId: i.group_id,
+    invitedBy: i.invited_by,
+    invitedUserId: i.invited_user_id,
+    status: i.status,
+    createdAt: i.created_at,
+    updatedAt: i.updated_at,
+    groupTitle: i.group_title,
+    inviterUsername: i.inviter_username,
+  }));
+}
+
+export async function getPendingJoinRequests(
+  groupId: number,
+): Promise<GroupJoinRequest[]> {
+  const data = await groupRequest<
+    Envelope & { join_requests?: ApiGroupJoinRequest[] }
+  >(`/groups/${groupId}/join-requests`);
+  return (data.join_requests ?? []).map((r) => ({
+    id: r.id,
+    groupId: r.group_id,
+    userId: r.user_id,
+    username: r.username,
+    status: r.status,
+    createdAt: r.created_at,
+    updatedAt: r.updated_at,
+  }));
+}
+
+function toGroupEvent(e: ApiEvent): GroupEvent {
+  return {
+    id: e.id,
+    groupId: e.group_id,
+    createdBy: e.created_by,
+    title: e.title,
+    description: e.description,
+    eventTime: e.event_time,
+    createdAt: e.created_at,
+    updatedAt: e.updated_at,
+    currentUserResponse: e.current_user_response ?? null,
+    goingCount: e.going_count,
+    notGoingCount: e.not_going_count,
+  };
+}
+
+export async function getGroupEvents(groupId: number): Promise<GroupEvent[]> {
+  const data = await groupRequest<Envelope & { events?: ApiEvent[] }>(
+    `/groups/${groupId}/events`,
+  );
+  return (data.events ?? []).map(toGroupEvent);
+}
+
+export async function createGroupEvent(
+  groupId: number,
+  input: CreateEventInput,
+): Promise<void> {
+  await groupRequest<Envelope & { event_id?: number }>(
+    `/groups/${groupId}/events`,
+    {
+      title: input.title,
+      description: input.description,
+      event_time: input.eventTime,
+    },
+    "POST",
+  );
+}
+
+export async function respondToGroupEvent(
+  groupId: number,
+  eventId: number,
+  response: EventResponseStatus,
+): Promise<GroupEvent> {
+  const data = await groupRequest<Envelope & { event: ApiEvent }>(
+    `/groups/${groupId}/events/${eventId}/response`,
+    { response },
+    "PUT",
+  );
+  return toGroupEvent(data.event);
+}
+
+export const createJoinRequest = (id: number) =>
+  post(`/groups/${id}/join-requests`);
+export const createGroupInvitation = (groupId: number, userId: number) =>
+  post(`/groups/${groupId}/invitations`, { invited_user_id: userId });
+export const acceptJoinRequest = (groupId: number, id: number) =>
+  post(`/groups/${groupId}/join-requests/${id}/accept`);
+export const rejectJoinRequest = (groupId: number, id: number) =>
+  post(`/groups/${groupId}/join-requests/${id}/reject`);
+export const acceptGroupInvitation = (id: number) =>
+  post(`/group-invitations/${id}/accept`);
+export const declineGroupInvitation = (id: number) =>
+  post(`/group-invitations/${id}/decline`);
+export const removeMember = (groupId: number, memberId: number) =>
+  groupRequest<Envelope>(
+    `/groups/${groupId}/members/${memberId}`,
+    undefined,
+    "DELETE",
+  ).then(() => undefined);
+export const deleteGroup = (groupId: number) =>
+  groupRequest<Envelope>(`/groups/${groupId}`, undefined, "DELETE").then(
+    () => undefined,
+  );
+
 export function toInviteCandidate(user: ApiInviteCandidate): InviteCandidate {
   return {
     id: user.id,
@@ -132,156 +317,29 @@ export function toInviteCandidate(user: ApiInviteCandidate): InviteCandidate {
   };
 }
 
-// avatarUrl turns a raw profile_photo path (as stored/returned by the
-// backend, e.g. "avatars/xxx.jpg") into a URL the browser can load. The
-// backend serves uploads directly from /uploads/, outside of /api/.
-export function avatarUrl(profilePhoto?: string): string | undefined {
-  if (!profilePhoto) return undefined;
-  if (/^https?:\/\//.test(profilePhoto)) return profilePhoto;
-  return `${getUploadsBaseUrl()}/${profilePhoto}`;
+export function avatarUrl(photo?: string): string | undefined {
+  if (!photo) return undefined;
+  return /^https?:\/\//.test(photo) ? photo : `${getUploadsBaseUrl()}/${photo}`;
 }
 
-function toGroup(group: ApiGroup): Group {
-  return {
-    id: group.id,
-    creatorId: group.creator_id,
-    title: group.title,
-    description: group.description,
-    createdAt: group.created_at,
-    updatedAt: group.updated_at,
-  };
-}
-
-export async function getGroups(): Promise<Group[]> {
-  const response = await fetch(`${getApiBaseUrl()}/groups`, {
-    method: "GET",
-    credentials: "include",
-  });
-
-  const data: GroupsResponse = await response.json();
-
-  if (!response.ok || !data.success) {
-    throw new Error(data.message ?? "Failed to load groups");
-  }
-
-  return (data.groups ?? []).map(toGroup);
-}
-
-
-export async function createGroup(
-  input: CreateGroupInput
-): Promise<Group> {
-  const response = await fetch(`${getApiBaseUrl()}/groups`, {
-    method: "POST",
-
-    headers: {
-      "Content-Type": "application/json",
-    },
-
-    credentials: "include",
-
-    body: JSON.stringify(input),
-  });
-
-  const data: CreateGroupResponse = await response.json();
-
-  if (!response.ok || !data.success || !data.group_id) {
-    throw new Error(data.message ?? "Failed to create group");
-  }
-
-  return getGroup(data.group_id);
-}
-
-
-export async function getGroupMembers(
-  groupId: number
-): Promise<GroupMember[]> {
-  const response = await fetch(
-    `${getApiBaseUrl()}/groups/${groupId}/members`,
-    {
-      method: "GET",
-      credentials: "include",
-    }
-  );
-
-  const data: GroupMembersResponse = await response.json();
-
-  if (!response.ok || !data.success) {
-    throw new Error(data.message ?? "Failed to load group members");
-  }
-
-  return (data.members ?? []).map(toGroupMember);
-}
-
-export async function getMembership(groupId: number): Promise<Membership> {
-  const response = await fetch(
-    `${getApiBaseUrl()}/groups/${groupId}/membership`,
-    {
-      method: "GET",
-      credentials: "include",
-    }
-  );
-
-  const data: MembershipResponse = await response.json();
-
-  if (!response.ok || !data.success) {
-    throw new Error(data.message ?? "Failed to load membership status");
-  }
-
-  return { isMember: data.is_member, role: data.role };
-}
-
-export async function createJoinRequest(groupId: number): Promise<void> {
-  const response = await fetch(`${getApiBaseUrl()}/groups/${groupId}/join-requests`, {
-    method: "POST",
-    credentials: "include",
-  });
-
-  const data: CreateJoinRequestResponse = await response.json();
-
-  if (!response.ok || !data.success) {
-    throw new Error(data.message ?? "Failed to send join request");
-  }
-}
-
-// getPendingInvitations lists the current user's pending group invitations
-// (GET /group-invitations). Used to resolve a group_invitation
-// notification's entity_id (the invitation ID) to its group, since the
-// notification payload itself doesn't carry a group_id.
-export async function getPendingInvitations(): Promise<GroupInvitation[]> {
-  const response = await fetch(`${getApiBaseUrl()}/group-invitations`, {
-    method: "GET",
-    credentials: "include",
-  });
-
-  const data: GetGroupInvitationsResponse = await response.json();
-
-  if (!response.ok || !data.success) {
-    throw new Error(data.message ?? "Failed to load invitations");
-  }
-
-  return (data.invitations ?? []).map(toGroupInvitation);
-}
-
-export async function createGroupInvitation(
+export async function getEventResponses(
   groupId: number,
-  invitedUserId: number
-): Promise<void> {
-  const response = await fetch(`${getApiBaseUrl()}/groups/${groupId}/invitations`, {
-    method: "POST",
-
-    headers: {
-      "Content-Type": "application/json",
-    },
-
-    credentials: "include",
-
-    body: JSON.stringify({ invited_user_id: invitedUserId }),
-  });
-
-  const data: CreateGroupInvitationResponse = await response.json();
-
-  if (!response.ok || !data.success) {
-    throw new Error(data.message ?? "Failed to send invitation");
-  }
+  eventId: number,
+): Promise<EventResponseUser[]> {
+  const data = await groupRequest<
+    Envelope & {
+      responses: {
+        user_id: number;
+        username: string;
+        avatar?: string;
+        response: EventResponseStatus;
+      }[];
+    }
+  >(`/groups/${groupId}/events/${eventId}/responses`);
+  return data.responses.map((user) => ({
+    userId: user.user_id,
+    username: user.username,
+    avatar: user.avatar,
+    response: user.response,
+  }));
 }

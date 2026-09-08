@@ -14,10 +14,13 @@ import (
 	"github.com/google/uuid"
 )
 
-const AvatarSubdir = "avatars"
+const (
+	AvatarSubdir     = "avatars"
+	GroupPhotoSubdir = "groups"
+)
 
 var (
-	ErrInvalidFileType = errors.New("file must be a JPEG, PNG, or GIF image")
+	ErrInvalidFileType = errors.New("unsupported image file type")
 	ErrFileTooLarge    = errors.New("file exceeds the maximum allowed size")
 )
 
@@ -27,22 +30,36 @@ var allowedAvatarTypes = map[string]string{
 	"image/gif":  ".gif",
 }
 
+// AvatarStorage saves validated images (user avatars, group photos, ...)
+// to a subdirectory of the shared uploads root.
 type AvatarStorage struct {
 	root    string
+	subdir  string
 	maxSize int64
 }
 
-func NewAvatarStorage(uploadsRoot string, maxSize int64) (*AvatarStorage, error) {
-	dir := filepath.Join(uploadsRoot, AvatarSubdir)
+func NewAvatarStorage(uploadsRoot, subdir string, maxSize int64) (*AvatarStorage, error) {
+	dir := filepath.Join(uploadsRoot, subdir)
 	if err := os.MkdirAll(dir, 0o755); err != nil {
-		return nil, fmt.Errorf("create avatar upload dir: %w", err)
+		return nil, fmt.Errorf("create upload dir: %w", err)
 	}
 
-	return &AvatarStorage{root: uploadsRoot, maxSize: maxSize}, nil
+	return &AvatarStorage{root: uploadsRoot, subdir: subdir, maxSize: maxSize}, nil
 }
 
 func (s *AvatarStorage) Save(file multipart.File, header *multipart.FileHeader) (string, error) {
-	if header.Size > s.maxSize {
+	return saveUpload(s.root, s.subdir, allowedAvatarTypes, s.maxSize, file, header)
+}
+
+func (s *AvatarStorage) Remove(relPath string) error {
+	return removeUpload(s.root, relPath)
+}
+
+// saveUpload validates file against allowedTypes/maxSize by sniffing its
+// content (never trusting the client-supplied filename or Content-Type),
+// then writes it under root/subdir using a random, collision-proof name.
+func saveUpload(root, subdir string, allowedTypes map[string]string, maxSize int64, file multipart.File, header *multipart.FileHeader) (string, error) {
+	if header.Size > maxSize {
 		return "", ErrFileTooLarge
 	}
 
@@ -53,7 +70,7 @@ func (s *AvatarStorage) Save(file multipart.File, header *multipart.FileHeader) 
 	}
 	sniff = sniff[:n]
 
-	ext, ok := allowedAvatarTypes[http.DetectContentType(sniff)]
+	ext, ok := allowedTypes[http.DetectContentType(sniff)]
 	if !ok {
 		return "", ErrInvalidFileType
 	}
@@ -63,8 +80,8 @@ func (s *AvatarStorage) Save(file multipart.File, header *multipart.FileHeader) 
 	}
 
 	filename := randomFilename(ext)
-	relPath := path.Join(AvatarSubdir, filename)
-	dstPath := filepath.Join(s.root, relPath)
+	relPath := path.Join(subdir, filename)
+	dstPath := filepath.Join(root, relPath)
 
 	dst, err := os.OpenFile(dstPath, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o644)
 	if err != nil {
@@ -73,12 +90,12 @@ func (s *AvatarStorage) Save(file multipart.File, header *multipart.FileHeader) 
 	defer dst.Close()
 
 	// Belt-and-braces size cap in case header.Size was inaccurate.
-	written, err := io.Copy(dst, io.LimitReader(file, s.maxSize+1))
+	written, err := io.Copy(dst, io.LimitReader(file, maxSize+1))
 	if err != nil {
 		os.Remove(dstPath)
 		return "", err
 	}
-	if written > s.maxSize {
+	if written > maxSize {
 		os.Remove(dstPath)
 		return "", ErrFileTooLarge
 	}
@@ -86,12 +103,11 @@ func (s *AvatarStorage) Save(file multipart.File, header *multipart.FileHeader) 
 	return relPath, nil
 }
 
-
-func (s *AvatarStorage) Remove(relPath string) error {
+func removeUpload(root, relPath string) error {
 	if relPath == "" {
 		return nil
 	}
-	return os.Remove(filepath.Join(s.root, relPath))
+	return os.Remove(filepath.Join(root, relPath))
 }
 
 func randomFilename(ext string) string {

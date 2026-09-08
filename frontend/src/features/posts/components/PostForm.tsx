@@ -2,23 +2,27 @@
 
 import { useState } from "react";
 import type { PostInput } from "@/features/posts/types/post";
+import ImageAttachmentField from "@/components/ImageAttachmentField";
 
 interface PostFormProps {
   initialValues?: PostInput;
   submitLabel: string;
   pendingLabel: string;
-  onSubmit: (input: PostInput) => Promise<void>;
+  showImage?: boolean;
+  onSubmit: (input: PostInput & { image?: File | null }) => Promise<void>;
 }
 
 export default function PostForm({
   initialValues,
   submitLabel,
   pendingLabel,
+  showImage = false,
   onSubmit,
 }: PostFormProps) {
   const [title, setTitle] = useState(initialValues?.title ?? "");
   const [content, setContent] = useState(initialValues?.content ?? "");
   const [isPrivate, setPrivate] = useState(initialValues?.private ?? false);
+  const [image, setImage] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -29,7 +33,7 @@ export default function PostForm({
     setLoading(true);
 
     try {
-      await onSubmit({ title, content, private: isPrivate });
+      await onSubmit({ title, content, private: isPrivate, image });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
@@ -81,6 +85,14 @@ export default function PostForm({
           Private post?
         </label>
       </div>
+
+      {showImage && (
+        <ImageAttachmentField
+          id="image"
+          label="Image or GIF (optional)"
+          onChange={setImage}
+        />
+      )}
 
       {error && <p className="form-error">{error}</p>}
 

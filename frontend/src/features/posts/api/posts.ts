@@ -1,20 +1,29 @@
 // Client for the Go backend's Posts API (see backend/internal/posts).
 
 import { apiRequest } from "@/lib/api/client";
-import type { Post, PostInput } from "../types/post";
+import type { NewPostInput, Post, PostInput } from "../types/post";
 
-export function listPosts(): Promise<Post[]> {
-  return apiRequest<Post[]>("/posts");
+export function listPosts(limit?: number): Promise<Post[]> {
+  const query = limit != null ? `?limit=${encodeURIComponent(limit)}` : "";
+  return apiRequest<Post[]>(`/posts${query}`);
 }
 
 export function getPost(id: number): Promise<Post> {
   return apiRequest<Post>(`/posts/${id}`);
 }
 
-export function createPost(input: PostInput): Promise<void> {
-  return apiRequest<void>("/posts", {
+export function createPost(input: NewPostInput): Promise<Post> {
+  const formData = new FormData();
+  formData.append("title", input.title);
+  formData.append("content", input.content);
+  formData.append("private", String(input.private));
+  if (input.image) {
+    formData.append("image", input.image);
+  }
+
+  return apiRequest<Post>("/posts", {
     method: "POST",
-    body: JSON.stringify(input),
+    body: formData,
   });
 }
 

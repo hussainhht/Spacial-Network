@@ -29,3 +29,5 @@ go.work.sum
 .idea/
 *.swp
 .DS_Store
+
+data

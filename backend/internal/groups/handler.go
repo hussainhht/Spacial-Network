@@ -7,14 +7,17 @@ import (
 	"time"
 
 	"social/internal/requestctx"
+	"social/internal/upload"
 )
 
 func toGroupResponse(g *Group) GroupResponse {
 	return GroupResponse{
-		ID:          g.ID,
+		ID:              g.ID,
+		CreatorUsername: g.CreatorUsername, MemberCount: g.MemberCount, MembershipRole: g.MembershipRole, HasPendingJoinRequest: g.HasPendingJoinRequest, HasPendingInvitation: g.HasPendingInvitation,
 		CreatorID:   g.CreatorID,
 		Title:       g.Title,
 		Description: g.Description,
+		GroupPhoto:  g.GroupPhoto,
 		CreatedAt:   g.CreatedAt.Format(time.RFC3339),
 		UpdatedAt:   g.UpdatedAt.Format(time.RFC3339),
 	}
@@ -22,7 +25,7 @@ func toGroupResponse(g *Group) GroupResponse {
 
 func toGroupMemberResponse(m GroupMember) GroupMemberResponse {
 	return GroupMemberResponse{
-		UserID:   m.UserID,
+		UserID: m.UserID, Avatar: m.Avatar,
 		Username: m.Username,
 		Role:     m.Role,
 		JoinedAt: m.JoinedAt.Format(time.RFC3339),
@@ -31,7 +34,7 @@ func toGroupMemberResponse(m GroupMember) GroupMemberResponse {
 
 func toGroupJoinRequestResponse(jr GroupJoinRequest) GroupJoinRequestResponse {
 	return GroupJoinRequestResponse{
-		ID:        jr.ID,
+		ID: jr.ID, Username: jr.Username,
 		GroupID:   jr.GroupID,
 		UserID:    jr.UserID,
 		Status:    jr.Status,
@@ -42,7 +45,7 @@ func toGroupJoinRequestResponse(jr GroupJoinRequest) GroupJoinRequestResponse {
 
 func toGroupInvitationResponse(inv GroupInvitation) GroupInvitationResponse {
 	return GroupInvitationResponse{
-		ID:            inv.ID,
+		ID: inv.ID, GroupTitle: inv.GroupTitle, InviterUsername: inv.InviterUsername,
 		GroupID:       inv.GroupID,
 		InvitedBy:     inv.InvitedBy,
 		InvitedUserID: inv.InvitedUserID,
@@ -62,9 +65,15 @@ func toInviteCandidateResponse(c InviteCandidate) InviteCandidateResponse {
 	}
 }
 
-func NewHandler(service *Service) *Handler {
+// maxCreateGroupRequestSize bounds the total size of a create-group request
+// body (form fields plus one optional group photo) accepted before it is
+// rejected.
+const maxCreateGroupRequestSize = 8 << 20 // 8 MiB
+
+func NewHandler(service *Service, photoStorage *upload.AvatarStorage) *Handler {
 	return &Handler{
-		service: service,
+		service:      service,
+		photoStorage: photoStorage,
 	}
 }
 
@@ -81,17 +90,17 @@ func (h *Handler) CreateGroupHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var req CreateGroupRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	r.Body = http.MaxBytesReader(w, r.Body, maxCreateGroupRequestSize)
+	if err := r.ParseMultipartForm(maxCreateGroupRequestSize); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(CreateGroupResponse{
 			Success: false,
-			Message: "Invalid request payload",
+			Message: "Invalid request payload or body",
 		})
 		return
 	}
 
-	title, err := ValidateTitle(req.Title)
+	title, err := ValidateTitle(r.FormValue("title"))
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(CreateGroupResponse{
@@ -101,7 +110,7 @@ func (h *Handler) CreateGroupHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	description, err := ValidateDescription(req.Description)
+	description, err := ValidateDescription(r.FormValue("description"))
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(CreateGroupResponse{
@@ -111,8 +120,37 @@ func (h *Handler) CreateGroupHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	groupID, err := h.service.CreateGroup(userID, title, description)
+	// Handle the optional group photo upload.
+	var photoPath string
+	file, header, err := r.FormFile("groupPhoto")
+	if err != nil && !errors.Is(err, http.ErrMissingFile) {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(CreateGroupResponse{
+			Success: false,
+			Message: "Invalid group photo upload",
+		})
+		return
+	}
+	if err == nil {
+		photoPath, err = h.photoStorage.Save(file, header)
+		file.Close()
+		if err != nil {
+			status := http.StatusBadRequest
+			if !errors.Is(err, upload.ErrInvalidFileType) && !errors.Is(err, upload.ErrFileTooLarge) {
+				status = http.StatusInternalServerError
+			}
+			w.WriteHeader(status)
+			json.NewEncoder(w).Encode(CreateGroupResponse{
+				Success: false,
+				Message: err.Error(),
+			})
+			return
+		}
+	}
+
+	groupID, err := h.service.CreateGroup(userID, title, description, photoPath)
 	if err != nil {
+		h.photoStorage.Remove(photoPath)
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(CreateGroupResponse{
 			Success: false,
@@ -126,6 +164,176 @@ func (h *Handler) CreateGroupHandler(w http.ResponseWriter, r *http.Request) {
 		Success: true,
 		Message: "Group created successfully",
 		GroupID: groupID,
+	})
+}
+
+// maxUpdateGroupRequestSize bounds the total size of an update-group request
+// body (form fields plus one optional group photo) accepted before it is
+// rejected.
+const maxUpdateGroupRequestSize = 8 << 20 // 8 MiB
+
+func (h *Handler) UpdateGroupHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	userID, ok := requestctx.UserID(r.Context())
+	if !ok {
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(GetGroupResponse{
+			Success: false,
+			Message: "Not logged in",
+		})
+		return
+	}
+
+	groupID, err := ValidateGroupID(r.PathValue("id"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(GetGroupResponse{
+			Success: false,
+			Message: err.Error(),
+		})
+		return
+	}
+
+	r.Body = http.MaxBytesReader(w, r.Body, maxUpdateGroupRequestSize)
+	if err := r.ParseMultipartForm(maxUpdateGroupRequestSize); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(GetGroupResponse{
+			Success: false,
+			Message: "Invalid request payload or body",
+		})
+		return
+	}
+
+	title, err := ValidateTitle(r.FormValue("title"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(GetGroupResponse{
+			Success: false,
+			Message: err.Error(),
+		})
+		return
+	}
+
+	description, err := ValidateDescription(r.FormValue("description"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(GetGroupResponse{
+			Success: false,
+			Message: err.Error(),
+		})
+		return
+	}
+
+	// Photo handling has three outcomes: a new file replaces the photo, an
+	// explicit remove_photo flag clears it, or - the default - it's left
+	// exactly as it is. A nil photoPath means "don't touch the column".
+	var photoPath *string
+	var newSavedPath string
+	file, header, fileErr := r.FormFile("groupPhoto")
+	if fileErr != nil && !errors.Is(fileErr, http.ErrMissingFile) {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(GetGroupResponse{
+			Success: false,
+			Message: "Invalid group photo upload",
+		})
+		return
+	}
+	if fileErr == nil {
+		saved, err := h.photoStorage.Save(file, header)
+		file.Close()
+		if err != nil {
+			status := http.StatusBadRequest
+			if !errors.Is(err, upload.ErrInvalidFileType) && !errors.Is(err, upload.ErrFileTooLarge) {
+				status = http.StatusInternalServerError
+			}
+			w.WriteHeader(status)
+			json.NewEncoder(w).Encode(GetGroupResponse{
+				Success: false,
+				Message: err.Error(),
+			})
+			return
+		}
+		newSavedPath = saved
+		photoPath = &newSavedPath
+	} else if r.FormValue("remove_photo") == "true" {
+		empty := ""
+		photoPath = &empty
+	}
+
+	group, oldPhoto, err := h.service.UpdateGroup(groupID, userID, title, description, photoPath)
+	if err != nil {
+		if newSavedPath != "" {
+			h.photoStorage.Remove(newSavedPath)
+		}
+		status, message := updateGroupErrorResponse(err)
+		w.WriteHeader(status)
+		json.NewEncoder(w).Encode(GetGroupResponse{
+			Success: false,
+			Message: message,
+		})
+		return
+	}
+
+	// The DB write succeeded and no longer references the old file (if the
+	// photo changed or was removed) - safe to delete it now.
+	if photoPath != nil && oldPhoto != "" && oldPhoto != *photoPath {
+		h.photoStorage.Remove(oldPhoto)
+	}
+
+	groupResp := toGroupResponse(group)
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(GetGroupResponse{
+		Success: true,
+		Message: "Group updated successfully",
+		Group:   &groupResp,
+	})
+}
+
+// DeleteGroupHandler permanently deletes a group. Only the group's creator,
+// taken from the session, may do this.
+func (h *Handler) DeleteGroupHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	userID, ok := requestctx.UserID(r.Context())
+	if !ok {
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(ActionResponse{
+			Success: false,
+			Message: "Not logged in",
+		})
+		return
+	}
+
+	groupID, err := ValidateGroupID(r.PathValue("id"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(ActionResponse{
+			Success: false,
+			Message: err.Error(),
+		})
+		return
+	}
+
+	photo, err := h.service.DeleteGroup(groupID, userID)
+	if err != nil {
+		status, message := deleteGroupErrorResponse(err)
+		w.WriteHeader(status)
+		json.NewEncoder(w).Encode(ActionResponse{
+			Success: false,
+			Message: message,
+		})
+		return
+	}
+
+	if photo != "" {
+		h.photoStorage.Remove(photo)
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(ActionResponse{
+		Success: true,
+		Message: "Group deleted",
 	})
 }
 
@@ -151,7 +359,75 @@ func (h *Handler) ListGroupsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	groupsList, err := h.service.GetAllGroups(limit, offset)
+	search, err := ValidateGroupSearchQuery(r.URL.Query().Get("search"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(ListGroupsResponse{
+			Success: false,
+			Message: err.Error(),
+		})
+		return
+	}
+
+	userID, _ := requestctx.UserID(r.Context())
+	groupsList, err := h.service.GetAllGroups(limit, offset, userID, search)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(ListGroupsResponse{
+			Success: false,
+			Message: "Failed to get groups",
+		})
+		return
+	}
+
+	resp := make([]GroupResponse, len(groupsList))
+	for i, g := range groupsList {
+		resp[i] = toGroupResponse(&g)
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(ListGroupsResponse{
+		Success: true,
+		Groups:  resp,
+	})
+}
+
+// GetMyGroupsHandler returns the groups the current session's user actually
+// belongs to (creator or member), for the "My Groups" section.
+func (h *Handler) GetMyGroupsHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	userID, ok := requestctx.UserID(r.Context())
+	if !ok {
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(ListGroupsResponse{
+			Success: false,
+			Message: "Not logged in",
+		})
+		return
+	}
+
+	limit, offset, err := ValidatePagination(r.URL.Query().Get("limit"), r.URL.Query().Get("offset"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(ListGroupsResponse{
+			Success: false,
+			Message: err.Error(),
+		})
+		return
+	}
+
+	search, err := ValidateGroupSearchQuery(r.URL.Query().Get("search"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(ListGroupsResponse{
+			Success: false,
+			Message: err.Error(),
+		})
+		return
+	}
+
+	groupsList, err := h.service.GetUserGroups(userID, limit, offset, search)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(ListGroupsResponse{
@@ -341,7 +617,13 @@ func (h *Handler) GetMembershipHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := MembershipResponse{Success: true, IsMember: member != nil}
+	pending, err := h.service.HasPendingJoinRequest(groupID, userID)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(MembershipResponse{Message: "Failed to get membership status"})
+		return
+	}
+	resp := MembershipResponse{Success: true, IsMember: member != nil, HasPendingJoinRequest: pending}
 	if member != nil {
 		resp.Role = member.Role
 	}
@@ -533,6 +815,58 @@ func (h *Handler) RejectJoinRequestHandler(w http.ResponseWriter, r *http.Reques
 	json.NewEncoder(w).Encode(ActionResponse{
 		Success: true,
 		Message: "Join request rejected",
+	})
+}
+
+// RemoveMemberHandler lets the group's creator remove another member.
+// The actor is always taken from the session, never from the request body.
+func (h *Handler) RemoveMemberHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	userID, ok := requestctx.UserID(r.Context())
+	if !ok {
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(ActionResponse{
+			Success: false,
+			Message: "Not logged in",
+		})
+		return
+	}
+
+	groupID, err := ValidateGroupID(r.PathValue("id"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(ActionResponse{
+			Success: false,
+			Message: err.Error(),
+		})
+		return
+	}
+
+	memberID, err := ValidateMemberID(r.PathValue("memberID"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(ActionResponse{
+			Success: false,
+			Message: err.Error(),
+		})
+		return
+	}
+
+	if err := h.service.RemoveMember(groupID, userID, memberID); err != nil {
+		status, message := removeMemberErrorResponse(err)
+		w.WriteHeader(status)
+		json.NewEncoder(w).Encode(ActionResponse{
+			Success: false,
+			Message: message,
+		})
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(ActionResponse{
+		Success: true,
+		Message: "Member removed",
 	})
 }
 

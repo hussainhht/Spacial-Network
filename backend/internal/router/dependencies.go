@@ -5,11 +5,11 @@ import (
 
 	"social/internal/auth"
 	"social/internal/chat"
+	"social/internal/comments"
 	"social/internal/config"
 	"social/internal/followers"
 	"social/internal/groups"
 	"social/internal/notifications"
-	"social/internal/notifications/notifiers"
 	"social/internal/posts"
 	"social/internal/upload"
 	"social/internal/users"
@@ -24,10 +24,9 @@ type Handlers struct {
 	Groups        *groups.Handler
 	Notifications *notifications.Handler
 	Users         *users.Handler
+	Comments      *comments.Handler
 	Followers     *followers.Handler
 
-	// TODO: Add Comments handler when the comments feature is implemented.
-	// Comments *comments.Handler
 	// TODO: Add Chat handler when the chat feature is implemented.
 	// Chat *chat.Handler
 }
@@ -66,7 +65,22 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 	// Uploads
 	// =========================
 
-	avatarStorage, err := upload.NewAvatarStorage(cfg.UploadsDir, cfg.MaxAvatarSize)
+	avatarStorage, err := upload.NewAvatarStorage(cfg.UploadsDir, upload.AvatarSubdir, cfg.MaxAvatarSize)
+	if err != nil {
+		return nil, err
+	}
+
+	groupPhotoStorage, err := upload.NewAvatarStorage(cfg.UploadsDir, upload.GroupPhotoSubdir, cfg.MaxAvatarSize)
+	if err != nil {
+		return nil, err
+	}
+
+	postMediaStorage, err := upload.NewMediaStorage(cfg.UploadsDir, upload.PostsSubdir, cfg.MaxMediaSize)
+	if err != nil {
+		return nil, err
+	}
+
+	commentMediaStorage, err := upload.NewMediaStorage(cfg.UploadsDir, upload.CommentsSubdir, cfg.MaxMediaSize)
 	if err != nil {
 		return nil, err
 	}
@@ -94,20 +108,19 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 	postsService := posts.NewService(postsRepo)
 	postsHandler := posts.NewHandler(
 		postsService,
+		postMediaStorage,
 		cfg.SessionCookieName,
 		cfg.CookieSecure,
 		cfg.SessionLifetime,
 	)
 
 	// =========================
-	// Comments - Future
+	// Comments
 	// =========================
 
-	// TODO: Enable when the comments package is implemented.
-	//
-	// commentsRepo := comments.NewRepository(db)
-	// commentsService := comments.NewService(commentsRepo)
-	// commentsHandler := comments.NewHandler(commentsService)
+	commentsRepo := comments.NewRepository(db)
+	commentsService := comments.NewService(commentsRepo, postsService)
+	commentsHandler := comments.NewHandler(commentsService, commentMediaStorage)
 
 	// =========================
 	// Followers
@@ -122,8 +135,9 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 	// =========================
 	// Persists notifications to SQLite and pushes them over the existing
 	// websocket hub. Other features (Groups, and Followers once it exists)
-	// depend only on notificationsService.Create(...) - never on this
-	// package's repository or SQL.
+	// depend on notificationsService only through their own generic
+	// NotificationSender interface (Notify(...)) - never on this package's
+	// repository or SQL.
 
 	notificationsRepo := notifications.NewRepository(db)
 	notificationsSender := notifications.NewHubSender(hub)
@@ -135,9 +149,8 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 	// =========================
 
 	groupsRepo := groups.NewRepository(db)
-	groupNotifier := notifiers.NewGroupNotifier(notificationsService)
-	groupsService := groups.NewService(groupsRepo, groupNotifier)
-	groupsHandler := groups.NewHandler(groupsService)
+	groupsService := groups.NewService(groupsRepo, notificationsService, hub)
+	groupsHandler := groups.NewHandler(groupsService, groupPhotoStorage)
 	inviteSearchWSHandler := groups.NewInviteSearchWSHandler(groupsService, hub)
 
 	// =========================
@@ -171,8 +184,8 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 			Posts:         postsHandler,
 			Notifications: notificationsHandler,
 			Users:         usersHandler,
+			Comments:      commentsHandler,
 			Followers:     followersHandler,
-			// Comments:      commentsHandler,
 		},
 		AuthService:          authService,
 		GroupsService:        groupsService,

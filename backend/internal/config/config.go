@@ -17,6 +17,7 @@ type Config struct {
 
 	UploadsDir    string
 	MaxAvatarSize int64
+	MaxMediaSize  int64
 }
 
 func Load() Config {
@@ -32,10 +33,11 @@ func Load() Config {
 		DBFile: "social-network.db",
 
 		SessionCookieName: "session_token",
-		SessionLifetime:   30 * time.Minute,
+		SessionLifetime:   24 * time.Hour,
 		CookieSecure:      false,
 
 		UploadsDir:    "data/uploads",
 		MaxAvatarSize: 5 << 20, // 5 MiB
+		MaxMediaSize:  5 << 20, // 5 MiB, per post/comment attachment
 	}
 }

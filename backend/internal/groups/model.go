@@ -1,17 +1,28 @@
 package groups
 
-import "time"
+import (
+	"time"
+
+	"social/internal/upload"
+)
 
 type Group struct {
-	ID          int       `db:"id"`
-	CreatorID   int       `db:"creator_id"`
-	Title       string    `db:"title"`
-	Description string    `db:"description"`
-	CreatedAt   time.Time `db:"created_at"`
-	UpdatedAt   time.Time `db:"updated_at"`
+	CreatorUsername       string
+	MemberCount           int
+	MembershipRole        string
+	HasPendingJoinRequest bool
+	HasPendingInvitation  bool
+	ID                    int       `db:"id"`
+	CreatorID             int       `db:"creator_id"`
+	Title                 string    `db:"title"`
+	Description           string    `db:"description"`
+	GroupPhoto            string    `db:"group_photo"`
+	CreatedAt             time.Time `db:"created_at"`
+	UpdatedAt             time.Time `db:"updated_at"`
 }
 
 type GroupMember struct {
+	Avatar   string    `json:"avatar,omitempty"`
 	UserID   int       `db:"user_id"`
 	Username string    `db:"username"`
 	Role     string    `db:"role"`
@@ -26,13 +37,15 @@ const (
 )
 
 type GroupInvitation struct {
-	ID            int       `db:"id"`
-	GroupID       int       `db:"group_id"`
-	InvitedBy     int       `db:"invited_by"`
-	InvitedUserID int       `db:"invited_user_id"`
-	Status        string    `db:"status"`
-	CreatedAt     time.Time `db:"created_at"`
-	UpdatedAt     time.Time `db:"updated_at"`
+	GroupTitle      string    `json:"group_title"`
+	InviterUsername string    `json:"inviter_username"`
+	ID              int       `db:"id"`
+	GroupID         int       `db:"group_id"`
+	InvitedBy       int       `db:"invited_by"`
+	InvitedUserID   int       `db:"invited_user_id"`
+	Status          string    `db:"status"`
+	CreatedAt       time.Time `db:"created_at"`
+	UpdatedAt       time.Time `db:"updated_at"`
 }
 
 // InviteCandidate is a user who can be shown as a match when a group member
@@ -46,17 +59,13 @@ type InviteCandidate struct {
 }
 
 type GroupJoinRequest struct {
+	Username  string    `json:"username"`
 	ID        int       `db:"id"`
 	GroupID   int       `db:"group_id"`
 	UserID    int       `db:"user_id"`
 	Status    string    `db:"status"`
 	CreatedAt time.Time `db:"created_at"`
 	UpdatedAt time.Time `db:"updated_at"`
-}
-
-type CreateGroupRequest struct {
-	Title       string `json:"title"`
-	Description string `json:"description"`
 }
 
 type CreateGroupResponse struct {
@@ -66,12 +75,18 @@ type CreateGroupResponse struct {
 }
 
 type GroupResponse struct {
-	ID          int    `json:"id"`
-	CreatorID   int    `json:"creator_id"`
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	CreatedAt   string `json:"created_at"`
-	UpdatedAt   string `json:"updated_at"`
+	CreatorUsername       string `json:"creator_username"`
+	MemberCount           int    `json:"member_count"`
+	MembershipRole        string `json:"membership_role,omitempty"`
+	HasPendingJoinRequest bool   `json:"has_pending_join_request"`
+	HasPendingInvitation  bool   `json:"has_pending_invitation"`
+	ID                    int    `json:"id"`
+	CreatorID             int    `json:"creator_id"`
+	Title                 string `json:"title"`
+	Description           string `json:"description"`
+	GroupPhoto            string `json:"group_photo,omitempty"`
+	CreatedAt             string `json:"created_at"`
+	UpdatedAt             string `json:"updated_at"`
 }
 
 type ListGroupsResponse struct {
@@ -87,6 +102,7 @@ type GetGroupResponse struct {
 }
 
 type GroupMemberResponse struct {
+	Avatar   string `json:"avatar,omitempty"`
 	UserID   int    `json:"user_id"`
 	Username string `json:"username"`
 	Role     string `json:"role"`
@@ -100,10 +116,11 @@ type GetGroupMembersResponse struct {
 }
 
 type MembershipResponse struct {
-	Success  bool   `json:"success"`
-	Message  string `json:"message,omitempty"`
-	IsMember bool   `json:"is_member"`
-	Role     string `json:"role,omitempty"`
+	HasPendingJoinRequest bool   `json:"has_pending_join_request"`
+	Success               bool   `json:"success"`
+	Message               string `json:"message,omitempty"`
+	IsMember              bool   `json:"is_member"`
+	Role                  string `json:"role,omitempty"`
 }
 
 // ActionResponse is a generic success/message envelope for endpoints that
@@ -119,6 +136,7 @@ type CreateJoinRequestResponse struct {
 }
 
 type GroupJoinRequestResponse struct {
+	Username  string `json:"username"`
 	ID        int    `json:"id"`
 	GroupID   int    `json:"group_id"`
 	UserID    int    `json:"user_id"`
@@ -143,13 +161,15 @@ type CreateGroupInvitationResponse struct {
 }
 
 type GroupInvitationResponse struct {
-	ID            int    `json:"id"`
-	GroupID       int    `json:"group_id"`
-	InvitedBy     int    `json:"invited_by"`
-	InvitedUserID int    `json:"invited_user_id"`
-	Status        string `json:"status"`
-	CreatedAt     string `json:"created_at"`
-	UpdatedAt     string `json:"updated_at"`
+	GroupTitle      string `json:"group_title"`
+	InviterUsername string `json:"inviter_username"`
+	ID              int    `json:"id"`
+	GroupID         int    `json:"group_id"`
+	InvitedBy       int    `json:"invited_by"`
+	InvitedUserID   int    `json:"invited_user_id"`
+	Status          string `json:"status"`
+	CreatedAt       string `json:"created_at"`
+	UpdatedAt       string `json:"updated_at"`
 }
 
 type GetGroupInvitationsResponse struct {
@@ -169,5 +189,6 @@ type InviteCandidateResponse struct {
 }
 
 type Handler struct {
-	service *Service
+	service      *Service
+	photoStorage *upload.AvatarStorage
 }

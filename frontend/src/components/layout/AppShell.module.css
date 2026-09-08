@@ -1,7 +1,9 @@
 /* Temporary development shell. Theme overrides stay local to Home. */
 .shell {
   --sidebar-width: 244px;
-  min-height: 100dvh;
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
 }
 .shell a:focus-visible, .shell button:focus-visible {
   outline: 2px solid var(--space-accent-violet);
@@ -57,7 +59,13 @@
 .logout { width: 100%; font: inherit; background: transparent; cursor: pointer; }
 .logout:disabled { cursor: wait; opacity: .6; }
 .logoutError { font-size: 12px; color: var(--space-error-text); }
-.routeContent { margin-left: var(--sidebar-width); min-width: 0; }
+.routeContent {
+  margin-left: var(--sidebar-width);
+  min-width: 0;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
 .home {
   position: relative;
   isolation: isolate;

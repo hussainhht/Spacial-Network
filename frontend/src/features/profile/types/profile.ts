@@ -13,6 +13,8 @@ export interface Profile {
   isPrivate: boolean;
 }
 
+export type ProfileTab = "posts" | "about";
+
 export interface ProfileUserSummary {
   id: number;
   username: string;

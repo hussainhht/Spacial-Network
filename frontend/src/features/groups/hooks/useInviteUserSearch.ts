@@ -10,14 +10,18 @@ const SEARCH_DEBOUNCE_MS = 200;
 const SEARCH_LIMIT = 10;
 
 function makeRequestId(): string {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+  if (
+    typeof crypto !== "undefined" &&
+    typeof crypto.randomUUID === "function"
+  ) {
     return crypto.randomUUID();
   }
   return `${Date.now()}-${Math.random()}`;
 }
 
 export function useInviteUserSearch(groupId: number) {
-  const { isConnected, sendEvent, inviteSearchResults, errorMessage } = useWebSocket();
+  const { isConnected, sendEvent, inviteSearchResults, errorMessage } =
+    useWebSocket();
 
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<InviteCandidate[]>([]);
@@ -55,7 +59,6 @@ export function useInviteUserSearch(groupId: number) {
     if (!inviteSearchResults) return;
     if (inviteSearchResults.request_id !== latestRequestIdRef.current) return;
     if (inviteSearchResults.group_id !== groupId) return;
-
 
     setResults(inviteSearchResults.users.map(toInviteCandidate));
     setLoading(false);

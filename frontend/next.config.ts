@@ -10,6 +10,9 @@ const nextConfig: NextConfig = {
         pathname: "/uploads/**",
       },
     ],
+    // The backend is always localhost in this app's current single-host
+    // setup, which next/image otherwise blocks as a potential SSRF target.
+    dangerouslyAllowLocalIP: true,
   },
 };
 

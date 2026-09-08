@@ -1,48 +1,72 @@
 package groups
 
-import "errors"
+import (
+	"errors"
+	"log"
+
+	"social/internal/notifications"
+	"social/internal/websocket"
+)
 
 type Service struct {
 	repo     *Repository
 	notifier NotificationSender
+	hub      *websocket.Hub
 }
 
 func NewService(
-	repo *Repository, notifier NotificationSender) *Service {
+	repo *Repository, notifier NotificationSender, hub *websocket.Hub) *Service {
 	return &Service{
 		repo:     repo,
 		notifier: notifier,
+		hub:      hub,
 	}
 }
 
+
 type NotificationSender interface {
-	NotifyGroupInvitation(
-		receiverID int,
-		actorID int,
-		invitationID int,
-	) error
+	Notify(notifications.CreateNotificationRequest) error
+}
 
-	NotifyGroupJoinRequest(
-		receiverID int,
-		actorID int,
-		requestID int,
-	) error
 
-	// NotifyGroupEvent(
-	// 	receiverID int,
-	// 	actorID int,
-	// 	eventID int,
-	// ) error
+func (s *Service) notify(receiverID, actorID int, notifType notifications.NotificationType, entityType string, entityID int, message string) {
+	if s.notifier == nil {
+		return
+	}
+
+	actor := actorID
+	et := entityType
+	eid := entityID
+	if err := s.notifier.Notify(notifications.CreateNotificationRequest{
+		ReceiverID: receiverID,
+		ActorID:    &actor,
+		Type:       notifType,
+		EntityType: &et,
+		EntityID:   &eid,
+		Message:    message,
+	}); err != nil {
+		log.Printf("groups: %s notification for entity %d failed: %v", notifType, entityID, err)
+	}
 }
 
 // CreateGroup stores a new group owned by creatorID and returns its ID.
-func (s *Service) CreateGroup(creatorID int, title, description string) (int64, error) {
-	return s.repo.InsertGroup(creatorID, title, description)
+func (s *Service) CreateGroup(creatorID int, title, description, photoPath string) (int64, error) {
+	return s.repo.InsertGroup(creatorID, title, description, photoPath)
 }
 
 // GetAllGroups returns a page of groups, most recently created first.
-func (s *Service) GetAllGroups(limit, offset int) ([]Group, error) {
-	return s.repo.GetAllGroups(limit, offset)
+// search, when non-empty, filters to groups whose title or description
+// contains it (case-insensitive).
+func (s *Service) GetAllGroups(limit, offset, userID int, search string) ([]Group, error) {
+	return s.repo.GetAllGroups(limit, offset, userID, search)
+}
+
+// GetUserGroups returns a page of groups the given user actually belongs to
+// (creator or member), most recently created first. search, when non-empty,
+// filters to groups whose title or description contains it
+// (case-insensitive).
+func (s *Service) GetUserGroups(userID, limit, offset int, search string) ([]Group, error) {
+	return s.repo.GetGroupsForUser(userID, limit, offset, search)
 }
 
 // GetGroupByID returns the group with the given ID.
@@ -50,8 +74,47 @@ func (s *Service) GetGroupByID(id int) (*Group, error) {
 	return s.repo.GetGroupByID(id)
 }
 
-// GetGroupMembers returns the members of a group, or ErrGroupNotFound if the
-// group doesn't exist.
+
+func (s *Service) UpdateGroup(groupID, userID int, title, description string, photoPath *string) (*Group, string, error) {
+	group, err := s.repo.GetGroupByID(groupID)
+	if err != nil {
+		return nil, "", err
+	}
+	if group.CreatorID != userID {
+		return nil, "", ErrNotGroupCreator
+	}
+	oldPhoto := group.GroupPhoto
+
+	if err := s.repo.UpdateGroup(groupID, title, description, photoPath); err != nil {
+		return nil, "", err
+	}
+
+	updated, err := s.repo.GetGroupByID(groupID)
+	if err != nil {
+		return nil, "", err
+	}
+	return updated, oldPhoto, nil
+}
+
+// DeleteGroup permanently deletes groupID on behalf of actorID. Only the
+// group's creator may delete it. On success it returns the group's photo
+// path (possibly empty) so the caller can clean up the stored file.
+func (s *Service) DeleteGroup(groupID, actorID int) (string, error) {
+	group, err := s.repo.GetGroupByID(groupID)
+	if err != nil {
+		return "", err
+	}
+	if group.CreatorID != actorID {
+		return "", ErrNotGroupCreator
+	}
+
+	if err := s.repo.DeleteGroup(groupID); err != nil {
+		return "", err
+	}
+
+	return group.GroupPhoto, nil
+}
+
 func (s *Service) GetGroupMembers(groupID int) ([]GroupMember, error) {
 	if _, err := s.repo.GetGroupByID(groupID); err != nil {
 		return nil, err
@@ -92,6 +155,33 @@ func (s *Service) AddMember(groupID, userID int) error {
 	return s.repo.AddMember(groupID, userID)
 }
 
+// RemoveMember removes memberID's membership from groupID, on behalf of
+// actorID. Only the group's creator may remove another member, and the
+// creator can never be removed through this operation.
+func (s *Service) RemoveMember(groupID, actorID, memberID int) error {
+	group, err := s.repo.GetGroupByID(groupID)
+	if err != nil {
+		return err
+	}
+	if group.CreatorID != actorID {
+		return ErrNotGroupCreator
+	}
+
+	member, err := s.repo.GetMembership(groupID, memberID)
+	if err != nil {
+		return err
+	}
+	if member == nil {
+		return ErrMemberNotFound
+	}
+
+	if memberID == group.CreatorID {
+		return ErrCannotRemoveCreator
+	}
+
+	return s.repo.RemoveMember(groupID, memberID)
+}
+
 func (s *Service) RequestToJoin(groupID, userID int) error {
 	group, err := s.repo.GetGroupByID(groupID)
 	if err != nil {
@@ -119,15 +209,14 @@ func (s *Service) RequestToJoin(groupID, userID int) error {
 		return err
 	}
 
-	if s.notifier != nil {
-		if err := s.notifier.NotifyGroupJoinRequest(
-			group.CreatorID, // receiver
-			userID,          // actor
-			int(requestID),  // join request
-		); err != nil {
-			// log the notification error, but don't fail the join request
-		}
-	}
+	s.notify(
+		group.CreatorID, // receiver
+		userID,          // actor
+		notifications.NotificationGroupJoinRequest,
+		notifications.EntityGroupJoinRequest,
+		int(requestID),
+		"requested to join your group",
+	)
 
 	return nil
 }
@@ -145,47 +234,13 @@ func (s *Service) GetPendingJoinRequests(groupID, creatorID int) ([]GroupJoinReq
 }
 
 func (s *Service) AcceptJoinRequest(groupID, requestID, creatorID int) error {
-	req, err := s.resolvePendingJoinRequest(groupID, requestID, creatorID)
-	if err != nil {
-		return err
-	}
-
-	if err := s.repo.AddMember(groupID, req.UserID); err != nil && !errors.Is(err, ErrAlreadyMember) {
-		return err
-	}
-
-	return s.repo.UpdateJoinRequestStatus(requestID, StatusAccepted)
+	return s.repo.RespondToJoinRequest(groupID, requestID, creatorID, StatusAccepted)
 }
-
 func (s *Service) RejectJoinRequest(groupID, requestID, creatorID int) error {
-	if _, err := s.resolvePendingJoinRequest(groupID, requestID, creatorID); err != nil {
-		return err
-	}
-
-	return s.repo.UpdateJoinRequestStatus(requestID, StatusDeclined)
+	return s.repo.RespondToJoinRequest(groupID, requestID, creatorID, StatusDeclined)
 }
-
-func (s *Service) resolvePendingJoinRequest(groupID, requestID, creatorID int) (*GroupJoinRequest, error) {
-	group, err := s.repo.GetGroupByID(groupID)
-	if err != nil {
-		return nil, err
-	}
-	if group.CreatorID != creatorID {
-		return nil, ErrNotGroupCreator
-	}
-
-	req, err := s.repo.GetGroupJoinRequestByID(requestID)
-	if err != nil {
-		return nil, err
-	}
-	if req.GroupID != groupID {
-		return nil, ErrJoinRequestNotFound
-	}
-	if req.Status != StatusPending {
-		return nil, ErrJoinRequestNotPending
-	}
-
-	return req, nil
+func (s *Service) HasPendingJoinRequest(groupID, userID int) (bool, error) {
+	return s.repo.HasPendingJoinRequest(groupID, userID)
 }
 
 func (s *Service) CreateGroupInvitation(groupID, inviterID, invitedUserID int) error {
@@ -203,6 +258,14 @@ func (s *Service) CreateGroupInvitation(groupID, inviterID, invitedUserID int) e
 	}
 	if inviter == nil {
 		return ErrNotGroupMember
+	}
+
+	exists, err := s.repo.UserExists(invitedUserID)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return ErrInviteeNotFound
 	}
 
 	invited, err := s.repo.GetMembership(groupID, invitedUserID)
@@ -226,15 +289,14 @@ func (s *Service) CreateGroupInvitation(groupID, inviterID, invitedUserID int) e
 		return err
 	}
 
-	if s.notifier != nil {
-		if err := s.notifier.NotifyGroupInvitation(
-			invitedUserID,     // receiver
-			inviterID,         // actor
-			int(invitationID), // invitation
-		); err != nil {
-			// log the notification error, but don't fail the invitation
-		}
-	}
+	s.notify(
+		invitedUserID, // receiver
+		inviterID,     // actor
+		notifications.NotificationGroupInvitation,
+		notifications.EntityGroupInvitation,
+		int(invitationID),
+		"invited you to join a group",
+	)
 
 	return nil
 }
@@ -244,26 +306,11 @@ func (s *Service) GetPendingInvitations(userID int) ([]GroupInvitation, error) {
 }
 
 func (s *Service) AcceptGroupInvitation(invitationID, userID int) error {
-	inv, err := s.resolvePendingInvitation(invitationID, userID)
-	if err != nil {
-		return err
-	}
-
-	if err := s.repo.AddMember(inv.GroupID, userID); err != nil && !errors.Is(err, ErrAlreadyMember) {
-		return err
-	}
-
-	return s.repo.UpdateInvitationStatus(invitationID, StatusAccepted)
+	return s.repo.RespondToInvitation(invitationID, userID, StatusAccepted)
 }
-
 func (s *Service) DeclineGroupInvitation(invitationID, userID int) error {
-	if _, err := s.resolvePendingInvitation(invitationID, userID); err != nil {
-		return err
-	}
-
-	return s.repo.UpdateInvitationStatus(invitationID, StatusDeclined)
+	return s.repo.RespondToInvitation(invitationID, userID, StatusDeclined)
 }
-
 
 func (s *Service) SearchInviteCandidates(groupID, currentUserID int, rawQuery string, limit int) ([]InviteCandidate, error) {
 	if _, err := s.repo.GetGroupByID(groupID); err != nil {
@@ -291,19 +338,4 @@ func (s *Service) SearchInviteCandidates(groupID, currentUserID int, rawQuery st
 	}
 
 	return s.repo.SearchInviteCandidates(groupID, currentUserID, query, limit)
-}
-
-func (s *Service) resolvePendingInvitation(invitationID, userID int) (*GroupInvitation, error) {
-	inv, err := s.repo.GetGroupInvitationByID(invitationID)
-	if err != nil {
-		return nil, err
-	}
-	if inv.InvitedUserID != userID {
-		return nil, ErrInvitationNotFound
-	}
-	if inv.Status != StatusPending {
-		return nil, ErrInvitationNotPending
-	}
-
-	return inv, nil
 }
