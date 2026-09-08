@@ -8,6 +8,7 @@ export interface Group {
   creatorId: number;
   title: string;
   description: string;
+  groupPhoto?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -15,6 +16,14 @@ export interface Group {
 export interface CreateGroupInput {
   title: string;
   description: string;
+  photo?: File | null;
+}
+
+export interface UpdateGroupInput {
+  title: string;
+  description: string;
+  photo?: File | null;
+  removePhoto?: boolean;
 }
 
 export interface GroupMember {
@@ -60,4 +69,33 @@ export interface GroupJoinRequest {
   status: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export type EventResponseStatus = "going" | "not_going";
+
+export interface GroupEvent {
+  id: number;
+  groupId: number;
+  createdBy: number;
+  title: string;
+  description: string;
+  eventTime: string;
+  createdAt: string;
+  updatedAt: string;
+  currentUserResponse: EventResponseStatus | null;
+  goingCount: number;
+  notGoingCount: number;
+}
+
+export interface CreateEventInput {
+  title: string;
+  description: string;
+  eventTime: string;
+}
+
+export interface EventResponseUser {
+  userId: number;
+  username: string;
+  avatar?: string;
+  response: EventResponseStatus;
 }

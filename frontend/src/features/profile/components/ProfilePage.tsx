@@ -2,13 +2,18 @@
 
 import { useEffect, useState } from "react";
 import {
+  followUser,
+  getFollowers,
+  getFollowing,
+  getFollowStatus,
   getMyProfile,
   getProfileByUsername,
+  unfollowUser,
   updateMyProfilePrivacy,
 } from "../api/profiles";
 import { listPosts } from "@/features/posts/api/posts";
 import type { Post } from "@/features/posts/types/post";
-import type { Profile, ProfileTab } from "../types/profile";
+import type { Profile, ProfileTab, ProfileUserSummary } from "../types/profile";
 import ProfileHeader from "./ProfileHeader";
 import ProfileContent from "./ProfileContent";
 import {
@@ -39,6 +44,13 @@ export default function ProfilePage({ username }: ProfilePageProps) {
   const [postsLoading, setPostsLoading] = useState(!isLocked);
   const [privacyUpdating, setPrivacyUpdating] = useState(false);
   const [privacyError, setPrivacyError] = useState<string | null>(null);
+
+  const [followers, setFollowers] = useState<ProfileUserSummary[]>([]);
+  const [following, setFollowing] = useState<ProfileUserSummary[]>([]);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followDataLoading, setFollowDataLoading] = useState(!isLocked);
+  const [followLoading, setFollowLoading] = useState(false);
+  const [followError, setFollowError] = useState<string | null>(null);
 
   // Load profile data
   useEffect(() => {
@@ -130,6 +142,83 @@ export default function ProfilePage({ username }: ProfilePageProps) {
     };
   }, [profile, isLocked]);
 
+  // Load followers/following data
+  useEffect(() => {
+    if (!profile || isLocked) {
+      return;
+    }
+
+    const profileUsername = profile.username;
+    let isMounted = true;
+    setFollowDataLoading(true);
+
+    async function loadFollowData() {
+      try {
+        const [followersResult, followingResult, followStatusResult] =
+          await Promise.all([
+            getFollowers(profileUsername),
+            getFollowing(profileUsername),
+            isOwnProfile ? Promise.resolve(false) : getFollowStatus(profileUsername),
+          ]);
+
+        if (isMounted) {
+          setFollowers(followersResult);
+          setFollowing(followingResult);
+          setIsFollowing(followStatusResult);
+        }
+      } catch {
+        if (isMounted) {
+          setFollowers([]);
+          setFollowing([]);
+        }
+      } finally {
+        if (isMounted) {
+          setFollowDataLoading(false);
+        }
+      }
+    }
+
+    loadFollowData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [profile, isLocked, isOwnProfile]);
+
+  async function handleToggleFollow() {
+    if (!profile || isOwnProfile || followLoading) {
+      return;
+    }
+
+    setFollowError(null);
+    setFollowLoading(true);
+
+    try {
+      if (isFollowing) {
+        await unfollowUser(profile.username);
+      } else {
+        await followUser(profile.username);
+      }
+
+      const [followersResult, followingResult, followStatusResult] =
+        await Promise.all([
+          getFollowers(profile.username),
+          getFollowing(profile.username),
+          getFollowStatus(profile.username),
+        ]);
+
+      setFollowers(followersResult);
+      setFollowing(followingResult);
+      setIsFollowing(followStatusResult);
+    } catch (err) {
+      setFollowError(
+        err instanceof Error ? err.message : "Failed to update follow",
+      );
+    } finally {
+      setFollowLoading(false);
+    }
+  }
+
   function handleRetry() {
     setLoading(true);
     setReloadTrigger((prev) => prev + 1);
@@ -197,7 +286,12 @@ export default function ProfilePage({ username }: ProfilePageProps) {
           profile={effectiveProfile}
           isOwnProfile={isOwnProfile}
           postsCount={posts.length}
+          followersCount={followers.length}
+          followingCount={following.length}
+          isFollowing={isFollowing}
+          followLoading={followLoading}
           onSelectTab={setActiveTab}
+          onToggleFollow={handleToggleFollow}
         />
 
         {isLocked ? (
@@ -214,6 +308,10 @@ export default function ProfilePage({ username }: ProfilePageProps) {
             onTogglePrivacy={isOwnProfile ? handleTogglePrivacy : undefined}
             privacyUpdating={privacyUpdating}
             privacyError={privacyError}
+            followers={followers}
+            following={following}
+            followDataLoading={followDataLoading}
+            followError={followError}
           />
         )}
       </div>

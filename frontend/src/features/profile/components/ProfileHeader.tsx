@@ -80,10 +80,19 @@ function ProfileAvatar({
 
 interface ProfileStatsProps {
   postsCount: number;
+  followersCount: number;
+  followingCount: number;
   onSelectPosts: () => void;
+  onSelectFollows: () => void;
 }
 
-function ProfileStats({ postsCount, onSelectPosts }: ProfileStatsProps) {
+function ProfileStats({
+  postsCount,
+  followersCount,
+  followingCount,
+  onSelectPosts,
+  onSelectFollows,
+}: ProfileStatsProps) {
   return (
     <div
       className={styles.statsRow}
@@ -101,6 +110,28 @@ function ProfileStats({ postsCount, onSelectPosts }: ProfileStatsProps) {
           {postsCount === 1 ? "Post" : "Posts"}
         </span>
       </button>
+
+      <button
+        type="button"
+        className={styles.statItem}
+        onClick={onSelectFollows}
+        title="View Followers"
+      >
+        <span className={styles.statNumber}>{followersCount}</span>
+        <span className={styles.statLabel}>
+          {followersCount === 1 ? "Follower" : "Followers"}
+        </span>
+      </button>
+
+      <button
+        type="button"
+        className={styles.statItem}
+        onClick={onSelectFollows}
+        title="View Following"
+      >
+        <span className={styles.statNumber}>{followingCount}</span>
+        <span className={styles.statLabel}>Following</span>
+      </button>
     </div>
   );
 }
@@ -109,14 +140,24 @@ interface ProfileHeaderProps {
   profile: Profile;
   isOwnProfile: boolean;
   postsCount: number;
+  followersCount: number;
+  followingCount: number;
+  isFollowing: boolean;
+  followLoading: boolean;
   onSelectTab: (tab: ProfileTab) => void;
+  onToggleFollow: () => void;
 }
 
 export default function ProfileHeader({
   profile,
   isOwnProfile,
   postsCount,
+  followersCount,
+  followingCount,
+  isFollowing,
+  followLoading,
   onSelectTab,
+  onToggleFollow,
 }: ProfileHeaderProps) {
   const displayName = getDisplayName(
     profile.firstName,
@@ -138,7 +179,7 @@ export default function ProfileHeader({
             isPrivate={profile.isPrivate}
           />
 
-          {isOwnProfile && (
+          {isOwnProfile ? (
             <div className={styles.actionsRow}>
               <button
                 type="button"
@@ -147,6 +188,24 @@ export default function ProfileHeader({
                 title="Privacy Settings"
               >
                 Privacy Settings
+              </button>
+            </div>
+          ) : profile.isPrivate ? (
+            <div className={styles.actionsRow}>
+              <span className={styles.statLabel}>
+                Follow requests for private profiles will be added later.
+              </span>
+            </div>
+          ) : (
+            <div className={styles.actionsRow}>
+              <button
+                type="button"
+                onClick={onToggleFollow}
+                disabled={followLoading}
+                className={isFollowing ? styles.btnSecondary : styles.btnPrimary}
+                title={isFollowing ? "Unfollow" : "Follow"}
+              >
+                {followLoading ? "Saving..." : isFollowing ? "Unfollow" : "Follow"}
               </button>
             </div>
           )}
@@ -168,7 +227,10 @@ export default function ProfileHeader({
 
         <ProfileStats
           postsCount={postsCount}
+          followersCount={followersCount}
+          followingCount={followingCount}
           onSelectPosts={() => onSelectTab("posts")}
+          onSelectFollows={() => onSelectTab("about")}
         />
       </div>
     </header>

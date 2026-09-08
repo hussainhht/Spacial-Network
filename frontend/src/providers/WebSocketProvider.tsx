@@ -21,6 +21,7 @@ import type {
   ErrorPayload,
   InviteUserSearchResultsPayload,
   NotificationEventPayload,
+  GroupEventResponseUpdatedPayload,
 } from "@/lib/websocket/types";
 
 const WebSocketContext = createContext<WebSocketContextType | undefined>(
@@ -38,6 +39,14 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     useState<InviteUserSearchResultsPayload | null>(null);
   const [lastNotification, setLastNotification] =
     useState<NotificationEventPayload | null>(null);
+  const [lastEventResponseUpdate, setLastEventResponseUpdate] =
+    useState<GroupEventResponseUpdatedPayload | null>(null);
+
+  const eventResponseListeners = useRef(new Set<(event: GroupEventResponseUpdatedPayload) => void>());
+  const subscribeEventResponses = useCallback((listener: (event: GroupEventResponseUpdatedPayload) => void) => {
+    eventResponseListeners.current.add(listener);
+    return () => { eventResponseListeners.current.delete(listener); };
+  }, []);
 
   const notificationListeners = useRef(
     new Set<(notification: NotificationEventPayload) => void>(),
@@ -161,6 +170,12 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
               );
               break;
             }
+            case "group_event_response_updated": {
+              const update = data.payload as GroupEventResponseUpdatedPayload;
+              setLastEventResponseUpdate(update);
+              eventResponseListeners.current.forEach(listener => listener(update));
+              break;
+            }
             case "error": {
               const errPayload = data.payload as ErrorPayload;
               console.error("WS error:", errPayload?.message);
@@ -236,6 +251,8 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
       errorMessage,
       inviteSearchResults,
       lastNotification,
+      lastEventResponseUpdate,
+      subscribeEventResponses,
       subscribeNotifications,
       sendEvent,
     }),
@@ -248,7 +265,9 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
       errorMessage,
       inviteSearchResults,
       lastNotification,
+      lastEventResponseUpdate,
       subscribeNotifications,
+      subscribeEventResponses,
       sendEvent,
     ],
   );

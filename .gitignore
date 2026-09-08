@@ -21,8 +21,6 @@ Thumbs.db
 !.env.example
 
 # Local planning & tracking files
-CHAT_WS_STEPS.md
-*_STEPS.md
 ws_steps.md
 *.xlsx
 
@@ -58,45 +56,8 @@ backend/bin/
 # Uploads
 backend/uploads/*
 !backend/uploads/.gitkeep
-
-# Local planning & tracking files
-CHAT_WS_STEPS.md
-*_STEPS.md
-ws_steps.md
-*.xlsx
-
-# Frontend / Node / Next.js
-**/node_modules/
-**/.next/
-**/out/
-**/build/
-**/dist/
-*.tsbuildinfo
-next-env.d.ts
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
-
-# Backend / Go / SQLite
-backend/data/
-*.db
-*.db-journal
-*.db-wal
-*.db-shm
-*.exe
-*.exe~
-*.dll
-*.so
-*.dylib
-*.test
-*.out
-/bin/
-backend/bin/
-
-# Uploads
-backend/uploads/*
-!backend/uploads/.gitkeep
+backend/cmd/server/data/
+**/data/uploads/
 
 # Dependencies & Build artifacts
 node_modules/

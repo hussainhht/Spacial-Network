@@ -89,16 +89,46 @@ func NewRouter(db *sql.DB, cfg config.Config) (http.Handler, error) {
 	)
 
 	// =========================
-	// Comments Routes - Future
+	// Comments Routes
 	// =========================
 
-	// TODO: Register Comments routes here once the Comments handler is implemented.
+	apiMux.Handle(
+		"POST /posts/{id}/comments",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Comments.NewCommentHandler)),
+	)
+	apiMux.Handle(
+		"GET /posts/{id}/comments",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Comments.ListCommentsHandler)),
+	)
+	apiMux.Handle(
+		"DELETE /comments/{commentID}",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Comments.DeleteCommentHandler)),
+	)
 
 	// =========================
-	// Followers Routes - Future
+	// Followers Routes
 	// =========================
 
-	// TODO: Register Followers routes here once the Followers handler is implemented.
+	apiMux.Handle(
+		"POST /profiles/{username}/follow",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Followers.FollowUserHandler)),
+	)
+	apiMux.Handle(
+		"DELETE /profiles/{username}/follow",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Followers.UnfollowUserHandler)),
+	)
+	apiMux.Handle(
+		"GET /profiles/{username}/followers",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Followers.GetFollowersHandler)),
+	)
+	apiMux.Handle(
+		"GET /profiles/{username}/following",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Followers.GetFollowingHandler)),
+	)
+	apiMux.Handle(
+		"GET /profiles/{username}/follow-status",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Followers.FollowStatusHandler)),
+	)
 
 	// =========================
 	// Groups Routes
@@ -113,8 +143,20 @@ func NewRouter(db *sql.DB, cfg config.Config) (http.Handler, error) {
 		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.CreateGroupHandler)),
 	)
 	apiMux.Handle(
+		"GET /groups/mine",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.GetMyGroupsHandler)),
+	)
+	apiMux.Handle(
 		"GET /groups/{id}",
 		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.GetGroupHandler)),
+	)
+	apiMux.Handle(
+		"PUT /groups/{id}",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.UpdateGroupHandler)),
+	)
+	apiMux.Handle(
+		"DELETE /groups/{id}",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.DeleteGroupHandler)),
 	)
 	apiMux.Handle(
 		"GET /groups/{id}/members",
@@ -123,6 +165,10 @@ func NewRouter(db *sql.DB, cfg config.Config) (http.Handler, error) {
 	apiMux.Handle(
 		"GET /groups/{id}/membership",
 		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.GetMembershipHandler)),
+	)
+	apiMux.Handle(
+		"DELETE /groups/{id}/members/{memberID}",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.RemoveMemberHandler)),
 	)
 	apiMux.Handle(
 		"POST /groups/{id}/join-requests",
@@ -155,6 +201,31 @@ func NewRouter(db *sql.DB, cfg config.Config) (http.Handler, error) {
 	apiMux.Handle(
 		"POST /group-invitations/{invitationID}/decline",
 		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.DeclineGroupInvitationHandler)),
+	)
+
+	// =========================
+	// Group Events Routes
+	// =========================
+
+	apiMux.Handle(
+		"POST /groups/{id}/events",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.CreateEventHandler)),
+	)
+	apiMux.Handle(
+		"GET /groups/{id}/events",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.GetGroupEventsHandler)),
+	)
+	apiMux.Handle(
+		"GET /groups/{id}/events/{eventID}",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.GetEventHandler)),
+	)
+	apiMux.Handle(
+		"GET /groups/{id}/events/{eventID}/responses",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.GetEventResponsesHandler)),
+	)
+	apiMux.Handle(
+		"PUT /groups/{id}/events/{eventID}/response",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.RespondToEventHandler)),
 	)
 
 	// =========================

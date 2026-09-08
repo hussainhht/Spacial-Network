@@ -3,8 +3,9 @@
 import PostCard from "@/features/posts/components/PostCard";
 import type { Post } from "@/features/posts/types/post";
 import { parseDate } from "@/lib/utils";
-import type { Profile, ProfileTab } from "../types/profile";
+import type { Profile, ProfileTab, ProfileUserSummary } from "../types/profile";
 import ProfilePrivacy from "./ProfilePrivacy";
+import ProfileUserList from "./ProfileUserList";
 import styles from "./Profile.module.css";
 
 interface TabsProps {
@@ -99,6 +100,10 @@ interface AboutTabProps {
   onTogglePrivacy?: () => Promise<void>;
   privacyUpdating?: boolean;
   privacyError?: string | null;
+  followers: ProfileUserSummary[];
+  following: ProfileUserSummary[];
+  followDataLoading?: boolean;
+  followError?: string | null;
 }
 
 function AboutTab({
@@ -107,6 +112,10 @@ function AboutTab({
   onTogglePrivacy,
   privacyUpdating = false,
   privacyError = null,
+  followers,
+  following,
+  followDataLoading = false,
+  followError = null,
 }: AboutTabProps) {
   const createdDate = parseDate(profile.createdAt);
   const memberSince = createdDate
@@ -182,6 +191,28 @@ function AboutTab({
             error={privacyError}
           />
         )}
+
+        {!followDataLoading && (
+          <div className={styles.card}>
+            <ProfileUserList
+              title="Followers"
+              users={followers}
+              emptyMessage="No followers yet."
+            />
+          </div>
+        )}
+
+        {!followDataLoading && (
+          <div className={styles.card}>
+            <ProfileUserList
+              title="Following"
+              users={following}
+              emptyMessage="Not following anyone yet."
+            />
+          </div>
+        )}
+
+        {followError && <p className={styles.emptyDescription}>{followError}</p>}
       </div>
     </div>
   );
@@ -198,6 +229,10 @@ interface ProfileContentProps {
   onTogglePrivacy?: () => Promise<void>;
   privacyUpdating?: boolean;
   privacyError?: string | null;
+  followers: ProfileUserSummary[];
+  following: ProfileUserSummary[];
+  followDataLoading?: boolean;
+  followError?: string | null;
 }
 
 export default function ProfileContent({
@@ -211,6 +246,10 @@ export default function ProfileContent({
   onTogglePrivacy,
   privacyUpdating,
   privacyError,
+  followers,
+  following,
+  followDataLoading,
+  followError,
 }: ProfileContentProps) {
   return (
     <>
@@ -235,6 +274,10 @@ export default function ProfileContent({
           onTogglePrivacy={onTogglePrivacy}
           privacyUpdating={privacyUpdating}
           privacyError={privacyError}
+          followers={followers}
+          following={following}
+          followDataLoading={followDataLoading}
+          followError={followError}
         />
       )}
     </>

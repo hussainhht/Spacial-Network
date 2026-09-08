@@ -17,6 +17,8 @@ const (
 	MaxInviteSearchQueryLength  = 100
 	DefaultInviteCandidateLimit = 10
 	MaxInviteCandidateLimit     = 25
+
+	MaxGroupSearchQueryLength = 100
 )
 
 func ValidateTitle(title string) (string, error) {
@@ -92,6 +94,16 @@ func ValidateInvitationID(idParam string) (int, error) {
 	return id, nil
 }
 
+// ValidateMemberID parses and validates a group member's user ID taken
+// from a URL path.
+func ValidateMemberID(idParam string) (int, error) {
+	id, err := strconv.Atoi(idParam)
+	if err != nil || id <= 0 {
+		return 0, errors.New("member id must be a positive integer")
+	}
+	return id, nil
+}
+
 // ValidateInvitedUserID validates the invited user's ID from a group
 // invitation request body.
 func ValidateInvitedUserID(id int) (int, error) {
@@ -108,5 +120,15 @@ func ValidateInviteSearchQuery(query string) (string, error) {
 		Field:    "search query",
 		Required: true,
 		Max:      MaxInviteSearchQueryLength,
+	})
+}
+
+// ValidateGroupSearchQuery sanitizes the optional `search` query param used
+// to filter the groups list by title/description. Blank is valid and means
+// "no filter".
+func ValidateGroupSearchQuery(query string) (string, error) {
+	return validation.SanitizeText(query, validation.TextRules{
+		Field: "search",
+		Max:   MaxGroupSearchQueryLength,
 	})
 }

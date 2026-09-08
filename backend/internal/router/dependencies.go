@@ -5,7 +5,9 @@ import (
 
 	"social/internal/auth"
 	"social/internal/chat"
+	"social/internal/comments"
 	"social/internal/config"
+	"social/internal/followers"
 	"social/internal/groups"
 	"social/internal/notifications"
 	"social/internal/posts"
@@ -22,11 +24,9 @@ type Handlers struct {
 	Groups        *groups.Handler
 	Notifications *notifications.Handler
 	Users         *users.Handler
+	Comments      *comments.Handler
+	Followers     *followers.Handler
 
-	// TODO: Add Comments handler when the comments feature is implemented.
-	// Comments *comments.Handler
-	// TODO: Add Followers handler when the followers feature is implemented.
-	// Followers *followers.Handler
 	// TODO: Add Chat handler when the chat feature is implemented.
 	// Chat *chat.Handler
 }
@@ -37,6 +37,7 @@ type Dependencies struct {
 	AuthService          *auth.Service
 	GroupsService        *groups.Service
 	NotificationsService *notifications.Service
+	FollowersService     *followers.Service
 
 	// Future shared services:
 	PostsService *posts.Service
@@ -84,7 +85,22 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 	// Uploads
 	// =========================
 
-	avatarStorage, err := upload.NewAvatarStorage(cfg.UploadsDir, cfg.MaxAvatarSize)
+	avatarStorage, err := upload.NewAvatarStorage(cfg.UploadsDir, upload.AvatarSubdir, cfg.MaxAvatarSize)
+	if err != nil {
+		return nil, err
+	}
+
+	groupPhotoStorage, err := upload.NewAvatarStorage(cfg.UploadsDir, upload.GroupPhotoSubdir, cfg.MaxAvatarSize)
+	if err != nil {
+		return nil, err
+	}
+
+	postMediaStorage, err := upload.NewMediaStorage(cfg.UploadsDir, upload.PostsSubdir, cfg.MaxMediaSize)
+	if err != nil {
+		return nil, err
+	}
+
+	commentMediaStorage, err := upload.NewMediaStorage(cfg.UploadsDir, upload.CommentsSubdir, cfg.MaxMediaSize)
 	if err != nil {
 		return nil, err
 	}
@@ -112,18 +128,35 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 	postsService := posts.NewService(postsRepo)
 	postsHandler := posts.NewHandler(
 		postsService,
+		postMediaStorage,
 		cfg.SessionCookieName,
 		cfg.CookieSecure,
 		cfg.SessionLifetime,
 	)
 
 	// =========================
+	// Comments
+	// =========================
+
+	commentsRepo := comments.NewRepository(db)
+	commentsService := comments.NewService(commentsRepo, postsService)
+	commentsHandler := comments.NewHandler(commentsService, commentMediaStorage)
+
+	// =========================
+	// Followers
+	// =========================
+
+	followersRepo := followers.NewRepository(db)
+	followersService := followers.NewService(followersRepo)
+	followersHandler := followers.NewHandler(followersService, usersService)
+
+	// =========================
 	// Groups
 	// =========================
 
 	groupsRepo := groups.NewRepository(db)
-	groupsService := groups.NewService(groupsRepo, notificationsService)
-	groupsHandler := groups.NewHandler(groupsService)
+	groupsService := groups.NewService(groupsRepo, notificationsService, hub)
+	groupsHandler := groups.NewHandler(groupsService, groupPhotoStorage)
 	inviteSearchWSHandler := groups.NewInviteSearchWSHandler(groupsService, hub)
 
 	// =========================
@@ -148,12 +181,13 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 			Posts:         postsHandler,
 			Notifications: notificationsHandler,
 			Users:         usersHandler,
-			// Comments:      commentsHandler,
-			// Followers:     followersHandler,
+			Comments:      commentsHandler,
+			Followers:     followersHandler,
 		},
 		AuthService:          authService,
 		GroupsService:        groupsService,
 		NotificationsService: notificationsService,
+		FollowersService:     followersService,
 
 		// PostsService: postsService,
 	}, nil

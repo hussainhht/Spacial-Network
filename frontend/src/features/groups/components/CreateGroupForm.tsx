@@ -1,6 +1,6 @@
 "use client";
 
-import { type SubmitEvent, useState } from "react";
+import { type SubmitEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -40,8 +40,19 @@ export default function CreateGroupForm() {
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [photo, setPhoto] = useState<File | null>(null);
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
+
+  const photoPreview = useMemo(
+    () => (photo ? URL.createObjectURL(photo) : null),
+    [photo],
+  );
+  useEffect(() => {
+    return () => {
+      if (photoPreview) URL.revokeObjectURL(photoPreview);
+    };
+  }, [photoPreview]);
 
   // Set exactly once, by the explicit "Create Group" submit below. Nothing
   // else in this component is allowed to create a group.
@@ -73,6 +84,7 @@ export default function CreateGroupForm() {
       const group = await createGroup({
         title: trimmedTitle,
         description: description.trim(),
+        photo,
       });
       setCreatedGroup(group);
       setStep("ready");
@@ -156,6 +168,33 @@ export default function CreateGroupForm() {
             <p className="group-field-hint">
               Choose a name people will recognize.
             </p>
+          </div>
+
+          <div className="form-field">
+            <label htmlFor="groupPhoto">Group photo (optional)</label>
+            <div className="group-photo-picker">
+              {photoPreview ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={photoPreview}
+                  alt=""
+                  className="group-photo-preview"
+                />
+              ) : (
+                <span className="group-photo-preview-empty" aria-hidden="true">
+                  {trimmedTitle.charAt(0).toUpperCase() || "?"}
+                </span>
+              )}
+              <input
+                id="groupPhoto"
+                type="file"
+                accept="image/jpeg,image/png,image/gif"
+                onChange={(event) => {
+                  setPhoto(event.target.files?.[0] ?? null);
+                }}
+              />
+            </div>
+            <p className="group-field-hint">JPEG, PNG, or GIF. Fully optional.</p>
           </div>
 
           <div className="form-field">

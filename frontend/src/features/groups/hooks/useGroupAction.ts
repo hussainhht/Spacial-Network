@@ -23,6 +23,7 @@ export function useGroupAction(key: string, groupId: number) {
     () => null,
   );
   const [error, setError] = useState<string | null>(null);
+
   const run = useCallback(
     async (label: string, action: () => Promise<void>): Promise<boolean> => {
       if (mutations.has(key)) return false;

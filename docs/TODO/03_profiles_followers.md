@@ -84,36 +84,36 @@ Authentication, Docker, and final project-wide integration are not included in t
 
 ### Database
 
-- [ ] Create `followers` table migration
-- [ ] Store follower user ID
-- [ ] Store followed user ID
-- [ ] Prevent duplicate follow relationships
-- [ ] Prevent a user from following themselves
-- [ ] Create matching `.down.sql` migration
+- [X] Create `followers` table migration
+- [X] Store follower user ID
+- [X] Store followed user ID
+- [X] Prevent duplicate follow relationships
+- [X] Prevent a user from following themselves
+- [X] Create matching `.down.sql` migration
 
 ### Backend
 
-- [ ] Follow another user
-- [ ] Unfollow another user
-- [ ] Get followers list
-- [ ] Get following list
-- [ ] Check whether User A follows User B
+- [X] Follow another user
+- [X] Unfollow another user
+- [X] Get followers list
+- [X] Get following list
+- [X] Check whether User A follows User B
 - [ ] Check whether at least one user follows the other when needed by chat
-- [ ] Handle invalid follow operations safely
+- [X] Handle invalid follow operations safely
 
 ### Public Profile Follow Flow
 
-- [ ] Follow immediately when the target profile is Public
-- [ ] Create follower relationship directly
-- [ ] Do not require approval
+- [X] Follow immediately when the target profile is Public
+- [X] Create follower relationship directly
+- [X] Do not require approval
 
 ### Frontend
 
-- [ ] Add Follow button
-- [ ] Add Unfollow button
-- [ ] Display Followers list
-- [ ] Display Following list
-- [ ] Update button state after follow/unfollow
+- [X] Add Follow button
+- [X] Add Unfollow button
+- [X] Display Followers list
+- [X] Display Following list
+- [X] Update button state after follow/unfollow
 
 ---
 

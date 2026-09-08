@@ -1,14 +1,13 @@
 import Link from "next/link";
 import type { Group } from "../types/group";
+import GroupAvatar from "./GroupAvatar";
 import { MembershipBadge } from "./GroupPanels";
 
 export default function GroupCard({ group }: { group: Group }) {
   return (
     <article className="group-card">
       <div className="group-card-top">
-        <span className="group-emblem" aria-hidden="true">
-          {group.title.charAt(0).toUpperCase()}
-        </span>
+        <GroupAvatar group={group} />
         <MembershipBadge
           role={group.membershipRole}
           invited={group.hasPendingInvitation}

@@ -1,6 +1,10 @@
 package groups
 
-import "time"
+import (
+	"time"
+
+	"social/internal/upload"
+)
 
 type Group struct {
 	CreatorUsername       string
@@ -12,6 +16,7 @@ type Group struct {
 	CreatorID             int       `db:"creator_id"`
 	Title                 string    `db:"title"`
 	Description           string    `db:"description"`
+	GroupPhoto            string    `db:"group_photo"`
 	CreatedAt             time.Time `db:"created_at"`
 	UpdatedAt             time.Time `db:"updated_at"`
 }
@@ -63,11 +68,6 @@ type GroupJoinRequest struct {
 	UpdatedAt time.Time `db:"updated_at"`
 }
 
-type CreateGroupRequest struct {
-	Title       string `json:"title"`
-	Description string `json:"description"`
-}
-
 type CreateGroupResponse struct {
 	Success bool   `json:"success"`
 	Message string `json:"message"`
@@ -84,6 +84,7 @@ type GroupResponse struct {
 	CreatorID             int    `json:"creator_id"`
 	Title                 string `json:"title"`
 	Description           string `json:"description"`
+	GroupPhoto            string `json:"group_photo,omitempty"`
 	CreatedAt             string `json:"created_at"`
 	UpdatedAt             string `json:"updated_at"`
 }
@@ -188,5 +189,6 @@ type InviteCandidateResponse struct {
 }
 
 type Handler struct {
-	service *Service
+	service      *Service
+	photoStorage *upload.AvatarStorage
 }
