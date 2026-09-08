@@ -353,17 +353,7 @@ export default function GroupGalaxy({
           ? `${selected.title} preview open. View Group follows the stars in the tab order.`
           : ""}
       </p>
-      <div
-        data-universe-ui
-        className={styles.legend}
-        aria-label="Group relationships"
-      >
-        <span data-role="creator">Creator</span>
-        <span data-role="member">Member</span>
-        <span data-role="invited">Invited</span>
-        <span data-role="pending">Request pending</span>
-        <span>Discover</span>
-      </div>
+
     </div>
   );
 }

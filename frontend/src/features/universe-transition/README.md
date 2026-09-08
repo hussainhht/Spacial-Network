@@ -60,3 +60,26 @@ Verified against the existing development API and records with headless Chrome:
 Headless Chrome uses SwiftShader here; these checks do not establish 60 FPS on a
 hardware-accelerated device. Production build and targeted lint/TypeScript checks
 are run separately; repository-wide lint has existing unrelated failures.
+
+## File inventory
+
+Created in this directory: `UniverseTransitionProvider.tsx`,
+`UniverseTransitionLayer.tsx`, `animation.ts`, `types.ts`,
+`UniverseTransition.module.css`, and this README.
+
+Modified integration points:
+
+- `src/app/(main)/page.tsx`
+- `src/components/layout/AppShell.tsx`
+- `src/components/layout/AppSidebar.tsx`
+- `src/components/layout/TopNavbar.tsx`
+- `src/components/space/HomeEarth.tsx`
+- `src/components/space/Earth3D.tsx`
+- `src/components/space/SpaceBackground.tsx`
+- `src/features/posts/components/home/HomeOrbitalFeed.tsx`
+- `src/features/groups/components/GroupsPageContent.tsx`
+- `src/features/groups/components/GroupGalaxy.tsx`
+- `src/features/groups/components/GroupStar.tsx`
+- `src/features/groups/components/GroupPanels.tsx` (invitation animation hook only)
+
+Existing uncommitted Groups styling and preview changes were preserved.
