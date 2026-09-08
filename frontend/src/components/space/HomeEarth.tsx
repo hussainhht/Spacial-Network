@@ -38,6 +38,7 @@ export default function HomeEarth() {
           rotationSpeed={0.04}
           interactive={false}
           background={null}
+          boundsMargin={1.05}
           ariaLabel="Earth rotating in space"
         />
       </EarthErrorBoundary>
