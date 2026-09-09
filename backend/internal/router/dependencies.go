@@ -101,13 +101,22 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 	)
 
 	// =========================
+	// Followers
+	// =========================
+
+	followersRepo := followers.NewRepository(db)
+	followersService := followers.NewService(followersRepo)
+	followersHandler := followers.NewHandler(followersService, usersService)
+
+	// =========================
 	// Posts
 	// =========================
 
 	postsRepo := posts.NewRepository(db)
-	postsService := posts.NewService(postsRepo)
+	postsService := posts.NewService(postsRepo, followersService)
 	postsHandler := posts.NewHandler(
 		postsService,
+		usersService,
 		postMediaStorage,
 		cfg.SessionCookieName,
 		cfg.CookieSecure,
@@ -121,14 +130,6 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 	commentsRepo := comments.NewRepository(db)
 	commentsService := comments.NewService(commentsRepo, postsService)
 	commentsHandler := comments.NewHandler(commentsService, commentMediaStorage)
-
-	// =========================
-	// Followers
-	// =========================
-
-	followersRepo := followers.NewRepository(db)
-	followersService := followers.NewService(followersRepo)
-	followersHandler := followers.NewHandler(followersService, usersService)
 
 	// =========================
 	// Notifications
