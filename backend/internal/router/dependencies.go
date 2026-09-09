@@ -140,14 +140,28 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 	inviteSearchWSHandler := groups.NewInviteSearchWSHandler(groupsService, hub)
 
 	// =========================
-	// Chat - Future
+	// Posts
 	// =========================
 
-	// TODO: Enable when the chat package is implemented.
-	//
-	// chatRepo := chat.NewRepository(db)
-	// chatService := chat.NewService(chatRepo)
-	// chatHandler := chat.NewHandler(chatService)
+	postsRepo := posts.NewRepository(db)
+	postsService := posts.NewService(postsRepo, followersService, groupsService)
+	postsHandler := posts.NewHandler(
+		postsService,
+		usersService,
+		groupsService,
+		postMediaStorage,
+		cfg.SessionCookieName,
+		cfg.CookieSecure,
+		cfg.SessionLifetime,
+	)
+
+	// =========================
+	// Comments
+	// =========================
+
+	commentsRepo := comments.NewRepository(db)
+	commentsService := comments.NewService(commentsRepo, postsService)
+	commentsHandler := comments.NewHandler(commentsService, commentMediaStorage)
 
 	// =========================
 	// WebSocket message routing
