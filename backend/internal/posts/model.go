@@ -18,6 +18,7 @@ type post struct {
 	Title      string         `db:"title"`
 	Content    string         `db:"content"`
 	ImagePath  sql.NullString `db:"image_path"`
+	GroupID    sql.NullInt64  `db:"group_id"`
 	Created_At time.Time      `db:"created_at"`
 	Updated_At time.Time      `db:"updated_at"`
 }

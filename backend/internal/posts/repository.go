@@ -21,9 +21,9 @@ func (r *Repository) CreatePost(post *post) error {
 	post.Updated_At = now
 
 	res, err := r.db.Exec(`
-		INSERT INTO posts (user_id, visibility, title, content, image_path, created_at, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?)
-	`, post.User_ID, post.visibility, post.Title, post.Content, post.ImagePath, post.Created_At, post.Updated_At)
+		INSERT INTO posts (user_id, visibility, title, content, image_path, group_id, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+	`, post.User_ID, post.visibility, post.Title, post.Content, post.ImagePath, post.GroupID, post.Created_At, post.Updated_At)
 	if err != nil {
 		return err
 	}
@@ -41,10 +41,10 @@ func (r *Repository) GetPostByID(id int) (*post, error) {
 	var p post
 
 	err := r.db.QueryRow(`
-		SELECT id, user_id, visibility, title, content, image_path, created_at, updated_at
+		SELECT id, user_id, visibility, title, content, image_path, group_id, created_at, updated_at
 		FROM posts
 		WHERE id = ?
-	`, id).Scan(&p.ID, &p.User_ID, &p.visibility, &p.Title, &p.Content, &p.ImagePath, &p.Created_At, &p.Updated_At)
+	`, id).Scan(&p.ID, &p.User_ID, &p.visibility, &p.Title, &p.Content, &p.ImagePath, &p.GroupID, &p.Created_At, &p.Updated_At)
 	if err == sql.ErrNoRows {
 		return nil, ErrPostNotFound
 	}
@@ -57,15 +57,16 @@ func (r *Repository) GetPostByID(id int) (*post, error) {
 
 // ListPosts returns up to limit posts visible to viewerID, newest first:
 // every public post, the viewer's own posts regardless of visibility,
-// followers-only posts from creators the viewer follows, and custom-visibility
+// followers-only posts from creators the viewer follows, custom-visibility
 // posts where the viewer is both on the allowed-viewer list and still a
-// follower of the creator.
+// follower of the creator, and group posts from groups the viewer belongs
+// to.
 func (r *Repository) ListPosts(viewerID, limit int) ([]*post, error) {
 	rows, err := r.db.Query(`
-		SELECT id, user_id, visibility, title, content, image_path, created_at, updated_at
+		SELECT id, user_id, visibility, title, content, image_path, group_id, created_at, updated_at
 		FROM posts p
 		WHERE p.user_id = ?
-			OR p.visibility = 'public'
+			OR (p.group_id IS NULL AND p.visibility = 'public')
 			OR (p.visibility = 'followers' AND EXISTS (
 				SELECT 1 FROM followers f
 				WHERE f.follower_id = ? AND f.followed_id = p.user_id
@@ -75,9 +76,13 @@ func (r *Repository) ListPosts(viewerID, limit int) ([]*post, error) {
 				JOIN followers f ON f.follower_id = pav.user_id AND f.followed_id = p.user_id
 				WHERE pav.post_id = p.id AND pav.user_id = ?
 			))
+			OR (p.group_id IS NOT NULL AND EXISTS (
+				SELECT 1 FROM group_members gm
+				WHERE gm.group_id = p.group_id AND gm.user_id = ?
+			))
 		ORDER BY p.created_at DESC
 		LIMIT ?
-	`, viewerID, viewerID, viewerID, limit)
+	`, viewerID, viewerID, viewerID, viewerID, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +91,38 @@ func (r *Repository) ListPosts(viewerID, limit int) ([]*post, error) {
 	posts := []*post{}
 	for rows.Next() {
 		var p post
-		if err := rows.Scan(&p.ID, &p.User_ID, &p.visibility, &p.Title, &p.Content, &p.ImagePath, &p.Created_At, &p.Updated_At); err != nil {
+		if err := rows.Scan(&p.ID, &p.User_ID, &p.visibility, &p.Title, &p.Content, &p.ImagePath, &p.GroupID, &p.Created_At, &p.Updated_At); err != nil {
+			return nil, err
+		}
+		posts = append(posts, &p)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return posts, nil
+}
+
+// ListPostsByGroup returns up to limit posts belonging to groupID, newest
+// first. Open to any caller - viewing a group's posts doesn't require
+// membership.
+func (r *Repository) ListPostsByGroup(groupID, limit int) ([]*post, error) {
+	rows, err := r.db.Query(`
+		SELECT id, user_id, visibility, title, content, image_path, group_id, created_at, updated_at
+		FROM posts
+		WHERE group_id = ?
+		ORDER BY created_at DESC
+		LIMIT ?
+	`, groupID, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	posts := []*post{}
+	for rows.Next() {
+		var p post
+		if err := rows.Scan(&p.ID, &p.User_ID, &p.visibility, &p.Title, &p.Content, &p.ImagePath, &p.GroupID, &p.Created_At, &p.Updated_At); err != nil {
 			return nil, err
 		}
 		posts = append(posts, &p)

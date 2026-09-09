@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"time"
 
+	"social/internal/groups"
 	"social/internal/posts"
 	"social/internal/requestctx"
 	"social/internal/upload"
@@ -40,9 +41,22 @@ type CommentResponse struct {
 	// IsOwner tells the client whether the requesting user owns this
 	// comment, so it knows whether to offer a delete action.
 	IsOwner bool `json:"is_owner"`
+	// CanDelete tells the client whether the requesting user may delete
+	// this comment - true for the author, and also for the creator of the
+	// group its post belongs to.
+	CanDelete bool `json:"can_delete"`
 }
 
-func newCommentResponse(c *comment, viewerID int) CommentResponse {
+// newCommentResponse builds the response for c as seen by viewerID.
+// isModerator is whether viewerID is the creator of the group c's post
+// belongs to (irrelevant, and safe to pass false, when c is owned by
+// viewerID) - callers rendering a whole list should look it up once via
+// Service.IsGroupModerator and pass the same value for every comment on
+// that post, rather than re-checking per comment.
+func (h *Handler) newCommentResponse(c *comment, viewerID int, isModerator bool) CommentResponse {
+	isOwner := c.UserID == viewerID
+	canDelete := isOwner || isModerator
+
 	resp := CommentResponse{
 		ID:        c.ID,
 		PostID:    c.PostID,
@@ -50,7 +64,8 @@ func newCommentResponse(c *comment, viewerID int) CommentResponse {
 		Content:   c.Content,
 		CreatedAt: c.Created_At,
 		UpdatedAt: c.Updated_At,
-		IsOwner:   c.UserID == viewerID,
+		IsOwner:   isOwner,
+		CanDelete: canDelete,
 	}
 	if c.ImagePath.Valid {
 		resp.ImageURL = "/uploads/" + c.ImagePath.String
@@ -128,7 +143,9 @@ func (h *Handler) NewCommentHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(newCommentResponse(c, userID))
+	// A freshly created comment is always owned by userID, so moderator
+	// status can't affect can_delete here.
+	json.NewEncoder(w).Encode(h.newCommentResponse(c, userID, false))
 }
 
 // ListCommentsHandler returns every comment on the post identified by the
@@ -154,9 +171,16 @@ func (h *Handler) ListCommentsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Looked up once and reused for every comment below, instead of
+	// re-fetching the (shared) post per comment.
+	isModerator, err := h.service.IsGroupModerator(userID, postID)
+	if err != nil {
+		isModerator = false
+	}
+
 	res := make([]CommentResponse, 0, len(list))
 	for _, c := range list {
-		res = append(res, newCommentResponse(c, userID))
+		res = append(res, h.newCommentResponse(c, userID, isModerator))
 	}
 
 	w.WriteHeader(http.StatusOK)
@@ -202,6 +226,9 @@ func writeCommentError(w http.ResponseWriter, err error) {
 	case errors.Is(err, ErrForbidden):
 		w.WriteHeader(http.StatusForbidden)
 		json.NewEncoder(w).Encode(Response{Error: "Not allowed to modify this comment"})
+	case errors.Is(err, groups.ErrNotGroupMember):
+		w.WriteHeader(http.StatusForbidden)
+		json.NewEncoder(w).Encode(Response{Error: "You must be a member of this group to comment"})
 	default:
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(Response{Error: "Server error"})

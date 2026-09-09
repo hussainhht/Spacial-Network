@@ -72,7 +72,7 @@ function CommentItem({
           {new Date(comment.created_at).toLocaleString()}
         </time>
 
-        {comment.is_owner && (
+        {comment.can_delete && (
           <button type="button" onClick={handleDelete} disabled={deleting}>
             {deleting ? "Deleting..." : "Delete"}
           </button>

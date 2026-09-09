@@ -7,4 +7,5 @@ export interface Comment {
   created_at: string;
   updated_at: string;
   is_owner: boolean;
+  can_delete: boolean;
 }

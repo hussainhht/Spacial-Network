@@ -242,6 +242,19 @@ func NewRouter(db *sql.DB, cfg config.Config) (http.Handler, error) {
 	)
 
 	// =========================
+	// Group Posts Routes
+	// =========================
+
+	apiMux.Handle(
+		"POST /groups/{id}/posts",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Posts.NewGroupPostHandler)),
+	)
+	apiMux.Handle(
+		"GET /groups/{id}/posts",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Posts.ListGroupPostsHandler)),
+	)
+
+	// =========================
 	// Chat Routes - Future
 	// =========================
 

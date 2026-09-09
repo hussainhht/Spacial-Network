@@ -1,7 +1,12 @@
 // Client for the Go backend's Posts API (see backend/internal/posts).
 
 import { apiRequest } from "@/lib/api/client";
-import type { NewPostInput, Post, PostInput } from "../types/post";
+import type {
+  NewGroupPostInput,
+  NewPostInput,
+  Post,
+  PostInput,
+} from "../types/post";
 
 export function listPosts(limit?: number): Promise<Post[]> {
   const query = limit != null ? `?limit=${encodeURIComponent(limit)}` : "";
@@ -47,5 +52,26 @@ export function updatePost(id: number, input: PostInput): Promise<void> {
 export function deletePost(id: number): Promise<void> {
   return apiRequest<void>(`/posts/${id}`, {
     method: "DELETE",
+  });
+}
+
+export function listGroupPosts(groupId: number): Promise<Post[]> {
+  return apiRequest<Post[]>(`/groups/${groupId}/posts`);
+}
+
+export function createGroupPost(
+  groupId: number,
+  input: NewGroupPostInput,
+): Promise<Post> {
+  const formData = new FormData();
+  formData.append("title", input.title);
+  formData.append("content", input.content);
+  if (input.image) {
+    formData.append("image", input.image);
+  }
+
+  return apiRequest<Post>(`/groups/${groupId}/posts`, {
+    method: "POST",
+    body: formData,
   });
 }
