@@ -10,9 +10,11 @@ import { useEffect, useRef, useState } from "react";
 import AppIcon from "./AppIcon";
 import { useNotifications } from "@/features/notifications/context/NotificationProvider";
 import NotificationDropdown from "@/features/notifications/components/NotificationDropdown";
+import { useSidebar } from "./sidebarContext";
 import styles from "./TopNavbar.module.css";
 
 export default function TopNavbar() {
+  const { isOpen: sidebarOpen, toggle: toggleSidebar } = useSidebar();
   const pathname = usePathname();
   const context = getNavbarContext(pathname);
   const { search, setSearch } = useGroupsSearch();
@@ -76,12 +78,25 @@ export default function TopNavbar() {
 
   return (
     <nav className={styles.navbar} aria-label="Top navigation">
-      {/* 1. Left Section: Current page context */}
+      {/* 1. Left Section: Current page context & Sidebar Toggle */}
       <div className={styles.contextSection}>
-        <span className={styles.contextEyebrow}>{context.eyebrow}</span>
-        <h1 id="app-page-title" tabIndex={-1} className={styles.contextTitle}>
-          {context.title}
-        </h1>
+        <button
+          type="button"
+          onClick={toggleSidebar}
+          className={styles.sidebarToggle}
+          aria-label={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
+          aria-expanded={sidebarOpen}
+          aria-controls="app-sidebar"
+          title={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
+        >
+          <AppIcon name={sidebarOpen ? "panelLeftClose" : "panelLeftOpen"} />
+        </button>
+        <div className={styles.contextText}>
+          <span className={styles.contextEyebrow}>{context.eyebrow}</span>
+          <h1 id="app-page-title" tabIndex={-1} className={styles.contextTitle}>
+            {context.title}
+          </h1>
+        </div>
       </div>
 
       {/* 2. Search Bar: Visual placeholder only */}

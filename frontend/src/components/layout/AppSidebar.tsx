@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState, useSyncExternalStore } from "react";
 import { getApiUrl } from "@/lib/api";
 import AppIcon, { type AppIconName } from "./AppIcon";
+import { useSidebar } from "./sidebarContext";
 import styles from "./AppShell.module.css";
 
 const navigation: { href: string; label: string; icon: AppIconName }[] = [
@@ -39,6 +40,7 @@ function useHasMounted() {
 }
 
 export default function AppSidebar() {
+  const { isOpen } = useSidebar();
   const { navigate } = useUniverseTransition();
   const pathname = usePathname();
   const router = useRouter();
@@ -73,7 +75,12 @@ export default function AppSidebar() {
   }
 
   return (
-    <aside className={styles.sidebar} aria-label="Application sidebar">
+    <aside
+      id="app-sidebar"
+      className={`${styles.sidebar} ${!isOpen ? styles.sidebarCollapsed : ""}`}
+      aria-label="Application sidebar"
+      inert={!isOpen ? true : undefined}
+    >
       <Link
         href="/"
         onNavigate={(event) => {
@@ -136,7 +143,9 @@ export default function AppSidebar() {
             <Link
               href="/dev/planets"
               className={styles.navLink}
-              aria-current={mounted && pathname === "/dev/planets" ? "page" : undefined}
+              aria-current={
+                mounted && pathname === "/dev/planets" ? "page" : undefined
+              }
               aria-label="Planet Lab"
               title="Planet Lab"
             >

@@ -20,6 +20,14 @@ const paths = {
   x: "M18 6 6 18 M6 6l12 12",
   dots: "M5 12h.01 M12 12h.01 M19 12h.01",
   chevronDown: "m6 9 6 6 6-6",
+  chevronLeft: "m15 18-6-6 6-6",
+  chevronRight: "m9 18 6-6-6-6",
+  arrowLeft: "M19 12H5 M12 19l-7-7 7-7",
+  arrowRight: "M5 12h14 M12 5l7 7-7 7",
+  panelLeftClose:
+    "M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5Z M9 3v18 M15 9l-3 3 3 3",
+  panelLeftOpen:
+    "M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5Z M9 3v18 M13 15l3-3-3-3",
 } satisfies Record<string, string>;
 
 export type AppIconName = keyof typeof paths;
