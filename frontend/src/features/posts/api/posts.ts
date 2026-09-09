@@ -16,7 +16,12 @@ export function createPost(input: NewPostInput): Promise<Post> {
   const formData = new FormData();
   formData.append("title", input.title);
   formData.append("content", input.content);
-  formData.append("private", String(input.private));
+  formData.append("visibility", input.visibility);
+  if (input.visibility === "custom") {
+    for (const id of input.viewerIds) {
+      formData.append("viewer_ids", String(id));
+    }
+  }
   if (input.image) {
     formData.append("image", input.image);
   }
@@ -30,7 +35,12 @@ export function createPost(input: NewPostInput): Promise<Post> {
 export function updatePost(id: number, input: PostInput): Promise<void> {
   return apiRequest<void>(`/posts/${id}`, {
     method: "PUT",
-    body: JSON.stringify(input),
+    body: JSON.stringify({
+      title: input.title,
+      content: input.content,
+      visibility: input.visibility,
+      viewer_ids: input.visibility === "custom" ? input.viewerIds : [],
+    }),
   });
 }
 

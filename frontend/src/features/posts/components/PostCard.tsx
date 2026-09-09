@@ -6,6 +6,7 @@ import { useState } from "react";
 import { deletePost } from "@/features/posts/api/posts";
 import type { Post } from "@/features/posts/types/post";
 import { getBackendBaseUrl } from "@/lib/api";
+import PostAuthorLink from "./PostAuthorLink";
 
 interface PostCardProps {
   post: Post;
@@ -35,11 +36,18 @@ export default function PostCard({ post, onDeleted }: PostCardProps) {
 
   return (
     <article className="post-card">
+      <PostAuthorLink author={post.author} />
+
       <header className="post-card-header">
         <h2>
           <Link href={`/posts/${post.id}`}>{post.title}</Link>
         </h2>
-        {post.private && <span className="post-badge">Private</span>}
+        {post.visibility === "followers" && (
+          <span className="post-badge">Followers only</span>
+        )}
+        {post.visibility === "custom" && (
+          <span className="post-badge">Custom audience</span>
+        )}
       </header>
 
       <p className="post-card-content">{post.content}</p>
