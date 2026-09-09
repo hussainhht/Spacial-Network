@@ -84,6 +84,9 @@ func (s *Service) CanMessage(userA, userB int) (bool, error) {
 	return s.repo.HasFollowRelationship(userA, userB)
 }
 
-func (s *Service) GetEligibleChatContacts(userID int) ([]UserSummary, error) {
-	return s.repo.GetEligibleChatContacts(userID)
+func (s *Service) GetEligibleChatContacts(userID int, search string, contactID int, limit, offset int) ([]UserSummary, error) {
+	if userID <= 0 {
+		return []UserSummary{}, nil
+	}
+	return s.repo.GetEligibleChatContacts(userID, search, contactID, limit, offset)
 }

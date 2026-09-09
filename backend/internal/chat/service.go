@@ -31,7 +31,7 @@ type NotificationSender interface {
 
 type FollowPermissionChecker interface {
 	CanMessage(userA, userB int) (bool, error)
-	GetEligibleChatContacts(userID int) ([]followers.UserSummary, error)
+	GetEligibleChatContacts(userID int, search string, contactID int, limit, offset int) ([]followers.UserSummary, error)
 }
 
 type Service struct {
@@ -252,11 +252,11 @@ func (s *Service) GetRecentConversations(userID int64) ([]ConversationSummary, e
 	return s.repo.GetRecentConversations(userID)
 }
 
-func (s *Service) GetEligibleContacts(userID int64) ([]followers.UserSummary, error) {
+func (s *Service) GetEligibleContacts(userID int64, search string, contactID int, limit, offset int) ([]followers.UserSummary, error) {
 	if s.followChecker == nil {
 		return []followers.UserSummary{}, nil
 	}
-	return s.followChecker.GetEligibleChatContacts(int(userID))
+	return s.followChecker.GetEligibleChatContacts(int(userID), search, contactID, limit, offset)
 }
 
 func (s *Service) sendError(userID int64, message string) {

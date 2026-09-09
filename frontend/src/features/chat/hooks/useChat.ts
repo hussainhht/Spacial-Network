@@ -26,8 +26,7 @@ export function useChat() {
   const [myUserId, setMyUserId] = useState<number | null>(null);
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [loadingConversations, setLoadingConversations] = useState(true);
-  const [eligibleContacts, setEligibleContacts] = useState<EligibleContact[]>([]);
-  const [loadingEligible, setLoadingEligible] = useState(true);
+  const [isPartnerEligible, setIsPartnerEligible] = useState<boolean>(true);
 
   const [activePartnerId, setActivePartnerId] = useState<number | null>(null);
   const [activePartnerUsername, setActivePartnerUsername] = useState<string>("");
@@ -58,14 +57,10 @@ export function useChat() {
           setMyUserId(user.user_id);
         }
 
-        const [convos, eligible] = await Promise.all([
-          getConversations().catch(() => []),
-          getEligibleContacts().catch(() => []),
-        ]);
+        const convos = await getConversations().catch(() => []);
 
         if (isMounted) {
           setConversations(convos);
-          setEligibleContacts(eligible);
         }
       } catch (err) {
         if (err instanceof ApiError && err.status === 401) {
@@ -76,7 +71,6 @@ export function useChat() {
       } finally {
         if (isMounted) {
           setLoadingConversations(false);
-          setLoadingEligible(false);
         }
       }
     }
@@ -87,6 +81,32 @@ export function useChat() {
       isMounted = false;
     };
   }, [router]);
+
+  // Check eligibility for the active chat partner
+  useEffect(() => {
+    if (!activePartnerId) {
+      setIsPartnerEligible(true);
+      return;
+    }
+
+    let isMounted = true;
+    getEligibleContacts("", 1, 0, activePartnerId)
+      .then((contacts) => {
+        if (isMounted) {
+          setIsPartnerEligible(contacts.length > 0 && contacts[0].id === activePartnerId);
+        }
+      })
+      .catch(() => {
+        // Keep eligible on transient error; WebSocket will gate send if blocked
+        if (isMounted) {
+          setIsPartnerEligible(true);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [activePartnerId]);
 
   const selectConversation = useCallback(
     async (partnerId: number, partnerUsername: string, partnerAvatar?: string) => {
@@ -126,16 +146,27 @@ export function useChat() {
 
   const searchPartnerId = searchParams.get("partnerId");
   useEffect(() => {
-    if (!searchPartnerId || loadingConversations || loadingEligible) return;
+    if (!searchPartnerId || loadingConversations) return;
     const pid = parseInt(searchPartnerId, 10);
     if (!isNaN(pid) && pid > 0 && pid !== activePartnerId) {
       const found = conversationsRef.current.find((c) => c.partner_id === pid);
-      const foundEligible = eligibleContacts.find((c) => c.id === pid);
-      const username = found ? found.partner_username : foundEligible ? foundEligible.username : `User ${pid}`;
-      const avatar = found ? found.partner_avatar : foundEligible?.profile_photo;
-      selectConversation(pid, username, avatar);
+      if (found) {
+        selectConversation(pid, found.partner_username, found.partner_avatar);
+      } else {
+        getEligibleContacts("", 1, 0, pid)
+          .then((contacts) => {
+            if (contacts.length > 0) {
+              selectConversation(pid, contacts[0].username, contacts[0].profile_photo || undefined);
+            } else {
+              selectConversation(pid, `User ${pid}`);
+            }
+          })
+          .catch(() => {
+            selectConversation(pid, `User ${pid}`);
+          });
+      }
     }
-  }, [searchPartnerId, loadingConversations, loadingEligible, eligibleContacts, activePartnerId, selectConversation]);
+  }, [searchPartnerId, loadingConversations, activePartnerId, selectConversation]);
 
   const loadMoreHistory = useCallback(async () => {
     if (!activePartnerId || loadingHistory || !hasMoreHistory) return;
@@ -283,12 +314,8 @@ export function useChat() {
   );
 
   const isPermissionBlocked =
-    (!loadingEligible &&
-      activePartnerId !== null &&
-      !eligibleContacts.some((c) => c.id === activePartnerId)) ||
+    !isPartnerEligible ||
     Boolean(errorMessage && errorMessage.toLowerCase().includes("only message users you follow"));
-
-  const isPartnerEligible = !isPermissionBlocked;
 
   return {
     isConnected,
@@ -296,11 +323,10 @@ export function useChat() {
     myUserId,
     conversations,
     loadingConversations,
-    eligibleContacts,
     activePartnerId,
     activePartnerUsername,
     activePartnerAvatar,
-    isPartnerEligible,
+    isPartnerEligible: !isPermissionBlocked,
     messages,
     loadingHistory,
     hasMoreHistory,

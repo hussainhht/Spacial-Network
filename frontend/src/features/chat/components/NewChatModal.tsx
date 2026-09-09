@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { getEligibleContacts } from "../api/chat";
 import type { EligibleContact } from "../types/chat";
 import { getDisplayName, getInitials } from "@/lib/utils";
@@ -27,6 +27,8 @@ export default function NewChatModal({
   useEffect(() => {
     if (!isOpen) {
       setSearchQuery("");
+      setContacts([]);
+      setLoading(false);
       return;
     }
 
@@ -34,27 +36,33 @@ export default function NewChatModal({
     setLoading(true);
     setError(null);
 
-    getEligibleContacts()
-      .then((data) => {
-        if (isMounted) {
-          setContacts(data);
-        }
-      })
-      .catch((err) => {
-        if (isMounted) {
-          setError(err instanceof Error ? err.message : "Failed to load contacts");
-        }
-      })
-      .finally(() => {
-        if (isMounted) {
-          setLoading(false);
-        }
-      });
+    const trimmed = searchQuery.trim();
+    const delay = trimmed ? 250 : 0;
+
+    const timer = setTimeout(() => {
+      getEligibleContacts(trimmed, 20, 0)
+        .then((data) => {
+          if (isMounted) {
+            setContacts(data);
+          }
+        })
+        .catch((err) => {
+          if (isMounted) {
+            setError(err instanceof Error ? err.message : "Failed to load contacts");
+          }
+        })
+        .finally(() => {
+          if (isMounted) {
+            setLoading(false);
+          }
+        });
+    }, delay);
 
     return () => {
       isMounted = false;
+      clearTimeout(timer);
     };
-  }, [isOpen]);
+  }, [isOpen, searchQuery]);
 
   // Handle escape key
   useEffect(() => {
@@ -69,16 +77,6 @@ export default function NewChatModal({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onClose]);
-
-  const filteredContacts = useMemo(() => {
-    if (!searchQuery.trim()) return contacts;
-    const q = searchQuery.toLowerCase();
-    return contacts.filter((c) => {
-      const full = `${c.first_name} ${c.last_name}`.toLowerCase();
-      const user = c.username.toLowerCase();
-      return full.includes(q) || user.includes(q);
-    });
-  }, [contacts, searchQuery]);
 
   if (!isOpen) return null;
 
@@ -127,27 +125,32 @@ export default function NewChatModal({
               placeholder="Search people you follow or followers..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-3 pr-8 py-2 rounded-lg border border-slate-700/60 bg-[#10152f]/80 text-slate-100 placeholder-slate-400 text-sm focus:outline-none focus:border-indigo-500 transition-colors"
+              className="w-full pl-3 pr-10 py-2 rounded-lg border border-slate-700/60 bg-[#10152f]/80 text-slate-100 placeholder-slate-400 text-sm focus:outline-none focus:border-indigo-500 transition-colors"
             />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => setSearchQuery("")}
-                className="absolute right-2.5 text-slate-400 hover:text-slate-200 text-base cursor-pointer leading-none"
-                aria-label="Clear search"
-              >
-                &times;
-              </button>
-            )}
+            <div className="absolute right-2.5 flex items-center gap-1.5">
+              {loading && (
+                <div className="w-3.5 h-3.5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+              )}
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="text-slate-400 hover:text-slate-200 text-base cursor-pointer leading-none"
+                  aria-label="Clear search"
+                >
+                  &times;
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
         {/* Contacts List */}
         <div className="flex-1 overflow-y-auto divide-y divide-slate-800/40 p-1">
-          {loading && (
+          {loading && contacts.length === 0 && (
             <div className="py-12 text-center text-slate-400 text-sm">
               <div className="inline-block w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mb-2" />
-              <p>Finding eligible contacts...</p>
+              <p>{searchQuery.trim() ? "Searching contacts..." : "Finding eligible contacts..."}</p>
             </div>
           )}
 
@@ -159,9 +162,9 @@ export default function NewChatModal({
                 onClick={() => {
                   setLoading(true);
                   setError(null);
-                  getEligibleContacts()
+                  getEligibleContacts(searchQuery.trim(), 20, 0)
                     .then(setContacts)
-                    .catch((e) => setError(e.message))
+                    .catch((e) => setError(e instanceof Error ? e.message : "Failed to load contacts"))
                     .finally(() => setLoading(false));
                 }}
                 className="mt-2 text-xs text-indigo-400 hover:underline cursor-pointer"
@@ -173,23 +176,29 @@ export default function NewChatModal({
 
           {!loading && !error && contacts.length === 0 && (
             <div className="py-10 px-6 text-center text-slate-400">
-              <div className="text-3xl mb-2">👥</div>
-              <h3 className="text-sm font-semibold text-slate-200 m-0">No eligible contacts</h3>
-              <p className="text-xs text-slate-400 mt-1 mb-0 leading-relaxed">
-                You can only message users you follow or who follow you. Follow people to chat with them!
-              </p>
-            </div>
-          )}
-
-          {!loading && !error && contacts.length > 0 && filteredContacts.length === 0 && (
-            <div className="py-8 text-center text-slate-400 text-sm">
-              No contacts matching &ldquo;{searchQuery}&rdquo;
+              {searchQuery.trim() ? (
+                <>
+                  <div className="text-3xl mb-2">🔍</div>
+                  <h3 className="text-sm font-semibold text-slate-200 m-0">No contacts found</h3>
+                  <p className="text-xs text-slate-400 mt-1 mb-0 leading-relaxed">
+                    No contacts matching &ldquo;{searchQuery.trim()}&rdquo;
+                  </p>
+                </>
+              ) : (
+                <>
+                  <div className="text-3xl mb-2">👥</div>
+                  <h3 className="text-sm font-semibold text-slate-200 m-0">No eligible contacts</h3>
+                  <p className="text-xs text-slate-400 mt-1 mb-0 leading-relaxed">
+                    You can only message users you follow or who follow you. Follow people to chat with them!
+                  </p>
+                </>
+              )}
             </div>
           )}
 
           {!loading &&
             !error &&
-            filteredContacts.map((contact) => {
+            contacts.map((contact) => {
               const isOnline = onlineUserIDs.includes(contact.id);
               const displayName = getDisplayName(
                 contact.first_name,

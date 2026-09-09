@@ -66,10 +66,10 @@ export default function ProfilePage({ username }: ProfilePageProps) {
     }
 
     let isMounted = true;
-    getEligibleContacts()
+    getEligibleContacts("", 1, 0, profile.id)
       .then((contacts) => {
         if (isMounted) {
-          setCanMessage(contacts.some((c) => c.id === profile.id));
+          setCanMessage(contacts.length > 0 && contacts[0].id === profile.id);
         }
       })
       .catch(() => {

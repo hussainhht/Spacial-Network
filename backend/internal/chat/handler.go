@@ -114,7 +114,12 @@ func (h *Handler) GetEligibleContactsHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	contacts, err := h.service.GetEligibleContacts(int64(userID))
+	search := r.URL.Query().Get("search")
+	contactID, _ := strconv.Atoi(r.URL.Query().Get("contact_id"))
+	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+	offset, _ := strconv.Atoi(r.URL.Query().Get("offset"))
+
+	contacts, err := h.service.GetEligibleContacts(int64(userID), search, contactID, limit, offset)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to load contacts"})
