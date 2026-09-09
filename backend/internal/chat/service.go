@@ -6,8 +6,11 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"time"
 	"unicode/utf8"
 
+	"social/internal/followers"
+	"social/internal/notifications"
 	"social/internal/websocket"
 )
 
@@ -22,16 +25,36 @@ var (
 	ErrSelfMessage     = errors.New("cannot send a message to yourself")
 )
 
-type Service struct {
-	repo *Repository
-	hub  *websocket.Hub
+type NotificationSender interface {
+	Notify(notifications.CreateNotificationRequest) error
 }
 
-func NewService(repo *Repository, hub *websocket.Hub) *Service {
+type FollowPermissionChecker interface {
+	CanMessage(userA, userB int) (bool, error)
+	GetEligibleChatContacts(userID int, search string, contactID int, limit, offset int) ([]followers.UserSummary, error)
+}
+
+type Service struct {
+	repo          *Repository
+	hub           *websocket.Hub
+	notifier      NotificationSender
+	followChecker FollowPermissionChecker
+}
+
+func NewService(repo *Repository, hub *websocket.Hub, notifier NotificationSender, followChecker FollowPermissionChecker) *Service {
 	return &Service{
-		repo: repo,
-		hub:  hub,
+		repo:          repo,
+		hub:           hub,
+		notifier:      notifier,
+		followChecker: followChecker,
 	}
+}
+
+// RegisterWSRoutes registers all chat WebSocket event handlers with the given WebSocket router.
+func (s *Service) RegisterWSRoutes(r *websocket.Router) {
+	r.Register(EventPrivateMessage, s.HandlePrivateMessage)
+	r.Register(EventTyping, s.HandleTyping)
+	r.Register(EventMarkRead, s.HandleMarkRead)
 }
 
 func (s *Service) HandleIncomingWSMessage(senderID int64, raw []byte) {
@@ -43,14 +66,17 @@ func (s *Service) HandleIncomingWSMessage(senderID int64, raw []byte) {
 
 	switch event.Type {
 	case EventPrivateMessage:
-		s.handlePrivateMessage(senderID, event.Payload)
+		s.HandlePrivateMessage(senderID, event.Payload)
 
 	case EventTyping:
-		s.handleTyping(senderID, event.Payload)
+		s.HandleTyping(senderID, event.Payload)
+
+	case EventMarkRead:
+		s.HandleMarkRead(senderID, event.Payload)
 	}
 }
 
-func (s *Service) handlePrivateMessage(senderID int64, rawPayload json.RawMessage) {
+func (s *Service) HandlePrivateMessage(senderID int64, rawPayload json.RawMessage) {
 	var req MessagePayload
 	if err := json.Unmarshal(rawPayload, &req); err != nil {
 		s.sendError(senderID, "Invalid message payload format")
@@ -78,6 +104,32 @@ func (s *Service) handlePrivateMessage(senderID int64, rawPayload json.RawMessag
 		return
 	}
 
+	if s.repo != nil {
+		exists, err := s.repo.UserExists(req.RecipientID)
+		if err != nil {
+			log.Printf("failed to check recipient existence: %v", err)
+			s.sendError(senderID, "Internal server error")
+			return
+		}
+		if !exists {
+			s.sendError(senderID, "Recipient does not exist")
+			return
+		}
+	}
+
+	if s.followChecker != nil {
+		canMessage, err := s.followChecker.CanMessage(int(senderID), int(req.RecipientID))
+		if err != nil {
+			log.Printf("failed to check follow relationship between %d and %d: %v", senderID, req.RecipientID, err)
+			s.sendError(senderID, "Internal server error")
+			return
+		}
+		if !canMessage {
+			s.sendError(senderID, "You can only message users you follow or who follow you")
+			return
+		}
+	}
+
 	savedMsg, err := s.repo.SavePrivateMessage(senderID, req.RecipientID, content)
 	if err != nil {
 		log.Printf("failed to save private message: %v", err)
@@ -90,7 +142,7 @@ func (s *Service) handlePrivateMessage(senderID int64, rawPayload json.RawMessag
 		SenderID:    savedMsg.SenderID,
 		RecipientID: savedMsg.RecipientID,
 		Content:     savedMsg.Content,
-		CreatedAt:   savedMsg.CreatedAt.Format("2006-01-02 15:04:05"),
+		CreatedAt:   savedMsg.CreatedAt.UTC().Format(time.RFC3339),
 	}
 
 	outEvent, err := websocket.NewEvent(EventPrivateMessage, outPayload)
@@ -101,8 +153,30 @@ func (s *Service) handlePrivateMessage(senderID int64, rawPayload json.RawMessag
 
 	s.hub.SendToUser(savedMsg.RecipientID, outEvent)
 	s.hub.SendToUser(savedMsg.SenderID, outEvent)
+
+	if s.notifier != nil {
+		actorID := int(senderID)
+		msgID := int(savedMsg.ID)
+		entityType := notifications.EntityPrivateMessage
+		preview := content
+		if utf8.RuneCountInString(preview) > 60 {
+			runes := []rune(preview)
+			preview = string(runes[:60]) + "..."
+		}
+		if err := s.notifier.Notify(notifications.CreateNotificationRequest{
+			ReceiverID: int(savedMsg.RecipientID),
+			ActorID:    &actorID,
+			Type:       notifications.NotificationPrivateMessage,
+			EntityType: &entityType,
+			EntityID:   &msgID,
+			Message:    preview,
+		}); err != nil {
+			log.Printf("chat: failed to create notification for user %d: %v", savedMsg.RecipientID, err)
+		}
+	}
 }
-func (s *Service) handleTyping(senderID int64, rawPayload json.RawMessage) {
+
+func (s *Service) HandleTyping(senderID int64, rawPayload json.RawMessage) {
 	var payload TypingPayload
 	if err := json.Unmarshal(rawPayload, &payload); err != nil {
 		return
@@ -121,12 +195,54 @@ func (s *Service) handleTyping(senderID int64, rawPayload json.RawMessage) {
 	s.hub.SendToUser(payload.RecipientID, outEvent)
 }
 
+func (s *Service) HandleMarkRead(readerID int64, rawPayload json.RawMessage) {
+	var payload MarkReadPayload
+	if err := json.Unmarshal(rawPayload, &payload); err != nil {
+		return
+	}
+
+	if payload.SenderID <= 0 || payload.SenderID == readerID {
+		return
+	}
+
+	if err := s.repo.MarkMessagesAsRead(payload.SenderID, readerID); err != nil {
+		log.Printf("failed to mark messages as read: %v", err)
+		return
+	}
+
+	readAt := time.Now().UTC().Format(time.RFC3339)
+	outPayload := MessagesReadPayload{
+		ReaderID: readerID,
+		SenderID: payload.SenderID,
+		ReadAt:   readAt,
+	}
+
+	outEvent, err := websocket.NewEvent(EventMessagesRead, outPayload)
+	if err != nil {
+		return
+	}
+
+	s.hub.SendToUser(payload.SenderID, outEvent)
+	s.hub.SendToUser(readerID, outEvent)
+}
+
 func (s *Service) GetHistory(userA, userB int64, limit, offset int) ([]PrivateMessage, error) {
 	if userB <= 0 {
 		return nil, ErrInvalidReceiver
 	}
 	if err := s.repo.MarkMessagesAsRead(userB, userA); err != nil {
 		log.Printf("failed to mark messages as read: %v", err)
+	} else if s.hub != nil {
+		readAt := time.Now().UTC().Format(time.RFC3339)
+		outPayload := MessagesReadPayload{
+			ReaderID: userA,
+			SenderID: userB,
+			ReadAt:   readAt,
+		}
+		if outEvent, err := websocket.NewEvent(EventMessagesRead, outPayload); err == nil {
+			s.hub.SendToUser(userB, outEvent)
+			s.hub.SendToUser(userA, outEvent)
+		}
 	}
 
 	return s.repo.GetPrivateHistory(userA, userB, limit, offset)
@@ -134,6 +250,13 @@ func (s *Service) GetHistory(userA, userB int64, limit, offset int) ([]PrivateMe
 
 func (s *Service) GetRecentConversations(userID int64) ([]ConversationSummary, error) {
 	return s.repo.GetRecentConversations(userID)
+}
+
+func (s *Service) GetEligibleContacts(userID int64, search string, contactID int, limit, offset int) ([]followers.UserSummary, error) {
+	if s.followChecker == nil {
+		return []followers.UserSummary{}, nil
+	}
+	return s.followChecker.GetEligibleChatContacts(int(userID), search, contactID, limit, offset)
 }
 
 func (s *Service) sendError(userID int64, message string) {

@@ -7,6 +7,7 @@ import { useParams, useRouter } from "next/navigation";
 import { deletePost, getPost } from "@/features/posts/api/posts";
 import { ApiError } from "@/lib/api/errors";
 import type { Post } from "@/features/posts/types/post";
+import { formatDateTime } from "@/lib/utils";
 import CommentsSection from "@/features/comments/components/CommentsSection";
 import PostAuthorLink from "@/features/posts/components/PostAuthorLink";
 import { getBackendBaseUrl } from "@/lib/api";
@@ -115,7 +116,7 @@ export default function PostDetailPage() {
 
             <footer className="post-card-footer">
               <time dateTime={post.created_at}>
-                {new Date(post.created_at).toLocaleString()}
+                {formatDateTime(post.created_at)}
               </time>
 
               {(post.is_owner || post.can_delete) && (

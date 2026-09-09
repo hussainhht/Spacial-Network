@@ -4,9 +4,11 @@ export type EventType =
   | "online_users"
   | "private_message"
   | "typing"
-  | "error"
+  | "mark_read"
+  | "messages_read"
   | "invite_user_search"
   | "invite_user_search_results"
+  | "error"
   | "notification"
   | "group_event_response_updated";
 
@@ -27,6 +29,16 @@ export interface TypingPayload {
   sender_id: number;
   recipient_id: number;
   is_typing: boolean;
+}
+
+export interface MarkReadPayload {
+  sender_id: number;
+}
+
+export interface MessagesReadPayload {
+  reader_id: number;
+  sender_id: number;
+  read_at: string;
 }
 
 export interface UserStatusPayload {
@@ -102,6 +114,7 @@ export interface WebSocketContextType {
   onlineUserIDs: number[];
   lastMessage: MessagePayload | null;
   typingStatus: TypingPayload | null;
+  lastReadReceipt: MessagesReadPayload | null;
   errorMessage: string | null;
   inviteSearchResults: InviteUserSearchResultsPayload | null;
   lastNotification: NotificationEventPayload | null;

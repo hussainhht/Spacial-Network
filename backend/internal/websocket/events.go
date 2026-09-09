@@ -8,7 +8,7 @@ const (
 	EventUserOnline  EventType = "user_online"
 	EventUserOffline EventType = "user_offline"
 	EventOnlineUsers EventType = "online_users"
-	EventError EventType = "error"
+	EventError       EventType = "error"
 )
 type Event struct {
 	Type    EventType       `json:"type"`

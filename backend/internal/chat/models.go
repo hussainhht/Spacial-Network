@@ -9,6 +9,8 @@ import (
 const (
 	EventPrivateMessage websocket.EventType = "private_message"
 	EventTyping         websocket.EventType = "typing"
+	EventMarkRead       websocket.EventType = "mark_read"
+	EventMessagesRead   websocket.EventType = "messages_read"
 )
 
 type PrivateMessage struct {
@@ -32,6 +34,16 @@ type TypingPayload struct {
 	SenderID    int64 `json:"sender_id"`
 	RecipientID int64 `json:"recipient_id"`
 	IsTyping    bool  `json:"is_typing"`
+}
+
+type MarkReadPayload struct {
+	SenderID int64 `json:"sender_id"`
+}
+
+type MessagesReadPayload struct {
+	ReaderID int64  `json:"reader_id"`
+	SenderID int64  `json:"sender_id"`
+	ReadAt   string `json:"read_at"`
 }
 
 type ConversationSummary struct {

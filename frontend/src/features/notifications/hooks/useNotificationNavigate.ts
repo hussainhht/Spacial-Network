@@ -27,6 +27,14 @@ export function useNotificationNavigate() {
           }
           break;
 
+        case "private_message":
+          if (notification.actorId) {
+            router.push(`/chat?partnerId=${notification.actorId}`);
+          } else {
+            router.push("/chat");
+          }
+          break;
+
         //todo add more notification types here in the future, such as post_comment, post_like, etc.
         /*
          * TODO: Add post notification navigation.

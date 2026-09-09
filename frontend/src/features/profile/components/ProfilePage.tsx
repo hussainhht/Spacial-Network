@@ -12,6 +12,7 @@ import {
   updateMyProfilePrivacy,
 } from "../api/profiles";
 import { listPosts } from "@/features/posts/api/posts";
+import { getEligibleContacts } from "@/features/chat/api/chat";
 import type { Post } from "@/features/posts/types/post";
 import type { Profile, ProfileTab, ProfileUserSummary } from "../types/profile";
 import ProfileHeader from "./ProfileHeader";
@@ -48,9 +49,37 @@ export default function ProfilePage({ username }: ProfilePageProps) {
   const [followers, setFollowers] = useState<ProfileUserSummary[]>([]);
   const [following, setFollowing] = useState<ProfileUserSummary[]>([]);
   const [isFollowing, setIsFollowing] = useState(false);
+  const [canMessage, setCanMessage] = useState(false);
   const [followDataLoading, setFollowDataLoading] = useState(!isLocked);
   const [followLoading, setFollowLoading] = useState(false);
   const [followError, setFollowError] = useState<string | null>(null);
+
+  // Determine messaging permission (User A follows User B OR User B follows User A)
+  useEffect(() => {
+    if (!profile || isOwnProfile) {
+      setCanMessage(false);
+      return;
+    }
+    if (isFollowing) {
+      setCanMessage(true);
+      return;
+    }
+
+    let isMounted = true;
+    getEligibleContacts("", 1, 0, profile.id)
+      .then((contacts) => {
+        if (isMounted) {
+          setCanMessage(contacts.length > 0 && contacts[0].id === profile.id);
+        }
+      })
+      .catch(() => {
+        if (isMounted) setCanMessage(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [profile, isOwnProfile, isFollowing]);
 
   // Load profile data
   useEffect(() => {
@@ -289,6 +318,7 @@ export default function ProfilePage({ username }: ProfilePageProps) {
           followersCount={followers.length}
           followingCount={following.length}
           isFollowing={isFollowing}
+          canMessage={canMessage}
           followLoading={followLoading}
           onSelectTab={setActiveTab}
           onToggleFollow={handleToggleFollow}

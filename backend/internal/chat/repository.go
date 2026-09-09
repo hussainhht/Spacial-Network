@@ -141,7 +141,7 @@ func (r *Repository) GetRecentConversations(userID int64) ([]ConversationSummary
 		); err != nil {
 			return nil, fmt.Errorf("scan conversation summary: %w", err)
 		}
-		c.LastMessageAt = rawTime.Format("2006-01-02 15:04:05")
+		c.LastMessageAt = rawTime.UTC().Format(time.RFC3339)
 		conversations = append(conversations, c)
 	}
 
@@ -163,4 +163,16 @@ func (r *Repository) MarkMessagesAsRead(senderID, recipientID int64) error {
 		return fmt.Errorf("mark messages as read: %w", err)
 	}
 	return nil
+}
+
+func (r *Repository) UserExists(userID int64) (bool, error) {
+	var exists int
+	err := r.db.QueryRow(`SELECT 1 FROM users WHERE id = ? LIMIT 1`, userID).Scan(&exists)
+	if err == sql.ErrNoRows {
+		return false, nil
+	}
+	if err != nil {
+		return false, fmt.Errorf("check user exists: %w", err)
+	}
+	return true, nil
 }

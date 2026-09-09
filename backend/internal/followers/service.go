@@ -75,3 +75,18 @@ func (s *Service) GetFollowers(userID int) ([]UserSummary, error) {
 func (s *Service) GetFollowing(userID int) ([]UserSummary, error) {
 	return s.repo.GetFollowing(userID)
 }
+
+func (s *Service) CanMessage(userA, userB int) (bool, error) {
+	if userA == userB {
+		return false, nil
+	}
+
+	return s.repo.HasFollowRelationship(userA, userB)
+}
+
+func (s *Service) GetEligibleChatContacts(userID int, search string, contactID int, limit, offset int) ([]UserSummary, error) {
+	if userID <= 0 {
+		return []UserSummary{}, nil
+	}
+	return s.repo.GetEligibleChatContacts(userID, search, contactID, limit, offset)
+}

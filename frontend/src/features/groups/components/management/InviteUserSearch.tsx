@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 
+import { getDisplayName, getInitials } from "@/lib/utils";
 import { avatarUrl } from "../../api/groups";
 import { useInviteUserSearch } from "../../hooks/useInviteUserSearch";
 import type { InviteCandidate } from "../../types/group";
@@ -72,9 +73,16 @@ export default function InviteUserSearch({
       {results.length > 0 && (
         <ul className="group-invite-results">
           {results.map((user) => {
-            const fullName = [user.firstName, user.lastName]
-              .filter(Boolean)
-              .join(" ");
+            const displayName = getDisplayName(
+              user.firstName,
+              user.lastName,
+              user.username,
+            );
+            const initials = getInitials(
+              user.firstName,
+              user.lastName,
+              user.username,
+            );
             const photo = avatarUrl(user.avatar);
 
             return (
@@ -93,13 +101,13 @@ export default function InviteUserSearch({
                       className="group-invite-avatar-fallback"
                       aria-hidden="true"
                     >
-                      {user.username.charAt(0).toUpperCase()}
+                      {initials}
                     </span>
                   )}
 
                   <span className="group-invite-result-text">
                     <span className="group-invite-result-name">
-                      {fullName || user.username}
+                      {displayName}
                     </span>
                     <span className="group-invite-result-username">
                       @{user.username}
