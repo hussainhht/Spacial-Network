@@ -154,7 +154,12 @@ export default function ExpandedPost({
           <div className={styles.expandedEditor} data-edit-post>
             <h2>Edit post</h2>
             <PostForm
-              initialValues={post}
+              initialValues={{
+                title: post.title,
+                content: post.content,
+                visibility: post.visibility,
+                viewerIds: post.viewer_ids ?? [],
+              }}
               submitLabel="Save changes"
               pendingLabel="Saving…"
               onSubmit={async (input) => {
@@ -163,7 +168,7 @@ export default function ExpandedPost({
                   ...post,
                   title: input.title,
                   content: input.content,
-                  private: input.private,
+                  visibility: input.visibility,
                 });
               }}
             />

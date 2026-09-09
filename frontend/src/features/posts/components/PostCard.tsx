@@ -8,6 +8,7 @@ import type { Post } from "@/features/posts/types/post";
 import { getBackendBaseUrl } from "@/lib/api";
 import AppIcon from "@/components/layout/AppIcon";
 import styles from "./PostCard.module.css";
+import PostAuthorLink from "./PostAuthorLink";
 
 interface PostCardProps {
   post: Post;
@@ -41,13 +42,8 @@ export default function PostCard({ post, onDeleted, onOpen, onComments, onEdit }
   return (
     <article className={`orbital-social-card ${styles.card}`}>
       <header className={styles.header}>
-        <span className={styles.avatar} aria-hidden="true">
-          <AppIcon name="user" width={20} height={20} />
-        </span>
+        <PostAuthorLink author={post.author} />
         <div className={styles.author}>
-          <span className={styles.authorName}>
-            {post.is_owner ? "You" : `User #${post.user_id}`}
-          </span>
           <time
             className={styles.timestamp}
             dateTime={post.created_at}
@@ -65,7 +61,7 @@ export default function PostCard({ post, onDeleted, onOpen, onComments, onEdit }
             })}
           </time>
         </div>
-        {post.is_owner && (
+        {(post.is_owner || post.can_delete) && (
           <details
             className={styles.actions}
             onBlur={(event) => {
@@ -85,24 +81,48 @@ export default function PostCard({ post, onDeleted, onOpen, onComments, onEdit }
               <span aria-hidden="true">•••</span>
             </summary>
             <div className={styles.actionMenu}>
-              {onEdit ? (
+              {post.is_owner && (onEdit ? (
                 <button type="button" onClick={(event) => {
                   event.currentTarget.closest("details")?.removeAttribute("open");
                   onEdit();
                 }}>Edit post</button>
-              ) : <Link href={`/posts/${post.id}/edit`}>Edit post</Link>}
-              <button
-                className={styles.deleteAction}
-                type="button"
-                onClick={handleDelete}
-                disabled={deleting}
-              >
-                {deleting ? "Deleting…" : "Delete post"}
-              </button>
+              ) : <Link href={`/posts/${post.id}/edit`}>Edit post</Link>)}
+              {post.can_delete && (
+                <button
+                  className={styles.deleteAction}
+                  type="button"
+                  onClick={handleDelete}
+                  disabled={deleting}
+                >
+                  {deleting ? "Deleting…" : "Delete post"}
+                </button>
+              )}
             </div>
           </details>
         )}
       </header>
+
+      {(post.visibility === "followers" ||
+        post.visibility === "custom" ||
+        post.group_id != null ||
+        post.author_left_group) && (
+        <div className={styles.badges}>
+          {post.visibility === "followers" && (
+            <span className="post-badge">Followers only</span>
+          )}
+          {post.visibility === "custom" && (
+            <span className="post-badge">Custom audience</span>
+          )}
+          {post.group_id != null && (
+            <Link href={`/groups/${post.group_id}`} className="post-badge">
+              Posted in group
+            </Link>
+          )}
+          {post.author_left_group && (
+            <span className="post-badge">Author left the group</span>
+          )}
+        </div>
+      )}
 
       <div className={styles.body}>
         <h2 className={styles.title}>
@@ -137,7 +157,7 @@ export default function PostCard({ post, onDeleted, onOpen, onComments, onEdit }
           <AppIcon name="arrow" width={15} height={15} />
         </Link>}
         <span className={styles.privacy}>
-          {post.private ? "Private" : "Public"}
+          {post.visibility === "public" ? "Public" : "Private"}
         </span>
       </footer>
 

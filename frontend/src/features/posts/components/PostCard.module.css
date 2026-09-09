@@ -147,6 +147,13 @@
   cursor: wait;
 }
 
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: -8px;
+}
+
 .body {
   display: grid;
   gap: 8px;

@@ -71,3 +71,13 @@ type UpdateProfilePrivacyResponse struct {
 type Handler struct {
 	service *Service
 }
+
+// Summary is a lightweight, publicly-safe view of a user for embedding in
+// other features' responses (e.g. a post's author).
+type Summary struct {
+	ID           int    `json:"id"`
+	Username     string `json:"username"`
+	FirstName    string `json:"first_name"`
+	LastName     string `json:"last_name"`
+	ProfilePhoto string `json:"profile_photo,omitempty"`
+}

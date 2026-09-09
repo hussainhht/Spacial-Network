@@ -13,6 +13,7 @@ import EditGroupForm from "./management/EditGroupForm";
 import GroupAvatar from "./GroupAvatar";
 import GroupDangerZone from "./management/GroupDangerZone";
 import GroupEvents from "./events/GroupEvents";
+import GroupPosts from "./GroupPosts";
 import {
   GroupLoadError,
   MembersPanel,
@@ -123,6 +124,18 @@ function GroupDetails({ groupId }: { groupId: number }) {
               <MembersPanel
                 groupId={groupId}
                 creatorId={group.data.creatorId}
+              />
+            </div>
+          )}
+          {activeTab === "posts" && (
+            <div
+              id="group-tabpanel-posts"
+              role="tabpanel"
+              aria-labelledby="group-tab-posts"
+            >
+              <GroupPosts
+                groupId={groupId}
+                isMember={Boolean(membership.data?.isMember)}
               />
             </div>
           )}

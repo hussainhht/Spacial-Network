@@ -53,6 +53,12 @@ func (s *Service) GetUserIDByUsername(username string) (int, error) {
 	return s.repo.GetUserIDByUsername(username)
 }
 
+// GetSummariesByIDs returns a lightweight Summary for each of ids, keyed by
+// user ID.
+func (s *Service) GetSummariesByIDs(ids []int) (map[int]Summary, error) {
+	return s.repo.GetSummariesByIDs(ids)
+}
+
 // GetProfileByID retrieves a user's profile by their user ID.
 func (s *Service) GetProfileByID(userID int) (*Profile, error) {
 	return s.repo.GetProfileByID(userID)

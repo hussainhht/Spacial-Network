@@ -129,6 +129,19 @@ func NewRouter(db *sql.DB, cfg config.Config) (http.Handler, error) {
 		"GET /profiles/{username}/follow-status",
 		sessionMiddleware(http.HandlerFunc(deps.Handlers.Followers.FollowStatusHandler)),
 	)
+	apiMux.Handle(
+		"GET /follow-requests",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Followers.GetPendingFollowRequestsHandler)),
+	)
+
+	apiMux.Handle(
+		"POST /follow-requests/{requestID}/accept",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Followers.AcceptFollowRequestHandler)),
+	)
+	apiMux.Handle(
+		"POST /follow-requests/{requestID}/decline",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Followers.DeclineFollowRequestHandler)),
+	)
 
 	// =========================
 	// Groups Routes
@@ -226,6 +239,19 @@ func NewRouter(db *sql.DB, cfg config.Config) (http.Handler, error) {
 	apiMux.Handle(
 		"PUT /groups/{id}/events/{eventID}/response",
 		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.RespondToEventHandler)),
+	)
+
+	// =========================
+	// Group Posts Routes
+	// =========================
+
+	apiMux.Handle(
+		"POST /groups/{id}/posts",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Posts.NewGroupPostHandler)),
+	)
+	apiMux.Handle(
+		"GET /groups/{id}/posts",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Posts.ListGroupPostsHandler)),
 	)
 
 	// =========================

@@ -115,7 +115,7 @@ function CommentItem({
             {formatTimeAgo(comment.created_at)}
           </time>
 
-          {comment.is_owner && (
+          {comment.can_delete && (
             <button
               type="button"
               className={styles.deleteBtn}
