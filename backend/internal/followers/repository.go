@@ -3,6 +3,7 @@ package followers
 import (
 	"database/sql"
 	"errors"
+	"strings"
 
 	"github.com/mattn/go-sqlite3"
 )
@@ -35,11 +36,31 @@ func (r *Repository) FollowUser(followerID, followedID int) error {
 }
 
 func (r *Repository) UnfollowUser(followerID, followedID int) error {
-	_, err := r.db.Exec(`
+	tx, err := r.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	if _, err := tx.Exec(`
 		DELETE FROM followers
 		WHERE follower_id = ? AND followed_id = ?
-	`, followerID, followedID)
-	return err
+	`, followerID, followedID); err != nil {
+		return err
+	}
+
+	// followerID may have been on the custom-visibility allowed-viewer list
+	// of posts belonging to followedID; once they're no longer a follower
+	// they lose access, so drop those grants too.
+	if _, err := tx.Exec(`
+		DELETE FROM post_allowed_viewers
+		WHERE user_id = ?
+			AND post_id IN (SELECT id FROM posts WHERE user_id = ?)
+	`, followerID, followedID); err != nil {
+		return err
+	}
+
+	return tx.Commit()
 }
 
 func (r *Repository) IsFollowing(followerID, followedID int) (bool, error) {
@@ -59,6 +80,45 @@ func (r *Repository) IsFollowing(followerID, followedID int) (bool, error) {
 	}
 
 	return true, nil
+}
+
+// FilterFollowerIDs returns the subset of candidateIDs that currently
+// follow followedID.
+func (r *Repository) FilterFollowerIDs(followedID int, candidateIDs []int) ([]int, error) {
+	if len(candidateIDs) == 0 {
+		return []int{}, nil
+	}
+
+	placeholders := make([]string, len(candidateIDs))
+	args := make([]any, 0, len(candidateIDs)+1)
+	args = append(args, followedID)
+	for i, id := range candidateIDs {
+		placeholders[i] = "?"
+		args = append(args, id)
+	}
+
+	rows, err := r.db.Query(`
+		SELECT follower_id FROM followers
+		WHERE followed_id = ? AND follower_id IN (`+strings.Join(placeholders, ",")+`)
+	`, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	ids := []int{}
+	for rows.Next() {
+		var id int
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return ids, nil
 }
 
 func (r *Repository) GetFollowers(userID int) ([]UserSummary, error) {

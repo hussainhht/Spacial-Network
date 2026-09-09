@@ -6,6 +6,7 @@ import { useState } from "react";
 import { deletePost } from "@/features/posts/api/posts";
 import type { Post } from "@/features/posts/types/post";
 import { getBackendBaseUrl } from "@/lib/api";
+import PostAuthorLink from "./PostAuthorLink";
 
 interface PostCardProps {
   post: Post;
@@ -35,11 +36,26 @@ export default function PostCard({ post, onDeleted }: PostCardProps) {
 
   return (
     <article className="post-card">
+      <PostAuthorLink author={post.author} />
+
       <header className="post-card-header">
         <h2>
           <Link href={`/posts/${post.id}`}>{post.title}</Link>
         </h2>
-        {post.private && <span className="post-badge">Private</span>}
+        {post.visibility === "followers" && (
+          <span className="post-badge">Followers only</span>
+        )}
+        {post.visibility === "custom" && (
+          <span className="post-badge">Custom audience</span>
+        )}
+        {post.group_id != null && (
+          <Link href={`/groups/${post.group_id}`} className="post-badge">
+            Posted in group
+          </Link>
+        )}
+        {post.author_left_group && (
+          <span className="post-badge">Author left the group</span>
+        )}
       </header>
 
       <p className="post-card-content">{post.content}</p>
@@ -60,12 +76,14 @@ export default function PostCard({ post, onDeleted }: PostCardProps) {
           {new Date(post.created_at).toLocaleString()}
         </time>
 
-        {post.is_owner && (
+        {(post.is_owner || post.can_delete) && (
           <div className="post-card-actions">
-            <Link href={`/posts/${post.id}/edit`}>Edit</Link>
-            <button type="button" onClick={handleDelete} disabled={deleting}>
-              {deleting ? "Deleting..." : "Delete"}
-            </button>
+            {post.is_owner && <Link href={`/posts/${post.id}/edit`}>Edit</Link>}
+            {post.can_delete && (
+              <button type="button" onClick={handleDelete} disabled={deleting}>
+                {deleting ? "Deleting..." : "Delete"}
+              </button>
+            )}
           </div>
         )}
       </footer>

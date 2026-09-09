@@ -62,6 +62,12 @@ func (s *Service) DeclineFollowRequest(requestID, targetID int) error {
 	return s.repo.DeclineFollowRequest(requestID, targetID)
 }
 
+// FilterFollowerIDs returns the subset of candidateIDs that currently
+// follow followedID.
+func (s *Service) FilterFollowerIDs(followedID int, candidateIDs []int) ([]int, error) {
+	return s.repo.FilterFollowerIDs(followedID, candidateIDs)
+}
+
 func (s *Service) GetFollowers(userID int) ([]UserSummary, error) {
 	return s.repo.GetFollowers(userID)
 }

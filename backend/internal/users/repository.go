@@ -2,6 +2,7 @@ package users
 
 import (
 	"database/sql"
+	"strings"
 )
 
 type Repository struct {
@@ -119,6 +120,49 @@ func (r *Repository) GetUserIDByUsername(username string) (int, error) {
 	}
 
 	return userID, nil
+}
+
+// GetSummariesByIDs returns a lightweight Summary for each of ids, keyed by
+// user ID. IDs that don't exist are simply absent from the result.
+func (r *Repository) GetSummariesByIDs(ids []int) (map[int]Summary, error) {
+	summaries := make(map[int]Summary, len(ids))
+	if len(ids) == 0 {
+		return summaries, nil
+	}
+
+	placeholders := make([]string, len(ids))
+	args := make([]any, len(ids))
+	for i, id := range ids {
+		placeholders[i] = "?"
+		args[i] = id
+	}
+
+	rows, err := r.db.Query(`
+		SELECT id, username, first_name, last_name, COALESCE(profile_photo, '')
+		FROM users
+		WHERE id IN (`+strings.Join(placeholders, ",")+`)
+	`, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var s Summary
+		var profilePhoto string
+		if err := rows.Scan(&s.ID, &s.Username, &s.FirstName, &s.LastName, &profilePhoto); err != nil {
+			return nil, err
+		}
+		if profilePhoto != "" {
+			s.ProfilePhoto = "/uploads/" + profilePhoto
+		}
+		summaries[s.ID] = s
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return summaries, nil
 }
 
 // GetProfileByID returns profile data for a user ID.

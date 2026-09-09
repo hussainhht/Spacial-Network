@@ -101,28 +101,6 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 	)
 
 	// =========================
-	// Posts
-	// =========================
-
-	postsRepo := posts.NewRepository(db)
-	postsService := posts.NewService(postsRepo)
-	postsHandler := posts.NewHandler(
-		postsService,
-		postMediaStorage,
-		cfg.SessionCookieName,
-		cfg.CookieSecure,
-		cfg.SessionLifetime,
-	)
-
-	// =========================
-	// Comments
-	// =========================
-
-	commentsRepo := comments.NewRepository(db)
-	commentsService := comments.NewService(commentsRepo, postsService)
-	commentsHandler := comments.NewHandler(commentsService, commentMediaStorage)
-
-	// =========================
 	// Followers
 	// =========================
 
@@ -147,11 +125,37 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 	// =========================
 	// Groups
 	// =========================
+	// Constructed before Posts/Comments, which depend on groupsService for
+	// group-membership checks on group-scoped posts and comments.
 
 	groupsRepo := groups.NewRepository(db)
 	groupsService := groups.NewService(groupsRepo, notificationsService, hub)
 	groupsHandler := groups.NewHandler(groupsService, groupPhotoStorage)
 	inviteSearchWSHandler := groups.NewInviteSearchWSHandler(groupsService, hub)
+
+	// =========================
+	// Posts
+	// =========================
+
+	postsRepo := posts.NewRepository(db)
+	postsService := posts.NewService(postsRepo, followersService, groupsService)
+	postsHandler := posts.NewHandler(
+		postsService,
+		usersService,
+		groupsService,
+		postMediaStorage,
+		cfg.SessionCookieName,
+		cfg.CookieSecure,
+		cfg.SessionLifetime,
+	)
+
+	// =========================
+	// Comments
+	// =========================
+
+	commentsRepo := comments.NewRepository(db)
+	commentsService := comments.NewService(commentsRepo, postsService)
+	commentsHandler := comments.NewHandler(commentsService, commentMediaStorage)
 
 	// =========================
 	// Chat - Future
