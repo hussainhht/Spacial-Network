@@ -125,6 +125,8 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 	// =========================
 	// Groups
 	// =========================
+	// Constructed before Posts/Comments, which depend on groupsService for
+	// group-membership checks on group-scoped posts and comments.
 
 	groupsRepo := groups.NewRepository(db)
 	groupsService := groups.NewService(groupsRepo, notificationsService, hub)
@@ -136,10 +138,11 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 	// =========================
 
 	postsRepo := posts.NewRepository(db)
-	postsService := posts.NewService(postsRepo, followersService)
+	postsService := posts.NewService(postsRepo, followersService, groupsService)
 	postsHandler := posts.NewHandler(
 		postsService,
 		usersService,
+		groupsService,
 		postMediaStorage,
 		cfg.SessionCookieName,
 		cfg.CookieSecure,
