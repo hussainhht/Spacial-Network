@@ -475,6 +475,62 @@ main:not(.chat-main):has(> form) form > p {
   border-radius: var(--space-radius-lg);
 }
 
+.post-author {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.9rem;
+  color: inherit;
+  text-decoration: none;
+}
+
+.post-author:hover .post-author-name {
+  text-decoration: underline;
+}
+
+.post-author-avatar,
+.post-author-avatar-fallback {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.post-author-avatar-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(99, 102, 241, 0.25);
+  color: var(--space-text-heading);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.post-author-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+  min-width: 0;
+}
+
+.post-author-name {
+  color: var(--space-text-heading);
+  font-size: 0.9rem;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.post-author-username {
+  color: var(--space-text-muted);
+  font-size: 0.78rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .post-card-header {
   display: flex;
   align-items: center;
@@ -644,6 +700,55 @@ main:not(.chat-main):has(> form) form > p {
 .form-field-checkbox input {
   width: auto;
   min-height: auto;
+}
+
+.post-visibility-status {
+  margin: 0;
+  color: var(--space-text-muted);
+  font-size: 0.875rem;
+}
+
+.post-visibility-picker {
+  padding: 0.9rem 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--space-border);
+  border-radius: var(--space-radius-md);
+}
+
+.post-visibility-picker-heading {
+  margin: 0 0 0.6rem;
+  color: var(--space-text-label);
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.post-visibility-picker-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.post-visibility-picker-item label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--space-text-heading);
+  font-size: 0.9rem;
+}
+
+.post-visibility-picker-item input {
+  width: auto;
+  min-height: auto;
+}
+
+.post-visibility-picker-username {
+  color: var(--space-text-muted);
+  font-size: 0.78rem;
 }
 
 .sr-only {

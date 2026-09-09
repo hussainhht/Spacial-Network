@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import type { PostInput } from "@/features/posts/types/post";
+import type { PostInput, PostVisibility } from "@/features/posts/types/post";
 import ImageAttachmentField from "@/components/ImageAttachmentField";
+import CustomViewerPicker from "./CustomViewerPicker";
 
 interface PostFormProps {
   initialValues?: PostInput;
@@ -21,7 +22,12 @@ export default function PostForm({
 }: PostFormProps) {
   const [title, setTitle] = useState(initialValues?.title ?? "");
   const [content, setContent] = useState(initialValues?.content ?? "");
-  const [isPrivate, setPrivate] = useState(initialValues?.private ?? false);
+  const [visibility, setVisibility] = useState<PostVisibility>(
+    initialValues?.visibility ?? "public",
+  );
+  const [viewerIds, setViewerIds] = useState<number[]>(
+    initialValues?.viewerIds ?? [],
+  );
   const [image, setImage] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -33,7 +39,7 @@ export default function PostForm({
     setLoading(true);
 
     try {
-      await onSubmit({ title, content, private: isPrivate, image });
+      await onSubmit({ title, content, visibility, viewerIds, image });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
@@ -73,18 +79,29 @@ export default function PostForm({
         />
       </div>
 
-      <div className="form-field form-field-checkbox">
-        <label htmlFor="private">
-          <input
-            id="private"
-            name="private"
-            type="checkbox"
-            checked={isPrivate}
-            onChange={(event) => setPrivate(event.target.checked)}
-          />
-          Private post?
-        </label>
+      <div className="form-field">
+        <label htmlFor="visibility">Who can see this post?</label>
+
+        <select
+          id="visibility"
+          name="visibility"
+          value={visibility}
+          onChange={(event) =>
+            setVisibility(event.target.value as PostVisibility)
+          }
+        >
+          <option value="public">Public - anyone on the platform</option>
+          <option value="followers">Followers only</option>
+          <option value="custom">Custom - only people I choose</option>
+        </select>
       </div>
+
+      {visibility === "custom" && (
+        <CustomViewerPicker
+          selectedIds={viewerIds}
+          onChange={setViewerIds}
+        />
+      )}
 
       {showImage && (
         <ImageAttachmentField

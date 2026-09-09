@@ -59,13 +59,15 @@ export default function EditPostPage() {
   async function handleSubmit(input: {
     title: string;
     content: string;
-    private: boolean;
+    visibility: Post["visibility"];
+    viewerIds: number[];
     image?: File | null;
   }) {
     await updatePost(postId, {
       title: input.title,
       content: input.content,
-      private: input.private,
+      visibility: input.visibility,
+      viewerIds: input.viewerIds,
     });
     router.push(`/posts/${postId}`);
   }
@@ -88,7 +90,8 @@ export default function EditPostPage() {
             initialValues={{
               title: post.title,
               content: post.content,
-              private: post.private,
+              visibility: post.visibility,
+              viewerIds: post.viewer_ids ?? [],
             }}
             submitLabel="Save changes"
             pendingLabel="Saving..."

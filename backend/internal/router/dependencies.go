@@ -129,35 +129,25 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 	)
 
 	// =========================
-	// Posts
-	// =========================
-
-	postsRepo := posts.NewRepository(db)
-	postsService := posts.NewService(postsRepo)
-	postsHandler := posts.NewHandler(
-		postsService,
-		postMediaStorage,
-		cfg.SessionCookieName,
-		cfg.CookieSecure,
-		cfg.SessionLifetime,
-	)
-
-	// =========================
-	// Comments
-	// =========================
-
-	commentsRepo := comments.NewRepository(db)
-	commentsService := comments.NewService(commentsRepo, postsService)
-	commentsHandler := comments.NewHandler(commentsService, commentMediaStorage)
-
-	// =========================
 	// Groups
 	// =========================
+	// Constructed before Posts/Comments, which depend on groupsService for
+	// group-membership checks on group-scoped posts and comments.
 
 	groupsRepo := groups.NewRepository(db)
 	groupsService := groups.NewService(groupsRepo, notificationsService, hub)
 	groupsHandler := groups.NewHandler(groupsService, groupPhotoStorage)
 	inviteSearchWSHandler := groups.NewInviteSearchWSHandler(groupsService, hub)
+
+	// =========================
+	// Chat - Future
+	// =========================
+
+	// TODO: Enable when the chat package is implemented.
+	//
+	// chatRepo := chat.NewRepository(db)
+	// chatService := chat.NewService(chatRepo)
+	// chatHandler := chat.NewHandler(chatService)
 
 	// =========================
 	// WebSocket message routing

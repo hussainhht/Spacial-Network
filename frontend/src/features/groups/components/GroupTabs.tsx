@@ -1,6 +1,6 @@
 "use client";
 
-export type ActiveGroupTab = "overview" | "events" | "edit";
+export type ActiveGroupTab = "overview" | "posts" | "events" | "edit";
 
 interface GroupTabsProps {
   activeTab: ActiveGroupTab;
@@ -30,16 +30,14 @@ export default function GroupTabs({
       <button
         type="button"
         role="tab"
-        aria-selected={false}
-        aria-disabled="true"
-        disabled
-        className="group-tab group-tab-locked"
-        title="Coming soon"
+        id="group-tab-posts"
+        aria-selected={activeTab === "posts"}
+        aria-controls="group-tabpanel-posts"
+        data-active={activeTab === "posts"}
+        className="group-tab"
+        onClick={() => onTabChange("posts")}
       >
-        Posts{" "}
-        <span className="group-tab-lock" aria-hidden="true">
-          🔒
-        </span>
+        Posts
       </button>
       <button
         type="button"
