@@ -5,10 +5,16 @@ import (
 	"time"
 )
 
+const (
+	VisibilityPublic    = "public"
+	VisibilityFollowers = "followers"
+	VisibilityCustom    = "custom"
+)
+
 type post struct {
 	ID         int            `db:"id"`
 	User_ID    int            `db:"user_id"`
-	isPrivate  bool           `db:"private"`
+	visibility string         `db:"visibility"`
 	Title      string         `db:"title"`
 	Content    string         `db:"content"`
 	ImagePath  sql.NullString `db:"image_path"`
