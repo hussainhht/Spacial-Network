@@ -54,14 +54,30 @@ func (s *Service) ListComments(userID, postID int) ([]*comment, error) {
 	return s.repo.ListCommentsByPost(postID)
 }
 
-// DeleteComment removes a comment, provided userID owns it.
+// IsGroupModerator reports whether userID is the creator of the group that
+// postID's post belongs to (false, nil if it isn't a group post). Meant to
+// be looked up once per request and reused across every comment on that
+// post, rather than re-fetching the post per comment.
+func (s *Service) IsGroupModerator(userID, postID int) (bool, error) {
+	return s.postsService.IsGroupModerator(userID, postID)
+}
+
+// DeleteComment removes a comment, provided userID owns it or is the
+// creator of the group the comment's post belongs to.
 func (s *Service) DeleteComment(userID, commentID int) error {
 	existing, err := s.repo.GetCommentByID(commentID)
 	if err != nil {
 		return err
 	}
+
 	if existing.UserID != userID {
-		return ErrForbidden
+		isModerator, err := s.postsService.IsGroupModerator(userID, existing.PostID)
+		if err != nil {
+			return err
+		}
+		if !isModerator {
+			return ErrForbidden
+		}
 	}
 
 	return s.repo.DeleteComment(commentID)
