@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"time"
 
+	"social/internal/groups"
 	"social/internal/requestctx"
 	"social/internal/upload"
 	"social/internal/users"
@@ -20,6 +21,7 @@ const maxNewPostRequestSize = 8 << 20 // 8 MiB
 type Handler struct {
 	service         *Service
 	usersService    *users.Service
+	groupsService   *groups.Service
 	mediaStorage    *upload.MediaStorage
 	cookieName      string
 	cookieSecure    bool
@@ -77,8 +79,17 @@ type PostResponse struct {
 	CreatedAt  time.Time      `json:"created_at"`
 	UpdatedAt  time.Time      `json:"updated_at"`
 	// IsOwner tells the client whether the requesting user owns this post,
-	// so it knows whether to offer edit/delete actions.
+	// so it knows whether to offer an edit action.
 	IsOwner bool `json:"is_owner"`
+	// CanDelete tells the client whether the requesting user may delete
+	// this post - true for the owner, and also for the creator of the
+	// group it was posted in.
+	CanDelete bool `json:"can_delete"`
+	// GroupID is set when this post was created within a group.
+	GroupID *int `json:"group_id,omitempty"`
+	// AuthorLeftGroup is only set on a group post whose author is no
+	// longer a member of that group.
+	AuthorLeftGroup bool `json:"author_left_group,omitempty"`
 	// ViewerIDs is only populated for the owner of a custom-visibility post,
 	// so an edit form can prefill the current allowed-viewer list.
 	ViewerIDs []int `json:"viewer_ids,omitempty"`
@@ -86,6 +97,11 @@ type PostResponse struct {
 
 func (h *Handler) newPostResponse(p *post, viewerID int, authors map[int]users.Summary) PostResponse {
 	isOwner := p.User_ID == viewerID
+
+	canDelete := isOwner
+	if !canDelete {
+		canDelete, _ = h.service.canModerate(viewerID, p)
+	}
 
 	resp := PostResponse{
 		ID:         p.ID,
@@ -96,12 +112,21 @@ func (h *Handler) newPostResponse(p *post, viewerID int, authors map[int]users.S
 		CreatedAt:  p.Created_At,
 		UpdatedAt:  p.Updated_At,
 		IsOwner:    isOwner,
+		CanDelete:  canDelete,
 	}
 	if author, ok := authors[p.User_ID]; ok {
 		resp.Author = toAuthorResponse(author)
 	}
 	if p.ImagePath.Valid {
 		resp.ImageURL = "/uploads/" + p.ImagePath.String
+	}
+
+	if p.GroupID.Valid {
+		groupID := int(p.GroupID.Int64)
+		resp.GroupID = &groupID
+		if isMember, err := h.groupsService.IsGroupMember(groupID, p.User_ID); err == nil && !isMember {
+			resp.AuthorLeftGroup = true
+		}
 	}
 
 	if isOwner && p.visibility == VisibilityCustom {
@@ -134,10 +159,11 @@ func (h *Handler) authorsFor(posts []*post) map[int]users.Summary {
 }
 
 // NewHandler creates a new Handler instance with the provided dependencies.
-func NewHandler(service *Service, usersService *users.Service, mediaStorage *upload.MediaStorage, cookieName string, cookieSecure bool, sessionLifetime time.Duration) *Handler {
+func NewHandler(service *Service, usersService *users.Service, groupsService *groups.Service, mediaStorage *upload.MediaStorage, cookieName string, cookieSecure bool, sessionLifetime time.Duration) *Handler {
 	return &Handler{
 		service:         service,
 		usersService:    usersService,
+		groupsService:   groupsService,
 		mediaStorage:    mediaStorage,
 		cookieName:      cookieName,
 		cookieSecure:    cookieSecure,
@@ -207,6 +233,69 @@ func (h *Handler) NewPostHandler(w http.ResponseWriter, r *http.Request) {
 		h.mediaStorage.Remove(imagePath)
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(Response{Error: "Server error"})
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(h.newPostResponse(p, userID, h.authorsFor([]*post{p})))
+}
+
+// NewGroupPostHandler creates a post within the group identified by the
+// {id} path segment, on behalf of the authenticated user. It expects a
+// multipart/form-data body with "title" and "content" fields, plus an
+// optional "image" file attachment. Only current members of the group may
+// post to it.
+func (h *Handler) NewGroupPostHandler(w http.ResponseWriter, r *http.Request) {
+	userID, ok := requestctx.UserID(r.Context())
+	if !ok {
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(Response{Error: "Not logged in"})
+		return
+	}
+
+	groupID, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(Response{Error: "Invalid group id"})
+		return
+	}
+
+	r.Body = http.MaxBytesReader(w, r.Body, maxNewPostRequestSize)
+	if err := r.ParseMultipartForm(maxNewPostRequestSize); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(Response{Error: "Invalid request payload or body"})
+		return
+	}
+
+	title, err := ValidateTitle(r.FormValue("title"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(Response{Error: err.Error()})
+		return
+	}
+
+	content, err := ValidateContent(r.FormValue("content"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(Response{Error: err.Error()})
+		return
+	}
+
+	imagePath, ok := h.saveImageAttachment(w, r)
+	if !ok {
+		return
+	}
+
+	p := &post{
+		User_ID:   userID,
+		Title:     title,
+		Content:   content,
+		ImagePath: sql.NullString{String: imagePath, Valid: imagePath != ""},
+	}
+
+	if err := h.service.CreateGroupPost(p, groupID); err != nil {
+		h.mediaStorage.Remove(imagePath)
+		writePostError(w, err)
 		return
 	}
 
@@ -325,6 +414,52 @@ func (h *Handler) ListPostsHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(res)
 }
 
+// ListGroupPostsHandler returns up to 50 posts belonging to the group
+// identified by the {id} path segment, newest first. Viewing a group's
+// posts never requires membership. The optional "limit" query parameter
+// requests fewer posts (capped at 50).
+func (h *Handler) ListGroupPostsHandler(w http.ResponseWriter, r *http.Request) {
+	userID, ok := requestctx.UserID(r.Context())
+	if !ok {
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(Response{Error: "Not logged in"})
+		return
+	}
+
+	groupID, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(Response{Error: "Invalid group id"})
+		return
+	}
+
+	limit := MaxListPosts
+	if raw := r.URL.Query().Get("limit"); raw != "" {
+		parsed, err := strconv.Atoi(raw)
+		if err != nil || parsed <= 0 {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(Response{Error: "Invalid limit"})
+			return
+		}
+		limit = parsed
+	}
+
+	posts, err := h.service.ListGroupPosts(groupID, limit)
+	if err != nil {
+		writePostError(w, err)
+		return
+	}
+
+	authors := h.authorsFor(posts)
+	res := make([]PostResponse, 0, len(posts))
+	for _, p := range posts {
+		res = append(res, h.newPostResponse(p, userID, authors))
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(res)
+}
+
 // EditPostHandler handles editing a single post, identified by the {id}
 // path segment. It is registered on its own PUT/PATCH routes, so the
 // method is guaranteed by the router. viewer_ids replaces the post's
@@ -416,6 +551,12 @@ func writePostError(w http.ResponseWriter, err error) {
 	case errors.Is(err, ErrForbidden):
 		w.WriteHeader(http.StatusForbidden)
 		json.NewEncoder(w).Encode(Response{Error: "Not allowed to modify this post"})
+	case errors.Is(err, groups.ErrGroupNotFound):
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(Response{Error: "Group not found"})
+	case errors.Is(err, groups.ErrNotGroupMember):
+		w.WriteHeader(http.StatusForbidden)
+		json.NewEncoder(w).Encode(Response{Error: "You must be a member of this group to do this"})
 	default:
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(Response{Error: "Server error"})
