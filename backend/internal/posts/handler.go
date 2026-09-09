@@ -190,25 +190,9 @@ func (h *Handler) NewPostHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var imagePath string
-	file, header, err := r.FormFile("image")
-	if err != nil && !errors.Is(err, http.ErrMissingFile) {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(Response{Error: "Invalid image upload"})
+	imagePath, ok := h.saveImageAttachment(w, r)
+	if !ok {
 		return
-	}
-	if err == nil {
-		imagePath, err = h.mediaStorage.Save(file, header)
-		file.Close()
-		if err != nil {
-			status := http.StatusBadRequest
-			if !errors.Is(err, upload.ErrInvalidFileType) && !errors.Is(err, upload.ErrFileTooLarge) {
-				status = http.StatusInternalServerError
-			}
-			w.WriteHeader(status)
-			json.NewEncoder(w).Encode(Response{Error: err.Error()})
-			return
-		}
 	}
 
 	p := &post{
@@ -228,6 +212,36 @@ func (h *Handler) NewPostHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(h.newPostResponse(p, userID, h.authorsFor([]*post{p})))
+}
+
+// saveImageAttachment reads the optional "image" form file from an
+// already-parsed multipart request and stores it, returning its relative
+// path (empty if no file was attached). On failure it writes the error
+// response itself and returns ok=false.
+func (h *Handler) saveImageAttachment(w http.ResponseWriter, r *http.Request) (imagePath string, ok bool) {
+	file, header, err := r.FormFile("image")
+	if err != nil {
+		if errors.Is(err, http.ErrMissingFile) {
+			return "", true
+		}
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(Response{Error: "Invalid image upload"})
+		return "", false
+	}
+	defer file.Close()
+
+	imagePath, err = h.mediaStorage.Save(file, header)
+	if err != nil {
+		status := http.StatusBadRequest
+		if !errors.Is(err, upload.ErrInvalidFileType) && !errors.Is(err, upload.ErrFileTooLarge) {
+			status = http.StatusInternalServerError
+		}
+		w.WriteHeader(status)
+		json.NewEncoder(w).Encode(Response{Error: err.Error()})
+		return "", false
+	}
+
+	return imagePath, true
 }
 
 // GetPostByIDHandler retrieves a post by its ID.
