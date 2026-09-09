@@ -19,15 +19,12 @@ func NewService(repo *Repository, postsService *posts.Service) *Service {
 }
 
 // CreateComment adds a comment to postID on behalf of userID, provided
-// userID can view the post. imagePath is the already-saved relative path of
-// an optional image/GIF attachment.
+// userID can comment on the post: they must be able to view it, and if
+// it's a group post, also be a current member of that group. imagePath is
+// the already-saved relative path of an optional image/GIF attachment.
 func (s *Service) CreateComment(userID, postID int, content string, imagePath sql.NullString) (*comment, error) {
-	canAccess, err := s.postsService.CanAccess(userID, postID)
-	if err != nil {
+	if err := s.postsService.CanCreateComment(userID, postID); err != nil {
 		return nil, err
-	}
-	if !canAccess {
-		return nil, ErrPostNotFound
 	}
 
 	c := &comment{
