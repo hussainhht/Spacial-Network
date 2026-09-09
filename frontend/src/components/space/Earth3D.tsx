@@ -25,10 +25,11 @@ function EarthModel() {
   const { model, center, scale } = useMemo(() => {
     // Clone the hierarchy so material overrides never mutate useGLTF's cache.
     const model = scene.clone(true);
-    const bounds = new Box3().setFromObject(model);
+    const bounds = new Box3().setFromObject(model); //calculate the bounding box of the model
     const center = bounds.getCenter(new Vector3());
     const size = bounds.getSize(new Vector3());
     const extent = Math.max(size.x, size.y, size.z);
+
     if (!Number.isFinite(extent) || extent <= 0)
       throw new Error("Model has no visible bounds.");
     return { model, center, scale: 2 / extent };
@@ -38,7 +39,9 @@ function EarthModel() {
     const surface = model.getObjectByName("surface");
     const cloud = model.getObjectByName("cloud");
     const atmo = model.getObjectByName("atmo");
+    
     const source = scene.getObjectByName("surface");
+
     if (
       !(surface instanceof Mesh) ||
       !(cloud instanceof Mesh) ||
@@ -51,12 +54,12 @@ function EarthModel() {
         "Earth requires surface, cloud, atmo meshes and the source coastline map.",
       );
     }
+
     const materials = createEarthMaterials(source.material.map);
     surface.material = materials.surface;
     cloud.material = materials.cloud;
     atmo.material = materials.atmo;
-    // The source is slightly oblate, with independently rotated shells that
-    // intersect. Align only the cloned shells and separate them radially.
+  
     for (const [shell, factor] of [
       [cloud, 1.008],
       [atmo, 1.025],
