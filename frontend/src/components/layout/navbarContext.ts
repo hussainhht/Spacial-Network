@@ -25,6 +25,8 @@ const sections: Record<string, string> = {
 };
 
 export function getNavbarContext(pathname: string): NavbarContext {
+  if (pathname === "/dev/planets")
+    return { title: "Planet Lab", eyebrow: "Development", searchMode: "global" };
   if (pathname === "/")
     return {
       title: "Home",

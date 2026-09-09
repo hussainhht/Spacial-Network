@@ -1,0 +1,6 @@
+.lab { color: #e3e9f5; padding: clamp(24px, 4vw, 56px); min-width: 0; }
+.lab h1 { margin: 0; font-size: 20px; font-weight: 500; letter-spacing: 0.2em; }
+.lab header p { margin: 12px 0 0; color: #9aa8c0; font-size: 14px; }
+.scrollArea { overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; scrollbar-color: #52617b55 transparent; margin-top: 24px; }
+.scrollArea:focus-visible { outline: 1px solid #9aa8c0; outline-offset: 4px; }
+.stage { min-width: 1000px; height: clamp(380px, 60vh, 640px); position: relative; }

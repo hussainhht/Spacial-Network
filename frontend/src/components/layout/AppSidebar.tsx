@@ -133,6 +133,16 @@ export default function AppSidebar() {
               <AppIcon name="orbit" />
               <span className={styles.sidebarLabel}>3D Models</span>
             </Link>
+            <Link
+              href="/dev/planets"
+              className={styles.navLink}
+              aria-current={mounted && pathname === "/dev/planets" ? "page" : undefined}
+              aria-label="Planet Lab"
+              title="Planet Lab"
+            >
+              <AppIcon name="orbit" />
+              <span className={styles.sidebarLabel}>Planet Lab</span>
+            </Link>
           </nav>
         </div>
       )}
