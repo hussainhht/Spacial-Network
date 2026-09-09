@@ -47,12 +47,22 @@ type Dependencies struct {
 
 func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 	hub := websocket.NewHub()
-	chatRepo := chat.NewRepository(db)
-	chatService := chat.NewService(chatRepo, hub)
-	chatHandler := chat.NewHandler(chatService)
 	wsHandler := websocket.NewHandler(hub)
-	// Message routing is finished further down, once every feature that
-	// handles inbound WebSocket events (chat, groups) has been constructed.
+
+	// =========================
+	// Notifications
+	// =========================
+	// Persists notifications to SQLite and pushes them over the existing
+	// websocket hub. Other features (Chat, Groups, and Followers once it exists)
+	// depend on notificationsService only through their own generic
+	// NotificationSender interface (Notify(...)) - never on this package's
+	// repository or SQL.
+
+	notificationsRepo := notifications.NewRepository(db)
+	notificationsSender := notifications.NewHubSender(hub)
+	notificationsService := notifications.NewService(notificationsRepo, notificationsSender)
+	notificationsHandler := notifications.NewHandler(notificationsService)
+
 	// =========================
 	// Users
 	// =========================
@@ -60,6 +70,24 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 	usersRepo := users.NewRepository(db)
 	usersService := users.NewService(usersRepo)
 	usersHandler := users.NewHandler(usersService)
+
+	// =========================
+	// Followers
+	// =========================
+
+	followersRepo := followers.NewRepository(db)
+	followersService := followers.NewService(followersRepo)
+	followersHandler := followers.NewHandler(followersService, usersService)
+
+	// =========================
+	// Chat
+	// =========================
+
+	chatRepo := chat.NewRepository(db)
+	chatService := chat.NewService(chatRepo, hub, notificationsService, followersService)
+	chatHandler := chat.NewHandler(chatService)
+	// Message routing is finished further down, once every feature that
+	// handles inbound WebSocket events (chat, groups) has been constructed.
 
 	// =========================
 	// Uploads
@@ -101,28 +129,6 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 	)
 
 	// =========================
-	// Followers
-	// =========================
-
-	followersRepo := followers.NewRepository(db)
-	followersService := followers.NewService(followersRepo)
-	followersHandler := followers.NewHandler(followersService, usersService)
-
-	// =========================
-	// Notifications
-	// =========================
-	// Persists notifications to SQLite and pushes them over the existing
-	// websocket hub. Other features (Groups, and Followers once it exists)
-	// depend on notificationsService only through their own generic
-	// NotificationSender interface (Notify(...)) - never on this package's
-	// repository or SQL.
-
-	notificationsRepo := notifications.NewRepository(db)
-	notificationsSender := notifications.NewHubSender(hub)
-	notificationsService := notifications.NewService(notificationsRepo, notificationsSender)
-	notificationsHandler := notifications.NewHandler(notificationsService)
-
-	// =========================
 	// Groups
 	// =========================
 	// Constructed before Posts/Comments, which depend on groupsService for
@@ -158,16 +164,6 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 	commentsHandler := comments.NewHandler(commentsService, commentMediaStorage)
 
 	// =========================
-	// Chat - Future
-	// =========================
-
-	// TODO: Enable when the chat package is implemented.
-	//
-	// chatRepo := chat.NewRepository(db)
-	// chatService := chat.NewService(chatRepo)
-	// chatHandler := chat.NewHandler(chatService)
-
-	// =========================
 	// WebSocket message routing
 	// =========================
 	// Both Chat and Groups handle inbound client messages; Router dispatches
@@ -176,6 +172,7 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 	// use it.
 
 	wsRouter := websocket.NewRouter()
+	chatService.RegisterWSRoutes(wsRouter)
 	wsRouter.Register(groups.EventInviteUserSearch, inviteSearchWSHandler.HandleInviteUserSearch)
 	wsHandler.SetMessageHandler(wsRouter.Dispatch)
 

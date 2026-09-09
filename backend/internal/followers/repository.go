@@ -153,6 +153,70 @@ func (r *Repository) GetFollowing(userID int) ([]UserSummary, error) {
 	return scanUserSummaries(rows)
 }
 
+func (r *Repository) HasFollowRelationship(userA, userB int) (bool, error) {
+	var exists int
+
+	err := r.db.QueryRow(`
+		SELECT 1
+		FROM followers
+		WHERE (follower_id = ? AND followed_id = ?)
+		   OR (follower_id = ? AND followed_id = ?)
+		LIMIT 1
+	`, userA, userB, userB, userA).Scan(&exists)
+	if err == sql.ErrNoRows {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
+}
+
+func (r *Repository) GetEligibleChatContacts(userID int, search string, contactID int, limit, offset int) ([]UserSummary, error) {
+	if limit <= 0 || limit > 100 {
+		limit = 20
+	}
+	if offset < 0 {
+		offset = 0
+	}
+
+	search = strings.TrimSpace(search)
+	like := "%" + escapeLikePattern(search) + "%"
+
+	rows, err := r.db.Query(`
+		SELECT DISTINCT u.id, u.username, u.first_name, u.last_name, COALESCE(u.profile_photo, '')
+		FROM users u
+		WHERE u.id != ? AND (
+			u.id IN (SELECT followed_id FROM followers WHERE follower_id = ?)
+			OR
+			u.id IN (SELECT follower_id FROM followers WHERE followed_id = ?)
+		)
+		AND (
+			? = 0 OR u.id = ?
+		)
+		AND (
+			? = '' OR
+			LOWER(u.username) LIKE LOWER(?) ESCAPE '\' OR
+			LOWER(u.first_name) LIKE LOWER(?) ESCAPE '\' OR
+			LOWER(u.last_name) LIKE LOWER(?) ESCAPE '\'
+		)
+		ORDER BY u.first_name ASC, u.last_name ASC
+		LIMIT ? OFFSET ?
+	`, userID, userID, userID, contactID, contactID, search, like, like, like, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	return scanUserSummaries(rows)
+}
+
+func escapeLikePattern(s string) string {
+	replacer := strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`)
+	return replacer.Replace(s)
+}
+
 func (r *Repository) CreateFollowRequest(requesterID, targetID int) error {
 	result, err := r.db.Exec(`
 		INSERT INTO follow_requests (requester_id, target_id, status)

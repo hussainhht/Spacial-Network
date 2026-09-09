@@ -5,11 +5,13 @@ import type { NotificationEventPayload } from "@/lib/websocket/types";
 // "group_event" also exist backend-side but have no frontend yet).
 export type SupportedNotificationType =
   | "group_invitation"
-  | "group_join_request";
+  | "group_join_request"
+  | "private_message";
 
 const SUPPORTED_NOTIFICATION_TYPES: readonly string[] = [
   "group_invitation",
   "group_join_request",
+  "private_message",
 ];
 
 export function isSupportedNotificationType(

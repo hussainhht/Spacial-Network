@@ -7,11 +7,13 @@ import React, {
   useRef,
   useState,
   useCallback,
+  useMemo,
 } from "react";
 import { getWebSocketUrl } from "@/lib/api";
 import type {
   EventType,
   MessagePayload,
+  MessagesReadPayload,
   OnlineUsersPayload,
   TypingPayload,
   UserStatusPayload,
@@ -31,6 +33,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   const [onlineUserIDs, setOnlineUserIDs] = useState<number[]>([]);
   const [lastMessage, setLastMessage] = useState<MessagePayload | null>(null);
   const [typingStatus, setTypingStatus] = useState<TypingPayload | null>(null);
+  const [lastReadReceipt, setLastReadReceipt] = useState<MessagesReadPayload | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [inviteSearchResults, setInviteSearchResults] =
     useState<InviteUserSearchResultsPayload | null>(null);
@@ -63,6 +66,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     null,
   );
   const isConnectingRef = useRef(false);
+  const pendingQueueRef = useRef<Array<{ type: EventType; payload: unknown }>>([]);
 
   const connect = useCallback(() => {
     if (typeof window === "undefined") return;
@@ -90,15 +94,29 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
           clearTimeout(reconnectTimeoutRef.current);
           reconnectTimeoutRef.current = null;
         }
+
+        // Flush any queued events
+        if (pendingQueueRef.current.length > 0) {
+          const queued = [...pendingQueueRef.current];
+          pendingQueueRef.current = [];
+          for (const item of queued) {
+            try {
+              ws.send(JSON.stringify(item));
+            } catch (err) {
+              console.error("Failed to send queued WebSocket event:", err);
+            }
+          }
+        }
       };
 
       ws.onclose = () => {
         isConnectingRef.current = false;
         setIsConnected(false);
+        socketRef.current = null;
         if (reconnectTimeoutRef.current) {
           clearTimeout(reconnectTimeoutRef.current);
         }
-        reconnectTimeoutRef.current = setTimeout(connect, 300);
+        reconnectTimeoutRef.current = setTimeout(connect, 1500);
       };
 
       ws.onerror = () => {
@@ -135,6 +153,9 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
               break;
             case "typing":
               setTypingStatus(data.payload as TypingPayload);
+              break;
+            case "messages_read":
+              setLastReadReceipt(data.payload as MessagesReadPayload);
               break;
             case "invite_user_search_results":
               setInviteSearchResults(
@@ -195,47 +216,64 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   // recreate this function, and any consumer effect that depends on it
   // (like a debounced search) would spuriously re-fire on every message.
   const sendEvent = useCallback(
-    function sendEvent(type: EventType, payload: unknown) {
-      if (
-        !socketRef.current ||
-        socketRef.current.readyState !== WebSocket.OPEN
-      ) {
-        if (socketRef.current?.readyState === WebSocket.CONNECTING) {
-          // If connecting, retry in 500ms
-          setTimeout(() => sendEvent(type, payload), 500);
-          return;
+    (type: EventType, payload: unknown) => {
+      const eventItem = { type, payload };
+
+      if (!socketRef.current || socketRef.current.readyState !== WebSocket.OPEN) {
+        // Queue the event so it is sent as soon as the connection is open
+        pendingQueueRef.current.push(eventItem);
+
+        if (!socketRef.current || socketRef.current.readyState === WebSocket.CLOSED) {
+          connect();
         }
-        console.warn(
-          "WebSocket is not connected (readyState:",
-          socketRef.current?.readyState,
-          ")",
-        );
-        setErrorMessage("WebSocket is not connected. Reconnecting...");
-        connect();
         return;
       }
+
       setErrorMessage(null);
-      socketRef.current.send(JSON.stringify({ type, payload }));
+      try {
+        socketRef.current.send(JSON.stringify(eventItem));
+      } catch (err) {
+        console.error("Failed to send WebSocket event:", err);
+        pendingQueueRef.current.push(eventItem);
+        connect();
+      }
     },
     [connect],
   );
 
+  const contextValue = useMemo(
+    () => ({
+      isConnected,
+      onlineUserIDs,
+      lastMessage,
+      typingStatus,
+      lastReadReceipt,
+      errorMessage,
+      inviteSearchResults,
+      lastNotification,
+      lastEventResponseUpdate,
+      subscribeEventResponses,
+      subscribeNotifications,
+      sendEvent,
+    }),
+    [
+      isConnected,
+      onlineUserIDs,
+      lastMessage,
+      typingStatus,
+      lastReadReceipt,
+      errorMessage,
+      inviteSearchResults,
+      lastNotification,
+      lastEventResponseUpdate,
+      subscribeNotifications,
+      subscribeEventResponses,
+      sendEvent,
+    ],
+  );
+
   return (
-    <WebSocketContext.Provider
-      value={{
-        isConnected,
-        onlineUserIDs,
-        lastMessage,
-        typingStatus,
-        errorMessage,
-        inviteSearchResults,
-        lastNotification,
-        lastEventResponseUpdate,
-        subscribeNotifications,
-        subscribeEventResponses,
-        sendEvent,
-      }}
-    >
+    <WebSocketContext.Provider value={contextValue}>
       {children}
     </WebSocketContext.Provider>
   );

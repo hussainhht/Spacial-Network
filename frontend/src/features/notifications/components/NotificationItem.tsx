@@ -5,37 +5,20 @@ import {
   InvitationActions,
   JoinRequestActions,
 } from "@/features/groups/components/GroupResponseActions";
+import { timeAgo } from "@/lib/utils";
 import { useNotifications } from "../context/NotificationProvider";
 import { useNotificationNavigate } from "../hooks/useNotificationNavigate";
-import type {
-  Notification,
-  SupportedNotificationType,
+import {
+  isGroupNotification,
+  type Notification,
+  type SupportedNotificationType,
 } from "../types/notification";
 
 const TYPE_LABELS: Record<SupportedNotificationType, string> = {
   group_invitation: "Group invitation",
   group_join_request: "Join request",
+  private_message: "Direct message",
 };
-
-//! remove it after we have a proper date formatting  utility function in the frontend
-function formatRelativeTime(iso: string): string {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "";
-
-  const diffSec = Math.round((Date.now() - date.getTime()) / 1000);
-  if (diffSec < 60) return "just now";
-
-  const diffMin = Math.round(diffSec / 60);
-  if (diffMin < 60) return `${diffMin} min ago`;
-
-  const diffHour = Math.round(diffMin / 60);
-  if (diffHour < 24) return `${diffHour} hr${diffHour === 1 ? "" : "s"} ago`;
-
-  const diffDay = Math.round(diffHour / 24);
-  if (diffDay < 7) return `${diffDay} day${diffDay === 1 ? "" : "s"} ago`;
-
-  return date.toLocaleDateString();
-}
 
 interface NotificationItemProps {
   notification: Notification;
@@ -93,43 +76,45 @@ export default function NotificationItem({
             </span>
           )}
           <span className="notification-item-time">
-            {formatRelativeTime(notification.createdAt)}
+            {timeAgo(notification.createdAt)}
           </span>
         </span>
       </button>
-      <div className="notification-actions">
-        {groupData &&
-        notification.entityId &&
-        notification.entityType === notification.type ? (
-          notification.type === "group_invitation" ? (
-            <InvitationActions
-              groupId={groupData.group_id}
-              entityId={notification.entityId}
-              onSuccess={afterAction}
-            />
+      {isGroupNotification(notification) && (
+        <div className="notification-actions">
+          {groupData &&
+          notification.entityId &&
+          notification.entityType === notification.type ? (
+            notification.type === "group_invitation" ? (
+              <InvitationActions
+                groupId={groupData.group_id}
+                entityId={notification.entityId}
+                onSuccess={afterAction}
+              />
+            ) : (
+              <JoinRequestActions
+                groupId={groupData.group_id}
+                entityId={notification.entityId}
+                onSuccess={afterAction}
+              />
+            )
           ) : (
-            <JoinRequestActions
-              groupId={groupData.group_id}
-              entityId={notification.entityId}
-              onSuccess={afterAction}
-            />
-          )
-        ) : (
-          <span className="group-muted">Group context unavailable</span>
-        )}
-        {readError && (
-          <p className="form-error" role="alert">
-            {readError}{" "}
-            <button
-              type="button"
-              className="group-button secondary"
-              onClick={() => void markRead()}
-            >
-              Retry mark read
-            </button>
-          </p>
-        )}
-      </div>
+            <span className="group-muted">Group context unavailable</span>
+          )}
+          {readError && (
+            <p className="form-error" role="alert">
+              {readError}{" "}
+              <button
+                type="button"
+                className="group-button secondary"
+                onClick={() => void markRead()}
+              >
+                Retry mark read
+              </button>
+            </p>
+          )}
+        </div>
+      )}
     </li>
   );
 }

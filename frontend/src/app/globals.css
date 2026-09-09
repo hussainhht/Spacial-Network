@@ -1,8 +1,9 @@
+@import "tailwindcss";
+
 /*
   Space / night-sky theme for the Login & Register pages.
-  Scoped entirely through `main:has(form)` — the home page's <main> has no
-  <form> inside it, so this file cannot change anything outside auth pages
-  without ever touching .tsx/.jsx.
+  Scoped through `main:not(.chat-main):has(> form)` so that other pages
+  (such as chat, posts, and groups) are completely unaffected.
 */
 
 /* ============================== Reset ============================== */
@@ -56,7 +57,7 @@ body {
 
 /* ======================= Page shell / background ======================= */
 
-main:has(form) {
+main:not(.chat-main):has(> form) {
   position: relative;
   isolation: isolate;
   display: flex;
@@ -85,14 +86,14 @@ main:has(form) {
 }
 
 /* Register has more fields, give its card a touch more breathing room */
-main:has(form:has(#firstName)) {
+main:not(.chat-main):has(> form:has(#firstName)) {
   --auth-card-width: 500px;
 }
 
 /* ============================ Stars / effects ============================ */
 
 /* Nebula glow — soft blurred color blobs behind the card */
-main:has(form)::before {
+main:not(.chat-main):has(> form)::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -111,7 +112,7 @@ main:has(form)::before {
 }
 
 /* Starfield — layered radial-gradient dots at three scales */
-main:has(form)::after {
+main:not(.chat-main):has(> form)::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -140,7 +141,7 @@ main:has(form)::after {
   animation: star-twinkle 6s ease-in-out infinite alternate;
 }
 
-main:has(form) ::selection {
+main:not(.chat-main):has(> form) ::selection {
   background: rgba(99, 102, 241, 0.35);
   color: #ffffff;
 }
@@ -169,7 +170,7 @@ main:has(form) ::selection {
 
 /* ================================ Heading ================================ */
 
-main:has(form) h1 {
+main:not(.chat-main):has(> form) h1 {
   margin: 0;
   width: min(100% - 2rem, var(--auth-card-width));
   text-align: center;
@@ -182,7 +183,7 @@ main:has(form) h1 {
 
 /* ============================ Card / form ============================ */
 
-main:has(form) form {
+main:not(.chat-main):has(> form) form {
   position: relative;
   z-index: 1;
   display: flex;
@@ -199,7 +200,7 @@ main:has(form) form {
     0 0 0 1px rgba(255, 255, 255, 0.02) inset, 0 0 40px rgba(99, 102, 241, 0.14);
 }
 
-main:has(form) form > div {
+main:not(.chat-main):has(> form) form > div {
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
@@ -207,7 +208,7 @@ main:has(form) form > div {
 
 /* ================================ Labels ================================ */
 
-main:has(form) label {
+main:not(.chat-main):has(> form) label {
   font-size: 0.8125rem;
   font-weight: 500;
   letter-spacing: 0.02em;
@@ -216,8 +217,8 @@ main:has(form) label {
 
 /* ================================ Inputs ================================ */
 
-main:has(form) input,
-main:has(form) select {
+main:not(.chat-main):has(> form) input,
+main:not(.chat-main):has(> form) select {
   width: 100%;
   min-height: 44px;
   padding: 0.65rem 0.9rem;
@@ -232,12 +233,12 @@ main:has(form) select {
     background-color 0.2s ease;
 }
 
-main:has(form) input::placeholder {
+main:not(.chat-main):has(> form) input::placeholder {
   color: var(--space-text-placeholder);
 }
 
-main:has(form) input:focus,
-main:has(form) select:focus {
+main:not(.chat-main):has(> form) input:focus,
+main:not(.chat-main):has(> form) select:focus {
   outline: none;
   border-color: var(--space-accent-indigo);
   background: var(--space-input-bg-focus);
@@ -245,15 +246,15 @@ main:has(form) select:focus {
 }
 
 /* Prevent the browser's autofill flash from breaking the dark theme */
-main:has(form) input:-webkit-autofill,
-main:has(form) input:-webkit-autofill:hover,
-main:has(form) input:-webkit-autofill:focus {
+main:not(.chat-main):has(> form) input:-webkit-autofill,
+main:not(.chat-main):has(> form) input:-webkit-autofill:hover,
+main:not(.chat-main):has(> form) input:-webkit-autofill:focus {
   -webkit-text-fill-color: var(--space-text-heading);
   -webkit-box-shadow: 0 0 0 1000px rgba(10, 15, 35, 0.9) inset;
   transition: background-color 9999s ease-in-out 0s;
 }
 
-main:has(form) select {
+main:not(.chat-main):has(> form) select {
   appearance: none;
   -webkit-appearance: none;
   padding-right: 2.5rem;
@@ -263,14 +264,14 @@ main:has(form) select {
   background-size: 14px;
 }
 
-main:has(form) select option {
+main:not(.chat-main):has(> form) select option {
   background: var(--space-bg-soft);
   color: var(--space-text-heading);
 }
 
 /* ============================== File input ============================== */
 
-main:has(form) input[type="file"] {
+main:not(.chat-main):has(> form) input[type="file"] {
   min-height: auto;
   padding: 0.5rem;
   border-style: dashed;
@@ -279,7 +280,7 @@ main:has(form) input[type="file"] {
   cursor: pointer;
 }
 
-main:has(form) input[type="file"]::file-selector-button {
+main:not(.chat-main):has(> form) input[type="file"]::file-selector-button {
   margin-right: 0.9rem;
   padding: 0.55rem 1rem;
   border-radius: var(--space-radius-sm);
@@ -293,14 +294,14 @@ main:has(form) input[type="file"]::file-selector-button {
   transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
-main:has(form) input[type="file"]::file-selector-button:hover {
+main:not(.chat-main):has(> form) input[type="file"]::file-selector-button:hover {
   background: rgba(99, 102, 241, 0.3);
   border-color: rgba(99, 102, 241, 0.5);
 }
 
 /* ================================ Button ================================ */
 
-main:has(form) button[type="submit"] {
+main:not(.chat-main):has(> form) button[type="submit"] {
   margin-top: 0.5rem;
   min-height: 46px;
   padding: 0.8rem 1.5rem;
@@ -318,25 +319,25 @@ main:has(form) button[type="submit"] {
   transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
 }
 
-main:has(form) button[type="submit"]:hover:not(:disabled) {
+main:not(.chat-main):has(> form) button[type="submit"]:hover:not(:disabled) {
   transform: translateY(-1px);
   filter: brightness(1.08);
   box-shadow: 0 10px 30px -6px rgba(59, 130, 246, 0.75),
     0 0 0 1px rgba(255, 255, 255, 0.08) inset;
 }
 
-main:has(form) button[type="submit"]:active:not(:disabled) {
+main:not(.chat-main):has(> form) button[type="submit"]:active:not(:disabled) {
   transform: translateY(0);
   filter: brightness(0.97);
   box-shadow: 0 4px 14px -6px rgba(59, 130, 246, 0.5);
 }
 
-main:has(form) button[type="submit"]:focus-visible {
+main:not(.chat-main):has(> form) button[type="submit"]:focus-visible {
   outline: 2px solid #93c5fd;
   outline-offset: 2px;
 }
 
-main:has(form) button[type="submit"]:disabled {
+main:not(.chat-main):has(> form) button[type="submit"]:disabled {
   opacity: 0.55;
   cursor: not-allowed;
   transform: none;
@@ -345,7 +346,7 @@ main:has(form) button[type="submit"]:disabled {
 
 /* ================================ Errors ================================ */
 
-main:has(form) form > p {
+main:not(.chat-main):has(> form) form > p {
   margin: 0;
   padding: 0.65rem 0.9rem;
   background: var(--space-error-bg);
@@ -359,11 +360,11 @@ main:has(form) form > p {
 /* ============================== Responsive ============================== */
 
 @media (max-width: 480px) {
-  main:has(form) h1 {
+  main:not(.chat-main):has(> form) h1 {
     font-size: 1.5rem;
   }
 
-  main:has(form) form {
+  main:not(.chat-main):has(> form) form {
     padding: 1.5rem 1.25rem;
     border-radius: 16px;
     gap: 1rem;
@@ -373,21 +374,21 @@ main:has(form) form > p {
 /* ============================ Reduced motion ============================ */
 
 @media (prefers-reduced-motion: reduce) {
-  main:has(form)::before,
-  main:has(form)::after,
+  main:not(.chat-main):has(> form)::before,
+  main:not(.chat-main):has(> form)::after,
   .space-shell::before,
   .space-shell::after {
     animation: none;
   }
 
-  main:has(form) *,
+  main:not(.chat-main):has(> form) *,
   .space-shell * {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
 
-  main:has(form) button[type="submit"]:hover:not(:disabled),
+  main:not(.chat-main):has(> form) button[type="submit"]:hover:not(:disabled),
   .space-shell button:hover:not(:disabled) {
     transform: none;
   }
@@ -1427,6 +1428,24 @@ main:has(form) form > p {
     border-radius: 16px;
   }
 }
+
+/* ================================================================== */
+/*  Chat UI & Overflow Prevention                                     */
+/* ================================================================== */
+
+.chat-bubble {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.chat-message-content {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
 
 /* ================================================================== */
 /*  Create Group — single unified card                                */

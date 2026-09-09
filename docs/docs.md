@@ -19,7 +19,7 @@ Topics that belong here include:
 - API flows
 - Authentication
 - Sessions and cookies
-- WebSockets
+- [WebSockets (Integration Guide)](WEBSOCKET_INTEGRATION_GUIDE.md)
 - Docker
 - Git workflows
 - Conventional Commits
