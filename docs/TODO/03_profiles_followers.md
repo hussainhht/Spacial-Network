@@ -76,7 +76,7 @@ Authentication, Docker, and final project-wide integration are not included in t
 - [X] Add profile privacy control
 - [X] Show current privacy state
 - [X] Allow user to switch Public ↔ Private
-- [ ] Update visible actions based on target profile privacy
+- [X] Update visible actions based on target profile privacy
 
 ---
 
@@ -141,12 +141,12 @@ Authentication, Docker, and final project-wide integration are not included in t
 
 ### Frontend
 
-- [ ] Show Request Follow button for private profiles
-- [ ] Show Requested/Pending state
-- [ ] Create Follow Requests UI
-- [ ] Add Accept button
-- [ ] Add Decline button
-- [ ] Update follower state after acceptance
+- [X] Show Request Follow button for private profiles
+- [X] Show Requested/Pending state
+- [X] Create Follow Requests UI
+- [X] Add Accept button
+- [X] Add Decline button
+- [X] Update follower state after acceptance
 
 ---
 

@@ -4,6 +4,7 @@ import PostCard from "@/features/posts/components/PostCard";
 import type { Post } from "@/features/posts/types/post";
 import { parseDate } from "@/lib/utils";
 import type { Profile, ProfileTab, ProfileUserSummary } from "../types/profile";
+import ProfileFollowRequests from "./ProfileFollowRequests";
 import ProfilePrivacy from "./ProfilePrivacy";
 import ProfileUserList from "./ProfileUserList";
 import styles from "./Profile.module.css";
@@ -104,6 +105,7 @@ interface AboutTabProps {
   following: ProfileUserSummary[];
   followDataLoading?: boolean;
   followError?: string | null;
+  onFollowRequestsChanged?: () => void | Promise<void>;
 }
 
 function AboutTab({
@@ -116,6 +118,7 @@ function AboutTab({
   following,
   followDataLoading = false,
   followError = null,
+  onFollowRequestsChanged,
 }: AboutTabProps) {
   const createdDate = parseDate(profile.createdAt);
   const memberSince = createdDate
@@ -192,6 +195,12 @@ function AboutTab({
           />
         )}
 
+        {isOwnProfile && (
+          <div className={styles.card}>
+            <ProfileFollowRequests onChanged={onFollowRequestsChanged} />
+          </div>
+        )}
+
         {!followDataLoading && (
           <div className={styles.card}>
             <ProfileUserList
@@ -233,6 +242,7 @@ interface ProfileContentProps {
   following: ProfileUserSummary[];
   followDataLoading?: boolean;
   followError?: string | null;
+  onFollowRequestsChanged?: () => void | Promise<void>;
 }
 
 export default function ProfileContent({
@@ -250,6 +260,7 @@ export default function ProfileContent({
   following,
   followDataLoading,
   followError,
+  onFollowRequestsChanged,
 }: ProfileContentProps) {
   return (
     <>
@@ -278,6 +289,7 @@ export default function ProfileContent({
           following={following}
           followDataLoading={followDataLoading}
           followError={followError}
+          onFollowRequestsChanged={onFollowRequestsChanged}
         />
       )}
     </>

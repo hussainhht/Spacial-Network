@@ -18,11 +18,12 @@ func NewHandler(service *Service) *Handler {
 
 func toProfileResponse(profile *Profile, includeProtected bool) ProfileResponse {
 	resp := ProfileResponse{
-		ID:        profile.ID,
-		Username:  profile.Username,
-		FirstName: profile.FirstName,
-		LastName:  profile.LastName,
-		IsPrivate: profile.IsPrivate,
+		ID:                 profile.ID,
+		Username:           profile.Username,
+		FirstName:          profile.FirstName,
+		LastName:           profile.LastName,
+		IsPrivate:          profile.IsPrivate,
+		CanViewFullProfile: includeProtected,
 	}
 
 	if profile.ProfilePhoto.Valid {
