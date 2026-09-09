@@ -11,6 +11,8 @@ import {
   getPendingInvitations,
   getPendingJoinRequests,
 } from "../api/groups";
+import { listGroupPosts } from "@/features/posts/api/posts";
+import type { Post } from "@/features/posts/types/post";
 
 import type { GroupEvent } from "../types/group";
 
@@ -129,6 +131,8 @@ export const usePendingJoinRequests = (id: number) =>
   useGroupQuery(`group:${id}:requests`, () => getPendingJoinRequests(id));
 export const useGroupEvents = (id: number) =>
   useGroupQuery(`group:${id}:events`, () => getGroupEvents(id));
+export const useGroupPosts = (id: number) =>
+  useGroupQuery(`group:${id}:posts`, () => listGroupPosts(id));
 
 export const useEventResponses = (groupId: number, eventId: number) =>
   useGroupQuery(`group:${groupId}:event:${eventId}:responses`, () =>
@@ -143,4 +147,12 @@ export function updateGroupEvent(event: GroupEvent) {
   resource?.update((events) =>
     events.map((existing) => (existing.id === event.id ? event : existing)),
   );
+}
+
+// Removes a post from a group's cached post list, e.g. after deletion.
+export function removeGroupPost(groupId: number, postId: number) {
+  const resource = resources.get(`group:${groupId}:posts`) as
+    | Resource<Post[]>
+    | undefined;
+  resource?.update((posts) => posts.filter((post) => post.id !== postId));
 }
