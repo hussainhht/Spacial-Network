@@ -1,6 +1,7 @@
 import { DEV_MODELS, type DevModel } from "@/components/space/modelsRegistry";
 import type { PlanetId } from "../contracts";
-import type { OrbitFraming } from "../motion/orbitPath";
+import type { OrbitFraming, OrbitPlacement } from "../motion/orbitPath";
+import { postsEarthAnchor } from "./postsStage";
 
 function modelFor(id: string): DevModel {
   const model = DEV_MODELS.find((entry) => entry.id === id);
@@ -120,7 +121,15 @@ export type SceneFraming = {
   orbit: OrbitFraming;
   /** World half-height, so per-frame drift can be sized without re-measuring. */
   halfHeight: number;
+  /** Where Earth rests on the Posts page, in the same rig-local units as an
+   * orbit placement, so a transition is a plain interpolation between two
+   * placements rather than a second coordinate system. */
+  posts: OrbitPlacement;
 };
+
+/** How far the neighbours retreat as the scene commits to Posts. Far enough to
+ * read as leaving, near enough that returning home is not a rush back. */
+export const NEIGHBOUR_RECEDE = 14;
 
 /** Fit a local envelope at z=0, allowing for its closest possible depth. */
 function fitEnvelope(
@@ -140,12 +149,14 @@ function fitEnvelope(
 /**
  * Turns a measured R3F viewport into the ellipse the planets ride and the size
  * of each body. `worldWidth`/`worldHeight` are world units at z=0;
- * `pixelWidth` only picks the responsive tier.
+ * `pixelWidth`/`pixelHeight` pick the responsive tier and convert the Posts
+ * anchor, which is authored in pixels, into the same world units.
  */
 export function measureSceneFraming(
   worldWidth: number,
   worldHeight: number,
   pixelWidth: number,
+  pixelHeight: number,
 ): SceneFraming {
   const halfWidth = Math.max(0, worldWidth) / 2;
   const halfHeight = Math.max(0, worldHeight) / 2;
@@ -179,7 +190,22 @@ export function measureSceneFraming(
   const marsScale = fitEnvelope(fitWidth, fitHeight, 1.05, 1.05, 1.05);
   const saturnScale = fitEnvelope(fitWidth, fitHeight, 1.1, 1.1, 1.1);
 
-  return { earthRadius, marsScale, saturnScale, orbit, halfHeight };
+  // The Posts composition is fixed by one anchor expressed in pixels, so the
+  // scene and the DOM feed agree on Earth's centre without measuring each other.
+  const anchor = postsEarthAnchor(pixelWidth, pixelHeight);
+  const unitsPerPixel = worldWidth / Math.max(1, pixelWidth);
+  const postsRadius = (anchor.diameter / 2) * unitsPerPixel;
+  const posts: OrbitPlacement = {
+    x: (anchor.x * unitsPerPixel) - halfWidth,
+    y: halfHeight - anchor.y * unitsPerPixel,
+    z: 0,
+    // `orbitRoot.scale` multiplies EarthSystem's own `earthRadius`, so the
+    // target is a ratio rather than a size. A degenerate measurement leaves the
+    // planet where it is instead of collapsing it.
+    scale: earthRadius > 0 ? postsRadius / earthRadius : 1,
+  };
+
+  return { earthRadius, marsScale, saturnScale, orbit, halfHeight, posts };
 }
 
 export function sceneFrameloop(renderActive: boolean, reducedMotion: boolean) {

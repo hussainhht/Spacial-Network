@@ -4,7 +4,7 @@ import { useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import type { Group } from "three";
 import { EarthPlanetModel, GenericPlanetModel } from "@/components/space/DevPlanetModel";
-import type { PhaseRef } from "../contracts";
+import type { PhaseRef, StageRef } from "../contracts";
 import { orbitNearness } from "../motion/orbitPath";
 import PlanetAsset, { type AssetErrorReporter } from "./PlanetAsset";
 import {
@@ -19,6 +19,7 @@ export default function EarthSystem({
   radius,
   animate,
   phase,
+  stage,
   index,
   count,
   onAssetError,
@@ -29,6 +30,9 @@ export default function EarthSystem({
    * rig writes: R3F runs a child's frame callback before its parent's, so
    * reading it would always be one frame stale. */
   phase: PhaseRef;
+  /** On Posts the Earth is the whole scene, so its satellite is always worth
+   * drawing regardless of where the home loop left the phase. */
+  stage: StageRef;
   index: number;
   count: number;
   onAssetError: AssetErrorReporter;
@@ -43,7 +47,9 @@ export default function EarthSystem({
     // across once Earth recedes, so it stops being drawn rather than being
     // drawn invisibly small. Visibility is the only thing culled; the orbit
     // keeps its phase so returning to Earth never shows a jump.
-    const visible = orbitNearness(index - phase.current, count) > SATELLITE_EMPHASIS;
+    const visible =
+      stage.current > 0.5 ||
+      orbitNearness(index - phase.current, count) > SATELLITE_EMPHASIS;
     if (satellite.current) satellite.current.visible = visible;
     if (!animate) return;
     const step = Math.min(delta, MAX_FRAME_DELTA);

@@ -19,6 +19,12 @@ export type PlanetDestination = {
  * inside `useFrame`, and neither may cost a render. */
 export type PhaseRef = { current: number };
 
+/** How far the scene has travelled from the home loop composition (0) towards
+ * the Posts composition (1). Like the loop phase it lives in a mutable cell:
+ * GSAP writes it during a route transition and `useFrame` reads it, and neither
+ * may cost a render. There is exactly one of these, owned by the provider. */
+export type StageRef = PhaseRef;
+
 /** Per-destination transform roots. Each root has exactly one controller:
  * `transitionRoot` is reserved for a future route transition (identity today),
  * `orbitRoot` is written only by the rig's own frame loop. */
@@ -43,6 +49,8 @@ export type UniverseCanvasProps = {
   reducedMotion: boolean;
   /** Continuous loop position, owned by the motion controller. */
   phase: PhaseRef;
+  /** Home-to-Posts blend, owned by the route transition. */
+  stage: StageRef;
   onSceneReady: (scene: UniverseSceneHandle | null) => void;
   /** A planet was clicked. Focusing versus opening is decided by the homepage. */
   onPlanetActivate: (id: PlanetId) => void;
@@ -74,6 +82,7 @@ export type UniverseHomeAPI = {
   activePlanetId: PlanetId;
   selectedPlanetId: PlanetId | null;
   phase: PhaseRef;
+  stage: StageRef;
   scene: UniverseSceneHandle | null;
   reducedMotion: boolean;
   isTransitioning: boolean;

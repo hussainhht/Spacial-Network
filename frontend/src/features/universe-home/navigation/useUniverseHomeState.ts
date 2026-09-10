@@ -1,7 +1,12 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import type { PhaseRef, PlanetId, UniverseSceneHandle } from "../contracts";
+import type {
+  PhaseRef,
+  PlanetId,
+  StageRef,
+  UniverseSceneHandle,
+} from "../contracts";
 import { PLANET_ORDER } from "./planetDestinations";
 import {
   isSelectionStale,
@@ -14,6 +19,7 @@ export type UniverseHomeState = {
   activePlanetId: PlanetId;
   selectedPlanetId: PlanetId | null;
   phase: PhaseRef;
+  stage: StageRef;
   scene: UniverseSceneHandle | null;
   commitActivePlanet: (id: PlanetId) => void;
   selectPlanet: (id: PlanetId | null) => void;
@@ -32,6 +38,10 @@ export function useUniverseHomeState(pathname: string): UniverseHomeState {
   // changes and Canvas remounts so returning to Home restores the view. It is
   // deliberately separate from the legacy `homePosition` post playhead.
   const phase = useRef(0);
+  // The Home-to-Posts blend. Same reasoning as the phase, and likewise a single
+  // cell: two copies would let the scene and the route disagree about which
+  // composition is on screen.
+  const stage = useRef(0);
   const [activePlanetId, setActivePlanetId] = useState<PlanetId>(
     PLANET_ORDER[0],
   );
@@ -89,6 +99,7 @@ export function useUniverseHomeState(pathname: string): UniverseHomeState {
     activePlanetId,
     selectedPlanetId,
     phase,
+    stage,
     scene,
     commitActivePlanet,
     selectPlanet,

@@ -1,5 +1,21 @@
+/* The Posts scene occupies the shell pane exactly, so the orbital scroller is
+   the page's only vertical interaction owner: no second scrollbar, and nothing
+   for the shell's own pane to scroll underneath it. */
+.page {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  color: var(--space-text-body);
+  font: 14px/1.6 ui-sans-serif, system-ui, -apple-system, sans-serif;
+  color-scheme: dark;
+}
+
+/* Scroll here is a driver for the orbit, not a document position, and a
+   reserved gutter would make this pane narrower than Home's — shifting the
+   Earth at the moment the canvas is handed over. The counter and the
+   previous/next controls report the position instead. Reduced motion turns
+   this back into a real document below, and gets its scrollbar back. */
 .scroller {
-  scrollbar-gutter: stable;
   position: absolute;
   inset: 0;
   z-index: 0;
@@ -7,8 +23,11 @@
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior-y: contain;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(167, 139, 250, 0.35) transparent;
+  scrollbar-width: none;
+}
+
+.scroller::-webkit-scrollbar {
+  display: none;
 }
 
 .scroller[data-focused="true"] {
@@ -299,6 +318,11 @@
   overflow: clip;
 }
 
+/* The docking parent of the persistent universe canvas. Its z-index is what
+   makes the planet part of the orbit rather than a backdrop: cards on the far
+   side of the ellipse render below 20 and are genuinely occluded, cards in
+   front render above it. `.scene` is a stacking context (it is sticky), so this
+   has to live inside it for those layers to interleave at all. */
 .earthLayer {
   position: absolute;
   inset: 0;
@@ -306,34 +330,10 @@
   pointer-events: none;
 }
 
-.heading {
-  position: absolute;
-  inset: 24px 32px auto;
-  z-index: 50;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  pointer-events: none;
-}
-
-.heading p {
-  margin: 0;
-  font-size: 10px;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  color: var(--space-text-muted);
-}
-
-.heading h1 {
-  margin: 2px 0 0;
-  font-size: 26px;
-  font-weight: 550;
-  color: var(--space-text-heading);
-}
-
+/* The navbar owns the page title and the New Post action on this route. The
+   only affordance the scene adds is the one in the empty state. */
 .newPost {
-  pointer-events: auto;
+  display: inline-block;
   padding: 8px 14px;
   border: 1px solid rgba(167, 139, 250, 0.3);
   border-radius: 9px;
@@ -352,6 +352,16 @@
   transform-origin: center;
 }
 
+.postSurface {
+  will-change: opacity;
+}
+
+/* Earth arrives first. The cards stay out of the frame until the scene says it
+   has settled, at which point GSAP's own inline opacity takes over from this. */
+.scene:not([data-revealed]) .postSurface {
+  opacity: 0;
+}
+
 .post :global(.orbital-social-card) {
   --post-media-max-height: 180px;
   max-height: min(
@@ -364,8 +374,29 @@
   scrollbar-color: rgba(167, 139, 250, 0.25) transparent;
 }
 
+/* Two reasons to drop the shared card's backdrop filter while it is in orbit.
+   Legibility: at 0.88 alpha over a bright neighbour the text behind reads
+   through the focused card, and the focused post has to be the most readable
+   thing on the page. Cost: five transformed layers each re-sampling the scene
+   behind them every frame is the most expensive thing this page could ask the
+   compositor for, and the wrapper's own opacity already carries the depth. */
+.post :global(.orbital-social-card) {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background:
+    radial-gradient(
+      ellipse at top left,
+      rgba(139, 92, 246, 0.07),
+      transparent 65%
+    ),
+    rgb(9, 13, 30);
+}
+
 .post[data-active="true"] :global(.orbital-social-card) {
   border-top-color: rgba(183, 161, 255, 0.45);
+  box-shadow:
+    0 22px 58px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(226, 232, 255, 0.05);
 }
 
 .controls {
@@ -437,12 +468,6 @@
 }
 
 @media (max-width: 760px) {
-  .heading {
-    inset: 18px 16px auto;
-  }
-  .heading h1 {
-    font-size: 22px;
-  }
   .newPost {
     padding: 7px 10px;
   }
@@ -453,14 +478,42 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  /* The scene stops being one pinned pane and becomes a scrolling document, so
+     an `inset: 0` Earth would stretch over its whole height. Stick it to the
+     top of the pane instead, and cancel the space it would occupy so the cards
+     still start at the top of the list. */
+  .earthLayer {
+    position: sticky;
+    inset: auto;
+    top: 0;
+    z-index: 0;
+    height: var(--focus-height, 100dvh);
+    /* Pulled out of the scene's own top padding so the Earth is framed against
+       the pane, not against the start of the card list, and given back exactly
+       the space it takes so the first card still starts at the top. */
+    margin-top: calc(-1 * var(--reduced-inset));
+    margin-bottom: calc(var(--reduced-inset) - var(--focus-height, 100dvh));
+  }
+  .postSurface {
+    will-change: auto;
+  }
+  /* A plain list again, so the scrollbar is genuine feedback and belongs. */
+  .scroller {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(167, 139, 250, 0.35) transparent;
+  }
+  .scroller::-webkit-scrollbar {
+    display: initial;
+  }
   .track {
     height: auto;
   }
   .scene {
+    --reduced-inset: 112px;
     position: relative;
     height: auto;
     min-height: 100%;
-    padding: 112px 16px 32px;
+    padding: var(--reduced-inset) 16px 32px;
   }
   .post {
     position: relative;

@@ -221,7 +221,7 @@ Modified integration points:
 - `src/components/space/HomeEarth.tsx`
 - `src/components/space/Earth3D.tsx`
 - `src/components/space/SpaceBackground.tsx`
-- `src/features/posts/components/home/HomeOrbitalFeed.tsx`
+- `src/features/posts/components/orbit/OrbitalPostsFeed.tsx`
 - `src/features/groups/components/GroupsPageContent.tsx`
 - `src/features/groups/components/galaxy/GroupGalaxy.tsx`
 - `src/features/groups/components/galaxy/GroupStar.tsx`

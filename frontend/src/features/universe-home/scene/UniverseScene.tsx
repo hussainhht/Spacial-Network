@@ -16,12 +16,18 @@ export default function UniverseScene({
   renderActive,
   reducedMotion,
   phase,
+  stage,
   onSceneReady,
   onPlanetActivate,
   onAssetError,
 }: Pick<
   UniverseCanvasProps,
-  "renderActive" | "reducedMotion" | "phase" | "onSceneReady" | "onPlanetActivate"
+  | "renderActive"
+  | "reducedMotion"
+  | "phase"
+  | "stage"
+  | "onSceneReady"
+  | "onPlanetActivate"
 > & {
   onAssetError: AssetErrorReporter;
 }) {
@@ -32,8 +38,8 @@ export default function UniverseScene({
   const invalidate = useThree((state) => state.invalidate);
   const { width, height } = getViewport(camera, RIG_PLANE, size);
   const framing = useMemo(
-    () => measureSceneFraming(width, height, size.width),
-    [width, height, size.width],
+    () => measureSceneFraming(width, height, size.width, size.height),
+    [width, height, size.width, size.height],
   );
 
   // Published once, and carrying no measurements: a resize re-frames the scene
@@ -60,6 +66,7 @@ export default function UniverseScene({
           index={index}
           count={PLANET_ORDER.length}
           phase={phase}
+          stage={stage}
           framing={framing}
           animate={renderActive && !reducedMotion}
           onAssetError={onAssetError}

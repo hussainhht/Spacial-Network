@@ -21,14 +21,30 @@ import { UNIVERSE_HOME_V1_ENABLED } from "@/features/universe-home/navigation/ho
 import UniverseCanvasHost from "@/features/universe-home/navigation/UniverseCanvasHost";
 import { useUniverseHomeState } from "@/features/universe-home/navigation/useUniverseHomeState";
 import { center, enterScene, exitScene, moveEarth } from "./animation";
+import { useStageTravel } from "./useStageTravel";
 import type {
   EarthHandle,
   SceneRegistration,
+  UniverseRoute,
   UniverseTransitionState,
 } from "./types";
 import styles from "./UniverseTransition.module.css";
 
 const motionQuery = "(prefers-reduced-motion: reduce)";
+
+/** Home to Posts. Earth travels for `EARTH_TRAVEL`; the route is pushed part
+ * way through, so React mounts Posts behind a scene that is still moving and
+ * the reader never sees a blank frame. Both are short enough that the whole
+ * move lands inside the ~1s a route change is allowed to feel like. */
+const EARTH_TRAVEL = 0.78;
+const ROUTE_PUSH_AT = 0.34;
+const REDUCED_TRAVEL = 0.2;
+/** Blend back to the home composition when Posts is left by ordinary
+ * navigation, where there is no cinematic to own the move. */
+const STAGE_RETURN = 0.55;
+/** A destination that never reports itself ready must not strand the scene in
+ * the overlay. Bounded wait, then settle wherever we are. */
+const ARRIVAL_TIMEOUT = 1600;
 const subscribeMotion = (notify: () => void) => {
   const media = window.matchMedia(motionQuery);
   media.addEventListener("change", notify);
@@ -39,8 +55,11 @@ type API = {
   isTransitioning: boolean;
   transitionState: UniverseTransitionState;
   navigate: (href: string) => boolean;
-  register: (route: "/" | "/groups", scene: SceneRegistration) => () => void;
-  homePosition: { current: number };
+  register: (route: UniverseRoute, scene: SceneRegistration) => () => void;
+  /** The orbital feed's playhead, kept across route changes so returning to
+   * Posts resumes on the card the reader left. Nothing to do with the planet
+   * loop's phase. */
+  orbitPosition: { current: number };
 };
 const Context = createContext<API | null>(null);
 export function useUniverseTransition() {
@@ -62,7 +81,7 @@ export function useUniverseHome() {
 
 type Run = {
   from: string;
-  to: "/" | "/groups";
+  to: UniverseRoute;
   pushed: boolean;
   reduced: boolean;
   timeline: gsap.core.Timeline;
@@ -86,14 +105,14 @@ export default function UniverseTransitionProvider({
   );
   const router = useRouter();
   const [direction, setDirection] = useState<
-    "home-to-groups" | "groups-to-home" | null
+    "home-to-groups" | "groups-to-home" | "home-to-posts" | null
   >(null);
   const active = direction !== null;
   const [host, setHost] = useState<HTMLDivElement | null>(null);
   const hostRef = useRef<HTMLDivElement | null>(null);
   const layer = useRef<HTMLDivElement>(null);
   const stage = useRef<HTMLDivElement | null>(null);
-  const homeViewport = useRef<HTMLElement | null>(null);
+  const dockedViewport = useRef<HTMLElement | null>(null);
   const viewportResize = useRef<ResizeObserver | null>(null);
   const glow = useRef<HTMLDivElement>(null);
   const shell = useRef<HTMLDivElement>(null);
@@ -102,19 +121,59 @@ export default function UniverseTransitionProvider({
   const run = useRef<Run | null>(null);
   const frame = useRef(0);
   const watchdog = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const homePosition = useRef(0);
+  const orbitPosition = useRef(0);
   const path = useRef(pathname);
   const lastOrigin = useRef<DOMRect | null>(null);
   const finishRef = useRef<() => void>(() => {});
-  // The universe home loop: active/selected planet, the continuous loop phase
-  // and the scene readiness snapshot. Deliberately separate from the legacy
-  // `homePosition` ref above, which stores the old feed's post playhead.
+  // The universe home loop: active/selected planet, the continuous loop phase,
+  // the Home-to-Posts blend and the scene readiness snapshot. Deliberately
+  // separate from `orbitPosition` above, which is the feed's post playhead.
   const homeTrack = useUniverseHomeState(pathname);
+  const stageBlend = homeTrack.stage;
+  const stageApplied = useRef(false);
+  const { travel: travelStage } = useStageTravel({
+    stageRef: homeTrack.stage,
+    phaseRef: homeTrack.phase,
+    scene: homeTrack.scene,
+  });
+
+  /** Pin the scene to a screen rectangle for the length of a move. The page
+   * that owns its docking parent is about to be replaced, so the canvas spends
+   * the transition in the fixed overlay instead — at exactly the geometry it
+   * already had, which is why the reparenting is invisible. */
+  const pinStage = useCallback((rect: DOMRect) => {
+    const element = stage.current;
+    if (!element) return;
+    gsap.set(element, {
+      position: "fixed",
+      left: rect.left,
+      top: rect.top,
+      right: "auto",
+      bottom: "auto",
+      width: rect.width,
+      height: rect.height,
+      visibility: "visible",
+    });
+    element.dataset.universePinned = "true";
+  }, []);
+  const unpinStage = useCallback(() => {
+    const element = stage.current;
+    if (!element?.dataset.universePinned) return;
+    delete element.dataset.universePinned;
+    gsap.set(element, {
+      clearProps: "position,left,top,right,bottom,width,height,visibility",
+    });
+  }, []);
 
   const park = useCallback((host: HTMLDivElement) => {
     if (host.parentElement !== layer.current) layer.current?.appendChild(host);
     host.style.display = "contents";
-    if (stage.current) stage.current.style.visibility = "hidden";
+    // A pinned scene is mid-move and owns its own geometry; parking it is only
+    // the reparenting, never the blanking.
+    if (stage.current && !stage.current.dataset.universePinned) {
+      stage.current.style.visibility = "hidden";
+      delete stage.current.dataset.universeDocked;
+    }
   }, []);
 
   const dock = useCallback(() => {
@@ -122,18 +181,21 @@ export default function UniverseTransitionProvider({
     if (!host || run.current) return;
     const home = scenes.current.get("/");
     if (UNIVERSE_HOME_V1_ENABLED) {
-      // The v1 home owns a measured viewport inside its registered root, and
-      // the Canvas sizes itself from that box. Docking into a 0x0 parent would
+      // Home and Posts are two compositions of one scene, so both dock the same
+      // canvas. Each owns a measured viewport inside its registered root and
+      // the Canvas sizes itself from that box; docking into a 0x0 parent would
       // publish an unusable scene handle, so wait for a real measurement.
+      const docking =
+        path.current === "/" || path.current === "/posts"
+          ? scenes.current.get(path.current)
+          : undefined;
       const viewport =
-        path.current === "/"
-          ? (home?.root.querySelector<HTMLElement>("[data-universe-viewport]") ??
-            null)
-          : null;
-      if (homeViewport.current !== viewport) {
-        if (homeViewport.current)
-          viewportResize.current?.unobserve(homeViewport.current);
-        homeViewport.current = viewport;
+        docking?.root.querySelector<HTMLElement>("[data-universe-viewport]") ??
+        null;
+      if (dockedViewport.current !== viewport) {
+        if (dockedViewport.current)
+          viewportResize.current?.unobserve(dockedViewport.current);
+        dockedViewport.current = viewport;
         if (viewport) viewportResize.current?.observe(viewport);
       }
       if (viewport && viewport.clientWidth > 0 && viewport.clientHeight > 0) {
@@ -144,6 +206,12 @@ export default function UniverseTransitionProvider({
         // The stage arrives after the lazy scene chunk resolves; docking must
         // not wait for it, and it must not stay hidden once it does arrive.
         stage.current?.style.removeProperty("visibility");
+        if (stage.current) {
+          // Planets are clickable on Home only. On Posts the canvas lies under
+          // the cards and must not take the pointer from them.
+          stage.current.dataset.universeDocked =
+            path.current === "/posts" ? "posts" : "home";
+        }
       } else {
         park(host);
       }
@@ -206,6 +274,7 @@ export default function UniverseTransitionProvider({
       }
       current.source.resume();
     }
+    unpinStage();
     shell.current?.removeAttribute("data-waiting");
     shell.current?.removeAttribute("data-running");
     for (const scene of scenes.current.values()) {
@@ -215,7 +284,7 @@ export default function UniverseTransitionProvider({
     if (glow.current) gsap.set(glow.current, { opacity: 0 });
     setDirection(null);
     dock();
-  }, [dock]);
+  }, [dock, unpinStage]);
   useLayoutEffect(() => {
     finishRef.current = finish;
   }, [finish]);
@@ -241,7 +310,7 @@ export default function UniverseTransitionProvider({
     return () => {
       observer.disconnect();
       viewportResize.current = null;
-      homeViewport.current = null;
+      dockedViewport.current = null;
     };
   }, [dock]);
   useLayoutEffect(() => {
@@ -249,7 +318,7 @@ export default function UniverseTransitionProvider({
   }, [dock, reducedMotion]);
 
   const register = useCallback(
-    (route: "/" | "/groups", scene: SceneRegistration) => {
+    (route: UniverseRoute, scene: SceneRegistration) => {
       scenes.current.set(route, scene);
       if (run.current) {
         scene.root.inert = true;
@@ -260,8 +329,10 @@ export default function UniverseTransitionProvider({
         const owned = scenes.current.get(route) === scene;
         if (owned) scenes.current.delete(route);
         // Park the host before React removes its old page-owned parent. A stale
-        // cleanup must never pull it out of a newer registration's viewport.
-        if (route === "/" && owned && hostRef.current) park(hostRef.current);
+        // cleanup must never pull it out of a newer registration's viewport, so
+        // this acts only on the registration the canvas is actually docked in.
+        const host = hostRef.current;
+        if (owned && host && scene.root.contains(host)) park(host);
       };
     },
     [dock, park],
@@ -274,6 +345,28 @@ export default function UniverseTransitionProvider({
       finishRef.current();
     if (!current) dock();
   }, [pathname, dock]);
+
+  // Posts can also be entered or left without the cinematic — a sidebar link, a
+  // back button, a hard load. The composition still has to match the route, so
+  // the blend is reconciled here and the cinematic simply gets there first.
+  useLayoutEffect(() => {
+    const first = !stageApplied.current;
+    stageApplied.current = true;
+    if (run.current) return;
+    const target = pathname === "/posts" ? 1 : 0;
+    if (Math.abs(stageBlend.current - target) < 1e-4) return;
+    // Nothing to travel through on a first paint, and nothing to watch under a
+    // reduced-motion preference.
+    travelStage(target, first || reducedMotion ? 0 : STAGE_RETURN);
+  }, [pathname, reducedMotion, travelStage, stageBlend]);
+
+  // Posts is Earth's destination, so arriving there is what makes Earth the
+  // active planet. Once per navigation, never per frame.
+  const commitActivePlanet = homeTrack.commitActivePlanet;
+  useLayoutEffect(() => {
+    if (pathname === "/posts") commitActivePlanet("earth");
+  }, [pathname, commitActivePlanet]);
+
   useLayoutEffect(() => {
     const cancel = () => finishRef.current();
     window.addEventListener("popstate", cancel);
@@ -290,16 +383,133 @@ export default function UniverseTransitionProvider({
     };
   }, [router]);
 
+  /**
+   * Home to Posts: one continuous scene, not a fade between two pages.
+   *
+   * Earth is the same WebGL object on both sides — the canvas is portalled into
+   * a host that is reparented, never rebuilt — so there is no arrival transform
+   * to match and nothing to teleport. The move is a single blend from the loop
+   * composition to the Posts composition, with the route pushed part way
+   * through it, and the frame loop keeps spinning the Earth and orbiting the
+   * Moon throughout.
+   */
+  const openPosts = useCallback(() => {
+    const host = hostRef.current;
+    const source = scenes.current.get("/");
+    // Without a stage there is nothing to pin, and the canvas would be parked
+    // hidden the moment Home unmounts. Let ordinary navigation handle it.
+    if (!host || !source || !stage.current) return false;
+
+    const reduced = window.matchMedia(motionQuery).matches;
+    const duration = reduced ? REDUCED_TRAVEL : EARTH_TRAVEL;
+    const context = gsap.context(() => {});
+    const timeline = gsap.timeline({ paused: true });
+    const current: Run = {
+      from: "/",
+      to: "/posts",
+      pushed: false,
+      reduced,
+      timeline,
+      context,
+      deadline: 0,
+      origin: source.root.getBoundingClientRect(),
+      overflow: document.body.style.overflow,
+      source,
+    };
+    run.current = current;
+    setDirection("home-to-posts");
+    shell.current?.setAttribute("data-running", "true");
+    // Locks the loop's gestures, the destination controls and a second click on
+    // the planet: `isTransitioning` is the one flag the homepage reads.
+    source.pause();
+    source.root.inert = true;
+    router.prefetch("/posts");
+    // Hold the scene in the overlay for the whole move. Home's viewport is
+    // about to be unmounted from under it, and the overlay rectangle is the
+    // pane it already occupies, so nothing moves at the handover.
+    layer.current?.appendChild(host);
+    host.style.display = "contents";
+    pinStage(current.origin);
+    // Started outside the run's gsap.context on purpose. A context collects
+    // animations created inside the callbacks of animations it owns, and
+    // `finish()` reverts it — which would snap the scene back to the home
+    // composition at the exact moment it arrives at the Posts one.
+    travelStage(1, duration);
+
+    const settle = () => {
+      if (run.current !== current) return;
+      const destination = scenes.current.get("/posts");
+      const ready =
+        path.current === "/posts" &&
+        destination !== undefined &&
+        destination.root.dataset.universeReady !== "false";
+      if (!ready && performance.now() < current.deadline) {
+        frame.current = requestAnimationFrame(settle);
+        return;
+      }
+      // Docking hands the canvas to the Posts earth layer at exactly the
+      // geometry it is already pinned to, so the unpin is not a visual change.
+      finishRef.current();
+    };
+
+    // One bounded safety timer, not visual sequencing. A failed mount must never
+    // leave the page inert or the scene stranded in the overlay. Armed before
+    // the timeline so a throw on the way in is covered too.
+    watchdog.current = setTimeout(() => {
+      if (run.current !== current) return;
+      finishRef.current();
+      if (!current.pushed) router.push("/posts");
+    }, 8000);
+
+    try {
+      context.add(() => {
+        const chrome =
+          source.root.querySelectorAll<HTMLElement>("[data-universe-ui]");
+        if (chrome.length)
+          timeline.to(chrome, { opacity: 0, duration: duration * 0.4 }, 0);
+        timeline.call(
+          () => {
+            if (run.current !== current) return;
+            current.pushed = true;
+            router.push("/posts", { scroll: false });
+          },
+          undefined,
+          reduced ? 0 : ROUTE_PUSH_AT,
+        );
+        // Anchored at 0, not appended: the timeline has to end when Earth
+        // finishes travelling, not one route-push offset later.
+        timeline.to({}, { duration }, 0);
+        timeline.call(
+          () => {
+            current.deadline = performance.now() + ARRIVAL_TIMEOUT;
+            frame.current = requestAnimationFrame(settle);
+          },
+          undefined,
+          duration,
+        );
+      });
+      timeline.play();
+    } catch (error) {
+      console.error("Universe departure failed", error);
+      finishRef.current();
+      router.push("/posts");
+    }
+    return true;
+  }, [router, pinStage, travelStage]);
+
   const navigate = useCallback(
     (href: string) => {
-    // Universe Home v1 guard (DECISIONS D09). The legacy cinematic is written
-    // against the old orbital feed's anchors, its EarthHandle and body scroll
-    // locks, none of which describe the three-planet homepage. Declining here
-    // covers both directions and a direct /groups entry alike, because the mode
-    // is a module constant rather than state set on first visiting Home. The
-    // callers' existing Next Links then navigate normally.
+    // A move already owns the scene. Claiming its own destination is what stops
+    // a second click from pushing the route twice.
+    if (run.current) return href === run.current.to;
+    if (pathname === "/" && href === "/posts") return openPosts();
+    // Universe Home v1 guard (DECISIONS D09). The legacy Home/Groups cinematic
+    // is written against the old orbital feed's anchors, its EarthHandle and
+    // body scroll locks, none of which describe the three-planet homepage.
+    // Declining here covers both directions and a direct /groups entry alike,
+    // because the mode is a module constant rather than state set on first
+    // visiting Home. The callers' existing Next Links then navigate normally.
     if (UNIVERSE_HOME_V1_ENABLED) return false;
-    if (run.current) return href === "/" || href === "/groups";
     if (!(
       (pathname === "/" && href === "/groups") ||
       (pathname === "/groups" && href === "/")
@@ -582,7 +792,7 @@ export default function UniverseTransitionProvider({
     }
     return true;
     },
-    [pathname, router],
+    [pathname, router, openPosts],
   );
 
   const onEarthReady = useCallback(
@@ -594,7 +804,12 @@ export default function UniverseTransitionProvider({
   );
 
   const transitionState: UniverseTransitionState =
-    direction ?? (pathname === "/" ? "idle-home" : "idle-groups");
+    direction ??
+    (pathname === "/"
+      ? "idle-home"
+      : pathname === "/posts"
+        ? "idle-posts"
+        : "idle-groups");
   // Memoized so home-track updates cannot re-render the Sidebar, Navbar and
   // Groups consumers of the unchanged transition API, and vice versa.
   const transitionApi = useMemo<API>(
@@ -603,7 +818,7 @@ export default function UniverseTransitionProvider({
       transitionState,
       navigate,
       register,
-      homePosition,
+      orbitPosition,
     }),
     [active, transitionState, navigate, register],
   );
@@ -612,6 +827,7 @@ export default function UniverseTransitionProvider({
       activePlanetId: homeTrack.activePlanetId,
       selectedPlanetId: homeTrack.selectedPlanetId,
       phase: homeTrack.phase,
+      stage: homeTrack.stage,
       scene: homeTrack.scene,
       reducedMotion,
       // One transition machine: this reads the existing coordinator rather than
@@ -625,6 +841,7 @@ export default function UniverseTransitionProvider({
       homeTrack.activePlanetId,
       homeTrack.selectedPlanetId,
       homeTrack.phase,
+      homeTrack.stage,
       homeTrack.scene,
       homeTrack.commitActivePlanet,
       homeTrack.selectPlanet,
@@ -647,14 +864,15 @@ export default function UniverseTransitionProvider({
               event.altKey
             )
               return;
-            const link = (event.target as HTMLElement).closest<HTMLAnchorElement>(
-              "a[href]",
-            );
+            const link = (
+              event.target as HTMLElement
+            ).closest<HTMLAnchorElement>("a[href]");
             if (
               link &&
               link.origin === location.origin &&
               link.pathname !== "/" &&
-              link.pathname !== "/groups"
+              link.pathname !== "/groups" &&
+              link.pathname !== "/posts"
             )
               finishRef.current();
           }}
@@ -665,7 +883,10 @@ export default function UniverseTransitionProvider({
         </div>
         <UniverseTransitionLayer layerRef={layer} glowRef={glow} />
         {host &&
-          (pathname === "/" || pathname === "/groups" || active) &&
+          (pathname === "/" ||
+            pathname === "/groups" ||
+            pathname === "/posts" ||
+            active) &&
           createPortal(
             // One payload, never both: a second HomeEarth Canvas alongside
             // UniverseCanvas would mean two WebGL contexts on the same route.
@@ -674,12 +895,15 @@ export default function UniverseTransitionProvider({
               <UniverseCanvasHost
                 ref={setStage}
                 className={styles.universeStage}
-                // Home draws; Groups keeps the same context but sleeps. This is
-                // independent of reduced motion, which stops spin and orbit
-                // inside the scene without blanking it.
-                renderActive={pathname === "/" || active}
+                // Home and Posts draw; Groups keeps the same context but
+                // sleeps. This is independent of reduced motion, which stops
+                // spin and orbit inside the scene without blanking it.
+                renderActive={
+                  pathname === "/" || pathname === "/posts" || active
+                }
                 reducedMotion={reducedMotion}
                 phase={homeTrack.phase}
+                stage={homeTrack.stage}
                 onSceneReady={homeTrack.onSceneReady}
                 onPlanetActivate={homeTrack.onPlanetActivate}
               />

@@ -1,11 +1,5 @@
-import PostFeed from "@/features/posts/components/PostFeed";
+import OrbitalPostsFeed from "@/features/posts/components/orbit/OrbitalPostsFeed";
 
 export default function PostsPage() {
-  return (
-    <main className="posts-page">
-      <div className="posts-container">
-        <PostFeed />
-      </div>
-    </main>
-  );
+  return <OrbitalPostsFeed />;
 }

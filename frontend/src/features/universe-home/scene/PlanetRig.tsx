@@ -4,7 +4,12 @@ import { useCallback, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { Group } from "three";
 import { GenericPlanetModel } from "@/components/space/DevPlanetModel";
-import type { PhaseRef, PlanetId, PlanetRigHandle } from "../contracts";
+import type {
+  PhaseRef,
+  PlanetId,
+  PlanetRigHandle,
+  StageRef,
+} from "../contracts";
 import {
   createPlacement,
   orbitNearness,
@@ -16,19 +21,26 @@ import {
   IDLE_DRIFT,
   IDLE_DRIFT_SPEED,
   MAX_FRAME_DELTA,
+  NEIGHBOUR_RECEDE,
   SCENE_MODELS,
   SPIN_SPEED,
   type SceneFraming,
 } from "./sceneConfig";
 
-export function createPlanetRigs(order: readonly PlanetId[]): ReadonlyMap<PlanetId, PlanetRigHandle> {
-  return new Map(order.map((id) => {
-    const transitionRoot = new Group();
-    const orbitRoot = new Group();
-    transitionRoot.name = `${id}-TransitionRoot`;
-    orbitRoot.name = `${id}-OrbitRoot`;
-    return [id, { id, transitionRoot, orbitRoot }];
-  }));
+const mix = (from: number, to: number, t: number) => from + (to - from) * t;
+
+export function createPlanetRigs(
+  order: readonly PlanetId[],
+): ReadonlyMap<PlanetId, PlanetRigHandle> {
+  return new Map(
+    order.map((id) => {
+      const transitionRoot = new Group();
+      const orbitRoot = new Group();
+      transitionRoot.name = `${id}-TransitionRoot`;
+      orbitRoot.name = `${id}-OrbitRoot`;
+      return [id, { id, transitionRoot, orbitRoot }];
+    }),
+  );
 }
 
 /**
@@ -38,12 +50,19 @@ export function createPlanetRigs(order: readonly PlanetId[]): ReadonlyMap<Planet
  * shared phase; a separate child group carries the idle spin. Because the two
  * live on different objects they can never fight for the same value, and a
  * transition never has to stop the rotation to take over.
+ *
+ * A route transition is the same story one level up: GSAP owns `stage`, a plain
+ * number, and this callback interpolates between the loop placement and the
+ * Posts placement from it. GSAP never touches a transform the frame loop also
+ * writes, so the two can run at once without fighting — which is what lets the
+ * Earth keep spinning and the Moon keep orbiting all the way through the move.
  */
 export default function PlanetRig({
   rig,
   index,
   count,
   phase,
+  stage,
   framing,
   animate,
   onAssetError,
@@ -53,12 +72,18 @@ export default function PlanetRig({
   index: number;
   count: number;
   phase: PhaseRef;
+  stage: StageRef;
   framing: SceneFraming;
   animate: boolean;
   onAssetError: AssetErrorReporter;
   onActivate: (id: PlanetId) => void;
 }) {
   const spin = useRef<Group>(null);
+  // Visibility lives on a local group rather than on the published orbitRoot.
+  // The rig's roots have exactly one documented writer each, and hiding the
+  // body here also lifts its hit proxy out of the raycast — a neighbour that
+  // has left the scene must not still be clickable.
+  const body = useRef<Group>(null);
   const { id } = rig;
   const placement = useMemo(() => createPlacement(), []);
   const elapsed = useRef(0);
@@ -82,8 +107,32 @@ export default function PlanetRig({
         (1 - near)
       : 0;
 
-    rig.orbitRoot.position.set(placement.x, placement.y + drift, placement.z);
-    rig.orbitRoot.scale.setScalar(placement.scale);
+    const y = placement.y + drift;
+    const blend = stage.current <= 0 ? 0 : Math.min(1, stage.current);
+    if (body.current) body.current.visible = blend < 1 || id === "earth";
+    if (blend === 0) {
+      rig.orbitRoot.position.set(placement.x, y, placement.z);
+      rig.orbitRoot.scale.setScalar(placement.scale);
+    } else if (id === "earth") {
+      // Earth is the subject on both pages, so it travels rather than fades.
+      const target = framing.posts;
+      rig.orbitRoot.position.set(
+        mix(placement.x, target.x, blend),
+        mix(y, target.y, blend),
+        mix(placement.z, target.z, blend),
+      );
+      rig.orbitRoot.scale.setScalar(mix(placement.scale, target.scale, blend));
+    } else {
+      // The neighbours are not part of the Posts composition. They withdraw
+      // along their own depth axis, which reads as leaving rather than as a
+      // fade — and stop being drawn entirely once they are gone.
+      rig.orbitRoot.position.set(
+        placement.x,
+        y,
+        placement.z - blend * NEIGHBOUR_RECEDE,
+      );
+      rig.orbitRoot.scale.setScalar(placement.scale * (1 - blend));
+    }
   });
 
   const activate = useCallback(() => onActivate(id), [onActivate, id]);
@@ -102,27 +151,36 @@ export default function PlanetRig({
     <primitive object={rig.transitionRoot}>
       {/* This rig's frame callback exclusively owns orbitRoot's transform. */}
       <primitive object={rig.orbitRoot}>
-        {id === "earth" ? (
-          <EarthSystem
-            radius={framing.earthRadius}
-            animate={animate}
-            phase={phase}
-            index={index}
-            count={count}
-            onAssetError={onAssetError}
-          />
-        ) : (
-          <group name={`${id}-Framing`} scale={id === "mars" ? framing.marsScale : framing.saturnScale}>
-            <group ref={spin} name={`${id}-RotationRoot`}>
-              <PlanetAsset model={SCENE_MODELS[id]} onAssetError={onAssetError}>
-                <GenericPlanetModel modelConfig={SCENE_MODELS[id]} />
-              </PlanetAsset>
+        <group ref={body} name={`${id}-Body`}>
+          {id === "earth" ? (
+            <EarthSystem
+              radius={framing.earthRadius}
+              animate={animate}
+              phase={phase}
+              stage={stage}
+              index={index}
+              count={count}
+              onAssetError={onAssetError}
+            />
+          ) : (
+            <group
+              name={`${id}-Framing`}
+              scale={id === "mars" ? framing.marsScale : framing.saturnScale}
+            >
+              <group ref={spin} name={`${id}-RotationRoot`}>
+                <PlanetAsset
+                  model={SCENE_MODELS[id]}
+                  onAssetError={onAssetError}
+                >
+                  <GenericPlanetModel modelConfig={SCENE_MODELS[id]} />
+                </PlanetAsset>
+              </group>
             </group>
-          </group>
-        )}
-        <mesh visible={false} onClick={activate}>
-          <sphereGeometry args={[hitRadius, 12, 8]} />
-        </mesh>
+          )}
+          <mesh visible={false} onClick={activate}>
+            <sphereGeometry args={[hitRadius, 12, 8]} />
+          </mesh>
+        </group>
       </primitive>
     </primitive>
   );

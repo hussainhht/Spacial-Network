@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   useCallback,
@@ -12,28 +13,41 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Flip } from "gsap/Flip";
 import type { PostView } from "./ExpandedPost";
-import earthStyles from "@/components/space/HomeEarth.module.css";
 import { useUniverseTransition } from "@/features/universe-transition/UniverseTransitionProvider";
+import {
+  FRONT_ANGLE,
+  orbitFraming,
+  postsEarthAnchor,
+} from "@/features/universe-home/scene/postsStage";
 import { listPosts } from "../../api/posts";
 import type { Post } from "../../types/post";
 import { ApiError } from "@/lib/api/errors";
 import OrbitalPost from "./OrbitalPost";
-import styles from "./HomeOrbitalFeed.module.css";
+import styles from "./OrbitalPostsFeed.module.css";
 
-const FRONT_ANGLE = 2.45;
-const ANGLE_STEP = 0.95;
+/** The feed grows a page at a time through the API's existing `limit`, rather
+ * than asking for everything the backend is willing to return. */
+const PAGE_SIZE = 12;
+/** Fetch while there is still orbit ahead of the reader, not once it runs out. */
+const PREFETCH_MARGIN = 3;
 
 type Selection = { id: number; expanded: boolean; view: PostView };
 
 gsap.registerPlugin(ScrollTrigger, Flip);
 
-export default function HomeOrbitalFeed() {
+export default function OrbitalPostsFeed() {
   const router = useRouter();
-  const { register, homePosition } = useUniverseTransition();
+  const { register, orbitPosition, isTransitioning } = useUniverseTransition();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [request, setRequest] = useState(0);
+  const [limit, setLimit] = useState(PAGE_SIZE);
+  // Set once a short page comes back — or once a page fails — and cleared only
+  // by an explicit retry. Together with `fetching` this is what bounds the
+  // orbit to one request at a time and a finite number of them.
+  const exhausted = useRef(false);
+  const fetching = useRef(false);
   const [selection, setSelection] = useState<Selection | null>(null);
   const [transitioning, setTransitioning] = useState(false);
   const selectionRef = useRef<Selection | null>(null);
@@ -51,14 +65,15 @@ export default function HomeOrbitalFeed() {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<HTMLDivElement>(null);
-  const earthRef = useRef<HTMLDivElement>(null);
   const postRefs = useRef(new Map<number, HTMLDivElement>());
+  const revealedRef = useRef(false);
   const counterRef = useRef<HTMLSpanElement>(null);
   const previousRef = useRef<HTMLButtonElement>(null);
   const nextRef = useRef<HTMLButtonElement>(null);
   const navigateRef = useRef<(direction: number) => void>(() => {});
   // Keep the same post in view when an earlier/current card is deleted.
-  const positionRef = useRef(homePosition.current);
+  const positionRef = useRef(orbitPosition.current);
+  const loadMoreRef = useRef(() => {});
 
   useLayoutEffect(() => {
     const scroller = scrollerRef.current;
@@ -75,20 +90,33 @@ export default function HomeOrbitalFeed() {
 
   useEffect(() => {
     let cancelled = false;
+    fetching.current = true;
 
     async function load() {
       try {
-        const data = await listPosts();
-        if (!cancelled) setPosts(data);
+        const data = await listPosts(limit);
+        if (cancelled) return;
+        // A short page is the end of the feed: the API answers with a window
+        // onto the newest posts, so asking for more would return the same rows.
+        exhausted.current = data.length < limit;
+        setPosts(data);
+        setError("");
       } catch (err) {
         if (cancelled) return;
         if (err instanceof ApiError && err.status === 401) {
           router.push("/login");
           return;
         }
+        // Stop asking for pages. Without this the orbit would keep requesting a
+        // larger window every frame it sits near the end of a failing feed.
+        // "Try again" is what re-arms it.
+        exhausted.current = true;
         setError(err instanceof Error ? err.message : "Failed to load posts");
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          fetching.current = false;
+          setLoading(false);
+        }
       }
     }
 
@@ -96,14 +124,23 @@ export default function HomeOrbitalFeed() {
     return () => {
       cancelled = true;
     };
-  }, [router, request]);
+  }, [router, request, limit]);
+
+  // One in-flight request at a time, and only while there is more to ask for.
+  const loadMore = useCallback(() => {
+    if (fetching.current || exhausted.current) return;
+    fetching.current = true;
+    setLimit((current) => current + PAGE_SIZE);
+  }, []);
+  useLayoutEffect(() => {
+    loadMoreRef.current = loadMore;
+  }, [loadMore]);
 
   useLayoutEffect(() => {
     const scroller = scrollerRef.current;
     const track = trackRef.current;
     const scene = sceneRef.current;
-    const earth = earthRef.current;
-    if (!scroller || !track || !scene || !earth || !orbitKey) return;
+    if (!scroller || !track || !scene || !orbitKey) return;
     const postIds = orbitKey.split(",").map(Number);
 
     gsap.registerPlugin(ScrollTrigger);
@@ -137,44 +174,52 @@ export default function HomeOrbitalFeed() {
         let radiusX = 0;
         let radiusY = 0;
         let tilt = 0;
+        let angleStep = 0.95;
+        let behind = 2;
+        let ahead = 3;
 
         function measure() {
           const width = scroller!.clientWidth;
           const height = scroller!.clientHeight;
           scroller!.style.setProperty("--scene-height", `${height}px`);
-          scrollPerPost = Math.max(800, height * 1.2);
+          scrollPerPost = Math.max(700, height * 1.05);
           track!.style.height = `${height + lastIndex * scrollPerPost}px`;
 
-          const bounds = scene!.getBoundingClientRect();
-          const earthBounds = earth!.getBoundingClientRect();
-          const compact = width < 640;
+          // The 3D Earth is placed from exactly this anchor, computed from the
+          // same box. Deriving both sides from one function is what keeps the
+          // cards orbiting the planet rather than a remembered rectangle, with
+          // no DOM measurement racing a WebGL frame.
           const cardWidth = Math.min(360, width - 32);
-          const activeX = compact
-            ? width / 2
-            : Math.max(cardWidth / 2 + 28, width * 0.46);
-          // Measure the existing Earth; never move it to fit the cards.
-          centerX = compact
-            ? width * 0.9
-            : earthBounds.left + earthBounds.width / 2 - bounds.left;
-          radiusX = Math.max(60, (centerX - activeX) / -Math.cos(FRONT_ANGLE));
-          radiusY = height * (compact ? 0.31 : 0.35);
-          tilt = compact ? 0.06 : 0.12;
-          // Project a tilted ellipse across the visible part of the large Earth.
-          centerY =
-            height * 0.6 -
-            radiusY * Math.sin(FRONT_ANGLE) -
-            tilt * radiusX * Math.cos(FRONT_ANGLE);
+          const framing = orbitFraming(
+            width,
+            height,
+            postsEarthAnchor(width, height),
+            cardWidth,
+          );
+          centerX = framing.centerX;
+          centerY = framing.centerY;
+          radiusX = framing.radiusX;
+          radiusY = framing.radiusY;
+          tilt = framing.tilt;
+          angleStep = framing.angleStep;
+          behind = framing.behind;
+          ahead = framing.ahead;
         }
 
         function render() {
           if (frozenRef.current) return;
           positionRef.current = playhead.position;
-          homePosition.current = playhead.position;
+          orbitPosition.current = playhead.position;
           const active = Math.round(playhead.position);
+          // Ask for the next page while there is still orbit ahead. Guarded
+          // inside `loadMore`, so a fast scroll cannot stack requests.
+          if (lastIndex - active <= PREFETCH_MARGIN) loadMoreRef.current();
           for (const card of cards) {
             const offset = card.index - playhead.position;
-            // A five-card window: old posts leave on the right; new ones enter above.
-            const visible = offset > -2 && offset < 3;
+            // A bounded window: old posts leave on the right, new ones enter
+            // above, and everything outside it is not drawn at all — which is
+            // what keeps a long feed to a handful of live cards.
+            const visible = offset > -behind && offset < ahead;
             card.element.style.visibility = visible ? "visible" : "hidden";
             const interactive = visible && card.index === active;
             if (!interactive && card.element.contains(document.activeElement)) {
@@ -186,14 +231,20 @@ export default function HomeOrbitalFeed() {
             card.element.dataset.active = String(interactive);
             if (!visible) continue;
 
-            const angle = FRONT_ANGLE + offset * ANGLE_STEP;
+            const angle = FRONT_ANGLE + offset * angleStep;
             // Cross behind at the planet's centerline, while the card is still
             // visible in the viewport. Keep the reading focus on FRONT_ANGLE.
             const depth = -Math.cos(angle);
             const nearness =
-              ((Math.cos(offset * ANGLE_STEP) + 1) / 2) *
+              ((Math.cos(offset * angleStep) + 1) / 2) *
               gsap.utils.clamp(0, 1, (depth + 0.18) / 0.8);
-            const fade = Math.min(1, (offset + 2) / 0.25, (3 - offset) / 0.5);
+            // Fade in and out at the window's own edges, so a card is never
+            // switched off while it is still solid.
+            const fade = Math.min(
+              1,
+              (offset + behind) / 0.25,
+              (ahead - offset) / 0.5,
+            );
             card.x(centerX + radiusX * Math.cos(angle));
             card.y(
               centerY +
@@ -229,6 +280,18 @@ export default function HomeOrbitalFeed() {
               start: "top top",
               end: () => `+=${Math.max(1, lastIndex * scrollPerPost)}`,
               scrub: true,
+              // Settle on a card rather than between two. Without this the
+              // playhead can rest at 1.4, where the card nearest the reading
+              // position is not the one that counts as active — so the most
+              // prominent card would not be the one taking clicks.
+              snap: lastIndex
+                ? {
+                    snapTo: 1 / lastIndex,
+                    duration: { min: 0.12, max: 0.3 },
+                    delay: 0.04,
+                    ease: "power2.out",
+                  }
+                : undefined,
               invalidateOnRefresh: true,
               onRefresh: render,
             },
@@ -287,7 +350,6 @@ export default function HomeOrbitalFeed() {
           });
         });
         observer.observe(scroller);
-        observer.observe(earth);
 
         return () => {
           observer.disconnect();
@@ -309,7 +371,7 @@ export default function HomeOrbitalFeed() {
     );
 
     return () => media.revert();
-  }, [orbitKey, homePosition]);
+  }, [orbitKey, orbitPosition]);
 
   const focusPost = useCallback((id: number, view: PostView) => {
     const surface = surfaceRefs.current.get(id);
@@ -479,7 +541,7 @@ export default function HomeOrbitalFeed() {
     );
     if (!root) return;
     root.dataset.universeReady = String(!loading);
-    return register("/", {
+    return register("/posts", {
       root,
       pause: () => {
         savedScrollRef.current = scrollerRef.current?.scrollTop ?? 0;
@@ -494,6 +556,30 @@ export default function HomeOrbitalFeed() {
       },
     });
   }, [register, loading, orbitKey]);
+
+  // Earth arrives first and settles; the cards then take up their orbit behind
+  // it. Waiting on the transition rather than on a timer means a direct load of
+  // /posts reveals as soon as the data does, with nothing to wait for.
+  useLayoutEffect(() => {
+    const scene = sceneRef.current;
+    if (!scene || loading || isTransitioning || revealedRef.current) return;
+    if (posts.length === 0) return;
+    revealedRef.current = true;
+    // Until this flag is set the stylesheet holds every card at zero opacity,
+    // so nothing pops into the frame while the Earth is still travelling.
+    scene.dataset.revealed = "true";
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const context = gsap.context(() => {
+      // Opacity only: each card's orbital depth already decides its scale and
+      // position, and overwriting those here would drop it out of the ellipse.
+      gsap.fromTo(
+        `.${styles.postSurface}`,
+        { opacity: 0 },
+        { opacity: 1, duration: 0.42, ease: "power2.out", stagger: 0.07 },
+      );
+    }, scene);
+    return () => context.revert();
+  }, [loading, isTransitioning, posts.length]);
 
   function handleDeleted(id: number) {
     if (selectionRef.current?.id === id) {
@@ -515,138 +601,149 @@ export default function HomeOrbitalFeed() {
   }
 
   return (
-    <div
-      ref={scrollerRef}
-      className={styles.scroller}
-      data-focused={selection !== null}
-      onScroll={(event) => {
-        if (
-          event.target === event.currentTarget &&
-          frozenRef.current &&
-          event.currentTarget.scrollTop !== savedScrollRef.current
-        ) {
-          event.currentTarget.scrollTop = savedScrollRef.current;
-        }
-      }}
-      tabIndex={0}
-      role="region"
-      aria-label="Orbital post feed"
-      aria-busy={loading}
+    <main
+      className={styles.page}
+      data-universe-scene="posts"
+      aria-labelledby="app-page-title"
     >
-      <div ref={trackRef} className={styles.track}>
-        <div ref={sceneRef} className={styles.scene}>
-          <div className={styles.earthLayer}>
+      <div
+        ref={scrollerRef}
+        className={styles.scroller}
+        data-focused={selection !== null}
+        onScroll={(event) => {
+          if (
+            event.target === event.currentTarget &&
+            frozenRef.current &&
+            event.currentTarget.scrollTop !== savedScrollRef.current
+          ) {
+            event.currentTarget.scrollTop = savedScrollRef.current;
+          }
+        }}
+        tabIndex={0}
+        role="region"
+        aria-label="Orbital post feed"
+        aria-busy={loading}
+      >
+        <div ref={trackRef} className={styles.track}>
+          <div ref={sceneRef} className={styles.scene}>
+            {/* The persistent universe canvas docks here. It sits above the cards
+              that have passed behind the planet and below the ones in front, so
+              the Earth genuinely occludes the far side of the orbit. It never
+              takes the pointer — the cards own it. */}
             <div
-              ref={earthRef}
-              className={earthStyles.stage}
-              data-universe-earth
+              className={styles.earthLayer}
+              data-universe-viewport
               aria-hidden="true"
             />
-          </div>
 
-          {loading && (
-            <p data-universe-ui className={styles.status} role="status">
-              Loading posts…
-            </p>
-          )}
-          {error && (
-            <div data-universe-ui className={styles.status} role="alert">
-              <p>{error}</p>
-              <button
-                type="button"
-                onClick={() => {
-                  setLoading(true);
-                  setError("");
-                  setRequest((current) => current + 1);
-                }}
-              >
-                Try again
-              </button>
-            </div>
-          )}
-          {!loading && !error && posts.length === 0 && (
-            <p data-universe-ui className={styles.status}>
-              No posts yet. Share the first one with your world.
-            </p>
-          )}
-
-          <div className={styles.focusWash} aria-hidden="true" />
-
-          {posts.map((post) => (
-            <OrbitalPost
-              key={post.id}
-              post={post}
-              onDeleted={handleDeleted}
-              onUpdated={(updated) => {
-                setPosts((current) =>
-                  current.map((item) =>
-                    item.id === updated.id ? updated : item,
-                  ),
-                );
-                if (
-                  selectionRef.current?.id === updated.id &&
-                  selectionRef.current.expanded
-                ) {
-                  openPost(updated.id, "post");
-                }
-              }}
-              selected={selection?.id === post.id}
-              expanded={selection?.id === post.id && selection.expanded}
-              inactive={
-                selection !== null &&
-                (selection.id !== post.id || transitioning)
-              }
-              view={selection?.id === post.id ? selection.view : "post"}
-              onOpen={(view) => openPost(post.id, view)}
-              onClose={closePost}
-              surfaceRef={(element) => {
-                if (element) {
-                  surfaceRefs.current.set(post.id, element);
-                  element.dataset.universePost = "";
-                } else surfaceRefs.current.delete(post.id);
-              }}
-              ref={(element) => {
-                if (element) postRefs.current.set(post.id, element);
-                else postRefs.current.delete(post.id);
-              }}
-            />
-          ))}
-
-          {posts.length > 0 && (
-            <nav
-              className={styles.controls}
-              data-universe-ui
-              aria-label="Browse orbital posts"
-              inert={selection !== null}
-            >
-              <button
-                ref={previousRef}
-                type="button"
-                aria-label="Previous post"
-                onClick={() => navigateRef.current(-1)}
-              >
-                ↑
-              </button>
-              <div>
-                <span ref={counterRef}>1 / {posts.length}</span>
-                <p>
-                  {posts.length > 1
-                    ? "Scroll to explore"
-                    : "You’re all caught up"}
-                </p>
+            {loading && (
+              <p data-universe-ui className={styles.status} role="status">
+                Loading posts…
+              </p>
+            )}
+            {error && (
+              <div data-universe-ui className={styles.status} role="alert">
+                <p>{error}</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLoading(true);
+                    setError("");
+                    exhausted.current = false;
+                    setRequest((current) => current + 1);
+                  }}
+                >
+                  Try again
+                </button>
               </div>
-              <button
-                ref={nextRef}
-                type="button"
-                aria-label="Next post"
-                onClick={() => navigateRef.current(1)}
+            )}
+            {!loading && !error && posts.length === 0 && (
+              <div data-universe-ui className={styles.status}>
+                <p>No posts yet. Share the first one with your world.</p>
+                <Link href="/posts/new" className={styles.newPost}>
+                  Create a post
+                </Link>
+              </div>
+            )}
+
+            <div className={styles.focusWash} aria-hidden="true" />
+
+            {posts.map((post) => (
+              <OrbitalPost
+                key={post.id}
+                post={post}
+                onDeleted={handleDeleted}
+                onUpdated={(updated) => {
+                  setPosts((current) =>
+                    current.map((item) =>
+                      item.id === updated.id ? updated : item,
+                    ),
+                  );
+                  if (
+                    selectionRef.current?.id === updated.id &&
+                    selectionRef.current.expanded
+                  ) {
+                    openPost(updated.id, "post");
+                  }
+                }}
+                selected={selection?.id === post.id}
+                expanded={selection?.id === post.id && selection.expanded}
+                inactive={
+                  selection !== null &&
+                  (selection.id !== post.id || transitioning)
+                }
+                view={selection?.id === post.id ? selection.view : "post"}
+                onOpen={(view) => openPost(post.id, view)}
+                onClose={closePost}
+                surfaceRef={(element) => {
+                  if (element) {
+                    surfaceRefs.current.set(post.id, element);
+                    element.dataset.universePost = "";
+                  } else surfaceRefs.current.delete(post.id);
+                }}
+                ref={(element) => {
+                  if (element) postRefs.current.set(post.id, element);
+                  else postRefs.current.delete(post.id);
+                }}
+              />
+            ))}
+
+            {posts.length > 0 && (
+              <nav
+                className={styles.controls}
+                data-universe-ui
+                aria-label="Browse orbital posts"
+                inert={selection !== null}
               >
-                ↓
-              </button>
-            </nav>
-          )}
+                <button
+                  ref={previousRef}
+                  type="button"
+                  aria-label="Previous post"
+                  onClick={() => navigateRef.current(-1)}
+                >
+                  ↑
+                </button>
+                <div>
+                  <span ref={counterRef}>1 / {posts.length}</span>
+                  <p>
+                    {posts.length > 1
+                      ? "Scroll to explore"
+                      : "You’re all caught up"}
+                  </p>
+                </div>
+                <button
+                  ref={nextRef}
+                  type="button"
+                  aria-label="Next post"
+                  onClick={() => navigateRef.current(1)}
+                >
+                  ↓
+                </button>
+              </nav>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

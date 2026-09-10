@@ -3,7 +3,7 @@
 import type { Ref } from "react";
 import ExpandedPost, { type PostView } from "./ExpandedPost";
 import type { Post } from "../../types/post";
-import styles from "./HomeOrbitalFeed.module.css";
+import styles from "./OrbitalPostsFeed.module.css";
 
 interface OrbitalPostProps {
   ref: Ref<HTMLDivElement>;

@@ -6,7 +6,7 @@ import { deletePost, updatePost } from "../../api/posts";
 import type { Post } from "../../types/post";
 import PostCard from "../PostCard";
 import PostForm from "../PostForm";
-import styles from "./HomeOrbitalFeed.module.css";
+import styles from "./OrbitalPostsFeed.module.css";
 
 export type PostView = "post" | "comments" | "edit";
 
