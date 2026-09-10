@@ -61,7 +61,8 @@ require.cache[modelPath] = {
   },
 };
 const UniverseScene = require("./UniverseScene.tsx").default;
-const { SCENE_CAMERA, EARTH_SYSTEM, SPIN_SPEED, MAX_FRAME_DELTA, measureSceneFraming, sceneFrameloop, isSoftwareRenderer } = require("./sceneConfig.ts");
+const { SCENE_CAMERA, EARTH_SYSTEM, SPIN_SPEED, MAX_FRAME_DELTA, SATELLITE_EMPHASIS, measureSceneFraming, sceneFrameloop, isSoftwareRenderer } = require("./sceneConfig.ts");
+const { placeOnOrbit, createPlacement, orbitNearness } = require("../motion/orbitPath.ts");
 
 function close(actual, expected, message) {
   assert.ok(Math.abs(actual - expected) < 1e-8, `${message}: ${actual} != ${expected}`);
@@ -72,6 +73,10 @@ async function main() {
   const assetErrors = [];
   const onSceneReady = (handle) => emitted.push(handle);
   const onAssetError = (model) => assetErrors.push(model.id);
+  const activated = [];
+  const onPlanetActivate = (id) => activated.push(id);
+  // The loop's continuous position. The scene only ever reads it.
+  const phase = { current: 0 };
   const canvas = {};
   const rendererErrors = [];
   globalThis.reportError = (error) => rendererErrors.push(error);
@@ -92,23 +97,78 @@ async function main() {
   const render = async (renderActive = true, reducedMotion = false) => {
     await act(async () => {
       store = root.render(React.createElement(React.StrictMode, null,
-        React.createElement(UniverseScene, { renderActive, reducedMotion, onSceneReady, onAssetError })));
+        React.createElement(UniverseScene, { renderActive, reducedMotion, phase, onSceneReady, onPlanetActivate, onAssetError })));
     });
   };
   await render();
   const initial = emitted.at(-1);
   assert.ok(initial, "Ready while all four models suspend");
-  assert.deepEqual([...initial.rigs.keys()], ["earth", "mars", "saturn"]);
-  assert.equal(store.getState().scene.children.filter((child) => child.name.endsWith("-TransitionRoot")).length, 3);
+  assert.equal(typeof initial.invalidate, "function", "The handle carries only what the loop needs");
+  const scene = store.getState().scene;
+  const transitionRoots = scene.children.filter((child) => child.name.endsWith("-TransitionRoot"));
+  assert.equal(transitionRoots.length, 3);
+  assert.deepEqual(transitionRoots.map((root) => root.name.replace("-TransitionRoot", "")), ["earth", "mars", "saturn"]);
   assert.equal(store.getState().internal.subscribers.length, 4, "StrictMode does not duplicate frame subscriptions");
 
-  for (const [index, rig] of [...initial.rigs.values()].entries()) {
-    rig.scrollRoot.position.x = (1 - index) * initial.spacing;
+  const orbitRoot = (id) => scene.getObjectByName(`${id}-OrbitRoot`);
+  // advance() takes an absolute timestamp, so frames must step forward.
+  let clock = 0;
+  const tick = () => store.getState().advance((clock += 0.016));
+  const orbitRoots = ["earth", "mars", "saturn"].map(orbitRoot);
+  assert.ok(orbitRoots.every(Boolean), "Every destination has an orbit root");
+
+  // The rigs place themselves from the phase; nothing outside them writes x.
+  tick();
+  const framing = measureSceneFraming(...(() => {
+    const { width, height } = store.getState().size;
+    const worldHeight = 2 * SCENE_CAMERA.position[2] * Math.tan(SCENE_CAMERA.fov * Math.PI / 360);
+    return [worldHeight * width / height, worldHeight, width];
+  })());
+  const expected = createPlacement();
+  for (const [index, id] of ["earth", "mars", "saturn"].entries()) {
+    placeOnOrbit(index - phase.current, 3, framing.orbit, expected);
+    const root = orbitRoot(id);
+    close(root.position.x, expected.x, `${id} sits at its orbit x`);
+    close(root.position.z, expected.z, `${id} sits at its orbit depth`);
+    close(root.scale.x, expected.scale, `${id} is drawn at its orbit scale`);
   }
-  const earth = initial.rigs.get("earth");
-  const earthSpin = earth.scrollRoot.getObjectByName("EarthRotationRoot");
-  const orbit = earth.scrollRoot.getObjectByName("MoonOrbitRoot");
-  const moonSpin = earth.scrollRoot.getObjectByName("MoonRotationRoot");
+  close(orbitRoot("earth").position.z, 0, "The focus rests on the measured framing plane");
+  assert.ok(orbitRoot("mars").scale.x < 0.6 && orbitRoot("mars").scale.x > 0.2, "A neighbour is subordinate but present");
+
+  // Advancing the phase moves every planet along the same closed path.
+  phase.current = 1;
+  tick();
+  for (const [index, id] of ["earth", "mars", "saturn"].entries()) {
+    placeOnOrbit(index - 1, 3, framing.orbit, expected);
+    close(orbitRoot(id).position.x, expected.x, `${id} follows the phase`);
+  }
+  close(orbitRoot("mars").position.z, 0, "One step brings Mars to the focus");
+  // Periodicity is the whole loop: a whole turn must reproduce the placement.
+  const beforeTurn = ["earth", "mars", "saturn"].map((id) => orbitRoot(id).position.clone());
+  phase.current = 1 + 3;
+  tick();
+  ["earth", "mars", "saturn"].forEach((id, index) => {
+    close(orbitRoot(id).position.x, beforeTurn[index].x, `${id} is unmoved by a whole turn of phase`);
+    close(orbitRoot(id).position.z, beforeTurn[index].z, `${id} keeps its depth across a whole turn`);
+  });
+  phase.current = 0;
+  tick();
+
+  const earth = { orbitRoot: orbitRoot("earth") };
+  const earthSpin = earth.orbitRoot.getObjectByName("EarthRotationRoot");
+  const orbit = earth.orbitRoot.getObjectByName("MoonOrbitRoot");
+  const moonSpin = earth.orbitRoot.getObjectByName("MoonRotationRoot");
+  const satellite = earth.orbitRoot.getObjectByName("MoonOrbitInclination");
+
+  // The Moon is drawn for the subject and culled once Earth becomes a neighbour.
+  assert.ok(satellite.visible, "The Moon is drawn while Earth is in focus");
+  phase.current = 1;
+  tick();
+  assert.ok(orbitNearness(-1, 3) < SATELLITE_EMPHASIS);
+  assert.equal(satellite.visible, false, "The Moon is culled once Earth recedes");
+  phase.current = 0;
+  tick();
+  assert.ok(satellite.visible, "The Moon returns with Earth, orbit phase intact");
   assert.ok(!earthSpin.getObjectById(orbit.id), "Moon is outside Earth axial rotation");
 
   const spinBefore = earthSpin.rotation.y;
@@ -122,23 +182,34 @@ async function main() {
   const moonAfter = new THREE.Vector3();
   moonSpin.getWorldPosition(moonAfter);
   close(moonAfter.distanceTo(moonBefore), 0, "Earth spin cannot move the Moon");
-  earth.scrollRoot.position.x += 3;
+  earth.orbitRoot.position.x += 3;
   moonSpin.getWorldPosition(moonAfter);
-  close(moonAfter.x - moonBefore.x, 3, "Moon travels with Earth scroll root");
-  for (const rig of initial.rigs.values()) {
-    assert.deepEqual(rig.transitionRoot.position.toArray(), [0, 0, 0]);
-    assert.deepEqual(rig.transitionRoot.scale.toArray(), [1, 1, 1]);
-    assert.deepEqual(rig.transitionRoot.quaternion.toArray(), [0, 0, 0, 1]);
+  close(moonAfter.x - moonBefore.x, 3, "Moon travels with Earth orbit root");
+  earth.orbitRoot.position.x -= 3;
+  for (const root of transitionRoots) {
+    assert.deepEqual(root.position.toArray(), [0, 0, 0]);
+    assert.deepEqual(root.scale.toArray(), [1, 1, 1]);
+    assert.deepEqual(root.quaternion.toArray(), [0, 0, 0, 1]);
   }
 
-  const positions = [...initial.rigs.values()].map((rig) => rig.scrollRoot.position.x);
+  const identities = orbitRoots.map((root) => root.uuid);
   const emissionCount = emitted.length;
   await act(async () => { store.getState().setSize(318, 740); });
   const resized = emitted.at(-1);
-  assert.equal(emitted.length, emissionCount + 1, "Resize emits one snapshot, no transient null");
-  assert.equal(resized.rigs, initial.rigs, "Map and all Group identities survive resize");
-  assert.notEqual(resized.spacing, initial.spacing);
-  assert.deepEqual([...resized.rigs.values()].map((rig) => rig.scrollRoot.position.x), positions, "Resize never writes motion-owned x");
+  // The handle deliberately carries no measurements, so a resize re-frames the
+  // scene in place. Republishing here used to tear down and rebuild the whole
+  // motion layer mid-gesture, which is what made scrolling stutter.
+  assert.equal(emitted.length, emissionCount, "Resize does not republish the scene handle");
+  assert.equal(resized, initial, "The motion layer keeps the handle it was given");
+  assert.deepEqual(["earth", "mars", "saturn"].map((id) => orbitRoot(id).uuid), identities, "Group identities survive resize");
+  const narrow = measureSceneFraming(...(() => {
+    const worldHeight = 2 * SCENE_CAMERA.position[2] * Math.tan(SCENE_CAMERA.fov * Math.PI / 360);
+    return [worldHeight * 318 / 740, worldHeight, 318];
+  })());
+  // Past the clamp probe above, which leaves the clock at 10s.
+  store.getState().advance(10.016);
+  placeOnOrbit(0, 3, narrow.orbit, expected);
+  close(orbitRoot("earth").position.x, expected.x, "Resize re-frames the orbit in place");
 
   const beforeLoad = emitted.length;
   await act(async () => {
@@ -147,7 +218,7 @@ async function main() {
     }
   });
   assert.equal(emitted.length, beforeLoad, "Asset completion does not republish handles");
-  assert.ok(earth.scrollRoot.getObjectByName("earth-loaded-model"));
+  assert.ok(earth.orbitRoot.getObjectByName("earth-loaded-model"));
   const originalError = console.error;
   const expectedErrors = [];
   console.error = (...args) => expectedErrors.push(args);
@@ -163,7 +234,7 @@ async function main() {
   assert.deepEqual(assetErrors, ["moon"], "Moon failure is reported independently");
   assert.deepEqual(rendererErrors.map((error) => error.message), ["Controlled moon load failure"]);
   assert.ok(expectedErrors.length > 0);
-  assert.equal(emitted.at(-1), resized, "Asset failure preserves the ready scene");
+  assert.equal(emitted.at(-1), initial, "Asset failure preserves the ready scene");
   assert.ok(store.getState().scene.getObjectByName("saturn-loaded-model"));
 
   await render(true, true);
@@ -202,27 +273,42 @@ async function main() {
   for (const [width, height] of [[1196, 836], [524, 920], [318, 740], [146, 740], [1196, 300]]) {
     const worldHeight = 2 * SCENE_CAMERA.position[2] * Math.tan(SCENE_CAMERA.fov * Math.PI / 360);
     const worldWidth = worldHeight * width / height;
-    const framing = measureSceneFraming(worldWidth, worldHeight);
-    assert.ok(Number.isFinite(framing.spacing) && framing.spacing > 0);
-    // Project conservative AABBs over their complete depth; bodies cannot clip
-    // at active stops or leak in from either neighboring stop.
+    const framing = measureSceneFraming(worldWidth, worldHeight, width);
+    const focus = placeOnOrbit(0, 3, framing.orbit, createPlacement());
+    const neighbour = placeOnOrbit(1, 3, framing.orbit, createPlacement());
+    assert.ok(Number.isFinite(focus.x) && Number.isFinite(neighbour.x));
+    // Project conservative AABBs over their complete depth. The subject must
+    // stay inside the pane at its resting point, and each neighbour must be
+    // both fully on screen and clearly subordinate to it.
     for (const [x, y, z] of [
       [1.88 * framing.earthRadius, 1.025 * framing.earthRadius, 1.88 * framing.earthRadius],
       [1.05 * framing.marsScale, 1.05 * framing.marsScale, 1.05 * framing.marsScale],
       [1.1 * framing.saturnScale, 1.1 * framing.saturnScale, 1.1 * framing.saturnScale],
     ]) {
-      const magnification = SCENE_CAMERA.position[2] / (SCENE_CAMERA.position[2] - z);
-      assert.ok(x * magnification <= worldWidth * 0.44 + 1e-8);
-      assert.ok(y * magnification <= worldHeight * 0.34 + 1e-8);
-      const neighborEdge = (framing.spacing - x) * SCENE_CAMERA.position[2] / (SCENE_CAMERA.position[2] + z);
-      assert.ok(neighborEdge > worldWidth / 2, "Neighbor envelopes are outside active view");
+      const magnify = (depth) => SCENE_CAMERA.position[2] / (SCENE_CAMERA.position[2] - depth);
+      const active = magnify(focus.z);
+      assert.ok(Math.abs(focus.x) + x * active <= worldWidth / 2 + 1e-8, "The subject stays inside the pane");
+      assert.ok(y * active <= worldHeight * 0.34 + 1e-8, "The subject leaves room for the heading and controls");
+      const far = magnify(neighbour.z) * neighbour.scale;
+      assert.ok(Math.abs(neighbour.x) + x * far <= worldWidth / 2 + 1e-8, "A neighbour is fully on screen");
+      assert.ok(Math.abs(neighbour.y) + y * far <= worldHeight / 2 + 1e-8, "A neighbour is fully on screen vertically");
+      assert.ok(far / active < 0.6, "A neighbour never competes with the subject");
+      assert.ok(far / active > 0.2, "A neighbour is still legibly a planet");
     }
-    metrics.push({ pane: `${width}x${height}`, width: worldWidth.toFixed(3), height: worldHeight.toFixed(3), spacing: framing.spacing.toFixed(3), earthDiameterPx: (2 * framing.earthRadius / worldHeight * height).toFixed(0) });
+    metrics.push({
+      pane: `${width}x${height}`,
+      width: worldWidth.toFixed(3),
+      height: worldHeight.toFixed(3),
+      focusX: focus.x.toFixed(2),
+      neighbourXY: `${neighbour.x.toFixed(2)},${neighbour.y.toFixed(2)}`,
+      neighbourScale: neighbour.scale.toFixed(3),
+      earthDiameterPx: (2 * framing.earthRadius / worldHeight * height).toFixed(0),
+    });
   }
   assert.ok(isSoftwareRenderer("ANGLE (Google, Vulkan SwiftShader)"));
   assert.ok(isSoftwareRenderer("llvmpipe (LLVM 15.0.7)"));
   assert.equal(isSoftwareRenderer("NVIDIA GeForce"), false);
-  console.log("PASS: R3F StrictMode, suspended/failed assets, transform isolation, resize, reduced motion, sleep/wake, cleanup, perspective envelope framing, software renderer detection.");
+  console.log("PASS: R3F StrictMode, suspended/failed assets, orbit placement and periodicity, satellite culling, transform isolation, resize, reduced motion, sleep/wake, cleanup, perspective envelope framing, software renderer detection.");
   console.table(metrics);
 }
 

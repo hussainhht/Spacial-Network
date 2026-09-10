@@ -17,7 +17,9 @@ export default function UniverseCanvas({
   className,
   renderActive,
   reducedMotion,
+  phase,
   onSceneReady,
+  onPlanetActivate,
 }: UniverseCanvasProps) {
   const [softwareRenderer, setSoftwareRenderer] = useState(false);
   const [failedAssets, setFailedAssets] = useState<readonly string[]>([]);
@@ -58,7 +60,9 @@ export default function UniverseCanvas({
           <UniverseScene
             renderActive={renderActive}
             reducedMotion={reducedMotion}
+            phase={phase}
             onSceneReady={reportScene}
+            onPlanetActivate={onPlanetActivate}
             onAssetError={reportAssetError}
           />
         </Canvas>

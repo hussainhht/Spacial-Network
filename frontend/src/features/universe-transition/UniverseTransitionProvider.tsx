@@ -106,7 +106,7 @@ export default function UniverseTransitionProvider({
   const path = useRef(pathname);
   const lastOrigin = useRef<DOMRect | null>(null);
   const finishRef = useRef<() => void>(() => {});
-  // The universe home track: active/selected planet, normalized track progress
+  // The universe home loop: active/selected planet, the continuous loop phase
   // and the scene readiness snapshot. Deliberately separate from the legacy
   // `homePosition` ref above, which stores the old feed's post playhead.
   const homeTrack = useUniverseHomeState(pathname);
@@ -611,22 +611,24 @@ export default function UniverseTransitionProvider({
     () => ({
       activePlanetId: homeTrack.activePlanetId,
       selectedPlanetId: homeTrack.selectedPlanetId,
-      homeProgress: homeTrack.homeProgress,
+      phase: homeTrack.phase,
       scene: homeTrack.scene,
       reducedMotion,
       // One transition machine: this reads the existing coordinator rather than
       // introducing a second transition flag.
       isTransitioning: active,
-      reportHomeProgress: homeTrack.reportHomeProgress,
+      commitActivePlanet: homeTrack.commitActivePlanet,
       selectPlanet: homeTrack.selectPlanet,
+      setPlanetActivateHandler: homeTrack.setPlanetActivateHandler,
     }),
     [
       homeTrack.activePlanetId,
       homeTrack.selectedPlanetId,
-      homeTrack.homeProgress,
+      homeTrack.phase,
       homeTrack.scene,
-      homeTrack.reportHomeProgress,
+      homeTrack.commitActivePlanet,
       homeTrack.selectPlanet,
+      homeTrack.setPlanetActivateHandler,
       reducedMotion,
       active,
     ],
@@ -677,7 +679,9 @@ export default function UniverseTransitionProvider({
                 // inside the scene without blanking it.
                 renderActive={pathname === "/" || active}
                 reducedMotion={reducedMotion}
+                phase={homeTrack.phase}
                 onSceneReady={homeTrack.onSceneReady}
+                onPlanetActivate={homeTrack.onPlanetActivate}
               />
             ) : (
               <HomeEarth

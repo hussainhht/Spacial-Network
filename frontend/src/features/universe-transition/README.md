@@ -78,22 +78,29 @@ lifecycle, and additionally owns the home track's state.
 
 `useUniverseHome(): UniverseHomeAPI` (same file, alongside
 `useUniverseTransition()`) is the single authority for `activePlanetId`,
-`selectedPlanetId`, normalized `homeProgress`, the scene readiness snapshot,
-the shared reduced-motion preference and `isTransitioning`. No page, scene or
-motion module may keep a second copy.
+`selectedPlanetId`, the loop `phase`, the scene readiness snapshot, the shared
+reduced-motion preference and `isTransitioning`. No page, scene or motion module
+may keep a second copy.
 
-`reportHomeProgress` clamps to `[0,1]` and writes a ref on every rendered motion
-tick; React state changes only when `round(p * (N - 1))` crosses a boundary, so a
-full scrub costs two renders rather than one per frame. The active index is
-derived, never stored twice. `homeProgress` is a distinct ref from the legacy
-`homePosition`, which still carries the old feed's post playhead.
+`phase` is a plain mutable number, not state. It is the loop's continuous
+position: GSAP tweens it, and each rig reads it inside `useFrame`. React learns
+nothing while a move is running. `commitActivePlanet` fires exactly once, when
+the timeline finishes and the arriving destination is genuinely in focus, so a
+transition costs one render rather than one per frame.
 
 `selectPlanet` records an explicit destination choice and nothing else: no route
-push, no zoom, no progress write, no input lock. A choice is stamped with the
-route it was made on, so it reads as cleared once navigation settles elsewhere,
-and it is dropped when a different planet becomes active.
+push, no zoom, no phase write, no input lock. A choice is stamped with the route
+it was made on, so it reads as cleared once navigation settles elsewhere, and it
+is dropped when a different planet becomes active.
 
-Progress survives route changes because the ref lives in this provider, above
+`setPlanetActivateHandler` is the channel for clicks that land on a planet. The
+Canvas is portalled from this provider, so only the provider holds a stable
+reference to it, but only the homepage knows whether a click should focus a
+neighbour or open a destination. The provider passes a stable dispatcher into
+the payload and the homepage installs the behaviour behind it, which keeps the
+memoized payload from re-rendering whenever that behaviour is re-created.
+
+The phase survives route changes because the ref lives in this provider, above
 the route boundary — even on routes where the Canvas unmounts entirely.
 
 ### The payload and its host
@@ -133,20 +140,60 @@ legacy path keeps all of those guarantees for a future re-enable.
 This deliberately defers the old Home/Groups Earth-to-galaxy visuals. Client
 navigation, modified clicks, Back/Forward and focus are unaffected.
 
+### How the loop moves
+
+The destination list is a ring, and each planet's place in the scene is a pure
+function of one number: its offset from the focus, `index - phase`. That offset
+is mapped onto a closed, tilted ellipse (`universe-home/motion/orbitPath.ts`)
+whose front point is the focus:
+
+| offset | slot     | where it sits                |
+| ------ | -------- | ---------------------------- |
+| `0`    | active   | large, close, right of centre |
+| `-1`   | previous | small, distant, upper left   |
+| `+1`   | next     | small, distant, lower left   |
+| `±N/2` | far side | smallest, furthest left      |
+
+Because every coordinate comes from `cos`/`sin` of `2*pi*offset/N`, the path is
+exactly periodic in `N`. Two things follow, and they are the whole design:
+
+- A planet leaving the "previous" slot does not jump to the "next" slot. It
+  keeps travelling round the far side, small and set back, and arrives there.
+  There is no recycled slot to snap and no hidden element to reset.
+- Adding or subtracting `N` from the phase reproduces every placement bit for
+  bit, so `planetLoop.wrapPhase` renormalises after every step with nothing
+  visible happening. The loop runs forever in both directions without float
+  drift, index overflow or a reset frame.
+
+`motion/usePlanetGestures` turns wheel, trackpad, touch and arrow keys into one
+"advance by one" intent, accumulating normalised deltas against a threshold and
+refusing to fire again on the decaying tail of a flick.
+`motion/usePlanetLoop` holds the state machine (`idle` / `moving-forward` /
+`moving-backward`), owns the single tween allowed to write the phase, and keeps
+at most one queued direction so a held gesture cannot build a backlog.
+
+There is deliberately no ScrollTrigger, no pin and no artificial page height.
+The homepage is one locked pane that never exceeds the shell's scroll
+container, so `#page-content` has nothing to scroll and no second scrollbar
+appears.
+
 ### Extension points for a later transition
 
-Nothing here implements a cinematic route transition, and scrolling never pushes
-a route. The seams a later coordinator would use already exist:
+Nothing here implements a cinematic route transition, and a gesture never
+pushes a route: scrolling explores, and only a click on the planet already in
+focus (or a destination link) opens a section. That click asks `navigate()`
+first, so re-enabling the cinematic picks it up with no change here. The seams
+a later coordinator would use already exist:
 
 - The registered `/` controller (`register('/', { root, pause, resume })`) locks
-  and releases the scroll choreography without touching this provider.
-- Each rig exposes a `transitionRoot` separate from the `scrollRoot` that motion
-  owns, so a transition can move a planet without fighting the scrub. Transition
-  roots are identity in v1.
+  and releases the loop without touching this provider.
+- Each rig exposes a `transitionRoot` separate from the `orbitRoot` its own
+  frame callback owns, so a transition can move a planet without fighting the
+  loop. Transition roots are identity today.
 - `selectedPlanetId` already records which destination was chosen, and
   `isTransitioning` already reads this provider's one coordinator.
 
-A future sequence would pause the controller, center and zoom the chosen rig's
+A future sequence would pause the controller, centre and zoom the chosen rig's
 `transitionRoot`, push the configured route from `navigation/planetDestinations`,
 reveal the destination and resume — reusing the persistent host rather than
 adding a second transition machine.
@@ -159,8 +206,11 @@ Created in this directory: `UniverseTransitionProvider.tsx`,
 
 Universe Home v1 additionally reads from `features/universe-home/contracts.ts`
 and `features/universe-home/navigation/` (`planetDestinations.ts`, `homeMode.ts`,
-`homeProgress.ts`, `homeSelection.ts`, `useUniverseHomeState.ts`,
-`UniverseCanvasHost.tsx`). `animation.ts` is unchanged.
+`planetLoop.ts`, `homeSelection.ts`, `useUniverseHomeState.ts`,
+`UniverseCanvasHost.tsx`). The loop itself lives in
+`features/universe-home/motion/` (`orbitPath.ts`, `planetLoop` consumers
+`usePlanetLoop.ts` and `usePlanetGestures.ts`, `wheelInput.ts`, and the
+composing `useUniverseHomeMotion.ts`). `animation.ts` is unchanged.
 
 Modified integration points:
 

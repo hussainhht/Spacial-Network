@@ -31,7 +31,17 @@ try {
   await page.getByRole("button", { name: "Focus Mars", exact: true }).click();
   await page.waitForTimeout(3500);
   report.mars = await snapshot(page);
-  check("Mars focus centers Mars with Earth right and Saturn left", report.mars.active === "mars" && report.mars.objects.some((o) => o.name === "mars-ScrollRoot" && Math.abs(o.position[0]) < 0.02), report.mars.objects);
+const orbitRoots = (snapshot) => Object.fromEntries(snapshot.objects.filter((o) => /-OrbitRoot$/.test(o.name)).map((o) => [o.name.replace("-OrbitRoot", ""), o]));
+const focused = (snapshot, id) => {
+  const roots = orbitRoots(snapshot);
+  const subject = roots[id];
+  // The focus slot is the front of the orbit: full scale on the z=0 framing
+  // plane. The other two sit back on the ellipse at a fraction of the size.
+  return Boolean(subject) && Math.abs(subject.scale[0] - 1) < 0.01 && Math.abs(subject.position[2]) < 0.01
+    && Object.entries(roots).every(([key, o]) => key === id || (o.scale[0] < 0.6 && o.position[2] < -1));
+};
+  check("Mars focus brings Mars to the front of the orbit and sets the others back", report.mars.active === "mars" && focused(report.mars, "mars"), report.mars.objects);
+  check("Both neighbours stay on screen while Mars is in focus", Object.values(orbitRoots(report.mars)).every((o) => o.scale[0] > 0.2), report.mars.objects);
   const beforeSpin = await snapshot(page);
   await page.waitForTimeout(600);
   const afterSpin = await snapshot(page);
@@ -47,7 +57,7 @@ try {
     await page.waitForTimeout(2200);
     const home = await snapshot(page);
     const identity = await page.evaluate(() => document.querySelector("canvas") === window.__originalCanvas && document.querySelector("canvas").getContext("webgl2") === window.__originalContext);
-    check(`Round ${round + 1}: Home restores Mars and canvas/context identity`, identity && home.active === "mars" && home.pinSpacers === 1 && home.canvasCount === 1, home);
+    check(`Round ${round + 1}: Home restores Mars and canvas/context identity`, identity && home.active === "mars" && home.pinSpacers === 0 && home.canvasCount === 1, home);
     check(`Round ${round + 1}: selection cleared and input unlocked`, await page.locator('[data-universe-scene="home"]').getAttribute("data-selected-planet") === null && home.bodyOverflow === "" && !home.inert.includes("home"));
     report.samples.push(home);
   }
@@ -71,15 +81,44 @@ try {
   await page.keyboard.press("Enter");
   await page.waitForTimeout(3500);
   check("Keyboard focus control and visible ring", (await snapshot(page)).active === "earth" && focus.outline !== "none" && focus.width !== "0px", focus);
-  for (const progress of [0.24, 0.26, 0.74, 0.76]) {
-    await page.evaluate((p) => {
-      const pane = document.querySelector("#page-content");
-      pane.scrollTop = (pane.scrollHeight - pane.clientHeight) * p;
-    }, progress);
-    await page.waitForTimeout(3500);
+  // Arrow keys must survive a destination button keeping focus.
+  await page.keyboard.press("ArrowDown");
+  await page.waitForTimeout(1800);
+  check("Arrow keys step the loop with a destination button focused", (await snapshot(page)).active === "mars");
+  await page.keyboard.press("ArrowUp");
+  await page.waitForTimeout(1800);
+  check("Arrow keys step back", (await snapshot(page)).active === "earth");
+  // The loop is gesture-driven: there is no scroll extent to seek into, and the
+  // pane must never gain one. A full turn in each direction has to land back on
+  // the destination it started from, with no pin spacer and no page scroll.
+  await page.getByRole("button", { name: "Focus Earth", exact: true }).click();
+  await page.waitForTimeout(2000);
+  for (const [direction, label] of [[1, "forward"], [-1, "backward"]]) {
+    const order = ["earth", "mars", "saturn"];
+    const seen = [];
+    for (let step = 0; step < order.length; step += 1) {
+      await page.mouse.move(700, 450);
+      await page.mouse.wheel(0, 140 * direction);
+      await page.waitForTimeout(1800);
+      seen.push((await snapshot(page)).active);
+    }
+    const expected = order.map((_, i) => order[(((i + 1) * direction) % order.length + order.length) % order.length]);
+    check(`A ${label} turn cycles ${expected.join(" -> ")} and returns to Earth`, JSON.stringify(seen) === JSON.stringify(expected), { seen, expected });
     const sample = await snapshot(page);
-    check(`Nearest snap at ${progress}`, sample.active === (progress < 0.25 ? "earth" : progress < 0.75 ? "mars" : "saturn") && sample.objects.some((o) => o.name === `${sample.active}-ScrollRoot` && Math.abs(o.position[0]) < 0.03), sample);
+    check(`A ${label} turn leaves no scroll extent or pin spacer`, sample.pinSpacers === 0 && sample.scroll === 0, sample);
+    check(`A ${label} turn leaves the focus at the front of the orbit`, focused(sample, sample.active), sample.objects);
   }
+  const burstBefore = (await snapshot(page)).active;
+  for (let i = 0; i < 12; i += 1) {
+    await page.mouse.wheel(0, 200);
+    await page.waitForTimeout(16);
+  }
+  await page.waitForTimeout(4000);
+  const burstAfter = await snapshot(page);
+  const advanced = (["earth", "mars", "saturn"].indexOf(burstAfter.active) - ["earth", "mars", "saturn"].indexOf(burstBefore) + 3) % 3;
+  // Momentum after one flick may fill the single queued slot; it must never run
+  // away through the whole system, and the stage must stay coherent.
+  check("A rapid burst advances at most two destinations and leaves one stage", advanced <= 2 && burstAfter.canvasCount === 1 && focused(burstAfter, burstAfter.active), { burstBefore, burstAfter: burstAfter.active, advanced });
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.waitForTimeout(500);
   const reducedBefore = await snapshot(page);
@@ -87,7 +126,8 @@ try {
   const reducedAfter = await snapshot(page);
   check("Live reduced motion stops all rotations", ["EarthRotationRoot", "MoonOrbitRoot", "MoonRotationRoot", "mars-RotationRoot", "saturn-RotationRoot"].every((name) => reducedBefore.objects.some((o) => o.name === name) && JSON.stringify(reducedBefore.objects.find((o) => o.name === name)?.rotation) === JSON.stringify(reducedAfter.objects.find((o) => o.name === name)?.rotation)));
   await page.getByRole("button", { name: "Focus Mars", exact: true }).click();
-  check("Reduced motion focus is immediate", (await snapshot(page)).active === "mars");
+  await page.waitForTimeout(600);
+  check("Reduced motion focus settles almost immediately", (await snapshot(page)).active === "mars");
   await context.close();
 
   for (const failure of ["missing-mars", "no-webgl", "reduced-startup"]) {

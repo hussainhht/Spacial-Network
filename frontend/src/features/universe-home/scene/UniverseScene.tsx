@@ -15,9 +15,14 @@ const RIG_PLANE = new Vector3(0, 0, 0);
 export default function UniverseScene({
   renderActive,
   reducedMotion,
+  phase,
   onSceneReady,
+  onPlanetActivate,
   onAssetError,
-}: Pick<UniverseCanvasProps, "renderActive" | "reducedMotion" | "onSceneReady"> & {
+}: Pick<
+  UniverseCanvasProps,
+  "renderActive" | "reducedMotion" | "phase" | "onSceneReady" | "onPlanetActivate"
+> & {
   onAssetError: AssetErrorReporter;
 }) {
   const [rigs] = useState(() => createPlanetRigs(PLANET_ORDER));
@@ -26,38 +31,39 @@ export default function UniverseScene({
   const getViewport = useThree((state) => state.viewport.getCurrentViewport);
   const invalidate = useThree((state) => state.invalidate);
   const { width, height } = getViewport(camera, RIG_PLANE, size);
-  const framing = useMemo(() => measureSceneFraming(width, height), [width, height]);
+  const framing = useMemo(
+    () => measureSceneFraming(width, height, size.width),
+    [width, height, size.width],
+  );
 
-  // Separate teardown from dimension publication: a resize never emits a
-  // transient null handle or recreates Groups while the motion owner restores x.
-  useLayoutEffect(() => () => onSceneReady(null), [onSceneReady]);
+  // Published once, and carrying no measurements: a resize re-frames the scene
+  // in place instead of handing the motion layer a new handle, which used to
+  // tear down and rebuild the entire scroll machinery mid-gesture.
   useLayoutEffect(() => {
-    if (width <= 0 || height <= 0) return;
-    onSceneReady({
-      rigs,
-      viewportWidth: width,
-      viewportHeight: height,
-      spacing: framing.spacing,
-      invalidate,
-    });
-  }, [rigs, width, height, framing.spacing, invalidate, onSceneReady]);
+    onSceneReady({ invalidate });
+    return () => onSceneReady(null);
+  }, [invalidate, onSceneReady]);
 
   useLayoutEffect(() => {
-    // Wake a static canvas on return to Home or a live preference change.
+    // Wake a static canvas on return to Home, a resize or a preference change.
     if (renderActive) invalidate();
-  }, [renderActive, reducedMotion, width, height, invalidate]);
+  }, [renderActive, reducedMotion, framing, invalidate]);
 
   return (
     <>
       <ambientLight intensity={0.12} />
       <directionalLight position={SUN_POSITION} intensity={3} />
-      {PLANET_ORDER.map((id) => (
+      {PLANET_ORDER.map((id, index) => (
         <PlanetRig
           key={id}
           rig={rigs.get(id)!}
+          index={index}
+          count={PLANET_ORDER.length}
+          phase={phase}
           framing={framing}
           animate={renderActive && !reducedMotion}
           onAssetError={onAssetError}
+          onActivate={onPlanetActivate}
         />
       ))}
     </>

@@ -4,23 +4,47 @@ import { useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import type { Group } from "three";
 import { EarthPlanetModel, GenericPlanetModel } from "@/components/space/DevPlanetModel";
+import type { PhaseRef } from "../contracts";
+import { orbitNearness } from "../motion/orbitPath";
 import PlanetAsset, { type AssetErrorReporter } from "./PlanetAsset";
-import { EARTH_SYSTEM, MAX_FRAME_DELTA, SCENE_MODELS, SPIN_SPEED } from "./sceneConfig";
+import {
+  EARTH_SYSTEM,
+  MAX_FRAME_DELTA,
+  SATELLITE_EMPHASIS,
+  SCENE_MODELS,
+  SPIN_SPEED,
+} from "./sceneConfig";
 
 export default function EarthSystem({
   radius,
   animate,
+  phase,
+  index,
+  count,
   onAssetError,
 }: {
   radius: number;
   animate: boolean;
+  /** Earth's own emphasis is derived here rather than read from a value the
+   * rig writes: R3F runs a child's frame callback before its parent's, so
+   * reading it would always be one frame stale. */
+  phase: PhaseRef;
+  index: number;
+  count: number;
   onAssetError: AssetErrorReporter;
 }) {
   const earthSpin = useRef<Group>(null);
   const moonOrbit = useRef<Group>(null);
   const moonSpin = useRef<Group>(null);
+  const satellite = useRef<Group>(null);
 
   useFrame((_, delta) => {
+    // The Moon is the heaviest asset in the scene and is a couple of pixels
+    // across once Earth recedes, so it stops being drawn rather than being
+    // drawn invisibly small. Visibility is the only thing culled; the orbit
+    // keeps its phase so returning to Earth never shows a jump.
+    const visible = orbitNearness(index - phase.current, count) > SATELLITE_EMPHASIS;
+    if (satellite.current) satellite.current.visible = visible;
     if (!animate) return;
     const step = Math.min(delta, MAX_FRAME_DELTA);
     if (earthSpin.current) earthSpin.current.rotation.y += step * SPIN_SPEED.earth;
@@ -37,7 +61,7 @@ export default function EarthSystem({
           </PlanetAsset>
         </group>
       </group>
-      <group name="MoonOrbitInclination" rotation-x={EARTH_SYSTEM.orbitInclination}>
+      <group ref={satellite} name="MoonOrbitInclination" rotation-x={EARTH_SYSTEM.orbitInclination}>
         <group ref={moonOrbit} name="MoonOrbitRoot" rotation-y={EARTH_SYSTEM.orbitPhase}>
           <group name="MoonOffset" position-x={EARTH_SYSTEM.orbitRadius}>
             <group ref={moonSpin} name="MoonRotationRoot" scale={EARTH_SYSTEM.moonRadius}>

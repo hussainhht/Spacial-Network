@@ -4,7 +4,9 @@
   height: 100%;
   min-width: 0;
   min-height: 0;
-  pointer-events: none;
+  /* Planets are clickable. The heading and destination controls sit on a
+     higher layer, so this never intercepts anything the reader can read. */
+  pointer-events: auto;
 }
 
 .message {

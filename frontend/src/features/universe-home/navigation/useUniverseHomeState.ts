@@ -1,9 +1,8 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import type { PlanetId, UniverseSceneHandle } from "../contracts";
+import type { PhaseRef, PlanetId, UniverseSceneHandle } from "../contracts";
 import { PLANET_ORDER } from "./planetDestinations";
-import { clampProgress, progressToIndex } from "./homeProgress";
 import {
   isSelectionStale,
   resolveSelection,
@@ -14,49 +13,44 @@ import {
 export type UniverseHomeState = {
   activePlanetId: PlanetId;
   selectedPlanetId: PlanetId | null;
-  homeProgress: { current: number };
+  phase: PhaseRef;
   scene: UniverseSceneHandle | null;
-  reportHomeProgress: (progress: number) => void;
+  commitActivePlanet: (id: PlanetId) => void;
   selectPlanet: (id: PlanetId | null) => void;
   onSceneReady: (scene: UniverseSceneHandle | null) => void;
+  onPlanetActivate: (id: PlanetId) => void;
+  setPlanetActivateHandler: (handler: (id: PlanetId) => void) => () => void;
 };
 
-/** Home track state for the persistent provider. This hook is provider
+/** Home loop state for the persistent provider. This hook is provider
  * internals: it is called exactly once, by UniverseTransitionProvider, which
- * remains the single owner of active/selected/progress. Nothing else may hold
- * an active planet or a normalized progress value. */
+ * remains the single owner of active/selected/phase. Nothing else may hold an
+ * active planet or a second copy of the loop position. */
 export function useUniverseHomeState(pathname: string): UniverseHomeState {
-  // Continuous progress lives in a ref, not state: motion reports it on every
-  // rendered tick, and it must survive route changes and Canvas remounts so a
-  // return to Home can restore the previous position. It is deliberately
-  // separate from the legacy `homePosition` post playhead.
-  const homeProgress = useRef(0);
+  // The loop's continuous position lives in a ref, not state: it is written on
+  // every animation frame and read inside useFrame, and it must survive route
+  // changes and Canvas remounts so returning to Home restores the view. It is
+  // deliberately separate from the legacy `homePosition` post playhead.
+  const phase = useRef(0);
   const [activePlanetId, setActivePlanetId] = useState<PlanetId>(
     PLANET_ORDER[0],
   );
   const [selection, setSelection] = useState<RecordedSelection | null>(null);
   const [scene, setScene] = useState<UniverseSceneHandle | null>(null);
 
-  const reportHomeProgress = useCallback((progress: number) => {
-    const clamped = clampProgress(progress);
-    homeProgress.current = clamped;
-    const next = PLANET_ORDER[progressToIndex(clamped, PLANET_ORDER.length)];
-    // Dispatching the derived id every tick is what keeps the label honest: an
-    // index ref guarding this call could drift from the committed state (it did
-    // on returning to Home) and then pinned the label to the wrong planet
-    // permanently, because the guard suppressed the very update that would have
-    // corrected it. Passing the current value back is free - React compares
-    // eagerly and skips the render entirely - so a full scrub still costs one
-    // render per index boundary, not one per frame.
-    setActivePlanetId((current) => (current === next ? current : next));
+  // React learns the active planet once per move, when the timeline finishes
+  // and the new destination is genuinely the one in focus. Nothing here runs
+  // per frame, so a transition costs exactly one render.
+  const commitActivePlanet = useCallback((id: PlanetId) => {
+    setActivePlanetId((current) => (current === id ? current : id));
     // A recorded choice is stale once a different destination is active.
-    setSelection((current) => retainSelection(current, next));
+    setSelection((current) => retainSelection(current, id));
   }, []);
 
   const selectPlanet = useCallback(
     (id: PlanetId | null) => {
-      // Recording a choice only. No route push, no zoom, no progress write and
-      // no input lock: ordinary Next navigation stays in charge.
+      // Recording a choice only. No route push, no zoom, no phase write and no
+      // input lock: ordinary Next navigation stays in charge.
       setSelection(id === null ? null : { id, route: pathname });
     },
     [pathname],
@@ -65,6 +59,24 @@ export function useUniverseHomeState(pathname: string): UniverseHomeState {
   const onSceneReady = useCallback((next: UniverseSceneHandle | null) => {
     setScene(next);
   }, []);
+
+  // Clicks land inside the portalled Canvas, which the provider owns, but only
+  // the homepage knows whether a click should focus a planet or open its
+  // destination. A stable dispatcher keeps the memoized payload from
+  // re-rendering every time that behaviour is re-created.
+  const planetHandler = useRef<(id: PlanetId) => void>(() => {});
+  const onPlanetActivate = useCallback((id: PlanetId) => {
+    planetHandler.current(id);
+  }, []);
+  const setPlanetActivateHandler = useCallback(
+    (handler: (id: PlanetId) => void) => {
+      planetHandler.current = handler;
+      return () => {
+        if (planetHandler.current === handler) planetHandler.current = () => {};
+      };
+    },
+    [],
+  );
 
   // Drop the stored choice once navigation has settled elsewhere, rather than
   // only masking it: otherwise returning to the route it was made on would
@@ -76,10 +88,12 @@ export function useUniverseHomeState(pathname: string): UniverseHomeState {
   return {
     activePlanetId,
     selectedPlanetId,
-    homeProgress,
+    phase,
     scene,
-    reportHomeProgress,
+    commitActivePlanet,
     selectPlanet,
     onSceneReady,
+    onPlanetActivate,
+    setPlanetActivateHandler,
   };
 }

@@ -1,6 +1,9 @@
+/* One locked pane. The homepage never exceeds the shell's scroll container, so
+   `#page-content` has nothing to scroll and no second scrollbar appears. */
 .home {
   position: relative;
-  min-height: 100%;
+  height: 100%;
+  overflow: hidden;
   color: var(--space-text-body);
   font: 14px/1.5 ui-sans-serif, system-ui, -apple-system, sans-serif;
   color-scheme: dark;
@@ -10,8 +13,12 @@
   position: relative;
   isolation: isolate;
   width: 100%;
-  height: var(--universe-pane-height, calc(100dvh - var(--app-navbar-height, 64px)));
+  height: 100%;
   overflow: hidden;
+  /* Gestures drive the loop, so the browser must not claim them for panning or
+     pull-to-refresh. Scoped here: the rest of the app scrolls normally. */
+  touch-action: none;
+  overscroll-behavior: contain;
 }
 
 .caption {
@@ -23,6 +30,20 @@
   pointer-events: none;
 }
 
+/* A neighbouring planet can drift behind the heading. This keeps the text
+   readable without a filter over the canvas. */
+.caption::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: -32px -24px -40px -32px;
+  background: radial-gradient(
+    120% 100% at 0% 0%,
+    rgba(5, 8, 22, 0.82),
+    rgba(5, 8, 22, 0)
+  );
+}
+
 .planetName {
   margin: 0;
   color: var(--space-text-heading);
@@ -30,6 +51,19 @@
   font-weight: 450;
   letter-spacing: -0.04em;
   line-height: 1.2;
+  /* Remounted on every commit, so each destination name fades in on arrival. */
+  animation: nameArrival 420ms ease-out both;
+}
+
+@keyframes nameArrival {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 .hint {
@@ -85,6 +119,7 @@
   gap: 8px;
   color: var(--space-text-muted);
   cursor: pointer;
+  transition: color 240ms ease;
 }
 
 .focusButton:disabled {
@@ -97,6 +132,9 @@
   height: 5px;
   border: 1px solid currentColor;
   border-radius: 50%;
+  transition:
+    background 240ms ease,
+    box-shadow 240ms ease;
 }
 
 .destination[data-active="true"] .focusButton {
@@ -105,6 +143,7 @@
 
 .destination[data-active="true"] .marker {
   background: currentColor;
+  box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.16);
 }
 
 .destinationLink {
@@ -128,6 +167,13 @@
   outline-offset: 3px;
 }
 
+@media (max-width: 760px) {
+  .hint {
+    max-width: 24ch;
+    font-size: 12px;
+  }
+}
+
 @media (max-height: 500px) {
   .caption {
     top: 12px;
@@ -136,5 +182,16 @@
   .destinations {
     padding-top: 0;
     padding-bottom: 8px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .planetName {
+    animation-duration: 1ms;
+  }
+
+  .focusButton,
+  .marker {
+    transition: none;
   }
 }

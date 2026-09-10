@@ -22,11 +22,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  clampProgress,
-  indexToProgress,
-  planetIdAtProgress,
-  progressToIndex,
-} from "./homeProgress";
+  planetIdAtPhase,
+  planetIndex,
+  shortestStep,
+  wrapIndex,
+  wrapOffset,
+  wrapPhase,
+} from "./planetLoop";
 import { resolveSelection, retainSelection } from "./homeSelection";
 import {
   getPlanetDestination,
@@ -37,65 +39,112 @@ import { UNIVERSE_HOME_V1_ENABLED } from "./homeMode";
 
 const N = PLANET_ORDER.length;
 
-test("clampProgress bounds every reported value to [0,1]", () => {
-  assert.equal(clampProgress(0.37), 0.37);
-  assert.equal(clampProgress(-0.5), 0);
-  assert.equal(clampProgress(1.5), 1);
-  assert.equal(clampProgress(0), 0);
-  assert.equal(clampProgress(1), 1);
+test("wrapIndex keeps a circular list in range in both directions", () => {
+  assert.equal(wrapIndex(0, N), 0);
+  assert.equal(wrapIndex(N - 1, N), N - 1);
+  assert.equal(wrapIndex(N, N), 0);
+  assert.equal(wrapIndex(-1, N), N - 1);
+  assert.equal(wrapIndex(-N - 1, N), N - 1);
+  assert.equal(wrapIndex(100 * N + 2, N), 2);
 });
 
-test("clampProgress resolves unmeasured input to the start", () => {
-  assert.equal(clampProgress(Number.NaN), 0);
-  assert.equal(clampProgress(-Infinity), 0);
-  assert.equal(clampProgress(Infinity), 1);
+test("wrapIndex guards an empty configuration instead of returning NaN", () => {
+  assert.equal(wrapIndex(3, 0), 0);
 });
 
-test("progressToIndex picks the nearest destination at the resting stops", () => {
-  assert.equal(progressToIndex(0, N), 0);
-  assert.equal(progressToIndex(0.5, N), 1);
-  assert.equal(progressToIndex(1, N), 2);
+test("wrapPhase folds a continuous phase into one turn", () => {
+  assert.equal(wrapPhase(0, N), 0);
+  assert.equal(wrapPhase(N, N), 0);
+  assert.equal(wrapPhase(N + 0.25, N), 0.25);
+  assert.equal(wrapPhase(-0.5, N), N - 0.5);
+  assert.equal(wrapPhase(-3 * N - 1, N), N - 1);
 });
 
-test("progressToIndex switches active planet at the midpoints", () => {
-  assert.equal(progressToIndex(0.2499, N), 0);
-  assert.equal(progressToIndex(0.25, N), 1);
-  assert.equal(progressToIndex(0.7499, N), 1);
-  assert.equal(progressToIndex(0.75, N), 2);
+test("wrapPhase resolves unmeasured input to the start", () => {
+  assert.equal(wrapPhase(Number.NaN, N), 0);
+  assert.equal(wrapPhase(Infinity, N), 0);
+  assert.equal(wrapPhase(1, 0), 0);
 });
 
-test("progressToIndex clamps out-of-range progress instead of overflowing", () => {
-  assert.equal(progressToIndex(-3, N), 0);
-  assert.equal(progressToIndex(9, N), N - 1);
-  assert.equal(progressToIndex(Number.NaN, N), 0);
+test("wrapOffset always takes the short way round the ring", () => {
+  assert.equal(wrapOffset(0, N), 0);
+  assert.equal(wrapOffset(1, N), 1);
+  assert.equal(wrapOffset(2, N), -1);
+  assert.equal(wrapOffset(-2, N), 1);
+  assert.equal(wrapOffset(N, N), 0);
 });
 
-test("progressToIndex guards a track of one or zero destinations", () => {
-  assert.equal(progressToIndex(0.9, 1), 0);
-  assert.equal(progressToIndex(0.9, 0), 0);
+test("shortestStep reaches every destination in one step on a ring of three", () => {
+  assert.equal(shortestStep(0, 1, N), 1);
+  assert.equal(shortestStep(1, 2, N), 1);
+  assert.equal(shortestStep(2, 0, N), 1);
+  assert.equal(shortestStep(0, 2, N), -1);
+  assert.equal(shortestStep(1, 0, N), -1);
+  assert.equal(shortestStep(2, 1, N), -1);
 });
 
-test("indexToProgress returns the i/(N-1) snap stops", () => {
-  assert.equal(indexToProgress(0, N), 0);
-  assert.equal(indexToProgress(1, N), 0.5);
-  assert.equal(indexToProgress(2, N), 1);
+test("shortestStep is a no-op for the destination already in focus", () => {
+  for (let i = 0; i < N; i += 1) assert.equal(shortestStep(i, i, N), 0);
 });
 
-test("indexToProgress clamps an out-of-range index and guards N<=1", () => {
-  assert.equal(indexToProgress(-2, N), 0);
-  assert.equal(indexToProgress(99, N), 1);
-  assert.equal(indexToProgress(5, 1), 0);
+test("shortestStep is never longer than half the ring", () => {
+  for (let count = 2; count <= 9; count += 1)
+    for (let from = 0; from < count; from += 1)
+      for (let to = 0; to < count; to += 1)
+        assert.ok(Math.abs(shortestStep(from, to, count)) <= count / 2);
 });
 
-test("index and progress round-trip through every stop", () => {
-  for (let i = 0; i < N; i += 1)
-    assert.equal(progressToIndex(indexToProgress(i, N), N), i);
+test("planetIdAtPhase names the destination at rest, wrapping both ways", () => {
+  assert.equal(planetIdAtPhase(0), "earth");
+  assert.equal(planetIdAtPhase(1), "mars");
+  assert.equal(planetIdAtPhase(2), "saturn");
+  assert.equal(planetIdAtPhase(3), "earth");
+  assert.equal(planetIdAtPhase(-1), "saturn");
+  assert.equal(planetIdAtPhase(-2), "mars");
 });
 
-test("planetIdAtProgress names the planet the track is resting on", () => {
-  assert.equal(planetIdAtProgress(0), "earth");
-  assert.equal(planetIdAtProgress(0.5), "mars");
-  assert.equal(planetIdAtProgress(1), "saturn");
+test("planetIndex and planetIdAtPhase round-trip through every destination", () => {
+  for (const id of PLANET_ORDER)
+    assert.equal(planetIdAtPhase(planetIndex(id)), id);
+});
+
+test("planetIndex rejects an unconfigured id", () => {
+  assert.throws(() => planetIndex("moon" as never), /moon/);
+});
+
+test("the loop runs forever in both directions without drift", () => {
+  // 40 steps each way, renormalizing after every one exactly as the loop does.
+  for (const direction of [1, -1] as const) {
+    let phase = 0;
+    const visited: string[] = [];
+    for (let step = 0; step < 40; step += 1) {
+      phase = wrapPhase(phase + direction, N);
+      assert.ok(phase >= 0 && phase < N);
+      assert.equal(phase, Math.round(phase));
+      visited.push(planetIdAtPhase(phase));
+    }
+    // Every destination is reached repeatedly, and the cycle never stalls.
+    assert.equal(new Set(visited).size, N);
+    assert.equal(phase, wrapPhase(40 * direction, N));
+  }
+});
+
+test("one move commits one destination change", () => {
+  // Mirrors the loop's commit: React hears about the active planet once per
+  // completed timeline, not once per frame.
+  let phase = 0;
+  let active = planetIdAtPhase(phase);
+  let commits = 0;
+  for (let step = 0; step < 6; step += 1) {
+    phase = wrapPhase(phase + 1, N);
+    const next = planetIdAtPhase(phase);
+    if (next !== active) {
+      active = next;
+      commits += 1;
+    }
+  }
+  assert.equal(commits, 6);
+  assert.equal(active, "earth");
 });
 
 test("a recorded choice survives on the route it was made on", () => {
@@ -120,21 +169,6 @@ test("a recorded choice is kept by identity while it stays active", () => {
   // Same reference, so the provider's state update bails out instead of
   // re-rendering every consumer on each index change.
   assert.equal(retainSelection(selection, "mars"), selection);
-});
-
-test("scrubbing the whole track only changes active at index boundaries", () => {
-  // Mirrors reportHomeProgress: the ref moves every tick, React state does not.
-  let index = 0;
-  let commits = 0;
-  for (let tick = 0; tick <= 100; tick += 1) {
-    const next = progressToIndex(clampProgress(tick / 100), N);
-    if (next !== index) {
-      index = next;
-      commits += 1;
-    }
-  }
-  assert.equal(commits, N - 1);
-  assert.equal(index, N - 1);
 });
 
 test("destinations are configured Earth -> Mars -> Saturn with v1 routes", () => {
