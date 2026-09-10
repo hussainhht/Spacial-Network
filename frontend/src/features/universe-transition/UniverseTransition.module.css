@@ -64,3 +64,16 @@
 .shell [data-universe-node][data-universe-entered] {
   animation: none !important;
 }
+
+/* Universe Home v1 scene stage. The persistent host is `display: contents`, so
+   this positions against Agent 4's measured `[data-universe-viewport]` and sits
+   beneath its z-indexed caption and destination controls. The class is doubled
+   to outrank the scene module's own single-class `.stage` rule without relying
+   on bundle order or `!important`. Never pointer-interactive: while parked in
+   the fixed layer it covers the screen, and the navbar and sidebar must stay
+   clickable. */
+.universeStage.universeStage {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}

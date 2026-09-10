@@ -67,3 +67,8 @@ dist/
 build/
 
 dev/
+
+# Agent skills
+.agents/skills/
+.claude/skills/
+/skills/

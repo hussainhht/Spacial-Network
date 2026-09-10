@@ -5,6 +5,7 @@ import {
   useCallback,
   useContext,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
   useSyncExternalStore,
@@ -15,6 +16,10 @@ import { usePathname, useRouter } from "next/navigation";
 import { gsap } from "gsap";
 import UniverseTransitionLayer from "./UniverseTransitionLayer";
 import HomeEarth from "@/components/space/HomeEarth";
+import type { UniverseHomeAPI } from "@/features/universe-home/contracts";
+import { UNIVERSE_HOME_V1_ENABLED } from "@/features/universe-home/navigation/homeMode";
+import UniverseCanvasHost from "@/features/universe-home/navigation/UniverseCanvasHost";
+import { useUniverseHomeState } from "@/features/universe-home/navigation/useUniverseHomeState";
 import { center, enterScene, exitScene, moveEarth } from "./animation";
 import type {
   EarthHandle,
@@ -40,6 +45,17 @@ type API = {
 const Context = createContext<API | null>(null);
 export function useUniverseTransition() {
   const value = useContext(Context);
+  if (!value) throw new Error("UniverseTransitionProvider is required");
+  return value;
+}
+
+// The universe home track reads from the same persistent provider. It is a
+// second context only so that home consumers and the existing Sidebar/Groups
+// consumers do not re-render for each other's updates; the state itself has
+// exactly one owner.
+const HomeContext = createContext<UniverseHomeAPI | null>(null);
+export function useUniverseHome() {
+  const value = useContext(HomeContext);
   if (!value) throw new Error("UniverseTransitionProvider is required");
   return value;
 }
@@ -76,7 +92,9 @@ export default function UniverseTransitionProvider({
   const [host, setHost] = useState<HTMLDivElement | null>(null);
   const hostRef = useRef<HTMLDivElement | null>(null);
   const layer = useRef<HTMLDivElement>(null);
-  const stage = useRef<HTMLDivElement>(null);
+  const stage = useRef<HTMLDivElement | null>(null);
+  const homeViewport = useRef<HTMLElement | null>(null);
+  const viewportResize = useRef<ResizeObserver | null>(null);
   const glow = useRef<HTMLDivElement>(null);
   const shell = useRef<HTMLDivElement>(null);
   const earth = useRef<EarthHandle | null>(null);
@@ -88,11 +106,52 @@ export default function UniverseTransitionProvider({
   const path = useRef(pathname);
   const lastOrigin = useRef<DOMRect | null>(null);
   const finishRef = useRef<() => void>(() => {});
+  // The universe home track: active/selected planet, normalized track progress
+  // and the scene readiness snapshot. Deliberately separate from the legacy
+  // `homePosition` ref above, which stores the old feed's post playhead.
+  const homeTrack = useUniverseHomeState(pathname);
+
+  const park = useCallback((host: HTMLDivElement) => {
+    if (host.parentElement !== layer.current) layer.current?.appendChild(host);
+    host.style.display = "contents";
+    if (stage.current) stage.current.style.visibility = "hidden";
+  }, []);
 
   const dock = useCallback(() => {
     const host = hostRef.current;
-    if (!host || !stage.current || run.current) return;
+    if (!host || run.current) return;
     const home = scenes.current.get("/");
+    if (UNIVERSE_HOME_V1_ENABLED) {
+      // The v1 home owns a measured viewport inside its registered root, and
+      // the Canvas sizes itself from that box. Docking into a 0x0 parent would
+      // publish an unusable scene handle, so wait for a real measurement.
+      const viewport =
+        path.current === "/"
+          ? (home?.root.querySelector<HTMLElement>("[data-universe-viewport]") ??
+            null)
+          : null;
+      if (homeViewport.current !== viewport) {
+        if (homeViewport.current)
+          viewportResize.current?.unobserve(homeViewport.current);
+        homeViewport.current = viewport;
+        if (viewport) viewportResize.current?.observe(viewport);
+      }
+      if (viewport && viewport.clientWidth > 0 && viewport.clientHeight > 0) {
+        // The host is only reparented while empty of layout; the portal target,
+        // React tree, Canvas and WebGL context are untouched.
+        if (host.parentElement !== viewport) viewport.appendChild(host);
+        host.style.display = "contents";
+        // The stage arrives after the lazy scene chunk resolves; docking must
+        // not wait for it, and it must not stay hidden once it does arrive.
+        stage.current?.style.removeProperty("visibility");
+      } else {
+        park(host);
+      }
+      return;
+    }
+    // Legacy Earth docking below, reached only with the v1 home disabled. It
+    // must never run against the new scene's scroll or rotation roots.
+    if (!stage.current) return;
     const anchor = home?.root.querySelector<HTMLElement>(
       "[data-universe-earth]",
     );
@@ -119,7 +178,17 @@ export default function UniverseTransitionProvider({
         earth.current.group.visible = false;
       }
     }
-  }, []);
+  }, [park]);
+
+  // The scene stage belongs to the lazily loaded Canvas, so re-dock when it
+  // attaches or detaches rather than assuming it exists at mount.
+  const setStage = useCallback(
+    (element: HTMLDivElement | null) => {
+      stage.current = element;
+      dock();
+    },
+    [dock],
+  );
 
   const finish = useCallback(() => {
     const current = run.current;
@@ -165,6 +234,17 @@ export default function UniverseTransitionProvider({
     };
   }, []);
   useLayoutEffect(() => {
+    // Docking waits for a usable measurement, so re-check whenever the home
+    // viewport is measured or resized, including an animated sidebar collapse.
+    const observer = new ResizeObserver(() => dock());
+    viewportResize.current = observer;
+    return () => {
+      observer.disconnect();
+      viewportResize.current = null;
+      homeViewport.current = null;
+    };
+  }, [dock]);
+  useLayoutEffect(() => {
     dock();
   }, [dock, reducedMotion]);
 
@@ -177,13 +257,14 @@ export default function UniverseTransitionProvider({
       }
       dock();
       return () => {
-        if (scenes.current.get(route) === scene) scenes.current.delete(route);
-        // Move the host before React removes its old page-owned parent.
-        if (route === "/" && hostRef.current)
-          layer.current?.appendChild(hostRef.current);
+        const owned = scenes.current.get(route) === scene;
+        if (owned) scenes.current.delete(route);
+        // Park the host before React removes its old page-owned parent. A stale
+        // cleanup must never pull it out of a newer registration's viewport.
+        if (route === "/" && owned && hostRef.current) park(hostRef.current);
       };
     },
-    [dock],
+    [dock, park],
   );
 
   useLayoutEffect(() => {
@@ -209,7 +290,15 @@ export default function UniverseTransitionProvider({
     };
   }, [router]);
 
-  function navigate(href: string) {
+  const navigate = useCallback(
+    (href: string) => {
+    // Universe Home v1 guard (DECISIONS D09). The legacy cinematic is written
+    // against the old orbital feed's anchors, its EarthHandle and body scroll
+    // locks, none of which describe the three-planet homepage. Declining here
+    // covers both directions and a direct /groups entry alike, because the mode
+    // is a module constant rather than state set on first visiting Home. The
+    // callers' existing Next Links then navigate normally.
+    if (UNIVERSE_HOME_V1_ENABLED) return false;
     if (run.current) return href === "/" || href === "/groups";
     if (!(
       (pathname === "/" && href === "/groups") ||
@@ -492,7 +581,9 @@ export default function UniverseTransitionProvider({
       router.push(href);
     }
     return true;
-  }
+    },
+    [pathname, router],
+  );
 
   const onEarthReady = useCallback(
     (handle: EarthHandle | null) => {
@@ -504,55 +595,101 @@ export default function UniverseTransitionProvider({
 
   const transitionState: UniverseTransitionState =
     direction ?? (pathname === "/" ? "idle-home" : "idle-groups");
+  // Memoized so home-track updates cannot re-render the Sidebar, Navbar and
+  // Groups consumers of the unchanged transition API, and vice versa.
+  const transitionApi = useMemo<API>(
+    () => ({
+      isTransitioning: active,
+      transitionState,
+      navigate,
+      register,
+      homePosition,
+    }),
+    [active, transitionState, navigate, register],
+  );
+  const homeApi = useMemo<UniverseHomeAPI>(
+    () => ({
+      activePlanetId: homeTrack.activePlanetId,
+      selectedPlanetId: homeTrack.selectedPlanetId,
+      homeProgress: homeTrack.homeProgress,
+      scene: homeTrack.scene,
+      reducedMotion,
+      // One transition machine: this reads the existing coordinator rather than
+      // introducing a second transition flag.
+      isTransitioning: active,
+      reportHomeProgress: homeTrack.reportHomeProgress,
+      selectPlanet: homeTrack.selectPlanet,
+    }),
+    [
+      homeTrack.activePlanetId,
+      homeTrack.selectedPlanetId,
+      homeTrack.homeProgress,
+      homeTrack.scene,
+      homeTrack.reportHomeProgress,
+      homeTrack.selectPlanet,
+      reducedMotion,
+      active,
+    ],
+  );
   return (
-    <Context.Provider
-      value={{
-        isTransitioning: active,
-        transitionState,
-        navigate,
-        register,
-        homePosition,
-      }}
-    >
-      <div
-        ref={shell}
-        onClickCapture={(event) => {
-          if (
-            !run.current ||
-            event.metaKey ||
-            event.ctrlKey ||
-            event.shiftKey ||
-            event.altKey
-          )
-            return;
-          const link = (event.target as HTMLElement).closest<HTMLAnchorElement>(
-            "a[href]",
-          );
-          if (
-            link &&
-            link.origin === location.origin &&
-            link.pathname !== "/" &&
-            link.pathname !== "/groups"
-          )
-            finishRef.current();
-        }}
-        className={styles.shell}
-        data-universe-state={transitionState}
-      >
-        {children}
-      </div>
-      <UniverseTransitionLayer layerRef={layer} glowRef={glow} />
-      {host &&
-        (pathname === "/" || pathname === "/groups" || active) &&
-        createPortal(
-          <HomeEarth
-            ref={stage}
-            onTransitionReady={onEarthReady}
-            transitionActive={active && !reducedMotion}
-            renderActive={!reducedMotion && (active || pathname === "/")}
-          />,
-          host,
-        )}
+    <Context.Provider value={transitionApi}>
+      <HomeContext.Provider value={homeApi}>
+        <div
+          ref={shell}
+          onClickCapture={(event) => {
+            if (
+              !run.current ||
+              event.metaKey ||
+              event.ctrlKey ||
+              event.shiftKey ||
+              event.altKey
+            )
+              return;
+            const link = (event.target as HTMLElement).closest<HTMLAnchorElement>(
+              "a[href]",
+            );
+            if (
+              link &&
+              link.origin === location.origin &&
+              link.pathname !== "/" &&
+              link.pathname !== "/groups"
+            )
+              finishRef.current();
+          }}
+          className={styles.shell}
+          data-universe-state={transitionState}
+        >
+          {children}
+        </div>
+        <UniverseTransitionLayer layerRef={layer} glowRef={glow} />
+        {host &&
+          (pathname === "/" || pathname === "/groups" || active) &&
+          createPortal(
+            // One payload, never both: a second HomeEarth Canvas alongside
+            // UniverseCanvas would mean two WebGL contexts on the same route.
+            // The mode is a module constant, so this never swaps at runtime.
+            UNIVERSE_HOME_V1_ENABLED ? (
+              <UniverseCanvasHost
+                ref={setStage}
+                className={styles.universeStage}
+                // Home draws; Groups keeps the same context but sleeps. This is
+                // independent of reduced motion, which stops spin and orbit
+                // inside the scene without blanking it.
+                renderActive={pathname === "/" || active}
+                reducedMotion={reducedMotion}
+                onSceneReady={homeTrack.onSceneReady}
+              />
+            ) : (
+              <HomeEarth
+                ref={setStage}
+                onTransitionReady={onEarthReady}
+                transitionActive={active && !reducedMotion}
+                renderActive={!reducedMotion && (active || pathname === "/")}
+              />
+            ),
+            host,
+          )}
+      </HomeContext.Provider>
     </Context.Provider>
   );
 }
