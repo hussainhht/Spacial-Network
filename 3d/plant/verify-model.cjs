@@ -12,7 +12,14 @@ function resolveDependency(moduleName) {
       : null,
     path.join(__dirname, ".tools", "node_modules", ".bin", "gltf-transform"),
     path.join(__dirname, ".tools", "package.json"),
-    path.join(__dirname, "..", ".tools", "node_modules", ".bin", "gltf-transform"),
+    path.join(
+      __dirname,
+      "..",
+      ".tools",
+      "node_modules",
+      ".bin",
+      "gltf-transform",
+    ),
     path.join(__dirname, "..", ".tools", "package.json"),
     __filename,
   ].filter(Boolean);
@@ -102,13 +109,26 @@ function nodeToMatrix(node) {
   const r = node.rotation || [0, 0, 0, 1]; // [x, y, z, w]
   const s = node.scale || [1, 1, 1];
 
-  const x = r[0], y = r[1], z = r[2], w = r[3];
-  const x2 = x + x, y2 = y + y, z2 = z + z;
-  const xx = x * x2, xy = x * y2, xz = x * z2;
-  const yy = y * y2, yz = y * z2, zz = z * z2;
-  const wx = w * x2, wy = w * y2, wz = w * z2;
+  const x = r[0],
+    y = r[1],
+    z = r[2],
+    w = r[3];
+  const x2 = x + x,
+    y2 = y + y,
+    z2 = z + z;
+  const xx = x * x2,
+    xy = x * y2,
+    xz = x * z2;
+  const yy = y * y2,
+    yz = y * z2,
+    zz = z * z2;
+  const wx = w * x2,
+    wy = w * y2,
+    wz = w * z2;
 
-  const sx = s[0], sy = s[1], sz = s[2];
+  const sx = s[0],
+    sy = s[1],
+    sz = s[2];
 
   // Column-major order matrix (glTF standard)
   return [
@@ -292,8 +312,7 @@ async function main() {
   for (let nIdx = 0; nIdx < (a.nodes || []).length; nIdx++) {
     const nodeA = a.nodes[nIdx];
     if (nodeA.mesh !== undefined) {
-      const nodeB =
-        b.nodes.find((n) => n.name === nodeA.name) || b.nodes[nIdx];
+      const nodeB = b.nodes.find((n) => n.name === nodeA.name) || b.nodes[nIdx];
       assert.ok(
         nodeB && nodeB.mesh !== undefined,
         `Node ${nodeA.name || nIdx} lost its mesh assignment`,
@@ -469,6 +488,24 @@ async function main() {
   console.log(`Original:   ${(sizeA / 1e6).toFixed(2)} MB (${sizeA} bytes)`);
   console.log(`Optimized:  ${(sizeB / 1e6).toFixed(2)} MB (${sizeB} bytes)`);
   console.log(`Reduction:  ${reduction}%`);
+  console.log(
+    `Meshes: ${(a.meshes || []).length} -> ${(b.meshes || []).length}`,
+  );
+  console.log(
+    `Materials: ${(a.materials || []).length} -> ${(b.materials || []).length}`,
+  );
+  console.log(
+    `Textures: ${(a.textures || []).length} -> ${(b.textures || []).length}`,
+  );
+  console.log(
+    `Animations: ${(a.animations || []).length} -> ${(b.animations || []).length}`,
+  );
+  console.log(
+    `Extensions used (source): ${(a.extensionsUsed || []).join(", ") || "none"}`,
+  );
+  console.log(
+    `Extensions used (output): ${(b.extensionsUsed || []).join(", ") || "none"}`,
+  );
   console.log(
     `Preserved nodes: ${(b.nodes || []).map((n) => n.name || "(unnamed)").join(", ")}`,
   );

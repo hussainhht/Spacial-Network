@@ -95,9 +95,10 @@ export function createEarthMaterials(map: Texture) {
       .replace(
         "#include <map_fragment>",
         /* glsl */ `
-        // The export is predominantly white water and black land.
+        // The optimized color map has dark blue water; derive the coastline
+        // mask for the existing procedural surface palette.
         vec4 sourceTexel = texture2D(map, vMapUv);
-        float waterMask = smoothstep(0.15, 0.65, sourceTexel.r);
+        float waterMask = 1.0 - smoothstep(0.002, 0.018, max(sourceTexel.r, sourceTexel.g));
         float landMask = 1.0 - waterMask;
         vec3 p = normalize(vEarthPosition);
         // Sine of latitude: independent of the source map's UV transform.

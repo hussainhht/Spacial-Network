@@ -133,7 +133,7 @@ UniverseTransitionProvider (src/features/universe-transition/UniverseTransitionP
   ├── Portals ──► HomeEarth (src/components/space/HomeEarth.tsx)
   │                 └── Earth3D (src/components/space/Earth3D.tsx)
   │                       ├── Canvas (@react-three/fiber)
-  │                       ├── EarthModel (GLTF /models/earth-final.glb)
+  │                       ├── EarthModel (GLTF /models/planets/earth-final.glb)
   │                       └── createEarthMaterials (Coastline recoloring + FBM noise + Fresnel atmosphere)
   │
   ├── Controls ──► Home Scene (data-universe-scene="home")
@@ -423,7 +423,7 @@ This phase details how the space aesthetic and Three.js 3D earth model are const
   - **Purpose**: Stage sizing and placeholder styling for the 3D Earth container. Owned by `HomeEarth`.
 - [ ] `frontend/src/components/space/Earth3D.tsx`
   - Priority: HIGH
-  - **Purpose**: Three.js / React Three Fiber canvas component. Loads `/models/earth-final.glb`, clones scene hierarchies to isolate cached textures, applies custom materials, handles auto-rotation, and detects software renderer fallbacks.
+  - **Purpose**: Three.js / React Three Fiber canvas component. Loads `/models/planets/earth-final.glb`, clones scene hierarchies to isolate cached textures, applies custom materials, handles auto-rotation, and detects software renderer fallbacks.
 - [ ] `frontend/src/components/space/earthMaterials.ts`
   - Priority: HIGH
   - **Purpose**: Custom Three.js materials with embedded GLSL shader chunks. Injects 3D simplex noise (FBM) to recolor raw coastlines, procedurally generates clouds, and builds a Fresnel rim atmosphere shader with directional sun lighting.
@@ -1043,7 +1043,7 @@ frontend/
 
 Per instructions, the following items were intentionally excluded from source checklist tracking:
 1. `src/app/favicon.ico`: Static binary asset (icon), not source code.
-2. `public/models/earth-final.glb`: Static binary 3D asset model loaded at runtime by `Earth3D.tsx`.
+2. `public/models/planets/earth-final.glb`: Static binary 3D asset model loaded at runtime by `Earth3D.tsx`.
 3. `public/*.svg`: Static SVG icon files (`globe.svg`, `window.svg`, `file.svg`, `next.svg`, `vercel.svg`).
 4. `node_modules/`, `.next/`, `build/`, `dist/`: Generated build outputs and external npm packages.
 5. `pnpm-lock.yaml`, `package-lock.json`: Dependency lockfiles.

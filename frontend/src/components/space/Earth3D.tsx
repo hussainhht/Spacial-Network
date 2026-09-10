@@ -1,10 +1,12 @@
 "use client";
 
-import { Suspense, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useLayoutEffect, useRef, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Bounds, Html, OrbitControls, useGLTF } from "@react-three/drei";
-import { Box3, Group, Mesh, MeshStandardMaterial, Vector3 } from "three";
-import { createEarthMaterials, SUN_POSITION } from "./earthMaterials";
+import { Bounds, Html, OrbitControls } from "@react-three/drei";
+import { Group, Vector3 } from "three";
+import { SUN_POSITION } from "./earthMaterials";
+
+import { EarthPlanetModel } from "./DevPlanetModel";
 
 import type { EarthHandle } from "@/features/universe-transition/types";
 
@@ -18,72 +20,6 @@ export interface Earth3DProps {
   background?: string | null;
   boundsMargin?: number;
   ariaLabel?: string;
-}
-
-function EarthModel() {
-  const { scene } = useGLTF("/models/earth-final.glb");
-  const { model, center, scale } = useMemo(() => {
-    // Clone the hierarchy so material overrides never mutate useGLTF's cache.
-    const model = scene.clone(true);
-    const bounds = new Box3().setFromObject(model); //calculate the bounding box of the model
-    const center = bounds.getCenter(new Vector3());
-    const size = bounds.getSize(new Vector3());
-    const extent = Math.max(size.x, size.y, size.z);
-
-    if (!Number.isFinite(extent) || extent <= 0)
-      throw new Error("Model has no visible bounds.");
-    return { model, center, scale: 2 / extent };
-  }, [scene]);
-
-  useLayoutEffect(() => {
-    const surface = model.getObjectByName("surface");
-    const cloud = model.getObjectByName("cloud");
-    const atmo = model.getObjectByName("atmo");
-    
-    const source = scene.getObjectByName("surface");
-
-    if (
-      !(surface instanceof Mesh) ||
-      !(cloud instanceof Mesh) ||
-      !(atmo instanceof Mesh) ||
-      !(source instanceof Mesh) ||
-      !(source.material instanceof MeshStandardMaterial) ||
-      !source.material.map
-    ) {
-      throw new Error(
-        "Earth requires surface, cloud, atmo meshes and the source coastline map.",
-      );
-    }
-
-    const materials = createEarthMaterials(source.material.map);
-    surface.material = materials.surface;
-    cloud.material = materials.cloud;
-    atmo.material = materials.atmo;
-  
-    for (const [shell, factor] of [
-      [cloud, 1.008],
-      [atmo, 1.025],
-    ] as const) {
-      shell.position.copy(surface.position);
-      shell.quaternion.copy(surface.quaternion);
-      shell.scale.copy(surface.scale).multiplyScalar(factor);
-    }
-    cloud.renderOrder = 1;
-    atmo.renderOrder = 2;
-    return () => {
-      // Cached GLTF textures and geometry belong to useGLTF; dispose only ours.
-      Object.values(materials).forEach((material) => material.dispose());
-    };
-  }, [model, scene]);
-
-  // Frame the large, offset export without changing its geometry or UVs.
-  return (
-    <group scale={scale} dispose={null}>
-      <group position={[-center.x, -center.y, -center.z]}>
-        <primitive object={model} />
-      </group>
-    </group>
-  );
 }
 
 function RotatingEarthGroup({
@@ -199,7 +135,7 @@ export default function Earth3D({
             autoRotate={autoRotate}
             rotationSpeed={rotationSpeed}
           >
-            <EarthModel />
+            <EarthPlanetModel />
           </RotatingEarthGroup>
         </Bounds>
       </Suspense>

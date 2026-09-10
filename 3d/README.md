@@ -197,10 +197,10 @@ All production models are located in `frontend/public/models/` and are directly 
 ```tsx
 import { useGLTF } from "@react-three/drei";
 
-const { scene: earth } = useGLTF("/models/earth-final.glb");
-const { scene: mars } = useGLTF("/models/mars-final.glb");
-const { scene: moon } = useGLTF("/models/moon-final.glb");
-const { scene: saturn } = useGLTF("/models/saturn-final.glb");
+const { scene: earth } = useGLTF("/models/planets/earth-final.glb");
+const { scene: mars } = useGLTF("/models/planets/mars-final.glb");
+const { scene: moon } = useGLTF("/models/planets/moon-final.glb");
+const { scene: saturn } = useGLTF("/models/planets/saturn-final.glb");
 ```
 
 All models use standard web extensions (`EXT_texture_webp`) and do not require external wasm decoders like Meshopt or Draco.

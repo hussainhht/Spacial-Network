@@ -3,9 +3,15 @@ set -euo pipefail
 
 # Reusable 3D planet model optimization pipeline.
 # Usage:
-#   ./optimize-model.sh <source.glb> <output.glb> [options]
+#   ./optimize-model.sh <source.glb> <output.glb> [target-triangles] [options]
+# A plain-integer positional argument (in either position after source) is treated as a
+# target triangle count; the simplification ratio is derived automatically as
+# target-triangles / source-triangles. Use --simplify to pass an explicit ratio instead.
 # Options:
 #   --simplify <ratio>      Simplification ratio for gltfpack (e.g. 0.08). Omit or 1.0 to keep geometry.
+#                           Takes precedence over an automatically derived target-triangles ratio.
+#   --permissive            Allow gltfpack to simplify across UV/attribute seams (-sp). Use when a
+#                           model has many separate mesh islands and default mode barely reduces it.
 #   --max-width <pixels>    Max texture width for gltf-transform resize (default: 4096).
 #   --max-height <pixels>   Max texture height for gltf-transform resize (default: 2048).
 #   --quality <0-100>       WebP texture quality (default: 90).
@@ -25,10 +31,19 @@ SOURCE="$1"
 shift 1
 
 OUTPUT=""
-if [[ $# -gt 0 && "$1" != --* ]]; then
-  OUTPUT="$1"
+TARGET_TRIANGLES=""
+while [[ $# -gt 0 && "$1" != --* ]]; do
+  if [[ "$1" =~ ^[0-9]+$ ]]; then
+    TARGET_TRIANGLES="$1"
+  elif [[ -z "$OUTPUT" ]]; then
+    OUTPUT="$1"
+  else
+    echo "Unexpected positional argument: $1" >&2
+    exit 1
+  fi
   shift 1
-else
+done
+if [[ -z "$OUTPUT" ]]; then
   SRC_BASE="$(basename "$SOURCE" .glb)"
   case "$SRC_BASE" in
     *earth*) FINAL_NAME="earth-final.glb" ;;
@@ -53,6 +68,7 @@ fi
 [[ "$OUTPUT" = /* ]] || OUTPUT="$PWD/$OUTPUT"
 
 SIMPLIFY=""
+PERMISSIVE=0
 MAX_WIDTH="4096"
 MAX_HEIGHT="4096"
 QUALITY="90"
@@ -72,6 +88,10 @@ while [[ $# -gt 0 ]]; do
     --simplify)
       SIMPLIFY="$2"
       shift 2
+      ;;
+    --permissive)
+      PERMISSIVE=1
+      shift 1
       ;;
     --max-width)
       MAX_WIDTH="$2"
@@ -115,6 +135,35 @@ for tool in node gltfpack gltf-transform sha256sum; do
   fi
 done
 
+if [[ -n "$TARGET_TRIANGLES" ]]; then
+  if [[ -n "$SIMPLIFY" ]]; then
+    echo "Note: --simplify $SIMPLIFY overrides the target-triangles ratio derived from $TARGET_TRIANGLES" >&2
+  else
+    ORIGINAL_TRIS="$(node -e '
+      const fs = require("fs");
+      const b = fs.readFileSync(process.argv[1]);
+      const len = b.readUInt32LE(12);
+      const j = JSON.parse(b.subarray(20, 20 + len).toString());
+      const tris = (j.meshes || []).reduce((sum, m) => sum + (m.primitives || []).reduce((s, p) => {
+        if (p.indices !== undefined) return s + (j.accessors[p.indices]?.count || 0) / 3;
+        if (p.attributes && p.attributes.POSITION !== undefined) return s + (j.accessors[p.attributes.POSITION]?.count || 0) / 3;
+        return s;
+      }, 0), 0);
+      process.stdout.write(String(Math.round(tris)));
+    ' "$SOURCE")"
+    SIMPLIFY="$(node -e '
+      const target = Number(process.argv[1]);
+      const original = Number(process.argv[2]);
+      if (!(original > 0)) { process.stderr.write("Could not determine source triangle count\n"); process.exit(1); }
+      let ratio = target / original;
+      if (!(ratio > 0)) ratio = 0.01;
+      if (ratio > 1) ratio = 1;
+      process.stdout.write(ratio.toFixed(6));
+    ' "$TARGET_TRIANGLES" "$ORIGINAL_TRIS")"
+    echo "Target triangles: $TARGET_TRIANGLES (source has $ORIGINAL_TRIS) -> derived simplify ratio: $SIMPLIFY" >&2
+  fi
+fi
+
 export EARTH_GLTF_CLI="$(command -v gltf-transform)"
 
 # Check verification dependencies
@@ -141,6 +190,9 @@ BEFORE="$(sha256sum -- "$SOURCE")"
 PACK_ARGS=(-i "$SOURCE" -o "$TMP/stage1-geom.glb" -kn -km -kv -noq)
 if [[ -n "$SIMPLIFY" && "$SIMPLIFY" != "1.0" && "$SIMPLIFY" != "1" ]]; then
   PACK_ARGS+=(-si "$SIMPLIFY")
+  if [[ "$PERMISSIVE" -eq 1 ]]; then
+    PACK_ARGS+=(-sp)
+  fi
 fi
 
 gltfpack "${PACK_ARGS[@]}"

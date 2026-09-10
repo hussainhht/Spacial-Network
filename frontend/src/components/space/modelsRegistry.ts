@@ -12,54 +12,56 @@ export interface DevModel {
   triangles?: number;
 }
 
+export const EARTH_MODEL_PATH = "/models/planets/earth-final.glb";
+
 export const DEV_MODELS: DevModel[] = [
   {
     id: "earth",
     name: "Earth",
     filename: "earth-final.glb",
-    path: "/models/earth-final.glb",
+    path: EARTH_MODEL_PATH,
     format: "GLB",
     subtitle: "Terran Planet",
     description: "Recolored coastline map, procedural clouds, and subtle atmospheric scattering.",
     defaultRotation: [0, 0, 0],
     boundsMargin: 1.3,
-    triangles: 173010,
+    triangles: 11520,
   },
   {
     id: "moon",
     name: "Moon",
     filename: "moon-final.glb",
-    path: "/models/moon-final.glb",
+    path: "/models/planets/moon-final.glb",
     format: "GLB",
     subtitle: "Lunar Satellite",
     description: "4K high-resolution lunar surface map preserving impact craters and basalt maria.",
     defaultRotation: [0, 0, 0],
     boundsMargin: 1.3,
-    triangles: 23232,
+    triangles: 179976,
   },
   {
     id: "mars",
     name: "Mars",
     filename: "mars-final.glb",
-    path: "/models/mars-final.glb",
+    path: "/models/planets/mars-final.glb",
     format: "GLB",
     subtitle: "Red Planet",
     description: "Martian terrain with precomputed MikkTSpace normal tangents and WebP textures.",
     defaultRotation: [0, 0, 0],
     boundsMargin: 1.3,
-    triangles: 3072,
+    triangles: 179989,
   },
   {
     id: "saturn",
     name: "Saturn",
     filename: "saturn-final.glb",
-    path: "/models/saturn-final.glb",
+    path: "/models/planets/saturn-final.glb",
     format: "GLB",
     subtitle: "Gas Giant with Rings",
-    description: "Atmospheric planet body with dual-layer transparent alpha-blended ring disc.",
+    description: "Atmospheric planet body with transparent alpha-blended ring disc.",
     defaultRotation: [0.4, 0.2, 0.1],
     boundsMargin: 1.45,
-    triangles: 3328,
+    triangles: 17021,
   },
 ];
 

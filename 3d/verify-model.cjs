@@ -489,6 +489,24 @@ async function main() {
   console.log(`Optimized:  ${(sizeB / 1e6).toFixed(2)} MB (${sizeB} bytes)`);
   console.log(`Reduction:  ${reduction}%`);
   console.log(
+    `Meshes: ${(a.meshes || []).length} -> ${(b.meshes || []).length}`,
+  );
+  console.log(
+    `Materials: ${(a.materials || []).length} -> ${(b.materials || []).length}`,
+  );
+  console.log(
+    `Textures: ${(a.textures || []).length} -> ${(b.textures || []).length}`,
+  );
+  console.log(
+    `Animations: ${(a.animations || []).length} -> ${(b.animations || []).length}`,
+  );
+  console.log(
+    `Extensions used (source): ${(a.extensionsUsed || []).join(", ") || "none"}`,
+  );
+  console.log(
+    `Extensions used (output): ${(b.extensionsUsed || []).join(", ") || "none"}`,
+  );
+  console.log(
     `Preserved nodes: ${(b.nodes || []).map((n) => n.name || "(unnamed)").join(", ")}`,
   );
   console.log(
