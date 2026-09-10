@@ -16,21 +16,21 @@ func NewHandler(service *Service) *Handler {
 	}
 }
 
-func toProfileResponse(profile *Profile, includeProtected bool) ProfileResponse {
+func toProfileResponse(profile *Profile, canViewFullProfile bool, includePersonalInfo bool) ProfileResponse {
 	resp := ProfileResponse{
 		ID:                 profile.ID,
 		Username:           profile.Username,
 		FirstName:          profile.FirstName,
 		LastName:           profile.LastName,
 		IsPrivate:          profile.IsPrivate,
-		CanViewFullProfile: includeProtected,
+		CanViewFullProfile: canViewFullProfile,
 	}
 
 	if profile.ProfilePhoto.Valid {
 		resp.ProfilePhoto = "/uploads/" + profile.ProfilePhoto.String
 	}
 
-	if includeProtected {
+	if includePersonalInfo {
 		resp.UUID = profile.UUID
 		resp.Age = profile.Age
 		resp.Gender = profile.Gender
@@ -84,7 +84,7 @@ func (h *Handler) GetMeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	profileResponse := toProfileResponse(profile, true)
+	profileResponse := toProfileResponse(profile, true, true)
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(GetProfileResponse{
@@ -155,7 +155,7 @@ func (h *Handler) GetProfileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	profileResponse := toProfileResponse(profile, canViewFullProfile)
+	profileResponse := toProfileResponse(profile, canViewFullProfile, viewerID == profile.ID)
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(GetProfileResponse{
