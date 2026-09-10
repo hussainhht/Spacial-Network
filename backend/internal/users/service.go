@@ -4,13 +4,19 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type Service struct {
-	repo *Repository
+type FollowChecker interface {
+	IsFollowing(followerID, followedID int) (bool, error)
 }
 
-func NewService(repo *Repository) *Service {
+type Service struct {
+	repo          *Repository
+	followChecker FollowChecker
+}
+
+func NewService(repo *Repository, followChecker FollowChecker) *Service {
 	return &Service{
-		repo: repo,
+		repo:          repo,
+		followChecker: followChecker,
 	}
 }
 
@@ -78,6 +84,26 @@ func hashPassword(password string) (string, error) {
 		return "", err
 	}
 	return string(hashed), nil
+}
+
+func (s *Service) CanViewFullProfile(viewerID int, profile *Profile) (bool, error) {
+	if profile == nil {
+		return false, nil
+	}
+
+	if viewerID == profile.ID {
+		return true, nil
+	}
+
+	if !profile.IsPrivate {
+		return true, nil
+	}
+
+	if s.followChecker == nil {
+		return false, nil
+	}
+
+	return s.followChecker.IsFollowing(viewerID, profile.ID)
 }
 
 func comparePasswords(hashedPassword, plainPassword string) bool {
