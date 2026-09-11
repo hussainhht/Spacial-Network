@@ -37,6 +37,20 @@ func toProfileResponse(profile *Profile, canViewFullProfile bool, includePersona
 		resp.Email = profile.Email
 		resp.CreatedAt = profile.CreatedAt.Format(time.RFC3339)
 		resp.UpdatedAt = profile.UpdatedAt.Format(time.RFC3339)
+
+		if profile.DateOfBirth.Valid {
+			resp.DateOfBirth = profile.DateOfBirth.String
+		}
+	}
+
+	if profile.Nickname.Valid {
+		resp.Nickname = profile.Nickname.String
+	}
+
+	if canViewFullProfile {
+		if profile.AboutMe.Valid {
+			resp.AboutMe = profile.AboutMe.String
+		}
 	}
 
 	return resp

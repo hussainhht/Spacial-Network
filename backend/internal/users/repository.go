@@ -170,7 +170,7 @@ func (r *Repository) GetProfileByID(userID int) (*Profile, error) {
 	profile := &Profile{}
 
 	err := r.db.QueryRow(`
-		SELECT id, uuid, username, age, gender, first_name, last_name, email, profile_photo, created_at, updated_at, is_private
+		SELECT id, uuid, username, age, gender, first_name, last_name, email, profile_photo, created_at, updated_at, is_private, nickname, about_me, date_of_birth
 		FROM users
 		WHERE id = ?
 	`, userID).Scan(
@@ -186,6 +186,9 @@ func (r *Repository) GetProfileByID(userID int) (*Profile, error) {
 		&profile.CreatedAt,
 		&profile.UpdatedAt,
 		&profile.IsPrivate,
+		&profile.Nickname,
+		&profile.AboutMe,
+		&profile.DateOfBirth,
 	)
 
 	if err != nil {
@@ -200,7 +203,7 @@ func (r *Repository) GetProfileByUsername(username string) (*Profile, error) {
 	profile := &Profile{}
 
 	err := r.db.QueryRow(`
-		SELECT id, uuid, username, age, gender, first_name, last_name, email, profile_photo, created_at, updated_at, is_private
+		SELECT id, uuid, username, age, gender, first_name, last_name, email, profile_photo, created_at, updated_at, is_private, nickname, about_me, date_of_birth
 		FROM users
 		WHERE username = ?
 	`, username).Scan(
@@ -216,6 +219,9 @@ func (r *Repository) GetProfileByUsername(username string) (*Profile, error) {
 		&profile.CreatedAt,
 		&profile.UpdatedAt,
 		&profile.IsPrivate,
+		&profile.Nickname,
+		&profile.AboutMe,
+		&profile.DateOfBirth,
 	)
 
 	if err != nil {
