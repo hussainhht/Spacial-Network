@@ -373,6 +373,13 @@
   font-weight: 400;
 }
 
+.nickname {
+  margin: 0.35rem 0 0;
+  color: var(--space-text-heading);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
 .aboutMe {
   margin: 0.6rem 0 0;
   max-width: 680px;

@@ -12,6 +12,9 @@ export interface Profile {
   updatedAt: string;
   isPrivate: boolean;
   canViewFullProfile: boolean;
+  nickname: string;
+  aboutMe: string;
+  dateOfBirth: string;
 }
 
 export type ProfileTab = "posts" | "about";

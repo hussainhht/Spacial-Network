@@ -21,6 +21,9 @@ interface ApiProfile {
   updated_at?: string;
   is_private: boolean;
   can_view_full_profile?: boolean;
+  nickname?: string;
+  about_me?: string;
+  date_of_birth?: string;
 }
 
 interface ProfileResponse {
@@ -91,6 +94,9 @@ function toProfile(profile: ApiProfile): Profile {
     isPrivate: profile.is_private,
     canViewFullProfile:
       profile.can_view_full_profile ?? !profile.is_private,
+    nickname: profile.nickname ?? "",
+    aboutMe: profile.about_me ?? "",
+    dateOfBirth: profile.date_of_birth ?? "",
   };
 }
 

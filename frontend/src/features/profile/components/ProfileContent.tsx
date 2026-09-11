@@ -128,6 +128,14 @@ function AboutTab({
         day: "numeric",
       })
     : null;
+  const birthDate = parseDate(profile.dateOfBirth);
+  const formattedDateOfBirth = birthDate
+    ? birthDate.toLocaleDateString(undefined, {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      })
+    : null;
 
   return (
     <div
@@ -166,6 +174,15 @@ function AboutTab({
                 <span className={styles.infoValue}>
                   {profile.gender.charAt(0).toUpperCase() +
                     profile.gender.slice(1)}
+                </span>
+              </div>
+            )}
+
+            {formattedDateOfBirth && (
+              <div className={styles.infoRow}>
+                <span className={styles.infoLabel}>Date of Birth</span>
+                <span className={styles.infoValue}>
+                  {formattedDateOfBirth}
                 </span>
               </div>
             )}
