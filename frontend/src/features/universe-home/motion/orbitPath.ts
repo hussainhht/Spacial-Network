@@ -78,3 +78,43 @@ export function placeOnOrbit(
 export function createPlacement(): OrbitPlacement {
   return { x: 0, y: 0, z: 0, scale: 1 };
 }
+
+/** Falls a placement into a point along a shrinking spiral.
+ *
+ * `t` runs 0 → 1. At 0 the body is exactly where the orbit left it; at 1 it is
+ * at the centre with no size. In between the angle sweeps while the radius
+ * closes, which is what makes the path read as a body being drawn in rather
+ * than sliding towards the middle.
+ *
+ * `yOffset` is added to the source's `y`: the caller's idle drift is not part of
+ * the orbit placement, and passing it in means neither object has to be mutated
+ * to combine them. `out` may safely be `from` — every source value is read
+ * before anything is written.
+ *
+ * Pure, allocation-free and safe to run for every body on every frame. Running
+ * it backwards (a falling `t`) retraces the same curve outwards, which is the
+ * whole return animation.
+ */
+export function spiralToPoint(
+  from: OrbitPlacement,
+  yOffset: number,
+  center: OrbitPlacement,
+  t: number,
+  sweep: number,
+  out: OrbitPlacement,
+): OrbitPlacement {
+  const dx = from.x - center.x;
+  const dy = from.y + yOffset - center.y;
+  const fromZ = from.z;
+  const fromScale = from.scale;
+  const angle = Math.atan2(dy, dx) + sweep * t;
+  // Ease the radius so the body spends its first half still recognisably in
+  // orbit, then accelerates into the core.
+  const radius = Math.hypot(dx, dy) * (1 - t) ** 1.35;
+  out.x = center.x + Math.cos(angle) * radius;
+  out.y = center.y + Math.sin(angle) * radius;
+  out.z = fromZ + (center.z - fromZ) * t;
+  // Collapse late: a body that shrinks early reads as fading out in place.
+  out.scale = fromScale * (1 - t * t);
+  return out;
+}

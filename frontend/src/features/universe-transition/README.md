@@ -1,17 +1,20 @@
-# Home ↔ Groups transition
+# Universe route transitions
 
-`UniverseTransitionProvider` lives inside the shared AppShell. It intercepts only
-Home/Groups navigation through Next Link's `onNavigate`, preserving modified clicks
-and ordinary links. Pages register their roots and existing orbit controllers;
-scoped `data-universe-*` hooks identify the animated elements. No APIs or data
-models are changed.
+`UniverseTransitionProvider` lives inside the shared AppShell. It intercepts
+navigation between Home and the destinations that share the persistent scene,
+through Next Link's `onNavigate`, preserving modified clicks and ordinary links.
+Pages register their roots and existing orbit controllers; scoped
+`data-universe-*` hooks identify the animated elements. No APIs or data models
+are changed.
 
-> **Universe Home v1 supersedes the two sections below at runtime.** The Earth
-> cinematic and its Earth-anchor docking are retained but disabled; the homepage
-> is the three-planet universe track. Read [Universe Home v1](#universe-home-v1)
-> for current behavior. The next three sections describe the legacy path that
-> stays isolated behind `navigation/homeMode.ts` for a later redesign, and the
-> verification recorded when it was last active.
+> **Universe Home v1 supersedes the two sections below at runtime.** The legacy
+> Earth cinematic and its Earth-anchor docking are retained but disabled; the
+> homepage is the three-planet universe track. Read
+> [Universe Home v1](#universe-home-v1) and
+> [The stage engine](#the-stage-engine) for current behavior. The next three
+> sections describe the legacy path that stays isolated behind
+> `navigation/homeMode.ts`, and the verification recorded when it was last
+> active.
 
 ## Persistent Earth
 
@@ -113,32 +116,32 @@ chunk load would otherwise take the sidebar, navbar and every destination link
 with it. The legacy `HomeEarth` payload is retained but never mounts while v1 is
 enabled — two payloads would mean two WebGL contexts on one route.
 
-Docking targets `[data-universe-viewport]` inside the registered `/` root, not
-the old Earth anchor's parent, and waits for a non-zero measurement: the Canvas
-sizes itself from that box, and a 0x0 parent would publish an unusable scene
-handle. A ResizeObserver re-checks when the viewport is measured or resized,
-including an animated sidebar collapse. The host parks back in
-`UniverseTransitionLayer` before the homepage's DOM is removed, and a stale
-registration cleanup can no longer pull it out of a newer registration.
-`renderActive` is true only on Home, so Groups keeps the same Canvas node and
-context but stops drawing. It is independent of reduced motion, which stops spin
-and orbit inside the scene without blanking it.
+Docking targets `[data-universe-viewport]` inside the registered root of
+whichever composed route is current — `/`, `/posts` or `/groups` — not the old
+Earth anchor's parent, and waits for a non-zero measurement: the Canvas sizes
+itself from that box, and a 0x0 parent would publish an unusable scene handle. A
+ResizeObserver re-checks when the viewport is measured or resized. The host parks
+back in `UniverseTransitionLayer` before the departing page's DOM is removed, and
+a stale registration cleanup can no longer pull it out of a newer registration.
+`renderActive` covers every composed route: Mars is the Groups section's anchor
+and has to keep turning there. It is independent of reduced motion, which stops
+spin and orbit inside the scene without blanking it. Planet clicks are Home's
+alone — `data-universe-docked` gates pointer events, so on Posts the cards and on
+Groups the galaxy own the pointer.
 
 ### The v1 navigation guard
 
-`navigate()` returns `false` for `/` and `/groups`, so the existing Next Links in
-the sidebar route normally. The legacy Earth cinematic is written against the old
-orbital feed's anchors, its `EarthHandle` and body scroll locks, none of which
-describe a three-planet scene; its `animation.ts` choreography is left untouched
-and isolated behind `navigation/homeMode.ts` for a later redesign rather than
-rewritten. The switch is a module constant on purpose — a flag set on first
-visiting Home would leave a direct `/groups` entry or a hard refresh on the
-legacy path. Nothing sets `run.current` under v1, so the watchdog, inert state
-and body-overflow mutations simply never engage on these routes; the retained
-legacy path keeps all of those guarantees for a future re-enable.
-
-This deliberately defers the old Home/Groups Earth-to-galaxy visuals. Client
-navigation, modified clicks, Back/Forward and focus are unaffected.
+`navigate()` now serves both `/` → `/posts` and `/` → `/groups`, and the return
+from Groups, through the stage engine below. The `UNIVERSE_HOME_V1_ENABLED`
+guard is therefore reached only with v1 disabled: the legacy Earth cinematic is
+written against the old orbital feed's anchors, its `EarthHandle` and body
+scroll locks, none of which describe a three-planet scene, and its
+`animation.ts` choreography is left intact behind `navigation/homeMode.ts`
+rather than rewritten. The switch is a module constant on purpose — a flag set
+on first visiting Home would leave a direct `/groups` entry or a hard refresh on
+a different path. `exitScene` from that module is reused by the Groups return,
+which is what it always described: group planets and orbit rings drawing into
+the core.
 
 ### How the loop moves
 
@@ -147,12 +150,12 @@ function of one number: its offset from the focus, `index - phase`. That offset
 is mapped onto a closed, tilted ellipse (`universe-home/motion/orbitPath.ts`)
 whose front point is the focus:
 
-| offset | slot     | where it sits                |
-| ------ | -------- | ---------------------------- |
+| offset | slot     | where it sits                 |
+| ------ | -------- | ----------------------------- |
 | `0`    | active   | large, close, right of centre |
-| `-1`   | previous | small, distant, upper left   |
-| `+1`   | next     | small, distant, lower left   |
-| `±N/2` | far side | smallest, furthest left      |
+| `-1`   | previous | small, distant, upper left    |
+| `+1`   | next     | small, distant, lower left    |
+| `±N/2` | far side | smallest, furthest left       |
 
 Because every coordinate comes from `cos`/`sin` of `2*pi*offset/N`, the path is
 exactly periodic in `N`. Two things follow, and they are the whole design:
@@ -177,26 +180,81 @@ The homepage is one locked pane that never exceeds the shell's scroll
 container, so `#page-content` has nothing to scroll and no second scrollbar
 appears.
 
-### Extension points for a later transition
+### Opening a destination
 
-Nothing here implements a cinematic route transition, and a gesture never
-pushes a route: scrolling explores, and only a click on the planet already in
-focus (or a destination link) opens a section. That click asks `navigate()`
-first, so re-enabling the cinematic picks it up with no change here. The seams
-a later coordinator would use already exist:
+A gesture never pushes a route: scrolling explores, and only a click on the
+planet already in focus — or its destination link — opens a section.
+`UniverseHome.openDestination` is the one entry point for both, so a section
+cannot be entered two different ways, and it asks `navigate()` before falling
+back to ordinary client navigation. The registered `/` controller
+(`register('/', { root, pause, resume })`) locks and releases the loop for the
+length of a move; `run.current` claiming its own destination is what makes a
+second click a no-op rather than a second history entry.
 
-- The registered `/` controller (`register('/', { root, pause, resume })`) locks
-  and releases the loop without touching this provider.
-- Each rig exposes a `transitionRoot` separate from the `orbitRoot` its own
-  frame callback owns, so a transition can move a planet without fighting the
-  loop. Transition roots are identity today.
-- `selectedPlanetId` already records which destination was chosen, and
-  `isTransitioning` already reads this provider's one coordinator.
+## The stage engine
 
-A future sequence would pause the controller, centre and zoom the chosen rig's
-`transitionRoot`, push the configured route from `navigation/planetDestinations`,
-reveal the destination and resume — reusing the persistent host rather than
-adding a second transition machine.
+A **stage** is the scene's arrangement on a destination route. Each one has
+exactly one subject — the planet that travels there and stays — and every other
+body leaves. `navigation/planetDestinations.ts` owns that table
+(`UNIVERSE_STAGE_PLANETS`: Posts → Earth, Groups → Mars) and derives each route
+from `PLANET_DESTINATIONS`, so a stage and its destination link cannot disagree.
+
+Two mutable cells carry a move, and neither costs a render:
+
+| cell          | meaning                                      | written by       | read by    |
+| ------------- | -------------------------------------------- | ---------------- | ---------- |
+| `stage`       | 0 = home loop, 1 = the destination           | `useStageTravel` | `useFrame` |
+| `stageTarget` | which destination `stage` is heading towards | `useStageTravel` | `useFrame` |
+
+`stageTarget` is written only on departure and deliberately left alone on the
+way back, so a return is an interpolation of the same two compositions the
+departure was: the bodies retrace the curve they arrived on instead of snapping
+to another destination's geometry half way home.
+
+`PlanetRig` reads both inside its frame callback and does one of three things
+per body: the subject travels to the destination anchor; on Groups every other
+body spirals into the core star (`orbitPath.spiralToPoint`, staggered by
+`ABSORB_DELAY` so the Moon leads, then Saturn, then Earth); on Posts they
+withdraw along their depth axis. GSAP never touches a transform the frame loop
+writes, which is why every planet keeps spinning and the Moon keeps orbiting
+throughout.
+
+`travelRun` in the provider is the single engine. Direction-specific
+choreography is one `choreograph` callback — there is no second transition
+machine for Mars. `openStage` adds the core-star glow, which lives in the fixed
+transition layer above both routes, so the star is already reacting when the
+galaxy mounts behind it; `returnHome` runs `exitScene` and contracts the same
+glow.
+
+### Where the Groups composition comes from
+
+`universe-home/scene/groupsStage.ts` is the single source of Mars's anchor, the
+core star and the galaxy diameter, as a pure function of the docked viewport's
+pixel box — the same contract as `postsStage.ts`, and for a stronger reason. The
+absorption is choreographed on Home, _before_ the Groups DOM exists, so the
+target cannot be measured; it is predicted, and the arriving page honours the
+same numbers. `useGroupsComposition` publishes them onto the pane as
+`--groups-star-*`, `--groups-galaxy` and `--groups-mars-*`, and the galaxy
+positions its core from those. Verified equal to the rendered core within ~3px
+at every tier.
+
+Below 1000px the galaxy falls back to a flowing grid, where the core sits a
+fixed pixel distance under the controls rather than at a fraction of the pane —
+`starY` is a discriminated union for exactly that reason.
+
+### Shell layout
+
+`components/layout/shellLayout.ts` decides which chrome a route gets.
+`universe` is navbar-only: `/`, `/posts` and everything under `/groups`. The
+sidebar is not rendered and its column is not reserved — `mainAreaFull` zeroes
+both the margin and `--sidebar-width`, so nothing downstream can lay itself out
+around a panel that is absent. Every other route keeps the original sidebar
+shell untouched. Routes move between the two lists as their navbar-only
+replacement lands; the last move deletes the branch.
+
+The navbar's sidebar-toggle slot carries a `← Universe` button on universe
+routes. It asks `navigate("/")` first and falls back to an explicit
+`router.push("/")` — never `router.back()`, which can point somewhere unrelated.
 
 ## File inventory
 
@@ -210,7 +268,14 @@ and `features/universe-home/navigation/` (`planetDestinations.ts`, `homeMode.ts`
 `UniverseCanvasHost.tsx`). The loop itself lives in
 `features/universe-home/motion/` (`orbitPath.ts`, `planetLoop` consumers
 `usePlanetLoop.ts` and `usePlanetGestures.ts`, `wheelInput.ts`, and the
-composing `useUniverseHomeMotion.ts`). `animation.ts` is unchanged.
+composing `useUniverseHomeMotion.ts`). `animation.ts` gains only an exported
+`localDelta`; its choreography is unchanged.
+
+The Mars → Groups stage adds
+`features/universe-home/scene/groupsStage.ts`,
+`features/groups/components/galaxy/galaxyReveal.ts`,
+`features/groups/components/galaxy/useGroupsComposition.ts` and
+`components/layout/shellLayout.ts`.
 
 Modified integration points:
 

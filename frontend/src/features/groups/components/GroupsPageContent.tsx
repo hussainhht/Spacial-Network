@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { getGroups } from "../api/groups";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { useGroupQuery, useMyGroups } from "../hooks/useGroupData";
 import { InvitationsPanel } from "./GroupPanels";
 import GroupGalaxy, { type GalaxyQueryState } from "./galaxy/GroupGalaxy";
+import { useGroupsComposition } from "./galaxy/useGroupsComposition";
 import { useGroupsSearch } from "../context/GroupsSearchProvider";
 import GroupsFilterTabs, { type GroupsTab } from "./GroupsFilterTabs";
 import styles from "./galaxy/GroupGalaxy.module.css";
@@ -14,7 +15,21 @@ import styles from "./galaxy/GroupGalaxy.module.css";
 const PAGE_SIZE = 12;
 const SEARCH_DEBOUNCE_MS = 300;
 
+/**
+ * The Groups world: one locked pane, no sidebar.
+ *
+ * Mars docks into this pane as the section's anchor — the same WebGL object the
+ * reader clicked on the homepage — and the galaxy's core star stands exactly
+ * where the home planets were absorbed. Both positions come from one shared
+ * composition (`universe-home/scene/groupsStage.ts`), published onto the pane as
+ * custom properties by `useGroupsComposition`.
+ *
+ * Data, search, tabs and pagination are unchanged: this component still owns
+ * them, and still drives the same API hooks.
+ */
 export default function GroupsPageContent() {
+  const pane = useRef<HTMLElement>(null);
+  useGroupsComposition(pane);
   const [activeTab, setActiveTab] = useState<GroupsTab>("mine");
   const { search } = useGroupsSearch();
   const debouncedSearch = useDebouncedValue(search.trim(), SEARCH_DEBOUNCE_MS);
@@ -41,14 +56,30 @@ export default function GroupsPageContent() {
 
   return (
     <main
+      ref={pane}
       data-universe-scene="groups"
-      className={`groups-page space-shell ${styles.page}`}
+      className={styles.page}
+      aria-labelledby="app-page-title"
     >
-      <div className="groups-container">
+      {/* The persistent universe canvas docks here. Mars settles into the
+          upper-left anchor and keeps turning; the layer never takes the pointer,
+          because the galaxy below owns it. */}
+      <div
+        className={styles.marsLayer}
+        data-universe-viewport
+        aria-hidden="true"
+      />
+      <p className={styles.marsLabel} data-universe-ui>
+        <span>Mars</span>
+        <span>Groups</span>
+      </p>
+      <div className={styles.content}>
         <div data-universe-ui className={styles.filters}>
           <GroupsFilterTabs activeTab={activeTab} onTabChange={changeTab} />
         </div>
-        <InvitationsPanel />
+        <div className={styles.invitations}>
+          <InvitationsPanel />
+        </div>
         <section
           id={`groups-tabpanel-${activeTab}`}
           role="tabpanel"

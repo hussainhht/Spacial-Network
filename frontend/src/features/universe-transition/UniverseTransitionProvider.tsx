@@ -16,30 +16,57 @@ import { usePathname, useRouter } from "next/navigation";
 import { gsap } from "gsap";
 import UniverseTransitionLayer from "./UniverseTransitionLayer";
 import HomeEarth from "@/components/space/HomeEarth";
-import type { UniverseHomeAPI } from "@/features/universe-home/contracts";
+import type {
+  UniverseHomeAPI,
+  UniverseStageId,
+} from "@/features/universe-home/contracts";
 import { UNIVERSE_HOME_V1_ENABLED } from "@/features/universe-home/navigation/homeMode";
 import UniverseCanvasHost from "@/features/universe-home/navigation/UniverseCanvasHost";
+import {
+  stageForRoute,
+  stagePlanet,
+  stageRoute,
+} from "@/features/universe-home/navigation/planetDestinations";
 import { useUniverseHomeState } from "@/features/universe-home/navigation/useUniverseHomeState";
+import { groupsComposition } from "@/features/universe-home/scene/groupsStage";
 import { center, enterScene, exitScene, moveEarth } from "./animation";
 import { useStageTravel } from "./useStageTravel";
 import type {
   EarthHandle,
+  Point,
   SceneRegistration,
   UniverseRoute,
+  UniverseTransitionDirection,
   UniverseTransitionState,
 } from "./types";
 import styles from "./UniverseTransition.module.css";
 
 const motionQuery = "(prefers-reduced-motion: reduce)";
 
-/** Home to Posts. Earth travels for `EARTH_TRAVEL`; the route is pushed part
- * way through, so React mounts Posts behind a scene that is still moving and
- * the reader never sees a blank frame. Both are short enough that the whole
- * move lands inside the ~1s a route change is allowed to feel like. */
-const EARTH_TRAVEL = 0.78;
-const ROUTE_PUSH_AT = 0.34;
+/** Home to a destination. The subject planet travels for `STAGE_TRAVEL`; the
+ * route is pushed part way through, at `STAGE_PUSH_AT`, so React mounts the
+ * destination behind a scene that is still moving and the reader never sees a
+ * blank frame.
+ *
+ * Groups is given a little longer than Posts because three bodies have to
+ * spiral into its core star on a staggered schedule rather than one planet
+ * having to arrive, and its route lands later so the core is already pulsing
+ * when the galaxy mounts behind it. Both stay inside the ~1s a route change is
+ * allowed to feel like, before the destination's own reveal. */
+const STAGE_TRAVEL: Record<UniverseStageId, number> = {
+  posts: 0.78,
+  groups: 0.92,
+};
+const STAGE_PUSH_AT: Record<UniverseStageId, number> = {
+  posts: 0.34,
+  groups: 0.5,
+};
+/** Leaving Groups. Shorter than arriving: a return should feel like stepping
+ * back out, not like a second feature. */
+const RETURN_TRAVEL = 0.82;
+const RETURN_PUSH_AT = 0.3;
 const REDUCED_TRAVEL = 0.2;
-/** Blend back to the home composition when Posts is left by ordinary
+/** Blend back to the home composition when a destination is left by ordinary
  * navigation, where there is no cinematic to own the move. */
 const STAGE_RETURN = 0.55;
 /** A destination that never reports itself ready must not strand the scene in
@@ -84,6 +111,12 @@ type Run = {
   to: UniverseRoute;
   pushed: boolean;
   reduced: boolean;
+  /** Whether arrival waits for the destination's data as well as its mount.
+   * Posts has nothing to show until its feed resolves; the Groups galaxy has a
+   * core star and orbit rings to arrive into, and reveals its planets when the
+   * API answers, so holding the scene in the overlay for it would only make the
+   * move feel like a loading screen. */
+  waitForData: boolean;
   timeline: gsap.core.Timeline;
   context: gsap.Context;
   deadline: number;
@@ -104,9 +137,9 @@ export default function UniverseTransitionProvider({
     () => false,
   );
   const router = useRouter();
-  const [direction, setDirection] = useState<
-    "home-to-groups" | "groups-to-home" | "home-to-posts" | null
-  >(null);
+  const [direction, setDirection] = useState<UniverseTransitionDirection | null>(
+    null,
+  );
   const active = direction !== null;
   const [host, setHost] = useState<HTMLDivElement | null>(null);
   const hostRef = useRef<HTMLDivElement | null>(null);
@@ -133,6 +166,7 @@ export default function UniverseTransitionProvider({
   const stageApplied = useRef(false);
   const { travel: travelStage } = useStageTravel({
     stageRef: homeTrack.stage,
+    stageTargetRef: homeTrack.stageTarget,
     phaseRef: homeTrack.phase,
     scene: homeTrack.scene,
   });
@@ -181,14 +215,14 @@ export default function UniverseTransitionProvider({
     if (!host || run.current) return;
     const home = scenes.current.get("/");
     if (UNIVERSE_HOME_V1_ENABLED) {
-      // Home and Posts are two compositions of one scene, so both dock the same
-      // canvas. Each owns a measured viewport inside its registered root and
-      // the Canvas sizes itself from that box; docking into a 0x0 parent would
-      // publish an unusable scene handle, so wait for a real measurement.
-      const docking =
-        path.current === "/" || path.current === "/posts"
-          ? scenes.current.get(path.current)
-          : undefined;
+      // Home, Posts and Groups are three compositions of one scene, so all
+      // three dock the same canvas. Each owns a measured viewport inside its
+      // registered root and the Canvas sizes itself from that box; docking into
+      // a 0x0 parent would publish an unusable scene handle, so wait for a real
+      // measurement.
+      const dockable =
+        path.current === "/" || stageForRoute(path.current) !== null;
+      const docking = dockable ? scenes.current.get(path.current) : undefined;
       const viewport =
         docking?.root.querySelector<HTMLElement>("[data-universe-viewport]") ??
         null;
@@ -208,9 +242,10 @@ export default function UniverseTransitionProvider({
         stage.current?.style.removeProperty("visibility");
         if (stage.current) {
           // Planets are clickable on Home only. On Posts the canvas lies under
-          // the cards and must not take the pointer from them.
+          // the cards, and on Groups under the galaxy; neither may take the
+          // pointer from them. See `UniverseTransition.module.css`.
           stage.current.dataset.universeDocked =
-            path.current === "/posts" ? "posts" : "home";
+            stageForRoute(path.current) ?? "home";
         }
       } else {
         park(host);
@@ -346,25 +381,32 @@ export default function UniverseTransitionProvider({
     if (!current) dock();
   }, [pathname, dock]);
 
-  // Posts can also be entered or left without the cinematic — a sidebar link, a
-  // back button, a hard load. The composition still has to match the route, so
-  // the blend is reconciled here and the cinematic simply gets there first.
+  // A destination can also be entered or left without the cinematic — a
+  // navbar link, a back button, a hard load. The composition still has to match
+  // the route, so the blend is reconciled here and the cinematic simply gets
+  // there first.
   useLayoutEffect(() => {
     const first = !stageApplied.current;
     stageApplied.current = true;
     if (run.current) return;
-    const target = pathname === "/posts" ? 1 : 0;
+    const destination = stageForRoute(pathname);
+    const target = destination ? 1 : 0;
     if (Math.abs(stageBlend.current - target) < 1e-4) return;
     // Nothing to travel through on a first paint, and nothing to watch under a
     // reduced-motion preference.
-    travelStage(target, first || reducedMotion ? 0 : STAGE_RETURN);
+    travelStage(
+      target,
+      first || reducedMotion ? 0 : STAGE_RETURN,
+      destination ?? undefined,
+    );
   }, [pathname, reducedMotion, travelStage, stageBlend]);
 
-  // Posts is Earth's destination, so arriving there is what makes Earth the
-  // active planet. Once per navigation, never per frame.
+  // Each destination belongs to one planet, so arriving there is what makes that
+  // planet the active one. Once per navigation, never per frame.
   const commitActivePlanet = homeTrack.commitActivePlanet;
   useLayoutEffect(() => {
-    if (pathname === "/posts") commitActivePlanet("earth");
+    const destination = stageForRoute(pathname);
+    if (destination) commitActivePlanet(stagePlanet(destination));
   }, [pathname, commitActivePlanet]);
 
   useLayoutEffect(() => {
@@ -383,132 +425,268 @@ export default function UniverseTransitionProvider({
     };
   }, [router]);
 
+  /** Where the Groups core star will be, in screen pixels, for a pane of this
+   * geometry. The galaxy is not mounted yet when the departure is built, so the
+   * absorption target is predicted from the shared composition rather than
+   * measured — and the page that arrives honours the same numbers. */
+  const corePoint = useCallback((rect: DOMRect): Point => {
+    const composition = groupsComposition(rect.width, rect.height);
+    return {
+      x: rect.left + composition.star.x,
+      y: rect.top + composition.star.y,
+    };
+  }, []);
+
   /**
-   * Home to Posts: one continuous scene, not a fade between two pages.
+   * One continuous scene, not a fade between two pages.
    *
-   * Earth is the same WebGL object on both sides — the canvas is portalled into
-   * a host that is reparented, never rebuilt — so there is no arrival transform
-   * to match and nothing to teleport. The move is a single blend from the loop
-   * composition to the Posts composition, with the route pushed part way
-   * through it, and the frame loop keeps spinning the Earth and orbiting the
-   * Moon throughout.
+   * The planets are the same WebGL objects on both sides — the canvas is
+   * portalled into a host that is reparented, never rebuilt — so there is no
+   * arrival transform to match and nothing to teleport. A move is a single blend
+   * from one composition to another, with the route pushed part way through it,
+   * and the frame loop keeps spinning every body throughout.
+   *
+   * This is the engine. What each direction looks like is the `choreograph`
+   * callback: Home to Posts draws the chrome down and lets Earth travel, Home to
+   * Groups lights the core star as Earth, Saturn and the Moon spiral into it,
+   * and leaving Groups collapses the galaxy back into that same star. The engine
+   * itself is identical for all of them, which is the point — there is one
+   * transition machine, not one per destination.
    */
-  const openPosts = useCallback(() => {
-    const host = hostRef.current;
-    const source = scenes.current.get("/");
-    // Without a stage there is nothing to pin, and the canvas would be parked
-    // hidden the moment Home unmounts. Let ordinary navigation handle it.
-    if (!host || !source || !stage.current) return false;
+  const travelRun = useCallback(
+    ({
+      from,
+      to,
+      blend,
+      target,
+      direction,
+      duration: requested,
+      pushAt,
+      waitForData,
+      choreograph,
+    }: {
+      from: UniverseRoute;
+      to: UniverseRoute;
+      /** 1 to commit to a destination composition, 0 to return home. */
+      blend: number;
+      /** Set only on a departure; a return keeps the composition it is leaving
+       * so the bodies retrace the path they arrived on. */
+      target?: UniverseStageId;
+      direction: UniverseTransitionDirection;
+      duration: number;
+      pushAt: number;
+      waitForData: boolean;
+      choreograph?: (
+        timeline: gsap.core.Timeline,
+        context: { root: HTMLElement; origin: DOMRect; duration: number },
+      ) => void;
+    }) => {
+      const host = hostRef.current;
+      const source = scenes.current.get(from);
+      // Without a stage there is nothing to pin, and the canvas would be parked
+      // hidden the moment the departing page unmounts. Let ordinary navigation
+      // handle it.
+      if (!host || !source || !stage.current) return false;
 
-    const reduced = window.matchMedia(motionQuery).matches;
-    const duration = reduced ? REDUCED_TRAVEL : EARTH_TRAVEL;
-    const context = gsap.context(() => {});
-    const timeline = gsap.timeline({ paused: true });
-    const current: Run = {
-      from: "/",
-      to: "/posts",
-      pushed: false,
-      reduced,
-      timeline,
-      context,
-      deadline: 0,
-      origin: source.root.getBoundingClientRect(),
-      overflow: document.body.style.overflow,
-      source,
-    };
-    run.current = current;
-    setDirection("home-to-posts");
-    shell.current?.setAttribute("data-running", "true");
-    // Locks the loop's gestures, the destination controls and a second click on
-    // the planet: `isTransitioning` is the one flag the homepage reads.
-    source.pause();
-    source.root.inert = true;
-    router.prefetch("/posts");
-    // Hold the scene in the overlay for the whole move. Home's viewport is
-    // about to be unmounted from under it, and the overlay rectangle is the
-    // pane it already occupies, so nothing moves at the handover.
-    layer.current?.appendChild(host);
-    host.style.display = "contents";
-    pinStage(current.origin);
-    // Started outside the run's gsap.context on purpose. A context collects
-    // animations created inside the callbacks of animations it owns, and
-    // `finish()` reverts it — which would snap the scene back to the home
-    // composition at the exact moment it arrives at the Posts one.
-    travelStage(1, duration);
+      const reduced = window.matchMedia(motionQuery).matches;
+      const length = reduced ? REDUCED_TRAVEL : requested;
+      const context = gsap.context(() => {});
+      const timeline = gsap.timeline({ paused: true });
+      const current: Run = {
+        from,
+        to,
+        pushed: false,
+        reduced,
+        waitForData,
+        timeline,
+        context,
+        deadline: 0,
+        origin: source.root.getBoundingClientRect(),
+        overflow: document.body.style.overflow,
+        source,
+      };
+      run.current = current;
+      setDirection(direction);
+      shell.current?.setAttribute("data-running", "true");
+      // Locks the loop's gestures, the destination controls and a second click
+      // on the planet: `isTransitioning` is the one flag the pages read.
+      source.pause();
+      source.root.inert = true;
+      router.prefetch(to);
+      // Hold the scene in the overlay for the whole move. The departing
+      // viewport is about to be unmounted from under it, and the overlay
+      // rectangle is the pane it already occupies, so nothing moves at the
+      // handover.
+      layer.current?.appendChild(host);
+      host.style.display = "contents";
+      pinStage(current.origin);
+      // Started outside the run's gsap.context on purpose. A context collects
+      // animations created inside the callbacks of animations it owns, and
+      // `finish()` reverts it — which would snap the scene back to the
+      // departing composition at the exact moment it arrives at the new one.
+      travelStage(blend, length, target);
 
-    const settle = () => {
-      if (run.current !== current) return;
-      const destination = scenes.current.get("/posts");
-      const ready =
-        path.current === "/posts" &&
-        destination !== undefined &&
-        destination.root.dataset.universeReady !== "false";
-      if (!ready && performance.now() < current.deadline) {
-        frame.current = requestAnimationFrame(settle);
-        return;
+      const settle = () => {
+        if (run.current !== current) return;
+        const destination = scenes.current.get(to);
+        const ready =
+          path.current === to &&
+          destination !== undefined &&
+          (!current.waitForData ||
+            destination.root.dataset.universeReady !== "false");
+        if (!ready && performance.now() < current.deadline) {
+          frame.current = requestAnimationFrame(settle);
+          return;
+        }
+        // Docking hands the canvas to the arriving page's viewport at exactly
+        // the geometry it is already pinned to, so the unpin is not a visual
+        // change.
+        finishRef.current();
+      };
+
+      // One bounded safety timer, not visual sequencing. A failed mount must
+      // never leave the page inert or the scene stranded in the overlay. Armed
+      // before the timeline so a throw on the way in is covered too.
+      watchdog.current = setTimeout(() => {
+        if (run.current !== current) return;
+        finishRef.current();
+        if (!current.pushed) router.push(to);
+      }, 8000);
+
+      try {
+        context.add(() => {
+          const chrome =
+            source.root.querySelectorAll<HTMLElement>("[data-universe-ui]");
+          if (chrome.length)
+            timeline.to(chrome, { opacity: 0, duration: length * 0.4 }, 0);
+          if (!reduced)
+            choreograph?.(timeline, {
+              root: source.root,
+              origin: current.origin,
+              duration: length,
+            });
+          timeline.call(
+            () => {
+              if (run.current !== current) return;
+              current.pushed = true;
+              router.push(to, { scroll: false });
+            },
+            undefined,
+            reduced ? 0 : length * pushAt,
+          );
+          // Anchored at 0, not appended: the timeline has to end when the
+          // subject finishes travelling, not one route-push offset later.
+          timeline.to({}, { duration: length }, 0);
+          timeline.call(
+            () => {
+              current.deadline = performance.now() + ARRIVAL_TIMEOUT;
+              frame.current = requestAnimationFrame(settle);
+            },
+            undefined,
+            length,
+          );
+        });
+        timeline.play();
+      } catch (error) {
+        console.error("Universe departure failed", error);
+        finishRef.current();
+        router.push(to);
       }
-      // Docking hands the canvas to the Posts earth layer at exactly the
-      // geometry it is already pinned to, so the unpin is not a visual change.
-      finishRef.current();
-    };
+      return true;
+    },
+    [router, pinStage, travelStage],
+  );
 
-    // One bounded safety timer, not visual sequencing. A failed mount must never
-    // leave the page inert or the scene stranded in the overlay. Armed before
-    // the timeline so a throw on the way in is covered too.
-    watchdog.current = setTimeout(() => {
-      if (run.current !== current) return;
-      finishRef.current();
-      if (!current.pushed) router.push("/posts");
-    }, 8000);
+  /** Home to a destination. Groups additionally lights its core star: the glow
+   * lives in the fixed transition layer, above both routes, so the star is
+   * already reacting to the bodies falling into it when the galaxy mounts behind
+   * it — which is what hides the React route boundary. */
+  const openStage = useCallback(
+    (destination: UniverseStageId) =>
+      travelRun({
+        from: "/",
+        to: stageRoute(destination) as UniverseRoute,
+        blend: 1,
+        target: destination,
+        direction: destination === "posts" ? "home-to-posts" : "home-to-groups",
+        duration: STAGE_TRAVEL[destination],
+        pushAt: STAGE_PUSH_AT[destination],
+        waitForData: destination === "posts",
+        choreograph:
+          destination === "groups"
+            ? (timeline, { origin, duration }) => {
+                const core = glow.current;
+                if (!core) return;
+                const point = corePoint(origin);
+                gsap.set(core, {
+                  left: point.x,
+                  top: point.y,
+                  opacity: 0,
+                  scale: 0.2,
+                });
+                // Brightens as the bodies arrive, then releases one ring
+                // outward as the last of them is absorbed. No flash, no bloom
+                // over the UI: a single element that grows and fades.
+                timeline.to(
+                  core,
+                  { opacity: 0.95, scale: 1, duration: duration * 0.6, ease: "power2.in" },
+                  duration * 0.3,
+                );
+                timeline.to(
+                  core,
+                  { scale: 1.8, opacity: 0, duration: 0.4, ease: "power2.out" },
+                  duration * 0.9,
+                );
+              }
+            : undefined,
+      }),
+    [travelRun, corePoint],
+  );
 
-    try {
-      context.add(() => {
-        const chrome =
-          source.root.querySelectorAll<HTMLElement>("[data-universe-ui]");
-        if (chrome.length)
-          timeline.to(chrome, { opacity: 0, duration: duration * 0.4 }, 0);
-        timeline.call(
-          () => {
-            if (run.current !== current) return;
-            current.pushed = true;
-            router.push("/posts", { scroll: false });
-          },
-          undefined,
-          reduced ? 0 : ROUTE_PUSH_AT,
-        );
-        // Anchored at 0, not appended: the timeline has to end when Earth
-        // finishes travelling, not one route-push offset later.
-        timeline.to({}, { duration }, 0);
-        timeline.call(
-          () => {
-            current.deadline = performance.now() + ARRIVAL_TIMEOUT;
-            frame.current = requestAnimationFrame(settle);
-          },
-          undefined,
-          duration,
-        );
-      });
-      timeline.play();
-    } catch (error) {
-      console.error("Universe departure failed", error);
-      finishRef.current();
-      router.push("/posts");
-    }
-    return true;
-  }, [router, pinStage, travelStage]);
+  /** Groups back to Home. The galaxy collapses into the core star it grew out
+   * of, the star contracts, and the same blend run backwards carries Mars out of
+   * its anchor and the absorbed bodies back out of the core onto their orbits. */
+  const returnHome = useCallback(
+    () =>
+      travelRun({
+        from: "/groups",
+        to: "/",
+        blend: 0,
+        direction: "groups-to-home",
+        duration: RETURN_TRAVEL,
+        pushAt: RETURN_PUSH_AT,
+        waitForData: false,
+        choreograph: (timeline, { root, origin }) => {
+          const point = corePoint(origin);
+          // The existing galaxy exit: group planets and orbit rings draw into
+          // the core, and the core's own label fades with them.
+          exitScene(timeline, root, point, false);
+          const core = glow.current;
+          if (!core) return;
+          gsap.set(core, { left: point.x, top: point.y, opacity: 0, scale: 0.5 });
+          timeline.to(core, { opacity: 0.8, scale: 1, duration: 0.34 }, 0.12);
+          timeline.to(core, { opacity: 0, scale: 0.15, duration: 0.36 }, 0.5);
+        },
+      }),
+    [travelRun, corePoint],
+  );
 
   const navigate = useCallback(
     (href: string) => {
     // A move already owns the scene. Claiming its own destination is what stops
     // a second click from pushing the route twice.
     if (run.current) return href === run.current.to;
-    if (pathname === "/" && href === "/posts") return openPosts();
+    const destination = stageForRoute(href);
+    if (pathname === "/" && destination) return openStage(destination);
+    // Groups is the one destination with its own return cinematic. Posts has no
+    // core star to collapse into, so leaving it stays ordinary navigation and
+    // the reconciliation effect above blends the composition back.
+    if (href === "/" && stageForRoute(pathname) === "groups") return returnHome();
     // Universe Home v1 guard (DECISIONS D09). The legacy Home/Groups cinematic
-    // is written against the old orbital feed's anchors, its EarthHandle and
-    // body scroll locks, none of which describe the three-planet homepage.
-    // Declining here covers both directions and a direct /groups entry alike,
-    // because the mode is a module constant rather than state set on first
-    // visiting Home. The callers' existing Next Links then navigate normally.
+    // below is written against the old orbital feed's anchors, its EarthHandle
+    // and body scroll locks, none of which describe the three-planet homepage.
+    // Both of its directions are now served by the engine above, so this is only
+    // reachable with v1 disabled; it is retained, not rewritten.
     if (UNIVERSE_HOME_V1_ENABLED) return false;
     if (!(
       (pathname === "/" && href === "/groups") ||
@@ -561,6 +739,9 @@ export default function UniverseTransitionProvider({
       to: href as "/" | "/groups",
       pushed: false,
       reduced,
+      // The retained legacy path has always held the scene until the galaxy's
+      // own data lands; see its `awaitDestination` below.
+      waitForData: true,
       timeline,
       context,
       deadline: 0,
@@ -792,7 +973,7 @@ export default function UniverseTransitionProvider({
     }
     return true;
     },
-    [pathname, router, openPosts],
+    [pathname, router, openStage, returnHome],
   );
 
   const onEarthReady = useCallback(
@@ -803,13 +984,9 @@ export default function UniverseTransitionProvider({
     [dock],
   );
 
+  const composed = stageForRoute(pathname);
   const transitionState: UniverseTransitionState =
-    direction ??
-    (pathname === "/"
-      ? "idle-home"
-      : pathname === "/posts"
-        ? "idle-posts"
-        : "idle-groups");
+    direction ?? (composed ? `idle-${composed}` : "idle-home");
   // Memoized so home-track updates cannot re-render the Sidebar, Navbar and
   // Groups consumers of the unchanged transition API, and vice versa.
   const transitionApi = useMemo<API>(
@@ -828,6 +1005,7 @@ export default function UniverseTransitionProvider({
       selectedPlanetId: homeTrack.selectedPlanetId,
       phase: homeTrack.phase,
       stage: homeTrack.stage,
+      stageTarget: homeTrack.stageTarget,
       scene: homeTrack.scene,
       reducedMotion,
       // One transition machine: this reads the existing coordinator rather than
@@ -842,6 +1020,7 @@ export default function UniverseTransitionProvider({
       homeTrack.selectedPlanetId,
       homeTrack.phase,
       homeTrack.stage,
+      homeTrack.stageTarget,
       homeTrack.scene,
       homeTrack.commitActivePlanet,
       homeTrack.selectPlanet,
@@ -883,10 +1062,7 @@ export default function UniverseTransitionProvider({
         </div>
         <UniverseTransitionLayer layerRef={layer} glowRef={glow} />
         {host &&
-          (pathname === "/" ||
-            pathname === "/groups" ||
-            pathname === "/posts" ||
-            active) &&
+          (pathname === "/" || composed !== null || active) &&
           createPortal(
             // One payload, never both: a second HomeEarth Canvas alongside
             // UniverseCanvas would mean two WebGL contexts on the same route.
@@ -895,15 +1071,15 @@ export default function UniverseTransitionProvider({
               <UniverseCanvasHost
                 ref={setStage}
                 className={styles.universeStage}
-                // Home and Posts draw; Groups keeps the same context but
-                // sleeps. This is independent of reduced motion, which stops
-                // spin and orbit inside the scene without blanking it.
-                renderActive={
-                  pathname === "/" || pathname === "/posts" || active
-                }
+                // Every composed route draws: Home, Posts, and Groups, where
+                // Mars is the section's anchor and has to keep turning. This is
+                // independent of reduced motion, which stops spin and orbit
+                // inside the scene without blanking it.
+                renderActive={pathname === "/" || composed !== null || active}
                 reducedMotion={reducedMotion}
                 phase={homeTrack.phase}
                 stage={homeTrack.stage}
+                stageTarget={homeTrack.stageTarget}
                 onSceneReady={homeTrack.onSceneReady}
                 onPlanetActivate={homeTrack.onPlanetActivate}
               />

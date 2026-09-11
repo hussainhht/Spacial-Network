@@ -219,7 +219,10 @@
   transition: margin-left 300ms cubic-bezier(0.4, 0, 0.2, 1);
   will-change: margin-left;
 }
-.mainAreaCollapsed {
+/* No reserved column. Used both for a collapsed sidebar and for the navbar-only
+   routes, which never render one: the custom property is zeroed as well as the
+   margin, so nothing inside can compute a gutter for a panel that is absent. */
+.mainAreaFull {
   margin-left: 0;
   --sidebar-width: 0px;
 }

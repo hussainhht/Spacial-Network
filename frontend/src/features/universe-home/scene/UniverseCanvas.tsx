@@ -19,6 +19,7 @@ export default function UniverseCanvas({
   reducedMotion,
   phase,
   stage,
+  stageTarget,
   onSceneReady,
   onPlanetActivate,
 }: UniverseCanvasProps) {
@@ -63,6 +64,7 @@ export default function UniverseCanvas({
             reducedMotion={reducedMotion}
             phase={phase}
             stage={stage}
+            stageTarget={stageTarget}
             onSceneReady={reportScene}
             onPlanetActivate={onPlanetActivate}
             onAssetError={reportAssetError}

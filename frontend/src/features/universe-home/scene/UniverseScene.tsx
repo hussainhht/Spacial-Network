@@ -17,6 +17,7 @@ export default function UniverseScene({
   reducedMotion,
   phase,
   stage,
+  stageTarget,
   onSceneReady,
   onPlanetActivate,
   onAssetError,
@@ -26,6 +27,7 @@ export default function UniverseScene({
   | "reducedMotion"
   | "phase"
   | "stage"
+  | "stageTarget"
   | "onSceneReady"
   | "onPlanetActivate"
 > & {
@@ -67,6 +69,7 @@ export default function UniverseScene({
           count={PLANET_ORDER.length}
           phase={phase}
           stage={stage}
+          stageTarget={stageTarget}
           framing={framing}
           animate={renderActive && !reducedMotion}
           onAssetError={onAssetError}

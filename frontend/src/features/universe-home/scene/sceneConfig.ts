@@ -1,6 +1,7 @@
 import { DEV_MODELS, type DevModel } from "@/components/space/modelsRegistry";
 import type { PlanetId } from "../contracts";
 import type { OrbitFraming, OrbitPlacement } from "../motion/orbitPath";
+import { groupsComposition } from "./groupsStage";
 import { postsEarthAnchor } from "./postsStage";
 
 function modelFor(id: string): DevModel {
@@ -125,11 +126,29 @@ export type SceneFraming = {
    * orbit placement, so a transition is a plain interpolation between two
    * placements rather than a second coordinate system. */
   posts: OrbitPlacement;
+  /** The Groups composition, in those same units: where Mars rests, and the
+   * point the other bodies spiral into. */
+  groups: { mars: OrbitPlacement; star: OrbitPlacement };
 };
 
 /** How far the neighbours retreat as the scene commits to Posts. Far enough to
  * read as leaving, near enough that returning home is not a rush back. */
 export const NEIGHBOUR_RECEDE = 14;
+
+/** Radians of orbit a body sweeps while it falls into the Groups core. Rather
+ * more than a quarter turn, so the path reads as a spiral being drawn in rather
+ * than as a straight line towards the middle. */
+export const ABSORB_SWEEP = Math.PI * 1.35;
+
+/** Each body starts its dive a little after the one before it. The Moon leads
+ * because it is already inside Earth's rig and closest to the core's pull; the
+ * subject of the composition never dives at all. */
+export const ABSORB_DELAY: Record<PlanetId | "moon", number> = {
+  moon: 0,
+  saturn: 0.06,
+  earth: 0.14,
+  mars: 0,
+};
 
 /** Fit a local envelope at z=0, allowing for its closest possible depth. */
 function fitEnvelope(
@@ -205,7 +224,30 @@ export function measureSceneFraming(
     scale: earthRadius > 0 ? postsRadius / earthRadius : 1,
   };
 
-  return { earthRadius, marsScale, saturnScale, orbit, halfHeight, posts };
+  // The Groups composition is fixed the same way, from one shared anchor set.
+  const composition = groupsComposition(pixelWidth, pixelHeight);
+  const toWorld = (x: number, y: number) => ({
+    x: x * unitsPerPixel - halfWidth,
+    y: halfHeight - y * unitsPerPixel,
+  });
+  const marsRadius = (composition.mars.diameter / 2) * unitsPerPixel;
+  const marsAnchor = toWorld(composition.mars.x, composition.mars.y);
+  const starAnchor = toWorld(composition.star.x, composition.star.y);
+  const groups = {
+    mars: {
+      ...marsAnchor,
+      z: 0,
+      // `orbitRoot.scale` multiplies the rig's own `marsScale`, so this is a
+      // ratio rather than a size — as with `posts` above.
+      scale: marsScale > 0 ? marsRadius / marsScale : 1,
+    },
+    // A target, not a body: the bodies that reach it have already collapsed.
+    star: { ...starAnchor, z: 0, scale: 0 },
+  };
+
+  return {
+    earthRadius, marsScale, saturnScale, orbit, halfHeight, posts, groups,
+  };
 }
 
 export function sceneFrameloop(renderActive: boolean, reducedMotion: boolean) {

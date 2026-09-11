@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useState } from "react";
+import { useCallback, useLayoutEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   useUniverseHome,
@@ -40,30 +40,37 @@ export default function UniverseHome() {
     return register("/", { root, pause, resume });
   }, [root, register, pause, resume]);
 
-  // Exploring and opening stay separate: a click on a neighbour brings it into
-  // focus, and only a click on the planet already in focus opens its section.
   const activePlanetId = home.activePlanetId;
   const { selectPlanet, setPlanetActivateHandler } = home;
+
+  /** Opens a destination, through the cinematic if it will take the move. The
+   * one entry point: the planet click below and the destination link in
+   * `DestinationNavigation` both come through here, so a section can never be
+   * entered two different ways. Returns whether the cinematic claimed it. */
+  const openDestination = useCallback(
+    (id: PlanetId) => {
+      const { href } = getPlanetDestination(id);
+      selectPlanet(id);
+      const claimed = navigate(href);
+      // The cinematic pushes the route itself, part way through the move.
+      if (!claimed) router.push(href);
+      return claimed;
+    },
+    [selectPlanet, navigate, router],
+  );
+
+  // Exploring and opening stay separate: a click on a neighbour brings it into
+  // focus, and only a click on the planet already in focus opens its section. A
+  // gesture never opens anything.
   useLayoutEffect(() => {
     return setPlanetActivateHandler((id: PlanetId) => {
       if (id !== activePlanetId) {
         goToPlanet(id);
         return;
       }
-      const { href } = getPlanetDestination(id);
-      selectPlanet(id);
-      // Defer to the route cinematic when it is enabled; it declines under v1
-      // and ordinary client navigation takes over.
-      if (!navigate(href)) router.push(href);
+      openDestination(id);
     });
-  }, [
-    setPlanetActivateHandler,
-    activePlanetId,
-    goToPlanet,
-    selectPlanet,
-    navigate,
-    router,
-  ]);
+  }, [setPlanetActivateHandler, activePlanetId, goToPlanet, openDestination]);
 
   const active = PLANET_DESTINATIONS.find(({ id }) => id === activePlanetId);
 
@@ -95,7 +102,7 @@ export default function UniverseHome() {
           selectedPlanetId={home.selectedPlanetId}
           canFocus={home.scene !== null && !home.isTransitioning}
           goToPlanet={goToPlanet}
-          selectPlanet={selectPlanet}
+          openDestination={openDestination}
         />
       </div>
     </main>

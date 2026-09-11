@@ -1,19 +1,25 @@
 "use client";
 
 import Link from "next/link";
-import type { HomeMotionController, UniverseHomeAPI } from "../contracts";
+import type { HomeMotionController, PlanetId, UniverseHomeAPI } from "../contracts";
 import { PLANET_DESTINATIONS } from "../navigation/planetDestinations";
 import styles from "../UniverseHome.module.css";
 
-type Props = Pick<UniverseHomeAPI, "activePlanetId" | "selectedPlanetId" | "selectPlanet"> &
-  Pick<HomeMotionController, "goToPlanet"> & { canFocus: boolean };
+type Props = Pick<UniverseHomeAPI, "activePlanetId" | "selectedPlanetId"> &
+  Pick<HomeMotionController, "goToPlanet"> & {
+    canFocus: boolean;
+    /** Opens a destination. Returns true when the cinematic claimed the move, in
+     * which case the Link must not navigate as well — the transition pushes the
+     * route itself, part way through. */
+    openDestination: (id: PlanetId) => boolean;
+  };
 
 export default function DestinationNavigation({
   activePlanetId,
   selectedPlanetId,
-  selectPlanet,
   goToPlanet,
   canFocus,
+  openDestination,
 }: Props) {
   return (
     <nav className={styles.destinations} aria-label="Universe destinations" data-universe-ui>
@@ -39,7 +45,9 @@ export default function DestinationNavigation({
             <Link
               href={destination.href}
               className={styles.destinationLink}
-              onNavigate={() => selectPlanet(destination.id)}
+              onNavigate={(event) => {
+                if (openDestination(destination.id)) event.preventDefault();
+              }}
             >
               Open {destination.sectionLabel}
             </Link>

@@ -1,11 +1,13 @@
 "use client";
 
 import { useUniverseTransition } from "@/features/universe-transition/UniverseTransitionProvider";
+import Link from "next/link";
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { gsap } from "gsap";
 import type { Group } from "../../types/group";
 import { createOrbitLayout, ORBITS } from "../../utils/orbitLayout";
 import { GroupLoadError } from "../GroupPanels";
+import { revealGalaxy } from "./galaxyReveal";
 import GroupStar from "./GroupStar";
 import GroupPreviewPanel from "../GroupPreviewPanel";
 import styles from "./GroupGalaxy.module.css";
@@ -34,7 +36,7 @@ export default function GroupGalaxy({
   mine: boolean;
   onBrowseAll: () => void;
 }) {
-  const { register } = useUniverseTransition();
+  const { register, isTransitioning } = useUniverseTransition();
   const universePaused = useRef(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const pausedRef = useRef(false);
@@ -159,6 +161,28 @@ export default function GroupGalaxy({
     syncMotionRef.current?.();
   }, [paused]);
 
+  // The galaxy's entrance. It waits on the route transition rather than on a
+  // timer: arriving from Home, the core star has just absorbed Earth, Saturn and
+  // the Moon, and the planets are generated out of it the moment the move hands
+  // the scene over. A direct load of /groups reveals as soon as the data does,
+  // with nothing to wait for. A new collection — another page, the other tab, a
+  // search — is generated the same way, which is why this is keyed on the layout
+  // rather than run once.
+  useLayoutEffect(() => {
+    const scene = rootRef.current;
+    if (!scene || state.loading || isTransitioning) return;
+    // Until this flag is set the stylesheet holds every planet at zero opacity,
+    // so nothing pops into frame while the home planets are still falling in.
+    scene.dataset.revealed = "true";
+    const reduced = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    const context = gsap.context(() => {
+      revealGalaxy(scene, { reduced });
+    }, scene);
+    return () => context.revert();
+  }, [state.loading, isTransitioning, layoutKey]);
+
   useLayoutEffect(() => {
     const root = rootRef.current?.closest<HTMLElement>("[data-universe-scene]");
     if (!root) return;
@@ -250,13 +274,25 @@ export default function GroupGalaxy({
               />
             ))}
           </div>
+          {/* The portal. Home planets are absorbed into this point and group
+              planets are generated out of it, so the core — not the label block
+              — is what sits on the galaxy's centre. The pulse wrapper exists so
+              GSAP can react to an arrival without fighting the core's own
+              breathing animation. */}
           <div data-universe-you className={styles.currentUser}>
             <span
-              data-universe-core
-              className={styles.userCore}
+              data-universe-shock
+              className={styles.coreShock}
               aria-hidden="true"
-            >
-              ✦
+            />
+            <span data-universe-pulse className={styles.corePulse}>
+              <span
+                data-universe-core
+                className={styles.userCore}
+                aria-hidden="true"
+              >
+                ✦
+              </span>
             </span>
             <strong>You</strong>
             <span>Your universe starts here</span>
@@ -322,9 +358,11 @@ export default function GroupGalaxy({
               <p>
                 {search
                   ? "No groups match this search. Try another name."
-                  : "Discover a community or create your first group."}
+                  : mine
+                    ? "No communities in your orbit yet. Explore all groups or create one."
+                    : "Discover a community or create your first group."}
               </p>
-              {!search && mine && (
+              {!search && (
                 <div className="group-buttons">
                   {mine && (
                     <button
@@ -332,9 +370,12 @@ export default function GroupGalaxy({
                       className="group-button secondary"
                       onClick={onBrowseAll}
                     >
-                      Discover Groups
+                      Explore all groups
                     </button>
                   )}
+                  <Link href="/groups/create" className="group-button">
+                    Create a group
+                  </Link>
                 </div>
               )}
             </div>

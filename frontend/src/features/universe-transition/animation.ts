@@ -44,7 +44,14 @@ export function exitScene(
     tl.to(elements(root, "you"), { opacity: 0, duration: 0.25 }, 0.36);
   }
 }
-function localDelta(node: HTMLElement, x: number, y: number) {
+/** Converts a screen-space vector into a node's own transform space.
+ *
+ * Group planets sit inside rotating orbit parents and counter-rotating label
+ * wrappers, so "move 200px towards the core" is not 200px in the node's own
+ * coordinates. Walking the ancestor transforms and inverting them is what lets
+ * a screen-space target be animated with plain `x`/`y`. Exported because the
+ * galaxy's own entrance needs exactly the same conversion. */
+export function localDelta(node: HTMLElement, x: number, y: number) {
   let matrix = new DOMMatrix();
   for (let parent = node.parentElement; parent; parent = parent.parentElement) {
     const transform = getComputedStyle(parent).transform;

@@ -19,11 +19,24 @@ export type PlanetDestination = {
  * inside `useFrame`, and neither may cost a render. */
 export type PhaseRef = { current: number };
 
+/** A composition the persistent scene can travel to from the home loop. Each
+ * one belongs to exactly one destination planet — see
+ * `navigation/planetDestinations.stagePlanet` — and there is never more than
+ * one of them on screen, which is why the blend below is a single number. */
+export type UniverseStageId = "posts" | "groups";
+
 /** How far the scene has travelled from the home loop composition (0) towards
- * the Posts composition (1). Like the loop phase it lives in a mutable cell:
- * GSAP writes it during a route transition and `useFrame` reads it, and neither
- * may cost a render. There is exactly one of these, owned by the provider. */
+ * the composition named by `StageTargetRef` (1). Like the loop phase it lives
+ * in a mutable cell: GSAP writes it during a route transition and `useFrame`
+ * reads it, and neither may cost a render. There is exactly one of these,
+ * owned by the provider. */
 export type StageRef = PhaseRef;
+
+/** Which composition `StageRef` is blending towards. Only the transition
+ * coordinator writes it, and only while the blend is at 0 — a move is never
+ * allowed to change destination half way through. It stays put on the way back
+ * to 0 so the return is an interpolation of the same two compositions. */
+export type StageTargetRef = { current: UniverseStageId };
 
 /** Per-destination transform roots. Each root has exactly one controller:
  * `transitionRoot` is reserved for a future route transition (identity today),
@@ -49,8 +62,10 @@ export type UniverseCanvasProps = {
   reducedMotion: boolean;
   /** Continuous loop position, owned by the motion controller. */
   phase: PhaseRef;
-  /** Home-to-Posts blend, owned by the route transition. */
+  /** Home-to-destination blend, owned by the route transition. */
   stage: StageRef;
+  /** Which destination composition `stage` is blending towards. */
+  stageTarget: StageTargetRef;
   onSceneReady: (scene: UniverseSceneHandle | null) => void;
   /** A planet was clicked. Focusing versus opening is decided by the homepage. */
   onPlanetActivate: (id: PlanetId) => void;
@@ -83,6 +98,7 @@ export type UniverseHomeAPI = {
   selectedPlanetId: PlanetId | null;
   phase: PhaseRef;
   stage: StageRef;
+  stageTarget: StageTargetRef;
   scene: UniverseSceneHandle | null;
   reducedMotion: boolean;
   isTransitioning: boolean;

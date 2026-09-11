@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { getNavbarContext } from "./navbarContext";
+import { shellLayoutFor } from "./shellLayout";
 import { useGroupsSearch } from "@/features/groups/context/GroupsSearchProvider";
 import GroupSearchInput from "@/features/groups/components/GroupSearchInput";
 import { useUniverseTransition } from "@/features/universe-transition/UniverseTransitionProvider";
@@ -16,9 +17,22 @@ import styles from "./TopNavbar.module.css";
 export default function TopNavbar() {
   const { isOpen: sidebarOpen, toggle: toggleSidebar } = useSidebar();
   const pathname = usePathname();
+  const router = useRouter();
   const context = getNavbarContext(pathname);
   const { search, setSearch } = useGroupsSearch();
-  const { isTransitioning } = useUniverseTransition();
+  const { isTransitioning, navigate } = useUniverseTransition();
+  // Navbar-only routes have no sidebar to toggle. The same slot carries the way
+  // back to the universe instead, which is the only navigation they need — see
+  // `shellLayout.ts`.
+  const universe = shellLayoutFor(pathname) === "universe";
+
+  function returnToUniverse() {
+    // A move already owns the scene; a second click must not start another.
+    if (isTransitioning) return;
+    // Ask the cinematic first, then navigate explicitly. Never `router.back()`:
+    // browser history can point at a login screen or another site entirely.
+    if (!navigate("/")) router.push("/");
+  }
   // Real notifications context
   const { unreadCount } = useNotifications();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -78,20 +92,39 @@ export default function TopNavbar() {
 
   return (
     <nav className={styles.navbar} aria-label="Top navigation">
-      {/* 1. Left Section: Current page context & Sidebar Toggle */}
+      {/* 1. Left Section: Universe return (or sidebar toggle) & page context */}
       <div className={styles.contextSection}>
-        <button
-          type="button"
-          onClick={toggleSidebar}
-          className={styles.sidebarToggle}
-          aria-label={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
-          aria-expanded={sidebarOpen}
-          aria-controls="app-sidebar"
-          title={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
-        >
-          <AppIcon name={sidebarOpen ? "panelLeftClose" : "panelLeftOpen"} />
-        </button>
-        <div className={styles.contextText}>
+        {universe ? (
+          pathname !== "/" && (
+            <button
+              type="button"
+              onClick={returnToUniverse}
+              className={styles.universeButton}
+              aria-label="Return to the universe"
+              title="Return to the universe"
+            >
+              <span className={styles.universeIcon} aria-hidden="true">
+                <AppIcon name="arrowLeft" />
+              </span>
+              <span className={styles.universeText}>Universe</span>
+            </button>
+          )
+        ) : (
+          <button
+            type="button"
+            onClick={toggleSidebar}
+            className={styles.sidebarToggle}
+            aria-label={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
+            aria-expanded={sidebarOpen}
+            aria-controls="app-sidebar"
+            title={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
+          >
+            <AppIcon name={sidebarOpen ? "panelLeftClose" : "panelLeftOpen"} />
+          </button>
+        )}
+        {/* Remounted per context so the section name crossfades with the route
+            rather than swapping under the reader's eye. */}
+        <div key={context.title} className={styles.contextText}>
           <span className={styles.contextEyebrow}>{context.eyebrow}</span>
           <h1 id="app-page-title" tabIndex={-1} className={styles.contextTitle}>
             {context.title}

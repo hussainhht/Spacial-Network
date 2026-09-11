@@ -9,15 +9,20 @@ import type {
   PlanetId,
   PlanetRigHandle,
   StageRef,
+  StageTargetRef,
 } from "../contracts";
 import {
   createPlacement,
   orbitNearness,
   placeOnOrbit,
+  spiralToPoint,
 } from "../motion/orbitPath";
+import { stagePlanet } from "../navigation/planetDestinations";
 import EarthSystem from "./EarthSystem";
 import PlanetAsset, { type AssetErrorReporter } from "./PlanetAsset";
 import {
+  ABSORB_DELAY,
+  ABSORB_SWEEP,
   IDLE_DRIFT,
   IDLE_DRIFT_SPEED,
   MAX_FRAME_DELTA,
@@ -28,6 +33,10 @@ import {
 } from "./sceneConfig";
 
 const mix = (from: number, to: number, t: number) => from + (to - from) * t;
+/** A body holds its orbit placement until its own delay has elapsed, then
+ * covers the rest of the blend — so a staggered start still lands on time. */
+const staggered = (blend: number, delay: number) =>
+  delay >= 1 ? blend : Math.max(0, (blend - delay) / (1 - delay));
 
 export function createPlanetRigs(
   order: readonly PlanetId[],
@@ -53,9 +62,10 @@ export function createPlanetRigs(
  *
  * A route transition is the same story one level up: GSAP owns `stage`, a plain
  * number, and this callback interpolates between the loop placement and the
- * Posts placement from it. GSAP never touches a transform the frame loop also
- * writes, so the two can run at once without fighting — which is what lets the
- * Earth keep spinning and the Moon keep orbiting all the way through the move.
+ * destination placement from it — Posts or Groups, whichever `stageTarget`
+ * names. GSAP never touches a transform the frame loop also writes, so the two
+ * can run at once without fighting, which is what lets Earth keep spinning, the
+ * Moon keep orbiting and Mars keep turning all the way through a move.
  */
 export default function PlanetRig({
   rig,
@@ -63,6 +73,7 @@ export default function PlanetRig({
   count,
   phase,
   stage,
+  stageTarget,
   framing,
   animate,
   onAssetError,
@@ -73,6 +84,7 @@ export default function PlanetRig({
   count: number;
   phase: PhaseRef;
   stage: StageRef;
+  stageTarget: StageTargetRef;
   framing: SceneFraming;
   animate: boolean;
   onAssetError: AssetErrorReporter;
@@ -109,23 +121,45 @@ export default function PlanetRig({
 
     const y = placement.y + drift;
     const blend = stage.current <= 0 ? 0 : Math.min(1, stage.current);
-    if (body.current) body.current.visible = blend < 1 || id === "earth";
+    // Exactly one planet is the subject of the composition being travelled to;
+    // every other body leaves. Which planet that is comes from the destination
+    // table, so a new stage never means a new branch here.
+    const subject = stagePlanet(stageTarget.current);
+    if (body.current) body.current.visible = blend < 1 || id === subject;
     if (blend === 0) {
       rig.orbitRoot.position.set(placement.x, y, placement.z);
       rig.orbitRoot.scale.setScalar(placement.scale);
-    } else if (id === "earth") {
-      // Earth is the subject on both pages, so it travels rather than fades.
-      const target = framing.posts;
+    } else if (id === subject) {
+      // The subject travels rather than fades: it is the same object on both
+      // pages, so it has to arrive where the destination's anchor says.
+      const target =
+        stageTarget.current === "posts" ? framing.posts : framing.groups.mars;
       rig.orbitRoot.position.set(
         mix(placement.x, target.x, blend),
         mix(y, target.y, blend),
         mix(placement.z, target.z, blend),
       );
       rig.orbitRoot.scale.setScalar(mix(placement.scale, target.scale, blend));
+    } else if (stageTarget.current === "groups") {
+      // Groups has a core star at its centre, so the bodies leaving do not
+      // simply withdraw — they spiral into it and are absorbed, each starting a
+      // beat after the one before.
+      const t = staggered(blend, ABSORB_DELAY[id]);
+      spiralToPoint(
+        placement,
+        drift,
+        framing.groups.star,
+        t,
+        ABSORB_SWEEP,
+        placement,
+      );
+      rig.orbitRoot.position.set(placement.x, placement.y, placement.z);
+      rig.orbitRoot.scale.setScalar(placement.scale);
+      if (body.current && t >= 1) body.current.visible = false;
     } else {
-      // The neighbours are not part of the Posts composition. They withdraw
-      // along their own depth axis, which reads as leaving rather than as a
-      // fade — and stop being drawn entirely once they are gone.
+      // Posts has nothing at its centre to be absorbed by, so the neighbours
+      // withdraw along their own depth axis instead — which reads as leaving
+      // rather than as a fade — and stop being drawn once they are gone.
       rig.orbitRoot.position.set(
         placement.x,
         y,
@@ -158,6 +192,7 @@ export default function PlanetRig({
               animate={animate}
               phase={phase}
               stage={stage}
+              stageTarget={stageTarget}
               index={index}
               count={count}
               onAssetError={onAssetError}

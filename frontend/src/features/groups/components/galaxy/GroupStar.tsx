@@ -34,34 +34,46 @@ export default function GroupStar({
       <div className={styles.anchor}>
         <div className={styles.angleCorrection}>
           <div className={styles.upright} data-counter-orbit={ring}>
-            <button
+            {/* Three transform writers, three elements: the ring rotation owns
+                `.upright` above, the entrance owns this wrapper, and hover and
+                selection own `.planet` inside the button. None of them can ever
+                overwrite another's transform. */}
+            <div
+              className={styles.emergence}
               data-universe-node
-              type="button"
-              id={`group-star-${group.id}`}
-              className={styles.star}
-              aria-label={`Open preview for ${group.title}`}
-              aria-describedby={`group-status-${group.id}`}
-              aria-pressed={selected}
-              aria-controls={selected ? "group-preview" : undefined}
-              onClick={onSelect}
+              data-universe-emerge={ring}
             >
-              <span className={styles.planet}>
-                <GroupAvatar group={group} size={56} />
-              </span>
-              <span className={styles.starName}>{group.title}</span>
-              <span className={styles.tooltip} id={`group-status-${group.id}`}>
-                <MembershipBadge
-                  role={group.membershipRole}
-                  invited={group.hasPendingInvitation}
-                  pending={group.hasPendingJoinRequest}
-                />
-                <span>{group.title}</span>
-                <span>
-                  {group.memberCount}{" "}
-                  {group.memberCount === 1 ? "member" : "members"}
+              <button
+                type="button"
+                id={`group-star-${group.id}`}
+                className={styles.star}
+                aria-label={`Open preview for ${group.title}`}
+                aria-describedby={`group-status-${group.id}`}
+                aria-pressed={selected}
+                aria-controls={selected ? "group-preview" : undefined}
+                onClick={onSelect}
+              >
+                <span className={styles.planet}>
+                  <GroupAvatar group={group} size={56} />
                 </span>
-              </span>
-            </button>
+                <span className={styles.starName}>{group.title}</span>
+                <span
+                  className={styles.tooltip}
+                  id={`group-status-${group.id}`}
+                >
+                  <MembershipBadge
+                    role={group.membershipRole}
+                    invited={group.hasPendingInvitation}
+                    pending={group.hasPendingJoinRequest}
+                  />
+                  <span>{group.title}</span>
+                  <span>
+                    {group.memberCount}{" "}
+                    {group.memberCount === 1 ? "member" : "members"}
+                  </span>
+                </span>
+              </button>
+            </div>
           </div>
         </div>
       </div>

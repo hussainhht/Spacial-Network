@@ -1,15 +1,93 @@
+/* One locked pane, no sidebar. The pane is the box the shared Groups
+   composition is expressed against — `useGroupsComposition` publishes
+   `--groups-star-*`, `--groups-galaxy` and `--groups-mars-*` onto it from the
+   same function the 3D scene measures itself with, which is why the core star
+   below lands exactly where the home planets were absorbed. */
 .page {
-  padding: clamp(16px, 2.5vw, 28px) clamp(16px, 3vw, 40px);
+  position: relative;
+  isolation: isolate;
+  height: 100%;
+  overflow: hidden;
+  color: var(--space-text-body);
+  font:
+    14px/1.5 ui-sans-serif,
+    system-ui,
+    -apple-system,
+    sans-serif;
+  color-scheme: dark;
 }
-.page :global(.groups-container) {
-  width: min(100%, 1400px);
-  gap: 16px;
+
+/* Where the persistent canvas docks. Mars is the section's anchor: it is drawn
+   here and never takes the pointer, which the galaxy below owns. */
+.marsLayer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
 }
+/* The section marker under Mars, positioned from the same anchor as the planet
+   so the two cannot drift apart. */
+.marsLabel {
+  position: absolute;
+  left: var(--groups-mars-x, 12%);
+  top: calc(
+    var(--groups-mars-y, 21%) + var(--groups-mars-size, 120px) / 2 + 10px
+  );
+  z-index: 1;
+  margin: 0;
+  display: grid;
+  justify-items: center;
+  gap: 1px;
+  translate: -50% 0;
+  text-align: center;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.marsLabel > span:first-child {
+  color: var(--space-text-heading);
+  font-size: clamp(15px, 1.5vw, 19px);
+  font-weight: 450;
+  letter-spacing: -0.02em;
+  text-shadow: 0 2px 14px rgba(3, 5, 20, 0.95);
+}
+.marsLabel > span:last-child {
+  color: #a79fc2;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+/* Everything that is not Mars. The pane itself never scrolls; below the desktop
+   tier the galaxy becomes a flowing grid and this layer takes the scroll, so
+   Mars stays anchored while the communities pass under it. */
+.content {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
 .filters {
-  align-self: flex-end;
+  position: absolute;
+  z-index: 3;
+  top: clamp(12px, 2vh, 20px);
+  right: clamp(12px, 2vw, 24px);
   width: fit-content;
   max-width: 100%;
-  margin-left: auto;
+}
+/* Pending invitations, when there are any. Below the tabs, against the same
+   edge, and scrollable so a long list cannot grow past the pane. */
+.invitations {
+  position: absolute;
+  z-index: 3;
+  top: calc(clamp(12px, 2vh, 20px) + 46px);
+  right: clamp(12px, 2vw, 24px);
+  width: min(330px, 40vw);
+  max-height: min(44%, 340px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.invitations:empty {
+  display: none;
 }
 .filters :global(.group-tabs) {
   display: inline-flex;
@@ -35,10 +113,13 @@
   display: none;
 }
 .tabPanel {
+  position: absolute;
+  inset: 0;
   min-height: 0;
 }
 .galaxy {
-  position: relative;
+  position: absolute;
+  inset: 0;
   /* Rotating square orbit containers have larger bounds than their visible
      circular paths. Clip that horizontal overflow, not the scrollable page. */
   overflow-x: clip;
@@ -47,7 +128,7 @@
 }
 .galaxyControlBtn {
   position: absolute;
-  top: 14px;
+  bottom: 14px;
   right: 14px;
   z-index: 5;
   display: inline-flex;
@@ -74,28 +155,22 @@
   transform: scale(1.05);
 }
 .explorer {
-  position: relative;
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  position: absolute;
+  inset: 0;
   min-height: 0;
 }
+/* Centred on the published star anchor, sized by the published galaxy diameter.
+   Offset with margins rather than a translate, because the selection shift below
+   animates this element's `transform` and must not have to preserve a
+   percentage translation through a matrix round trip. */
 .scene {
-  position: relative;
-  --galaxy-size: clamp(
-    280px,
-    min(
-      calc(100dvh - var(--app-navbar-height, 64px) - 150px),
-      calc(100vw - var(--sidebar-width, 244px) - 80px),
-      780px
-    ),
-    780px
-  );
-  width: var(--galaxy-size);
-  height: var(--galaxy-size);
-  aspect-ratio: 1;
-  margin: 0 auto;
+  position: absolute;
+  left: var(--groups-star-x, 50%);
+  top: var(--groups-star-y, 50%);
+  width: var(--groups-galaxy, 600px);
+  height: var(--groups-galaxy, 600px);
+  margin-left: calc(var(--groups-galaxy, 600px) / -2);
+  margin-top: calc(var(--groups-galaxy, 600px) / -2);
   isolation: isolate;
   transform-origin: center center;
   will-change: transform;
@@ -132,24 +207,56 @@
   border-color: rgba(196, 181, 253, 0.2);
   border-style: dashed;
 }
+/* A point, not a block. The core is the galaxy's centre and the transition's
+   portal, so it is the core that sits on the centre — the labels hang off it
+   without shifting it by half their height. */
 .currentUser {
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
-  display: flex;
-  align-items: center;
-  flex-direction: column;
-  width: 160px;
+  width: 0;
+  height: 0;
   text-align: center;
   pointer-events: none;
   z-index: 1;
 }
+.corePulse,
+.coreShock {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 82px;
+  height: 82px;
+  translate: -50% -50%;
+  border-radius: 50%;
+}
+/* The energy the arriving planets release. One ring that grows out of the core
+   and fades — not a bloom, and never over the navbar. */
+.coreShock {
+  opacity: 0;
+  border: 1px solid rgba(186, 230, 253, 0.7);
+  box-shadow:
+    0 0 24px rgba(125, 211, 252, 0.35),
+    inset 0 0 20px rgba(125, 211, 252, 0.2);
+}
+.currentUser strong,
+.currentUser > span:last-child {
+  position: absolute;
+  left: 50%;
+  translate: -50% 0;
+  white-space: nowrap;
+}
+.currentUser strong {
+  top: 52px;
+}
+.currentUser > span:last-child {
+  top: 76px;
+}
 .userCore {
   display: grid;
   place-items: center;
-  width: 82px;
-  height: 82px;
+  width: 100%;
+  height: 100%;
   border-radius: 50%;
   color: #f0f9ff;
   font-size: 40px;
@@ -161,7 +268,6 @@
   animation: breathe 6s ease-in-out infinite alternate;
 }
 .currentUser strong {
-  margin-top: 10px;
   color: var(--space-text-heading);
   font-size: 13px;
   font-weight: 600;
@@ -171,7 +277,6 @@
 .currentUser > span:last-child {
   font-size: 10px;
   color: var(--space-text-muted);
-  margin-top: 3px;
 }
 .orbit {
   list-style: none;
@@ -201,6 +306,16 @@
 }
 .upright {
   transform-origin: 50% 34px;
+}
+/* Owned exclusively by the entrance (`galaxyReveal.ts`). Held invisible until
+   the galaxy has something real to reveal, so no planet appears before the core
+   has reacted — and never with a fake name behind it. */
+.emergence {
+  display: block;
+  will-change: transform, opacity;
+}
+.scene:not([data-revealed]) .emergence {
+  opacity: 0;
 }
 .star {
   animation: appear 220ms ease-out;
@@ -536,12 +651,12 @@
   bottom: 17%;
   right: 26%;
 }
-.scene:has(.empty) .currentUser {
-  top: 34%;
-}
+/* The core never moves for an empty galaxy: it is the transition's portal, and
+   the reader has just watched three planets fall into it. The message goes below
+   it instead. */
 .empty {
   position: absolute;
-  top: 54%;
+  top: calc(50% + 110px);
   width: 100%;
   padding: 0 20px;
   text-align: center;
@@ -560,13 +675,18 @@
   justify-content: center;
   margin-top: 20px;
 }
+/* Floating over the pane rather than stacked under a scrolling galaxy. */
 .pagination {
+  position: absolute;
+  z-index: 3;
+  left: clamp(12px, 2vw, 24px);
+  right: calc(clamp(12px, 2vw, 24px) + 60px);
+  bottom: clamp(10px, 1.6vh, 18px);
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 16px;
   flex-wrap: wrap;
-  padding-top: 12px;
 }
 .pagination p {
   font-size: 12px;
@@ -599,25 +719,99 @@
     scale: 1.02;
   }
 }
+/* Below the desktop tier the orbits give way to a flowing grid of communities —
+   forcing the desktop geometry onto a narrow pane would crop it. Mars stays
+   anchored in the pane while this layer scrolls under it, and the core keeps its
+   role: the planets are still generated out of it, just into grid slots. */
 @media (max-width: 999px) {
+  .content {
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+  }
+  .filters {
+    left: 50%;
+    right: auto;
+    translate: -50% 0;
+  }
+  .invitations {
+    position: relative;
+    inset: auto;
+    width: auto;
+    max-height: none;
+    overflow: visible;
+    margin: 0 clamp(12px, 3vw, 24px);
+    padding-top: calc(clamp(12px, 2vh, 20px) + 52px);
+  }
+  .invitations:not(:empty) ~ .tabPanel .galaxy {
+    padding-top: 16px;
+  }
+  .tabPanel,
+  .galaxy,
+  .explorer {
+    position: relative;
+    inset: auto;
+  }
+  .galaxy {
+    display: flex;
+    flex-direction: column;
+    padding: calc(clamp(12px, 2vh, 20px) + 52px) 0 24px;
+  }
   .galaxyControlBtn {
-    top: 10px;
-    right: 10px;
+    position: sticky;
+    top: 8px;
+    right: auto;
+    bottom: auto;
+    align-self: flex-end;
+    margin-right: 10px;
   }
   .scene {
+    position: relative;
+    left: auto;
+    top: auto;
+    margin: 0;
     aspect-ratio: auto;
     padding: 38px 0 20px;
     min-height: 350px;
     width: 100%;
     height: auto;
   }
-  .currentUser,
-  .scene:has(.empty) .currentUser {
+  .currentUser {
     position: relative;
     top: auto;
     left: auto;
-    transform: none;
+    width: auto;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     margin: 0 auto 36px;
+  }
+  .corePulse {
+    position: relative;
+    top: auto;
+    left: auto;
+    translate: none;
+  }
+  .coreShock {
+    top: 41px;
+  }
+  .currentUser strong,
+  .currentUser > span:last-child {
+    position: relative;
+    top: auto;
+    left: auto;
+    translate: none;
+  }
+  .currentUser strong {
+    margin-top: 10px;
+  }
+  .currentUser > span:last-child {
+    margin-top: 3px;
+  }
+  .pagination {
+    position: relative;
+    inset: auto;
+    padding: 8px clamp(12px, 3vw, 24px) 24px;
   }
   .rings {
     overflow: hidden;
@@ -678,6 +872,7 @@
   .empty {
     position: relative;
     inset: auto;
+    top: auto;
   }
   .sceneStatus {
     position: relative;
@@ -685,11 +880,11 @@
     margin-top: 65px;
   }
   .previewSlot {
-    position: fixed;
+    position: absolute;
     z-index: 5;
-    left: calc(var(--sidebar-width) + 16px);
+    left: 16px;
     right: 16px;
-    bottom: 12px;
+    bottom: 56px;
     top: auto;
     transform: none;
     width: auto;
@@ -746,6 +941,7 @@
 @media (prefers-reduced-motion: reduce) {
   .page::before,
   .page::after,
+  .coreShock,
   .userCore,
   .star,
   .planet,
