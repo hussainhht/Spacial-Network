@@ -1,0 +1,76 @@
+/* One locked pane. The page is exactly the shell's content area — it never
+   grows past it, so there is no second scrollbar under the scene. */
+.home {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  color: var(--space-text-body);
+  font: 14px/1.5 ui-sans-serif, system-ui, -apple-system, sans-serif;
+  color-scheme: dark;
+}
+
+.viewport {
+  position: relative;
+  isolation: isolate;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.caption {
+  position: absolute;
+  z-index: 1;
+  top: clamp(18px, 4vh, 40px);
+  left: clamp(20px, 4%, 56px);
+  max-width: 34ch;
+  pointer-events: none;
+}
+
+/* A planet can drift behind the type. This darkens the corner it sits in
+   without putting a filter over the canvas. */
+.caption::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: -28px -32px -32px -36px;
+  background: radial-gradient(
+    110% 100% at 0% 0%,
+    rgba(3, 6, 18, 0.78),
+    rgba(3, 6, 18, 0)
+  );
+}
+
+.title {
+  margin: 0;
+  color: var(--space-text-heading);
+  font-size: clamp(19px, 1.7vw, 25px);
+  font-weight: 450;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
+}
+
+.subtitle {
+  margin: 7px 0 0;
+  max-width: 30ch;
+  color: var(--space-text-muted);
+  font-size: 13px;
+  letter-spacing: 0.005em;
+}
+
+@media (max-width: 760px) {
+  .subtitle {
+    max-width: 26ch;
+    font-size: 12px;
+  }
+}
+
+/* A short pane has no room for both the type and the system above the dock. */
+@media (max-height: 520px) {
+  .caption {
+    top: 12px;
+  }
+
+  .subtitle {
+    display: none;
+  }
+}

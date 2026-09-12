@@ -20,7 +20,10 @@ import type {
   UniverseHomeAPI,
   UniverseStageId,
 } from "@/features/universe-home/contracts";
-import { UNIVERSE_HOME_V1_ENABLED } from "@/features/universe-home/navigation/homeMode";
+import {
+  UNIVERSE_HOME_V1_ENABLED,
+  UNIVERSE_LOOP_HOME_ENABLED,
+} from "@/features/universe-home/navigation/homeMode";
 import UniverseCanvasHost from "@/features/universe-home/navigation/UniverseCanvasHost";
 import {
   stageForRoute,
@@ -221,7 +224,8 @@ export default function UniverseTransitionProvider({
       // a 0x0 parent would publish an unusable scene handle, so wait for a real
       // measurement.
       const dockable =
-        path.current === "/" || stageForRoute(path.current) !== null;
+        (UNIVERSE_LOOP_HOME_ENABLED && path.current === "/") ||
+        stageForRoute(path.current) !== null;
       const docking = dockable ? scenes.current.get(path.current) : undefined;
       const viewport =
         docking?.root.querySelector<HTMLElement>("[data-universe-viewport]") ??
@@ -985,6 +989,10 @@ export default function UniverseTransitionProvider({
   );
 
   const composed = stageForRoute(pathname);
+  // `/` only asks for the persistent canvas while it is the planet loop. Under
+  // the Solar System home it owns its own scene, and mounting this one as well
+  // would put a second WebGL context behind it.
+  const loopHome = UNIVERSE_LOOP_HOME_ENABLED && pathname === "/";
   const transitionState: UniverseTransitionState =
     direction ?? (composed ? `idle-${composed}` : "idle-home");
   // Memoized so home-track updates cannot re-render the Sidebar, Navbar and
@@ -1062,7 +1070,7 @@ export default function UniverseTransitionProvider({
         </div>
         <UniverseTransitionLayer layerRef={layer} glowRef={glow} />
         {host &&
-          (pathname === "/" || composed !== null || active) &&
+          (loopHome || composed !== null || active) &&
           createPortal(
             // One payload, never both: a second HomeEarth Canvas alongside
             // UniverseCanvas would mean two WebGL contexts on the same route.
@@ -1075,7 +1083,7 @@ export default function UniverseTransitionProvider({
                 // Mars is the section's anchor and has to keep turning. This is
                 // independent of reduced motion, which stops spin and orbit
                 // inside the scene without blanking it.
-                renderActive={pathname === "/" || composed !== null || active}
+                renderActive={loopHome || composed !== null || active}
                 reducedMotion={reducedMotion}
                 phase={homeTrack.phase}
                 stage={homeTrack.stage}
@@ -1088,7 +1096,7 @@ export default function UniverseTransitionProvider({
                 ref={setStage}
                 onTransitionReady={onEarthReady}
                 transitionActive={active && !reducedMotion}
-                renderActive={!reducedMotion && (active || pathname === "/")}
+                renderActive={!reducedMotion && (active || loopHome)}
               />
             ),
             host,

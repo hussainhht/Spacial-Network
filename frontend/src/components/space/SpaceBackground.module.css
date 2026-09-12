@@ -66,6 +66,24 @@
 @keyframes twinkleA { from { fill-opacity: 0.68; } to { fill-opacity: 1; } }
 @keyframes twinkleB { from { fill-opacity: 1; } to { fill-opacity: 0.72; } }
 
+/* Home: deep space and stars, nothing else. The haze and the dust pockets are
+   removed rather than dimmed — the solar system in front of them supplies all
+   the depth the page needs, and a cloud layer behind lit planets is the one
+   thing that makes them look pasted on. */
+.spaceContainer[data-scene="home"] {
+  background:
+    radial-gradient(ellipse at 72% 26%, #060b18 0%, transparent 58%),
+    linear-gradient(168deg, #020408 0%, #03060e 52%, #010307 100%);
+}
+.spaceContainer[data-scene="home"] .cosmicHazeLayer,
+.spaceContainer[data-scene="home"] .dustVeil {
+  display: none;
+}
+/* A touch more separation between the sky and the bodies in front of it. */
+.spaceContainer[data-scene="home"] .layerDistant { opacity: 0.8; }
+.spaceContainer[data-scene="home"] .layerMedium { opacity: 0.74; }
+.spaceContainer[data-scene="home"] .vignetteOverlay { opacity: 0.7; }
+
 /* Keep the interactive group stars visually distinct from the distant sky. */
 .spaceContainer[data-scene="groups"] .layerDistant { opacity: 0.55; }
 .spaceContainer[data-scene="groups"] .layerMedium { opacity: 0.4; }

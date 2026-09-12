@@ -14,6 +14,16 @@ function StarPaths({ paths }: { paths: typeof distantPaths }) {
   ));
 }
 
+/** Which treatment the sky gets. Home is the one route whose subject is the
+ * sky's own neighbourhood — a solar system, lit by its own star — so it drops
+ * the drifting haze and keeps stars only; anything cloudy behind the planets
+ * would read as atmosphere in a vacuum and flatten their depth. */
+function sceneFor(pathname: string): "home" | "groups" | undefined {
+  if (pathname === "/") return "home";
+  if (pathname === "/groups") return "groups";
+  return undefined;
+}
+
 function SpaceBackground() {
   const pathname = usePathname();
   const haloId = useId();
@@ -21,7 +31,7 @@ function SpaceBackground() {
   return (
     <div
       data-universe-background
-      data-scene={pathname === "/groups" ? "groups" : undefined}
+      data-scene={sceneFor(pathname)}
       className={styles.spaceContainer}
       aria-hidden="true"
     >

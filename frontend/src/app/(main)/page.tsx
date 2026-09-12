@@ -1,5 +1,5 @@
-import UniverseHome from "@/features/universe-home/UniverseHome";
+import SolarSystemHome from "@/features/solar-system/SolarSystemHome";
 
 export default function Home() {
-  return <UniverseHome />;
+  return <SolarSystemHome />;
 }
