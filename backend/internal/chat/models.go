@@ -8,6 +8,7 @@ import (
 
 const (
 	EventPrivateMessage websocket.EventType = "private_message"
+	EventGroupMessage   websocket.EventType = "group_message"
 	EventTyping         websocket.EventType = "typing"
 	EventMarkRead       websocket.EventType = "mark_read"
 	EventMessagesRead   websocket.EventType = "messages_read"
@@ -20,6 +21,30 @@ type PrivateMessage struct {
 	Content     string     `json:"content"`
 	CreatedAt   time.Time  `json:"created_at"`
 	ReadAt      *time.Time `json:"read_at,omitempty"`
+}
+
+type GroupMessage struct {
+	ID        int64     `json:"id"`
+	GroupID   int64     `json:"group_id"`
+	UserID    int64     `json:"user_id"`
+	Username  string    `json:"username"`
+	FirstName string    `json:"first_name"`
+	LastName  string    `json:"last_name"`
+	Avatar    string    `json:"avatar,omitempty"`
+	Content   string    `json:"content"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+type GroupMessagePayload struct {
+	ID        int64  `json:"id,omitempty"`
+	GroupID   int64  `json:"group_id"`
+	UserID    int64  `json:"user_id"`
+	Username  string `json:"username,omitempty"`
+	FirstName string `json:"first_name,omitempty"`
+	LastName  string `json:"last_name,omitempty"`
+	Avatar    string `json:"avatar,omitempty"`
+	Content   string `json:"content"`
+	CreatedAt string `json:"created_at,omitempty"`
 }
 
 type MessagePayload struct {

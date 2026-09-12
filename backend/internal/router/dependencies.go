@@ -81,16 +81,6 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 	followersHandler := followers.NewHandler(followersService, usersService)
 
 	// =========================
-	// Chat
-	// =========================
-
-	chatRepo := chat.NewRepository(db)
-	chatService := chat.NewService(chatRepo, hub, notificationsService, followersService)
-	chatHandler := chat.NewHandler(chatService)
-	// Message routing is finished further down, once every feature that
-	// handles inbound WebSocket events (chat, groups) has been constructed.
-
-	// =========================
 	// Uploads
 	// =========================
 
@@ -132,13 +122,21 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 	// =========================
 	// Groups
 	// =========================
-	// Constructed before Posts/Comments, which depend on groupsService for
-	// group-membership checks on group-scoped posts and comments.
+	// Constructed before Posts/Comments/Chat, which depend on groupsService for
+	// group-membership checks on group-scoped posts, comments, and messages.
 
 	groupsRepo := groups.NewRepository(db)
 	groupsService := groups.NewService(groupsRepo, notificationsService, hub)
 	groupsHandler := groups.NewHandler(groupsService, groupPhotoStorage)
 	inviteSearchWSHandler := groups.NewInviteSearchWSHandler(groupsService, hub)
+
+	// =========================
+	// Chat
+	// =========================
+
+	chatRepo := chat.NewRepository(db)
+	chatService := chat.NewService(chatRepo, hub, notificationsService, followersService, groupsService)
+	chatHandler := chat.NewHandler(chatService)
 
 	// =========================
 	// Posts
