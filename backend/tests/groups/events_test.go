@@ -1,0 +1,170 @@
+// Package groups_test (events_test.go) covers social/internal/groups event
+// creation, response validation ("going"/"not_going"), a member's response
+// being recorded and updatable, and that only group members may create or
+// respond to events.
+package groups_test
+
+import (
+	"testing"
+	"time"
+
+	"social/internal/groups"
+)
+
+func TestCreateEvent_RequiresTitleDescriptionAndTime(t *testing.T) {
+	f := setup(t)
+	creator := f.newUser(t, "evcreator")
+	groupID, err := f.groupsSvc.CreateGroup(creator, "Event Group", "", "")
+	if err != nil {
+		t.Fatalf("CreateGroup: %v", err)
+	}
+
+	tests := []struct {
+		name    string
+		title   string
+		desc    string
+		time    string
+		wantErr bool
+	}{
+		{"valid", "Meetup", "Come along", "", false},
+		{"missing title", "", "Come along", "", true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if _, err := groups.ValidateEventTitle(tt.title); tt.wantErr && err == nil {
+				t.Fatalf("expected title validation error, got nil")
+			} else if !tt.wantErr && err != nil {
+				t.Fatalf("unexpected title validation error: %v", err)
+			}
+		})
+	}
+
+	// event_time must parse as RFC3339; a garbage string is rejected.
+	if _, err := groups.ValidateEventTime("not-a-date"); err == nil {
+		t.Fatalf("expected an error for an invalid event_time")
+	}
+
+	future := time.Now().Add(24 * time.Hour)
+	eventID, err := f.groupsSvc.CreateEvent(int(groupID), creator, "Meetup", "Come along", future)
+	if err != nil {
+		t.Fatalf("CreateEvent: %v", err)
+	}
+	if eventID <= 0 {
+		t.Fatalf("expected a positive event id")
+	}
+}
+
+func TestCreateEvent_TimeMustBeInFuture(t *testing.T) {
+	f := setup(t)
+	creator := f.newUser(t, "evpastcreator")
+	groupID, err := f.groupsSvc.CreateGroup(creator, "Past Event Group", "", "")
+	if err != nil {
+		t.Fatalf("CreateGroup: %v", err)
+	}
+
+	past := time.Now().Add(-24 * time.Hour)
+	_, err = f.groupsSvc.CreateEvent(int(groupID), creator, "Old Meetup", "Too late", past)
+	if err != groups.ErrEventTimeInPast {
+		t.Fatalf("expected ErrEventTimeInPast, got %v", err)
+	}
+}
+
+func TestCreateEvent_NonMemberCannotCreate(t *testing.T) {
+	f := setup(t)
+	creator := f.newUser(t, "evnmcreator")
+	nonMember := f.newUser(t, "evnmoutsider")
+	groupID, err := f.groupsSvc.CreateGroup(creator, "NM Event Group", "", "")
+	if err != nil {
+		t.Fatalf("CreateGroup: %v", err)
+	}
+
+	future := time.Now().Add(24 * time.Hour)
+	_, err = f.groupsSvc.CreateEvent(int(groupID), nonMember, "Sneaky Meetup", "Shh", future)
+	if err != groups.ErrNotGroupMember {
+		t.Fatalf("expected ErrNotGroupMember for a non-member creating an event, got %v", err)
+	}
+}
+
+func TestEventResponse_GoingAndNotGoing_ValidOptions(t *testing.T) {
+	if _, err := groups.ValidateEventResponseStatus(groups.EventResponseGoing); err != nil {
+		t.Errorf("'going' should be a valid response: %v", err)
+	}
+	if _, err := groups.ValidateEventResponseStatus(groups.EventResponseNotGoing); err != nil {
+		t.Errorf("'not_going' should be a valid response: %v", err)
+	}
+	if _, err := groups.ValidateEventResponseStatus("maybe"); err == nil {
+		t.Errorf("expected an error for an unsupported response value")
+	}
+}
+
+func TestRespondToEvent_MemberResponseRecordedAndUpdatable(t *testing.T) {
+	f := setup(t)
+	creator := f.newUser(t, "evrespcreator")
+	member := f.newUser(t, "evrespmember")
+	groupID, err := f.groupsSvc.CreateGroup(creator, "Response Group", "", "")
+	if err != nil {
+		t.Fatalf("CreateGroup: %v", err)
+	}
+	if err := f.groupsSvc.AddMember(int(groupID), member); err != nil {
+		t.Fatalf("AddMember: %v", err)
+	}
+
+	future := time.Now().Add(24 * time.Hour)
+	eventID, err := f.groupsSvc.CreateEvent(int(groupID), creator, "Party", "Fun", future)
+	if err != nil {
+		t.Fatalf("CreateEvent: %v", err)
+	}
+
+	if err := f.groupsSvc.RespondToEvent(int(groupID), int(eventID), member, groups.EventResponseGoing); err != nil {
+		t.Fatalf("RespondToEvent(going): %v", err)
+	}
+
+	event, err := f.groupsSvc.GetEventDetails(int(groupID), int(eventID), member)
+	if err != nil {
+		t.Fatalf("GetEventDetails: %v", err)
+	}
+	if event.CurrentUserResponse == nil || *event.CurrentUserResponse != groups.EventResponseGoing {
+		t.Fatalf("expected current user response 'going', got %v", event.CurrentUserResponse)
+	}
+	if event.GoingCount != 1 {
+		t.Errorf("GoingCount = %d, want 1", event.GoingCount)
+	}
+
+	// Update the response.
+	if err := f.groupsSvc.RespondToEvent(int(groupID), int(eventID), member, groups.EventResponseNotGoing); err != nil {
+		t.Fatalf("RespondToEvent(not_going): %v", err)
+	}
+
+	event, err = f.groupsSvc.GetEventDetails(int(groupID), int(eventID), member)
+	if err != nil {
+		t.Fatalf("GetEventDetails after update: %v", err)
+	}
+	if event.CurrentUserResponse == nil || *event.CurrentUserResponse != groups.EventResponseNotGoing {
+		t.Fatalf("expected current user response 'not_going' after update, got %v", event.CurrentUserResponse)
+	}
+	if event.GoingCount != 0 || event.NotGoingCount != 1 {
+		t.Errorf("GoingCount/NotGoingCount = %d/%d, want 0/1", event.GoingCount, event.NotGoingCount)
+	}
+}
+
+func TestRespondToEvent_NonMemberCannotRespond(t *testing.T) {
+	f := setup(t)
+	creator := f.newUser(t, "evnrcreator")
+	nonMember := f.newUser(t, "evnroutsider")
+	groupID, err := f.groupsSvc.CreateGroup(creator, "NR Event Group", "", "")
+	if err != nil {
+		t.Fatalf("CreateGroup: %v", err)
+	}
+
+	future := time.Now().Add(24 * time.Hour)
+	eventID, err := f.groupsSvc.CreateEvent(int(groupID), creator, "Exclusive", "Members only", future)
+	if err != nil {
+		t.Fatalf("CreateEvent: %v", err)
+	}
+
+	err = f.groupsSvc.RespondToEvent(int(groupID), int(eventID), nonMember, groups.EventResponseGoing)
+	if err != groups.ErrNotGroupMember {
+		t.Fatalf("expected ErrNotGroupMember for a non-member responding, got %v", err)
+	}
+}
