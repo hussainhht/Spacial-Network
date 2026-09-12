@@ -256,10 +256,13 @@ func NewRouter(db *sql.DB, cfg config.Config) (http.Handler, error) {
 	)
 
 	// =========================
-	// Chat Routes - Future
+	// Group Messages Routes
 	// =========================
 
-	// TODO: Register Chat routes here once the Chat handler is implemented.
+	apiMux.Handle(
+		"GET /groups/{id}/messages",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Chat.GetGroupHistoryHandler)),
+	)
 
 	// =========================
 	// Notifications Routes
