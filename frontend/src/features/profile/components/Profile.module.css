@@ -617,6 +617,57 @@
   text-decoration: underline;
 }
 
+.requestList {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  margin: 0;
+  padding: 0;
+}
+
+.requestItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+}
+
+.requestItem:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.requestUser {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.requestMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.requestActions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.requestActions .btnPrimary,
+.requestActions .btnSecondary {
+  min-height: 36px;
+  padding: 0.45rem 0.85rem;
+}
+
 /* ================================================================== */
 /*  Privacy Settings Card                                             */
 /* ================================================================== */
@@ -916,6 +967,16 @@
 
   .aboutGrid {
     grid-template-columns: 1fr;
+  }
+
+  .requestItem {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .requestActions {
+    width: 100%;
+    justify-content: flex-start;
   }
 }
 

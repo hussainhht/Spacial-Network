@@ -64,19 +64,20 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 	notificationsHandler := notifications.NewHandler(notificationsService)
 
 	// =========================
-	// Users
-	// =========================
-
-	usersRepo := users.NewRepository(db)
-	usersService := users.NewService(usersRepo)
-	usersHandler := users.NewHandler(usersService)
-
-	// =========================
 	// Followers
 	// =========================
 
 	followersRepo := followers.NewRepository(db)
 	followersService := followers.NewService(followersRepo)
+
+	// =========================
+	// Users
+	// =========================
+
+	usersRepo := users.NewRepository(db)
+	usersService := users.NewService(usersRepo, followersService)
+	usersHandler := users.NewHandler(usersService)
+
 	followersHandler := followers.NewHandler(followersService, usersService)
 
 	// =========================

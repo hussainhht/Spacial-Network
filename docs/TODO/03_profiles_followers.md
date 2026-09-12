@@ -66,17 +66,17 @@ Authentication, Docker, and final project-wide integration are not included in t
 
 - [X] Change profile from Public to Private
 - [X] Change profile from Private to Public
-- [ ] Check profile privacy before exposing protected information
-- [ ] Allow followers to view permitted private-profile information
-- [ ] Prevent non-followers from viewing protected private-profile information
-- [ ] Allow the profile owner to view their own information
+- [X] Check profile privacy before exposing protected information
+- [X] Allow followers to view permitted private-profile information
+- [X] Prevent non-followers from viewing protected private-profile information
+- [X] Allow the profile owner to view their own information
 
 ### Frontend
 
 - [X] Add profile privacy control
 - [X] Show current privacy state
 - [X] Allow user to switch Public ↔ Private
-- [ ] Update visible actions based on target profile privacy
+- [X] Update visible actions based on target profile privacy
 
 ---
 
@@ -98,7 +98,7 @@ Authentication, Docker, and final project-wide integration are not included in t
 - [X] Get followers list
 - [X] Get following list
 - [X] Check whether User A follows User B
-- [ ] Check whether at least one user follows the other when needed by chat
+- [X] Check whether at least one user follows the other when needed by chat
 - [X] Handle invalid follow operations safely
 
 ### Public Profile Follow Flow
@@ -130,23 +130,23 @@ Authentication, Docker, and final project-wide integration are not included in t
 
 ### Backend
 
-- [ ] Send follow request when target profile is Private
-- [ ] Prevent duplicate pending requests
-- [ ] Get incoming pending follow requests
-- [ ] Accept follow request
-- [ ] Create follower relationship after acceptance
-- [ ] Decline follow request
-- [ ] Remove/update completed request correctly
-- [ ] Prevent unauthorized users from accepting/declining another user's requests
+- [X] Send follow request when target profile is Private
+- [X] Prevent duplicate pending requests
+- [X] Get incoming pending follow requests
+- [X] Accept follow request
+- [X] Create follower relationship after acceptance
+- [X] Decline follow request
+- [X] Remove/update completed request correctly
+- [X] Prevent unauthorized users from accepting/declining another user's requests
 
 ### Frontend
 
-- [ ] Show Request Follow button for private profiles
-- [ ] Show Requested/Pending state
-- [ ] Create Follow Requests UI
-- [ ] Add Accept button
-- [ ] Add Decline button
-- [ ] Update follower state after acceptance
+- [X] Show Request Follow button for private profiles
+- [X] Show Requested/Pending state
+- [X] Create Follow Requests UI
+- [X] Add Accept button
+- [X] Add Decline button
+- [X] Update follower state after acceptance
 
 ---
 
@@ -164,13 +164,13 @@ Authentication, Docker, and final project-wide integration are not included in t
 
 For Person 2 — Posts:
 
-- [ ] Provide a reusable follower check
-- [ ] Provide a way to get a user's followers for Private post selection
+- [X] Provide a reusable follower check
+- [X] Provide a way to get a user's followers for Private post selection
 
 For Person 4 — Chat:
 
-- [ ] Provide a reusable check for whether User A follows User B
-- [ ] Provide a reusable check for whether either user follows the other
+- [X] Provide a reusable check for whether User A follows User B
+- [X] Provide a reusable check for whether either user follows the other
 - [ ] Provide target profile privacy information when required by chat rules
 
 Suggested responsibility boundary:

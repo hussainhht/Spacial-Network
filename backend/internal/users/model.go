@@ -38,18 +38,19 @@ type Profile struct {
 
 // ProfileResponse is the JSON profile data sent to the frontend.
 type ProfileResponse struct {
-	ID           int    `json:"id"`
-	UUID         string `json:"uuid"`
-	Username     string `json:"username"`
-	Age          int    `json:"age"`
-	Gender       string `json:"gender"`
-	FirstName    string `json:"first_name"`
-	LastName     string `json:"last_name"`
-	Email        string `json:"email"`
-	ProfilePhoto string `json:"profile_photo,omitempty"`
-	CreatedAt    string `json:"created_at"`
-	UpdatedAt    string `json:"updated_at"`
-	IsPrivate    bool   `json:"is_private"`
+	ID                 int    `json:"id"`
+	UUID               string `json:"uuid,omitempty"`
+	Username           string `json:"username"`
+	Age                int    `json:"age,omitempty"`
+	Gender             string `json:"gender,omitempty"`
+	FirstName          string `json:"first_name"`
+	LastName           string `json:"last_name"`
+	Email              string `json:"email,omitempty"`
+	ProfilePhoto       string `json:"profile_photo,omitempty"`
+	CreatedAt          string `json:"created_at,omitempty"`
+	UpdatedAt          string `json:"updated_at,omitempty"`
+	IsPrivate          bool   `json:"is_private"`
+	CanViewFullProfile bool   `json:"can_view_full_profile"`
 }
 
 type GetProfileResponse struct {

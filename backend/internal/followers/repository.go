@@ -82,6 +82,25 @@ func (r *Repository) IsFollowing(followerID, followedID int) (bool, error) {
 	return true, nil
 }
 
+func (r *Repository) HasPendingFollowRequest(requesterID, targetID int) (bool, error) {
+	var exists int
+
+	err := r.db.QueryRow(`
+		SELECT 1
+		FROM follow_requests
+		WHERE requester_id = ? AND target_id = ? AND status = ?
+		LIMIT 1
+	`, requesterID, targetID, FollowRequestStatusPending).Scan(&exists)
+	if err == sql.ErrNoRows {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
+}
+
 // FilterFollowerIDs returns the subset of candidateIDs that currently
 // follow followedID.
 func (r *Repository) FilterFollowerIDs(followedID int, candidateIDs []int) ([]int, error) {

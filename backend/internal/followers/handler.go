@@ -248,10 +248,24 @@ func (h *Handler) FollowStatusHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	hasPendingRequest := false
+	if !isFollowing {
+		hasPendingRequest, err = h.service.HasPendingFollowRequest(currentUserID, targetProfile.ID)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(FollowStatusResponse{
+				Success: false,
+				Message: "Failed to get follow request status",
+			})
+			return
+		}
+	}
+
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(FollowStatusResponse{
-		Success:     true,
-		IsFollowing: isFollowing,
+		Success:           true,
+		IsFollowing:       isFollowing,
+		HasPendingRequest: hasPendingRequest,
 	})
 }
 
