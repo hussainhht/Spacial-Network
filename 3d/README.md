@@ -1,4 +1,5 @@
 # Planet 3D Models and Optimization Pipeline
+
 # Planet 3D Models and Web Optimization Pipeline
 
 All 3D planet assets and reproducible optimization tooling are maintained in this `3d/` directory.
@@ -11,12 +12,13 @@ All 3D planet assets and reproducible optimization tooling are maintained in thi
 - `mars-final.glb`: Web-optimized Mars model with embedded WebP textures and MikkTSpace tangents.
 - `moon_small.glb`: Source Moon asset.
 - `Saturn_1_120536.glb`: Source Saturn asset.
-| Planet / Body | Source File (Untouched Original) | Web Optimized Output (`*-final.glb`) |
-| --- | --- | --- |
-| **Earth** | `earth-00.glb` | `earth-final.glb` |
-| **Mars** | `24881_Mars_1_6792.glb` | `mars-final.glb` |
-| **Moon** | `moon_small.glb` | `moon-final.glb` |
-| **Saturn** | `Saturn_1_120536.glb` | `saturn-final.glb` |
+  | Planet / Body | Source File (Untouched Original) | Web Optimized Output (`*-final.glb`) |
+  | --- | --- | --- |
+  | **Earth** | `earth-00.glb` | `earth-final.glb` |
+  | **Mars** | `24881_Mars_1_6792.glb` | `mars-final.glb` |
+  | **Moon** | `moon_small.glb` | `moon-final.glb` |
+  | **Saturn** | `Saturn_1_120536.glb` | `saturn-final.glb` |
+  | **Black Hole** | `plant/black_hole.glb` | `black-hole-final.glb` |
 
 > [!IMPORTANT]
 > **Source files must never be overwritten, modified, or deleted.**
@@ -32,6 +34,8 @@ All 3D planet assets and reproducible optimization tooling are maintained in thi
 - `verify-model.cjs`: Generalized glTF/GLB validator verifying Khronos compliance, node hierarchy, mesh primitives, material integrity, texture decoding, and Three.js `GLTFLoader` compatibility.
 - `optimize-earth.sh`: Earth-specific pipeline wrapper preserving Earth-specific named nodes (`surface`, `cloud`, `atmo`).
 - `verify-earth.cjs`: Earth-specific validation script.
+- `optimize-black-hole.sh`: Black hole optimization pipeline preserving accretion disk silhouette and converting spec/gloss to metal/rough.
+- `verify-black-hole.cjs`: Black hole validation script verifying triangle targets, WebP textures, and Three.js parsing.
 
 ### Prerequisites
 
@@ -44,13 +48,16 @@ npm install --prefix 3d/.tools gltfpack@1.2.0 @gltf-transform/cli@4.5.0 gltf-val
 ---
 
 ## Mars Optimization
+
 ## How to Optimize Any Model
 
 ### How to Regenerate Mars
+
 To optimize a source model into its web-ready final version:
 
 To regenerate `mars-final.glb` from the untouched source:
-```bash
+
+````bash
 # General syntax:
 bash 3d/optimize-model.sh <source.glb> <output-final.glb> [options]
 
@@ -66,18 +73,21 @@ bash 3d/optimize-model.sh 3d/Saturn_1_120536.glb 3d/saturn-final.glb
 
 # Earth:
 bash 3d/optimize-earth.sh
-```
+````
 
 ### Mars Pipeline Details
+
 ---
 
 1. **Geometry preservation**: The source Mars geometry is already lightweight (3,072 triangles). gltfpack runs with `-kn -km -kv -noq` to preserve node hierarchy (`Cube.008`), material names (`Default OBJ.005`), and vertex attributes while avoiding lossy quantization.
 2. **Tangent generation**: Mars uses a normal map (`mars_norm.jpg`). `gltf-transform tangents` automatically computes standard MikkTSpace vertex tangents, resolving glTF validator warnings and runtime shader overhead.
 3. **Texture optimization**: Embedded textures (diffuse map and normal map at 2,048 × 1,536) are converted to WebP at quality 90 and effort 90 via `gltf-transform webp`. Redundant alpha channels on opaque maps are stripped without losing detail.
 4. **Verification**: `verify-model.cjs` ensures 0 Khronos errors/warnings, verifies node/material structure, decodes all WebP images with `sharp`, and confirms Three.js `GLTFLoader` can parse the model without requiring extra decoders.
+
 ## How to Verify Any Model
 
 ### Mars Verified Results
+
 ```bash
 # Verify Mars:
 node 3d/verify-model.cjs 3d/24881_Mars_1_6792.glb 3d/mars-final.glb
@@ -107,14 +117,17 @@ node 3d/verify-model.cjs 3d/earth-00.glb 3d/earth-final.glb
 ---
 
 ## Earth Optimization
+
 ## Model Details & Verified Results
 
 ### How to Regenerate Earth
+
 ### 1. Mars (`mars-final.glb`)
 
 ```bash
 bash 3d/optimize-earth.sh
 ```
+
 - **Geometry**: Source has 3,072 triangles. gltfpack runs with `-kn -km -kv -noq` (no simplification needed; duplicate seam indices welded cleanly).
 - **Tangents**: Standard MikkTSpace vertex tangents computed via `gltf-transform tangents` for normal map rendering.
 - **Textures**: Diffuse and Normal maps (2,048 × 1,536) converted to WebP at quality 90 / effort 90.
@@ -128,6 +141,7 @@ bash 3d/optimize-earth.sh
   - Preserved Materials: `Default OBJ.005`
 
 ### Earth Pipeline Details
+
 ### 2. Moon (`moon-final.glb`)
 
 1. Inspect installed versions/help and check dependencies and source existence.
@@ -135,6 +149,7 @@ bash 3d/optimize-earth.sh
 3. Run glTF Transform resize with `--width 4096 --height 2048`.
 4. Convert textures to WebP at quality 90 and effort 90 (`EXT_texture_webp`).
 5. Validate the staged output with `verify-earth.cjs` before publishing `earth-final.glb`.
+
 - **Geometry**: 23,232 triangles preserved (essential for accurate spherical crater silhouette).
 - **Textures**: 4,096 × 4,096 PNG diffuse map (12.17 MB) converted to WebP at quality 90 / effort 90 (3.65 MB). 100% texture resolution and crater detail retained.
 - **Result**:
@@ -147,6 +162,7 @@ bash 3d/optimize-earth.sh
   - Preserved Materials: `Material.001`
 
 ### Earth Verified Results
+
 ### 3. Saturn (`saturn-final.glb`)
 
 | Metric       | Source (`earth-00.glb`) | Optimized (`earth-final.glb`) |
@@ -155,6 +171,7 @@ bash 3d/optimize-earth.sh
 | MB (decimal) |                58.41 MB |                       2.33 MB |
 | Triangles    |               2,162,688 |                       173,010 |
 | Textures     |  Two 16,200 × 8,100 PNG |        Two 4,096 × 2,048 WebP |
+
 - **Geometry & Rings**:
   - Body (`Saturn.001`): 3,072 triangles.
   - Top Ring (`RingsTop`): 128 triangles.
@@ -176,9 +193,11 @@ bash 3d/optimize-earth.sh
   - Preserved Materials: `None`, `SaturnRings`
 
 Size reduction: **96.00%**. Simplification ratio: **0.08**.
+
 ### 4. Earth (`earth-final.glb`)
 
 Tool references: [gltfpack](https://github.com/zeux/meshoptimizer/blob/master/gltf/README.md) and [glTF Transform CLI](https://gltf-transform.dev/cli).
+
 - **Geometry**: Simplified from 2,162,688 to 173,010 triangles via gltfpack `-si 0.08`.
 - **Textures**: Two 16,200 × 8,100 maps resized to 4,096 × 2,048 WebP.
 - **Result**:
@@ -187,6 +206,21 @@ Tool references: [gltfpack](https://github.com/zeux/meshoptimizer/blob/master/gl
   - Reduction: **96.00%**
   - Khronos Validation: **0 errors, 0 warnings**
   - Preserved Nodes: `surface`, `cloud`, `atmo`
+
+### 5. Black Hole (`black-hole-final.glb`)
+
+- **Geometry**: Selective per-mesh decimation via meshoptimizer reducing geometry from 534,196 triangles to 13,357 triangles (~97.5% reduction) while allocating 2,399 triangles to the primary accretion ring (`ring_ring_0`) to preserve its smooth circular silhouette.
+- **Cleanup**: Pruned invisible/occluded geometry (`Planet_Planet_0` inside the event horizon) and 100% transparent shell (`distortion_0`).
+- **PBR Conversion**: Converted deprecated `KHR_materials_pbrSpecularGlossiness` to standard `pbrMetallicRoughness` and `KHR_materials_specular`.
+- **Textures**: Converted all diffuse, specular, and emissive textures to WebP (`EXT_texture_webp`) at quality 90 / effort 90, capped at 1024×1024 max.
+- **Result**:
+  - Original: **29.85 MB** (31,303,140 bytes)
+  - Final: **1.67 MB** (1,747,672 bytes)
+  - Reduction: **94.42%**
+  - Triangles: 534,196 → 13,357 (target: 10,000–15,000)
+  - Vertices: 466,279 → 10,595
+  - Khronos Validation: **0 errors, 0 warnings**
+  - Three.js Compatibility: Verified via `GLTFLoader` parse and headless WebGL render.
 
 ---
 

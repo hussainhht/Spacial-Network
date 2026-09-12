@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Component, type ReactNode, useState } from "react";
+import { Component, type ReactNode, useState, useEffect } from "react";
 import { DEV_MODELS, type DevModel } from "./modelsRegistry";
 import styles from "./page.module.css";
 
@@ -74,6 +74,14 @@ class PreviewBoundary extends Component<
 
 export default function ModelPreview() {
   const [selectedId, setSelectedId] = useState<string>("earth");
+
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search).get("model");
+    if (p && DEV_MODELS.some((m) => m.id === p)) {
+      setSelectedId(p);
+    }
+  }, []);
+
   const currentModel =
     DEV_MODELS.find((m) => m.id === selectedId) ?? DEV_MODELS[0];
 
