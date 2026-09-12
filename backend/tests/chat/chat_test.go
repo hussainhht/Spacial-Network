@@ -37,7 +37,7 @@ func setup(t *testing.T) fixture {
 
 	chatRepo := chat.NewRepository(db)
 	hub := websocket.NewHub()
-	chatSvc := chat.NewService(chatRepo, hub, notifSvc, followersSvc)
+	chatSvc := chat.NewService(chatRepo, hub, notifSvc, followersSvc, nil)
 
 	return fixture{db: db, chatSvc: chatSvc, chatRepo: chatRepo, followersSvc: followersSvc}
 }
