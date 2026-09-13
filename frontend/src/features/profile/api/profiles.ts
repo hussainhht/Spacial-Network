@@ -64,6 +64,14 @@ interface UpdateProfilePrivacyResponse {
   is_private: boolean;
 }
 
+export interface UpdateProfileDetailsInput {
+  firstName: string;
+  lastName: string;
+  nickname: string;
+  aboutMe: string;
+  dateOfBirth: string;
+}
+
 interface ApiFollowRequest {
   id: number;
   requester: ApiUserSummary;
@@ -243,6 +251,38 @@ export async function updateMyProfilePrivacy(
   }
 
   return data.is_private;
+}
+
+export async function updateMyProfileDetails(
+  input: UpdateProfileDetailsInput,
+): Promise<Profile> {
+  const optionalValue = (value: string) => {
+    const trimmed = value.trim();
+    return trimmed === "" ? null : trimmed;
+  };
+
+  const response = await fetch(`${API_BASE_URL}/users/me/profile`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify({
+      first_name: input.firstName.trim(),
+      last_name: input.lastName.trim(),
+      nickname: optionalValue(input.nickname),
+      about_me: optionalValue(input.aboutMe),
+      date_of_birth: optionalValue(input.dateOfBirth),
+    }),
+  });
+
+  const data: ProfileResponse = await response.json();
+
+  if (!response.ok || !data.success || !data.profile) {
+    throw new Error(data.message ?? "Failed to update profile details");
+  }
+
+  return toProfile(data.profile);
 }
 
 export async function getMyProfile(): Promise<Profile> {

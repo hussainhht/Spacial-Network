@@ -72,6 +72,20 @@ type UpdateProfilePrivacyRequest struct {
 	IsPrivate *bool `json:"is_private"`
 }
 
+type UpdateProfileDetailsRequest struct {
+	FirstName   string  `json:"first_name"`
+	LastName    string  `json:"last_name"`
+	Nickname    *string `json:"nickname"`
+	AboutMe     *string `json:"about_me"`
+	DateOfBirth *string `json:"date_of_birth"`
+}
+
+type UpdateProfileDetailsResponse struct {
+	Success bool             `json:"success"`
+	Message string           `json:"message,omitempty"`
+	Profile *ProfileResponse `json:"profile,omitempty"`
+}
+
 type UpdateProfilePrivacyResponse struct {
 	Success   bool   `json:"success"`
 	Message   string `json:"message,omitempty"`

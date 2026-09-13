@@ -178,6 +178,77 @@ func (h *Handler) GetProfileHandler(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// UpdateProfileDetailsHandler updates editable profile fields for the current user.
+func (h *Handler) UpdateProfileDetailsHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	if r.Method != http.MethodPatch {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		json.NewEncoder(w).Encode(UpdateProfileDetailsResponse{
+			Success: false,
+			Message: "Method not allowed",
+		})
+		return
+	}
+
+	userID, ok := requestctx.UserID(r.Context())
+	if !ok {
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(UpdateProfileDetailsResponse{
+			Success: false,
+			Message: "Not logged in",
+		})
+		return
+	}
+
+	var req UpdateProfileDetailsRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(UpdateProfileDetailsResponse{
+			Success: false,
+			Message: "Invalid request",
+		})
+		return
+	}
+
+	if err := ValidateUpdateProfileDetailsRequest(&req); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(UpdateProfileDetailsResponse{
+			Success: false,
+			Message: err.Error(),
+		})
+		return
+	}
+
+	profile, err := h.service.UpdateProfileDetails(userID, req)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			w.WriteHeader(http.StatusNotFound)
+			json.NewEncoder(w).Encode(UpdateProfileDetailsResponse{
+				Success: false,
+				Message: "User not found",
+			})
+			return
+		}
+
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(UpdateProfileDetailsResponse{
+			Success: false,
+			Message: "Failed to update profile details",
+		})
+		return
+	}
+
+	profileResponse := toProfileResponse(profile, true, true)
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(UpdateProfileDetailsResponse{
+		Success: true,
+		Message: "Profile details updated",
+		Profile: &profileResponse,
+	})
+}
+
 // UpdateProfilePrivacyHandler updates the privacy setting of the currently logged-in user's profile.
 func (h *Handler) UpdateProfilePrivacyHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")

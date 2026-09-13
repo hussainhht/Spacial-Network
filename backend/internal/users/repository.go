@@ -258,3 +258,32 @@ func (r *Repository) UpdateProfilePrivacy(userID int, isPrivate bool) error {
 
 	return nil
 }
+
+func (r *Repository) UpdateProfileDetails(
+	userID int,
+	firstName string,
+	lastName string,
+	nickname sql.NullString,
+	aboutMe sql.NullString,
+	dateOfBirth sql.NullString,
+) (*Profile, error) {
+	result, err := r.db.Exec(`
+		UPDATE users
+		SET first_name = ?, last_name = ?, nickname = ?, about_me = ?, date_of_birth = ?, updated_at = CURRENT_TIMESTAMP
+		WHERE id = ?
+	`, firstName, lastName, nickname, aboutMe, dateOfBirth, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return nil, err
+	}
+
+	if rowsAffected == 0 {
+		return nil, sql.ErrNoRows
+	}
+
+	return r.GetProfileByID(userID)
+}
