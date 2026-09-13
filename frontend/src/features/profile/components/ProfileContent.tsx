@@ -3,7 +3,10 @@
 import PostCard from "@/features/posts/components/PostCard";
 import type { Post } from "@/features/posts/types/post";
 import { parseDate } from "@/lib/utils";
+import type { UpdateProfileDetailsInput } from "../api/profiles";
 import type { Profile, ProfileTab, ProfileUserSummary } from "../types/profile";
+import ProfileDetailsForm from "./ProfileDetailsForm";
+import ProfileFollowRequests from "./ProfileFollowRequests";
 import ProfilePrivacy from "./ProfilePrivacy";
 import ProfileUserList from "./ProfileUserList";
 import styles from "./Profile.module.css";
@@ -100,10 +103,14 @@ interface AboutTabProps {
   onTogglePrivacy?: () => Promise<void>;
   privacyUpdating?: boolean;
   privacyError?: string | null;
+  onUpdateProfileDetails?: (input: UpdateProfileDetailsInput) => Promise<void>;
+  detailsUpdating?: boolean;
+  detailsError?: string | null;
   followers: ProfileUserSummary[];
   following: ProfileUserSummary[];
   followDataLoading?: boolean;
   followError?: string | null;
+  onFollowRequestsChanged?: () => void | Promise<void>;
 }
 
 function AboutTab({
@@ -112,14 +119,26 @@ function AboutTab({
   onTogglePrivacy,
   privacyUpdating = false,
   privacyError = null,
+  onUpdateProfileDetails,
+  detailsUpdating = false,
+  detailsError = null,
   followers,
   following,
   followDataLoading = false,
   followError = null,
+  onFollowRequestsChanged,
 }: AboutTabProps) {
   const createdDate = parseDate(profile.createdAt);
   const memberSince = createdDate
     ? createdDate.toLocaleDateString(undefined, {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      })
+    : null;
+  const birthDate = parseDate(profile.dateOfBirth);
+  const formattedDateOfBirth = birthDate
+    ? birthDate.toLocaleDateString(undefined, {
         year: "numeric",
         month: "long",
         day: "numeric",
@@ -134,6 +153,23 @@ function AboutTab({
       className={styles.tabContent}
     >
       <div className={styles.aboutGrid}>
+        {isOwnProfile && onUpdateProfileDetails && (
+          <ProfileDetailsForm
+            key={[
+              profile.id,
+              profile.firstName,
+              profile.lastName,
+              profile.nickname,
+              profile.aboutMe,
+              profile.dateOfBirth,
+            ].join(":")}
+            profile={profile}
+            onSave={onUpdateProfileDetails}
+            saving={detailsUpdating}
+            error={detailsError}
+          />
+        )}
+
         <section
           className={styles.card}
           aria-labelledby="personal-info-heading"
@@ -167,6 +203,15 @@ function AboutTab({
               </div>
             )}
 
+            {formattedDateOfBirth && (
+              <div className={styles.infoRow}>
+                <span className={styles.infoLabel}>Date of Birth</span>
+                <span className={styles.infoValue}>
+                  {formattedDateOfBirth}
+                </span>
+              </div>
+            )}
+
             {memberSince && (
               <div className={styles.infoRow}>
                 <span className={styles.infoLabel}>Joined</span>
@@ -190,6 +235,12 @@ function AboutTab({
             updating={privacyUpdating}
             error={privacyError}
           />
+        )}
+
+        {isOwnProfile && (
+          <div className={styles.card}>
+            <ProfileFollowRequests onChanged={onFollowRequestsChanged} />
+          </div>
         )}
 
         {!followDataLoading && (
@@ -229,10 +280,14 @@ interface ProfileContentProps {
   onTogglePrivacy?: () => Promise<void>;
   privacyUpdating?: boolean;
   privacyError?: string | null;
+  onUpdateProfileDetails?: (input: UpdateProfileDetailsInput) => Promise<void>;
+  detailsUpdating?: boolean;
+  detailsError?: string | null;
   followers: ProfileUserSummary[];
   following: ProfileUserSummary[];
   followDataLoading?: boolean;
   followError?: string | null;
+  onFollowRequestsChanged?: () => void | Promise<void>;
 }
 
 export default function ProfileContent({
@@ -246,10 +301,14 @@ export default function ProfileContent({
   onTogglePrivacy,
   privacyUpdating,
   privacyError,
+  onUpdateProfileDetails,
+  detailsUpdating,
+  detailsError,
   followers,
   following,
   followDataLoading,
   followError,
+  onFollowRequestsChanged,
 }: ProfileContentProps) {
   return (
     <>
@@ -274,10 +333,14 @@ export default function ProfileContent({
           onTogglePrivacy={onTogglePrivacy}
           privacyUpdating={privacyUpdating}
           privacyError={privacyError}
+          onUpdateProfileDetails={onUpdateProfileDetails}
+          detailsUpdating={detailsUpdating}
+          detailsError={detailsError}
           followers={followers}
           following={following}
           followDataLoading={followDataLoading}
           followError={followError}
+          onFollowRequestsChanged={onFollowRequestsChanged}
         />
       )}
     </>

@@ -3,6 +3,7 @@ export type EventType =
   | "user_offline"
   | "online_users"
   | "private_message"
+  | "group_message"
   | "typing"
   | "mark_read"
   | "messages_read"
@@ -21,6 +22,18 @@ export interface MessagePayload {
   id?: number;
   sender_id: number;
   recipient_id: number;
+  content: string;
+  created_at?: string;
+}
+
+export interface GroupMessagePayload {
+  id?: number;
+  group_id: number;
+  user_id: number;
+  username?: string;
+  first_name?: string;
+  last_name?: string;
+  avatar?: string;
   content: string;
   created_at?: string;
 }
@@ -117,6 +130,7 @@ export interface WebSocketContextType {
   inviteSearchResults: InviteUserSearchResultsPayload | null;
   lastNotification: NotificationEventPayload | null;
   lastEventResponseUpdate: GroupEventResponseUpdatedPayload | null;
+  subscribeGroupMessages: (listener: (msg: GroupMessagePayload) => void) => () => void;
   subscribeEventResponses: (listener: (event: GroupEventResponseUpdatedPayload) => void) => () => void;
   subscribeNotifications: (
     listener: (notification: NotificationEventPayload) => void,

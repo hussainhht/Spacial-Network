@@ -9,12 +9,19 @@ import {
   getMyProfile,
   getProfileByUsername,
   unfollowUser,
+  updateMyProfileDetails,
   updateMyProfilePrivacy,
 } from "../api/profiles";
 import { listPosts } from "@/features/posts/api/posts";
 import { getEligibleContacts } from "@/features/chat/api/chat";
 import type { Post } from "@/features/posts/types/post";
-import type { Profile, ProfileTab, ProfileUserSummary } from "../types/profile";
+import type { UpdateProfileDetailsInput } from "../api/profiles";
+import type {
+  FollowStatus,
+  Profile,
+  ProfileTab,
+  ProfileUserSummary,
+} from "../types/profile";
 import ProfileHeader from "./ProfileHeader";
 import ProfileContent from "./ProfileContent";
 import {
@@ -28,6 +35,11 @@ interface ProfilePageProps {
   username?: string;
 }
 
+const emptyFollowStatus: FollowStatus = {
+  isFollowing: false,
+  hasPendingRequest: false,
+};
+
 export default function ProfilePage({ username }: ProfilePageProps) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isOwnProfile, setIsOwnProfile] = useState(!username);
@@ -39,37 +51,60 @@ export default function ProfilePage({ username }: ProfilePageProps) {
   const [activeTab, setActiveTab] = useState<ProfileTab>("posts");
   const [posts, setPosts] = useState<Post[]>([]);
 
+  const effectiveIsPrivate = Boolean(
+    profile && (privacyOverride ?? profile.isPrivate),
+  );
   const isLocked = Boolean(
-    profile && !isOwnProfile && (privacyOverride ?? profile.isPrivate),
+    profile &&
+      !isOwnProfile &&
+      effectiveIsPrivate &&
+      !profile.canViewFullProfile,
   );
   const [postsLoading, setPostsLoading] = useState(!isLocked);
+  const [detailsUpdating, setDetailsUpdating] = useState(false);
+  const [detailsError, setDetailsError] = useState<string | null>(null);
   const [privacyUpdating, setPrivacyUpdating] = useState(false);
   const [privacyError, setPrivacyError] = useState<string | null>(null);
 
   const [followers, setFollowers] = useState<ProfileUserSummary[]>([]);
   const [following, setFollowing] = useState<ProfileUserSummary[]>([]);
   const [isFollowing, setIsFollowing] = useState(false);
-  const [messagePermission, setMessagePermission] = useState<{ id: number; allowed: boolean } | null>(null);
-  const canMessage = Boolean(profile && !isOwnProfile &&
-    (isFollowing || (messagePermission?.id === profile.id && messagePermission.allowed)));
-  const [followDataProfile, setFollowDataProfile] = useState<Profile | null>(null);
-  const followDataLoading = !isLocked && followDataProfile !== profile;
+  const [hasPendingFollowRequest, setHasPendingFollowRequest] = useState(false);
+  const [messageContactProfileID, setMessageContactProfileID] = useState<
+    number | null
+  >(null);
+  const [canMessageByContact, setCanMessageByContact] = useState(false);
+  const [followDataLoading, setFollowDataLoading] = useState(!isLocked);
   const [followLoading, setFollowLoading] = useState(false);
   const [followError, setFollowError] = useState<string | null>(null);
+  const canMessage = Boolean(
+    profile &&
+      !isOwnProfile &&
+      (isFollowing ||
+        (messageContactProfileID === profile.id && canMessageByContact)),
+  );
 
   // Determine messaging permission (User A follows User B OR User B follows User A)
   useEffect(() => {
-    if (!profile || isOwnProfile || isFollowing) return;
+    if (!profile || isOwnProfile || isFollowing) {
+      return;
+    }
 
     let isMounted = true;
     getEligibleContacts("", 1, 0, profile.id)
       .then((contacts) => {
         if (isMounted) {
-          setMessagePermission({ id: profile.id, allowed: contacts.length > 0 && contacts[0].id === profile.id });
+          setMessageContactProfileID(profile.id);
+          setCanMessageByContact(
+            contacts.length > 0 && contacts[0].id === profile.id,
+          );
         }
       })
       .catch(() => {
-        if (isMounted) setMessagePermission({ id: profile.id, allowed: false });
+        if (isMounted) {
+          setMessageContactProfileID(profile.id);
+          setCanMessageByContact(false);
+        }
       });
 
     return () => {
@@ -167,9 +202,9 @@ export default function ProfilePage({ username }: ProfilePageProps) {
     };
   }, [profile, isLocked]);
 
-  // Load followers/following data
+  // Load followers/following data and current follow status.
   useEffect(() => {
-    if (!profile || isLocked) {
+    if (!profile) {
       return;
     }
 
@@ -177,27 +212,50 @@ export default function ProfilePage({ username }: ProfilePageProps) {
     let isMounted = true;
 
     async function loadFollowData() {
+      if (isMounted) {
+        setFollowDataLoading(!isLocked);
+      }
+
       try {
+        const followStatusPromise = isOwnProfile
+          ? Promise.resolve(emptyFollowStatus)
+          : getFollowStatus(profileUsername);
+
+        if (isLocked) {
+          const followStatusResult = await followStatusPromise;
+
+          if (isMounted) {
+            setFollowers([]);
+            setFollowing([]);
+            setIsFollowing(followStatusResult.isFollowing);
+            setHasPendingFollowRequest(followStatusResult.hasPendingRequest);
+          }
+          return;
+        }
+
         const [followersResult, followingResult, followStatusResult] =
           await Promise.all([
             getFollowers(profileUsername),
             getFollowing(profileUsername),
-            isOwnProfile ? Promise.resolve(false) : getFollowStatus(profileUsername),
+            followStatusPromise,
           ]);
 
         if (isMounted) {
           setFollowers(followersResult);
           setFollowing(followingResult);
-          setIsFollowing(followStatusResult);
+          setIsFollowing(followStatusResult.isFollowing);
+          setHasPendingFollowRequest(followStatusResult.hasPendingRequest);
         }
       } catch {
         if (isMounted) {
           setFollowers([]);
           setFollowing([]);
+          setIsFollowing(false);
+          setHasPendingFollowRequest(false);
         }
       } finally {
         if (isMounted) {
-          setFollowDataProfile(profile);
+          setFollowDataLoading(false);
         }
       }
     }
@@ -210,7 +268,12 @@ export default function ProfilePage({ username }: ProfilePageProps) {
   }, [profile, isLocked, isOwnProfile]);
 
   async function handleToggleFollow() {
-    if (!profile || isOwnProfile || followLoading) {
+    if (
+      !profile ||
+      isOwnProfile ||
+      followLoading ||
+      (!isFollowing && hasPendingFollowRequest)
+    ) {
       return;
     }
 
@@ -224,22 +287,53 @@ export default function ProfilePage({ username }: ProfilePageProps) {
         await followUser(profile.username);
       }
 
-      const [followersResult, followingResult, followStatusResult] =
-        await Promise.all([
-          getFollowers(profile.username),
-          getFollowing(profile.username),
-          getFollowStatus(profile.username),
-        ]);
+      const followStatusResult = await getFollowStatus(profile.username);
+      setIsFollowing(followStatusResult.isFollowing);
+      setHasPendingFollowRequest(followStatusResult.hasPendingRequest);
+
+      if (profile.isPrivate && !followStatusResult.isFollowing) {
+        setProfile((current) =>
+          current && current.id === profile.id
+            ? { ...current, canViewFullProfile: false }
+            : current,
+        );
+        setFollowers([]);
+        setFollowing([]);
+        return;
+      }
+
+      const [followersResult, followingResult] = await Promise.all([
+        getFollowers(profile.username),
+        getFollowing(profile.username),
+      ]);
 
       setFollowers(followersResult);
       setFollowing(followingResult);
-      setIsFollowing(followStatusResult);
     } catch (err) {
       setFollowError(
         err instanceof Error ? err.message : "Failed to update follow",
       );
     } finally {
       setFollowLoading(false);
+    }
+  }
+
+  async function refreshFollowLists() {
+    if (!profile) {
+      return;
+    }
+
+    try {
+      const [followersResult, followingResult] = await Promise.all([
+        getFollowers(profile.username),
+        getFollowing(profile.username),
+      ]);
+
+      setFollowers(followersResult);
+      setFollowing(followingResult);
+    } catch {
+      setFollowers([]);
+      setFollowing([]);
     }
   }
 
@@ -270,6 +364,27 @@ export default function ProfilePage({ username }: ProfilePageProps) {
       );
     } finally {
       setPrivacyUpdating(false);
+    }
+  }
+
+  async function handleUpdateProfileDetails(input: UpdateProfileDetailsInput) {
+    if (!profile || !isOwnProfile || detailsUpdating) {
+      return;
+    }
+
+    setDetailsUpdating(true);
+    setDetailsError(null);
+
+    try {
+      const updatedProfile = await updateMyProfileDetails(input);
+      setProfile(updatedProfile);
+      setPrivacyOverride(updatedProfile.isPrivate);
+    } catch (err) {
+      setDetailsError(
+        err instanceof Error ? err.message : "Failed to update profile details",
+      );
+    } finally {
+      setDetailsUpdating(false);
     }
   }
 
@@ -313,6 +428,7 @@ export default function ProfilePage({ username }: ProfilePageProps) {
           followersCount={followers.length}
           followingCount={following.length}
           isFollowing={isFollowing}
+          hasPendingFollowRequest={hasPendingFollowRequest}
           canMessage={canMessage}
           followLoading={followLoading}
           onSelectTab={setActiveTab}
@@ -333,10 +449,16 @@ export default function ProfilePage({ username }: ProfilePageProps) {
             onTogglePrivacy={isOwnProfile ? handleTogglePrivacy : undefined}
             privacyUpdating={privacyUpdating}
             privacyError={privacyError}
+            onUpdateProfileDetails={
+              isOwnProfile ? handleUpdateProfileDetails : undefined
+            }
+            detailsUpdating={detailsUpdating}
+            detailsError={detailsError}
             followers={followers}
             following={following}
             followDataLoading={followDataLoading}
             followError={followError}
+            onFollowRequestsChanged={refreshFollowLists}
           />
         )}
       </div>

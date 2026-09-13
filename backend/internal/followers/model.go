@@ -29,9 +29,10 @@ type FollowResponse struct {
 }
 
 type FollowStatusResponse struct {
-	Success     bool   `json:"success"`
-	Message     string `json:"message,omitempty"`
-	IsFollowing bool   `json:"is_following"`
+	Success           bool   `json:"success"`
+	Message           string `json:"message,omitempty"`
+	IsFollowing       bool   `json:"is_following"`
+	HasPendingRequest bool   `json:"has_pending_request"`
 }
 
 const (

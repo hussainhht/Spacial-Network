@@ -346,6 +346,21 @@
   font-weight: 400;
 }
 
+.nickname {
+  margin: 0.35rem 0 0;
+  color: var(--space-text-heading);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.aboutMe {
+  margin: 0.6rem 0 0;
+  max-width: 680px;
+  color: var(--space-text-body);
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
 /* ================================================================== */
 /*  Stats Bar                                                         */
 /* ================================================================== */
@@ -532,6 +547,90 @@
 }
 
 /* ================================================================== */
+/*  Profile Details Form                                              */
+/* ================================================================== */
+
+.detailsFormCard {
+  grid-column: 1 / -1;
+}
+
+.profileForm {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.profileFormGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.profileFormField {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.profileFormFieldFull {
+  grid-column: 1 / -1;
+}
+
+.profileFormLabel {
+  color: var(--space-text-label);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.profileFormControl {
+  width: 100%;
+  min-width: 0;
+  padding: 0.65rem 0.85rem;
+  background: var(--space-input-bg);
+  border: 1px solid var(--space-border);
+  border-radius: var(--space-radius-md);
+  color: var(--space-text-heading);
+  font: inherit;
+  font-size: 0.95rem;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.profileFormControl:focus {
+  outline: none;
+  background: var(--space-input-bg-focus);
+  border-color: var(--space-accent-indigo);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+}
+
+.profileFormControl:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.profileFormTextarea {
+  min-height: 120px;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.profileFormMeta {
+  align-self: flex-end;
+  color: var(--space-text-muted);
+  font-size: 0.78rem;
+}
+
+.profileFormActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+/* ================================================================== */
 /*  Follow Lists                                                      */
 /* ================================================================== */
 
@@ -580,6 +679,57 @@
 .userListLink:hover {
   color: var(--space-accent-violet);
   text-decoration: underline;
+}
+
+.requestList {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  margin: 0;
+  padding: 0;
+}
+
+.requestItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+}
+
+.requestItem:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.requestUser {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.requestMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.requestActions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.requestActions .btnPrimary,
+.requestActions .btnSecondary {
+  min-height: 36px;
+  padding: 0.45rem 0.85rem;
 }
 
 /* ================================================================== */
@@ -881,6 +1031,20 @@
 
   .aboutGrid {
     grid-template-columns: 1fr;
+  }
+
+  .profileFormGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .requestItem {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .requestActions {
+    width: 100%;
+    justify-content: flex-start;
   }
 }
 

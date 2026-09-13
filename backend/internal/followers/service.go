@@ -34,6 +34,14 @@ func (s *Service) IsFollowing(followerID, followedID int) (bool, error) {
 	return s.repo.IsFollowing(followerID, followedID)
 }
 
+func (s *Service) HasPendingFollowRequest(requesterID, targetID int) (bool, error) {
+	if requesterID == targetID {
+		return false, nil
+	}
+
+	return s.repo.HasPendingFollowRequest(requesterID, targetID)
+}
+
 func (s *Service) CreateFollowRequest(requesterID, targetID int) error {
 	if requesterID == targetID {
 		return ErrCannotFollowSelf

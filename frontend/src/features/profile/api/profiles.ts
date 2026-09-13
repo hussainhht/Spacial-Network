@@ -1,20 +1,29 @@
-import type { Profile, ProfileUserSummary } from "../types/profile";
+import type {
+  FollowRequest,
+  FollowStatus,
+  Profile,
+  ProfileUserSummary,
+} from "../types/profile";
 
 const API_BASE_URL = "http://localhost:8080/api";
 
 interface ApiProfile {
   id: number;
-  uuid: string;
+  uuid?: string;
   username: string;
-  age: number;
-  gender: string;
+  age?: number;
+  gender?: string;
   first_name: string;
   last_name: string;
-  email: string;
+  email?: string;
   profile_photo?: string;
-  created_at: string;
-  updated_at: string;
+  created_at?: string;
+  updated_at?: string;
   is_private: boolean;
+  can_view_full_profile?: boolean;
+  nickname?: string;
+  about_me?: string;
+  date_of_birth?: string;
 }
 
 interface ProfileResponse {
@@ -46,6 +55,7 @@ interface FollowStatusResponse {
   success: boolean;
   message?: string;
   is_following: boolean;
+  has_pending_request?: boolean;
 }
 
 interface UpdateProfilePrivacyResponse {
@@ -54,20 +64,47 @@ interface UpdateProfilePrivacyResponse {
   is_private: boolean;
 }
 
+export interface UpdateProfileDetailsInput {
+  firstName: string;
+  lastName: string;
+  nickname: string;
+  aboutMe: string;
+  dateOfBirth: string;
+}
+
+interface ApiFollowRequest {
+  id: number;
+  requester: ApiUserSummary;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface FollowRequestsResponse {
+  success: boolean;
+  message?: string;
+  requests: ApiFollowRequest[];
+}
+
 function toProfile(profile: ApiProfile): Profile {
   return {
     id: profile.id,
-    uuid: profile.uuid,
+    uuid: profile.uuid ?? "",
     username: profile.username,
-    age: profile.age,
-    gender: profile.gender,
+    age: profile.age ?? 0,
+    gender: profile.gender ?? "",
     firstName: profile.first_name,
     lastName: profile.last_name,
-    email: profile.email,
+    email: profile.email ?? "",
     profilePhoto: profile.profile_photo,
-    createdAt: profile.created_at,
-    updatedAt: profile.updated_at,
+    createdAt: profile.created_at ?? "",
+    updatedAt: profile.updated_at ?? "",
     isPrivate: profile.is_private,
+    canViewFullProfile:
+      profile.can_view_full_profile ?? !profile.is_private,
+    nickname: profile.nickname ?? "",
+    aboutMe: profile.about_me ?? "",
+    dateOfBirth: profile.date_of_birth ?? "",
   };
 }
 
@@ -78,6 +115,16 @@ function toProfileUserSummary(user: ApiUserSummary): ProfileUserSummary {
     firstName: user.first_name,
     lastName: user.last_name,
     profilePhoto: user.profile_photo,
+  };
+}
+
+function toFollowRequest(request: ApiFollowRequest): FollowRequest {
+  return {
+    id: request.id,
+    requester: toProfileUserSummary(request.requester),
+    status: request.status,
+    createdAt: request.created_at,
+    updatedAt: request.updated_at,
   };
 }
 
@@ -122,7 +169,7 @@ export async function unfollowUser(username: string): Promise<void> {
   }
 }
 
-export async function getFollowStatus(username: string): Promise<boolean> {
+export async function getFollowStatus(username: string): Promise<FollowStatus> {
   const response = await fetch(
     `${API_BASE_URL}/profiles/${username}/follow-status`,
     {
@@ -137,7 +184,10 @@ export async function getFollowStatus(username: string): Promise<boolean> {
     throw new Error(data.message ?? "Failed to load follow status");
   }
 
-  return data.is_following;
+  return {
+    isFollowing: data.is_following,
+    hasPendingRequest: data.has_pending_request ?? false,
+  };
 }
 
 export async function getFollowers(
@@ -203,6 +253,38 @@ export async function updateMyProfilePrivacy(
   return data.is_private;
 }
 
+export async function updateMyProfileDetails(
+  input: UpdateProfileDetailsInput,
+): Promise<Profile> {
+  const optionalValue = (value: string) => {
+    const trimmed = value.trim();
+    return trimmed === "" ? null : trimmed;
+  };
+
+  const response = await fetch(`${API_BASE_URL}/users/me/profile`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify({
+      first_name: input.firstName.trim(),
+      last_name: input.lastName.trim(),
+      nickname: optionalValue(input.nickname),
+      about_me: optionalValue(input.aboutMe),
+      date_of_birth: optionalValue(input.dateOfBirth),
+    }),
+  });
+
+  const data: ProfileResponse = await response.json();
+
+  if (!response.ok || !data.success || !data.profile) {
+    throw new Error(data.message ?? "Failed to update profile details");
+  }
+
+  return toProfile(data.profile);
+}
+
 export async function getMyProfile(): Promise<Profile> {
   const response = await fetch(`${API_BASE_URL}/users/me`, {
     method: "GET",
@@ -216,4 +298,51 @@ export async function getMyProfile(): Promise<Profile> {
   }
 
   return toProfile(data.profile);
+}
+
+export async function getPendingFollowRequests(): Promise<FollowRequest[]> {
+  const response = await fetch(`${API_BASE_URL}/follow-requests`, {
+    method: "GET",
+    credentials: "include",
+  });
+
+  const data: FollowRequestsResponse = await response.json();
+
+  if (!response.ok || !data.success) {
+    throw new Error(data.message ?? "Failed to load follow requests");
+  }
+
+  return data.requests.map(toFollowRequest);
+}
+
+export async function acceptFollowRequest(requestID: number): Promise<void> {
+  const response = await fetch(
+    `${API_BASE_URL}/follow-requests/${requestID}/accept`,
+    {
+      method: "POST",
+      credentials: "include",
+    },
+  );
+
+  const data: FollowResponse = await response.json();
+
+  if (!response.ok || !data.success) {
+    throw new Error(data.message ?? "Failed to accept follow request");
+  }
+}
+
+export async function declineFollowRequest(requestID: number): Promise<void> {
+  const response = await fetch(
+    `${API_BASE_URL}/follow-requests/${requestID}/decline`,
+    {
+      method: "POST",
+      credentials: "include",
+    },
+  );
+
+  const data: FollowResponse = await response.json();
+
+  if (!response.ok || !data.success) {
+    throw new Error(data.message ?? "Failed to decline follow request");
+  }
 }

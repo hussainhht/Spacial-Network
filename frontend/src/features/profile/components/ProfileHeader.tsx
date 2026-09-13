@@ -144,6 +144,7 @@ interface ProfileHeaderProps {
   followersCount: number;
   followingCount: number;
   isFollowing: boolean;
+  hasPendingFollowRequest: boolean;
   canMessage?: boolean;
   followLoading: boolean;
   onSelectTab: (tab: ProfileTab) => void;
@@ -157,6 +158,7 @@ export default function ProfileHeader({
   followersCount,
   followingCount,
   isFollowing,
+  hasPendingFollowRequest,
   canMessage = false,
   followLoading,
   onSelectTab,
@@ -167,6 +169,25 @@ export default function ProfileHeader({
     profile.lastName,
     profile.username,
   );
+  const followActionLabel = followLoading
+    ? "Saving..."
+    : isFollowing
+      ? "Unfollow"
+      : profile.isPrivate && hasPendingFollowRequest
+        ? "Requested"
+        : profile.isPrivate
+          ? "Request Follow"
+          : "Follow";
+  const followActionTitle =
+    profile.isPrivate && hasPendingFollowRequest
+      ? "Follow request pending"
+      : followActionLabel;
+  const followActionDisabled =
+    followLoading || (!isFollowing && hasPendingFollowRequest);
+  const followActionClassName =
+    isFollowing || hasPendingFollowRequest
+      ? styles.btnSecondary
+      : styles.btnPrimary;
 
   return (
     <header className={styles.headerCard}>
@@ -195,21 +216,15 @@ export default function ProfileHeader({
             </div>
           ) : (
             <div className={styles.actionsRow}>
-              {profile.isPrivate ? (
-                <span className={styles.statLabel}>
-                  Follow requests for private profiles will be added later.
-                </span>
-              ) : (
-                <button
-                  type="button"
-                  onClick={onToggleFollow}
-                  disabled={followLoading}
-                  className={isFollowing ? styles.btnSecondary : styles.btnPrimary}
-                  title={isFollowing ? "Unfollow" : "Follow"}
-                >
-                  {followLoading ? "Saving..." : isFollowing ? "Unfollow" : "Follow"}
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={onToggleFollow}
+                disabled={followActionDisabled}
+                className={followActionClassName}
+                title={followActionTitle}
+              >
+                {followActionLabel}
+              </button>
 
               {canMessage && (
                 <Link
@@ -236,6 +251,13 @@ export default function ProfileHeader({
           </div>
 
           <p className={styles.username}>@{profile.username}</p>
+          {profile.nickname && (
+            <p className={styles.nickname}>{profile.nickname}</p>
+          )}
+
+          {profile.aboutMe && (
+            <p className={styles.aboutMe}>{profile.aboutMe}</p>
+          )}
         </div>
 
         <ProfileStats

@@ -22,6 +22,7 @@ import type {
   InviteUserSearchResultsPayload,
   NotificationEventPayload,
   GroupEventResponseUpdatedPayload,
+  GroupMessagePayload,
 } from "@/lib/websocket/types";
 
 const WebSocketContext = createContext<WebSocketContextType | undefined>(
@@ -49,6 +50,11 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   const subscribeReadReceipts = useCallback((listener: (receipt: MessagesReadPayload) => void) => {
     readReceiptListeners.current.add(listener);
     return () => { readReceiptListeners.current.delete(listener); };
+  }, []);
+  const groupMessageListeners = useRef(new Set<(msg: GroupMessagePayload) => void>());
+  const subscribeGroupMessages = useCallback((listener: (msg: GroupMessagePayload) => void) => {
+    groupMessageListeners.current.add(listener);
+    return () => { groupMessageListeners.current.delete(listener); };
   }, []);
 
   const eventResponseListeners = useRef(new Set<(event: GroupEventResponseUpdatedPayload) => void>());
@@ -160,6 +166,13 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
               messageListeners.current.forEach((listener) => listener(data.payload as MessagePayload));
               setErrorMessage(null);
               break;
+            case "group_message": {
+              const groupMsg = data.payload as GroupMessagePayload;
+              groupMessageListeners.current.forEach((listener) =>
+                listener(groupMsg)
+              );
+              break;
+            }
             case "typing":
               setTypingStatus(data.payload as TypingPayload);
               break;
@@ -259,6 +272,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
       inviteSearchResults,
       lastNotification,
       lastEventResponseUpdate,
+      subscribeGroupMessages,
       subscribeEventResponses,
       subscribeNotifications,
       subscribeMessages,
@@ -273,6 +287,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
       inviteSearchResults,
       lastNotification,
       lastEventResponseUpdate,
+      subscribeGroupMessages,
       subscribeNotifications,
       subscribeMessages,
       subscribeReadReceipts,
