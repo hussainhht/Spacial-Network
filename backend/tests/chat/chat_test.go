@@ -30,7 +30,7 @@ func setup(t *testing.T) fixture {
 	db := testutil.NewTestDB(t)
 
 	followersRepo := followers.NewRepository(db)
-	followersSvc := followers.NewService(followersRepo)
+	followersSvc := followers.NewService(followersRepo, nil)
 
 	notifRepo := notifications.NewRepository(db)
 	notifSvc := notifications.NewService(notifRepo, nil)
@@ -174,4 +174,3 @@ func TestHandlePrivateMessage_RejectsSelfMessage(t *testing.T) {
 		t.Fatalf("expected no self-message to be persisted, got %d", len(history))
 	}
 }
-

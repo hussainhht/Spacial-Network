@@ -1,14 +1,16 @@
 import type { NotificationEventPayload } from "@/lib/websocket/types";
 
-// Only these two backend notification types are supported by the UI today
-// (see backend/internal/notifications/model.go - "follow_request" and
-// "group_event" also exist backend-side but have no frontend yet).
+// Only these backend notification types are supported by the UI today.
 export type SupportedNotificationType =
+  | "follow_request"
+  | "new_follower"
   | "group_invitation"
   | "group_join_request"
   | "private_message";
 
 const SUPPORTED_NOTIFICATION_TYPES: readonly string[] = [
+  "follow_request",
+  "new_follower",
   "group_invitation",
   "group_join_request",
   "private_message",
@@ -37,6 +39,10 @@ export interface GroupNotificationData {
   actor_username?: string;
 }
 
+export interface FollowNotificationData {
+  actor_username: string;
+}
+
 function isGroupNotificationData(data: unknown): data is GroupNotificationData {
   if (typeof data !== "object" || data === null) return false;
   const candidate = data as Record<string, unknown>;
@@ -57,6 +63,27 @@ export function getGroupNotificationData(notification: {
   return isGroupNotificationData(notification.data) ? notification.data : null;
 }
 
+function isFollowNotificationData(
+  data: unknown,
+): data is FollowNotificationData {
+  if (typeof data !== "object" || data === null) return false;
+  const candidate = data as Record<string, unknown>;
+  return typeof candidate.actor_username === "string";
+}
+
+export function getFollowNotificationData(notification: {
+  data?: unknown;
+}): FollowNotificationData | null {
+  return isFollowNotificationData(notification.data)
+    ? notification.data
+    : null;
+}
+
+export type NotificationData =
+  | GroupNotificationData
+  | FollowNotificationData
+  | null;
+
 export interface Notification {
   id: number;
   actorId: number | null;
@@ -64,7 +91,7 @@ export interface Notification {
   entityType: string | null;
   entityId: number | null;
   message: string;
-  data: GroupNotificationData | null;
+  data: NotificationData;
   isRead: boolean;
   createdAt: string;
 }
@@ -76,11 +103,23 @@ export function isGroupNotification(notification: Notification): boolean {
   );
 }
 
+export function isFollowNotification(notification: Notification): boolean {
+  return (
+    notification.type === "follow_request" ||
+    notification.type === "new_follower"
+  );
+}
+
 // Adapts a raw backend notification into the frontend shape, or returns null
-// for a notification type this UI doesn't render (per scope: only group
-// invitations and group join requests).
+// for a notification type this UI doesn't render.
 export function toNotification(raw: RawNotification): Notification | null {
   if (!isSupportedNotificationType(raw.type)) return null;
+  const isFollowType =
+    raw.type === "follow_request" || raw.type === "new_follower";
+  const data = isFollowType
+    ? getFollowNotificationData(raw)
+    : getGroupNotificationData(raw);
+
   return {
     id: raw.id,
     actorId: raw.actor_id ?? null,
@@ -88,7 +127,7 @@ export function toNotification(raw: RawNotification): Notification | null {
     entityType: raw.entity_type ?? null,
     entityId: raw.entity_id ?? null,
     message: raw.message,
-    data: getGroupNotificationData(raw),
+    data,
     isRead: raw.read_at != null,
     createdAt: raw.created_at,
   };

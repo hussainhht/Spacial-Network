@@ -9,12 +9,16 @@ import { timeAgo } from "@/lib/utils";
 import { useNotifications } from "../context/NotificationProvider";
 import { useNotificationNavigate } from "../hooks/useNotificationNavigate";
 import {
+  getFollowNotificationData,
+  getGroupNotificationData,
   isGroupNotification,
   type Notification,
   type SupportedNotificationType,
 } from "../types/notification";
 
 const TYPE_LABELS: Record<SupportedNotificationType, string> = {
+  follow_request: "Follow request",
+  new_follower: "New follower",
   group_invitation: "Group invitation",
   group_join_request: "Join request",
   private_message: "Direct message",
@@ -52,7 +56,9 @@ export default function NotificationItem({
     await markRead();
   }
 
-  const groupData = notification.data;
+  const groupData = getGroupNotificationData(notification);
+  const followData = getFollowNotificationData(notification);
+  const actorUsername = groupData?.actor_username ?? followData?.actor_username;
 
   return (
     <li className="notification-item" data-unread={!notification.isRead}>
@@ -67,7 +73,7 @@ export default function NotificationItem({
             {TYPE_LABELS[notification.type]}
           </span>
           <span className="notification-item-message">
-            {groupData?.actor_username && `@${groupData.actor_username} `}
+            {actorUsername && `@${actorUsername} `}
             {notification.message}
           </span>
           {groupData?.group_title && (
