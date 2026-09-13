@@ -63,7 +63,7 @@ func NewRouter(db *sql.DB, cfg config.Config) (http.Handler, error) {
 
 	apiMux.Handle(
 		"PATCH /users/me/profile",
-		sessionMiddleware(http.HandlerFunc(deps.Handlers.Users.UpdateProfileDetailsHandler)),
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Users.UpdateProfileDetailsHandler))),
 	)
 
 	apiMux.Handle(
@@ -272,7 +272,7 @@ func NewRouter(db *sql.DB, cfg config.Config) (http.Handler, error) {
 
 	apiMux.Handle(
 		"GET /groups/{id}/messages",
-		sessionMiddleware(http.HandlerFunc(deps.Handlers.Chat.GetGroupHistoryHandler)),
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Chat.GetGroupHistoryHandler))),
 	)
 
 	// =========================
