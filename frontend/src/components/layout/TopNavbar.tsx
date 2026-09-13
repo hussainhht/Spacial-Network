@@ -10,6 +10,7 @@ import AppIcon from "./AppIcon";
 import { useNotifications } from "@/features/notifications/context/NotificationProvider";
 import NotificationDropdown from "@/features/notifications/components/NotificationDropdown";
 import { useSidebar } from "./sidebarContext";
+import { useLogout } from "./useLogout";
 import styles from "./TopNavbar.module.css";
 
 export default function TopNavbar() {
@@ -19,6 +20,7 @@ export default function TopNavbar() {
   const { search, setSearch } = useGroupsSearch();
   // Real notifications context
   const { unreadCount } = useNotifications();
+  const { logout, loggingOut, error: logoutError } = useLogout();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [menuRoute, setMenuRoute] = useState(pathname);
   const bellRef = useRef<HTMLDivElement>(null);
@@ -221,10 +223,16 @@ export default function TopNavbar() {
                 type="button"
                 className={`${styles.dropdownItem} ${styles.dropdownItemLogout}`}
                 role="menuitem"
-                onClick={() => setUserMenuOpen(false)}
+                onClick={logout}
+                disabled={loggingOut}
               >
-                Logout
+                {loggingOut ? "Logging out…" : "Logout"}
               </button>
+              {logoutError && (
+                <p className={styles.dropdownError} role="alert">
+                  {logoutError}
+                </p>
+              )}
             </div>
           )}
         </div>

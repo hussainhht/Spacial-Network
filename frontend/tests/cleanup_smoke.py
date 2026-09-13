@@ -239,7 +239,13 @@ with sync_playwright() as p:
             visit(page, route)
             sky(page)
             assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth"), route
-            expect(page.get_by_role("navigation", name="Main navigation", exact=True)).to_be_visible()
+            # Phase 01 navigation shell: mobile now gets the fixed bottom nav
+            # instead of the desktop sidebar rail (previously shrunk to an
+            # icon-only column here, but still the "Main navigation" landmark
+            # itself). The sidebar stays mounted (unconditional render, CSS
+            # decides visibility) but must be hidden at this width.
+            expect(page.get_by_role("navigation", name="Primary navigation", exact=True)).to_be_visible()
+            expect(page.get_by_role("navigation", name="Main navigation", exact=True)).to_be_hidden()
         page.screenshot(path=str(ARTIFACTS / "mobile.png"), full_page=True)
         page.emulate_media(reduced_motion="reduce")
         assert page.locator("[data-space-background] *").evaluate_all("els => els.every(el => getComputedStyle(el).animationName === 'none')")

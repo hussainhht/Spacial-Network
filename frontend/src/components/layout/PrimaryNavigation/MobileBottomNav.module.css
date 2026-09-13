@@ -1,0 +1,96 @@
+/* Fixed bottom nav, mobile-only. Sits outside the scrollable route pane so it
+   never introduces a second scrollbar; AppShell.module.css reserves matching
+   space at the bottom of .routeContent so content never renders underneath. */
+.bottomNav {
+  display: none;
+  position: fixed;
+  inset: auto 0 0 0;
+  z-index: 3;
+  /* content-box: the safe-area strip ADDS to the tappable row instead of
+     squeezing it on notched devices. */
+  box-sizing: content-box;
+  height: var(--nav-bottom-height);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  border-top: 1px solid var(--space-border);
+  background: linear-gradient(
+    180deg,
+    rgba(11, 14, 32, 0.94),
+    rgba(6, 8, 20, 0.98)
+  );
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+.navList {
+  display: flex;
+  width: 100%;
+  height: 100%;
+}
+.navItem {
+  position: relative;
+  flex: 1 1 0;
+  min-height: 44px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  color: var(--space-text-muted);
+  text-decoration: none;
+  transition: color 160ms ease;
+}
+.navItem[aria-current="page"] {
+  color: #ede9fe;
+}
+.navIcon {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  transition:
+    background 160ms ease,
+    box-shadow 160ms ease,
+    color 160ms ease;
+}
+.navIcon svg {
+  width: 20px;
+  height: 20px;
+}
+.navItem[aria-current="page"] .navIcon {
+  background: rgba(139, 92, 246, 0.2);
+  box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.35);
+  color: #ede9fe;
+}
+.navLabel {
+  font-size: 10px;
+  font-weight: 500;
+}
+
+/* Create: filled accent circle, always on — a touch of emphasis, not a FAB. */
+.navItemEmphasis .navIcon {
+  width: 38px;
+  height: 38px;
+  color: #fff;
+  background: linear-gradient(135deg, var(--space-accent-violet), var(--space-accent-indigo));
+  box-shadow: 0 2px 12px rgba(139, 92, 246, 0.45);
+}
+.navItemEmphasis[aria-current="page"] .navIcon {
+  box-shadow:
+    0 0 0 3px rgba(139, 92, 246, 0.25),
+    0 2px 14px rgba(139, 92, 246, 0.55);
+}
+
+@media (max-width: 760px) {
+  .bottomNav {
+    display: flex;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .navItem,
+  .navIcon {
+    transition: none;
+  }
+}

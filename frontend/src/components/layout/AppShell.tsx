@@ -2,7 +2,7 @@
 
 import { GroupsSearchProvider } from "@/features/groups/context/GroupsSearchProvider";
 import TopNavbar from "./TopNavbar";
-import AppSidebar from "./AppSidebar";
+import PrimaryNavigation from "./PrimaryNavigation/PrimaryNavigation";
 import { SidebarProvider, useSidebar } from "./sidebarContext";
 import styles from "./AppShell.module.css";
 
@@ -14,7 +14,7 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
       <a href="#page-content" className={styles.skipLink}>
         Skip to content
       </a>
-      <AppSidebar />
+      <PrimaryNavigation />
       <div className={`${styles.mainArea} ${isOpen ? "" : styles.mainAreaFull}`}>
         <TopNavbar />
         <div id="page-content" tabIndex={-1} className={styles.routeContent}>

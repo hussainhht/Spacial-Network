@@ -55,6 +55,8 @@ body {
   --space-radius-lg: 20px;
   --space-radius-md: 10px;
   --space-radius-sm: 8px;
+
+  --nav-bottom-height: 64px;
 }
 
 /* ======================= Page shell / background ======================= */

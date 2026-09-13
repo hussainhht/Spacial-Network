@@ -492,6 +492,17 @@
   color: #fca5a5;
 }
 
+.dropdownItemLogout:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.dropdownError {
+  margin: 4px 10px 2px;
+  font-size: 11px;
+  color: var(--space-error-text, #fca5a5);
+}
+
 /* ================= Responsive Design ================= */
 @media (max-width: 900px) {
   .contextEyebrow,
@@ -585,8 +596,9 @@
     padding-block: 12px;
   }
   .sidebarToggle {
-    width: 32px;
-    height: 32px;
+    /* No sidebar rail at this width (PrimaryNavigation shows the bottom nav
+       instead), so there is nothing left for this button to collapse. */
+    display: none;
   }
   .searchSection {
     display: flex;
