@@ -9,6 +9,7 @@ type NotificationType string
 
 const (
 	NotificationFollowRequest    NotificationType = "follow_request"
+	NotificationNewFollower      NotificationType = "new_follower"
 	NotificationGroupInvitation  NotificationType = "group_invitation"
 	NotificationGroupJoinRequest NotificationType = "group_join_request"
 	NotificationGroupEvent       NotificationType = "group_event"
@@ -21,6 +22,7 @@ const (
 // const above and an entry here - no schema change.
 var validNotificationTypes = map[NotificationType]bool{
 	NotificationFollowRequest:    true,
+	NotificationNewFollower:      true,
 	NotificationGroupInvitation:  true,
 	NotificationGroupJoinRequest: true,
 	NotificationGroupEvent:       true,
@@ -37,6 +39,7 @@ func IsValidNotificationType(t NotificationType) bool {
 // than their own enum) since entity_type is an open, descriptive field.
 const (
 	EntityFollowRequest    = "follow_request"
+	EntityFollow           = "follow"
 	EntityGroupInvitation  = "group_invitation"
 	EntityGroupJoinRequest = "group_join_request"
 	EntityEvent            = "event"
@@ -68,6 +71,11 @@ type GroupNotificationData struct {
 	GroupTitle    string  `json:"group_title"`
 	ActorUsername *string `json:"actor_username,omitempty"`
 }
+
+type FollowNotificationData struct {
+	ActorUsername string `json:"actor_username"`
+}
+
 type CreateNotificationRequest struct {
 	ReceiverID int
 	ActorID    *int

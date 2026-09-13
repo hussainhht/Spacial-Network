@@ -2,6 +2,7 @@ package chat
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -132,4 +133,58 @@ func (h *Handler) GetEligibleContactsHandler(w http.ResponseWriter, r *http.Requ
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(contacts)
+}
+
+func (h *Handler) GetGroupHistoryHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Method not allowed"})
+		return
+	}
+
+	userID, ok := requestctx.UserID(r.Context())
+	if !ok || userID <= 0 {
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Unauthorized"})
+		return
+	}
+
+	groupIDStr := r.PathValue("id")
+	if groupIDStr == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Missing group id"})
+		return
+	}
+
+	groupID, err := strconv.ParseInt(groupIDStr, 10, 64)
+	if err != nil || groupID <= 0 {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid group id"})
+		return
+	}
+
+	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+	offset, _ := strconv.Atoi(r.URL.Query().Get("offset"))
+
+	messages, err := h.service.GetGroupHistory(groupID, int64(userID), limit, offset)
+	if err != nil {
+		if errors.Is(err, ErrNotGroupMember) {
+			w.WriteHeader(http.StatusForbidden)
+			json.NewEncoder(w).Encode(map[string]string{"error": "You must be a member of this group to view messages"})
+			return
+		}
+
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to load group chat history"})
+		return
+	}
+
+	if messages == nil {
+		messages = []GroupMessage{}
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(messages)
 }

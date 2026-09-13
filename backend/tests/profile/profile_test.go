@@ -20,8 +20,8 @@ import (
 )
 
 type fixture struct {
-	db          *sql.DB
-	usersSvc    *users.Service
+	db           *sql.DB
+	usersSvc     *users.Service
 	usersHandler *users.Handler
 	followersSvc *followers.Service
 }
@@ -31,7 +31,7 @@ func setup(t *testing.T) fixture {
 	db := testutil.NewTestDB(t)
 
 	followersRepo := followers.NewRepository(db)
-	followersSvc := followers.NewService(followersRepo)
+	followersSvc := followers.NewService(followersRepo, nil)
 
 	usersRepo := users.NewRepository(db)
 	usersSvc := users.NewService(usersRepo, followersSvc)

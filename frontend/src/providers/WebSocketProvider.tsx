@@ -22,6 +22,7 @@ import type {
   InviteUserSearchResultsPayload,
   NotificationEventPayload,
   GroupEventResponseUpdatedPayload,
+  GroupMessagePayload,
 } from "@/lib/websocket/types";
 
 const WebSocketContext = createContext<WebSocketContextType | undefined>(
@@ -32,6 +33,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   const [isConnected, setIsConnected] = useState(false);
   const [onlineUserIDs, setOnlineUserIDs] = useState<number[]>([]);
   const [lastMessage, setLastMessage] = useState<MessagePayload | null>(null);
+  const [lastGroupMessage, setLastGroupMessage] = useState<GroupMessagePayload | null>(null);
   const [typingStatus, setTypingStatus] = useState<TypingPayload | null>(null);
   const [lastReadReceipt, setLastReadReceipt] = useState<MessagesReadPayload | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -41,6 +43,12 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     useState<NotificationEventPayload | null>(null);
   const [lastEventResponseUpdate, setLastEventResponseUpdate] =
     useState<GroupEventResponseUpdatedPayload | null>(null);
+
+  const groupMessageListeners = useRef(new Set<(msg: GroupMessagePayload) => void>());
+  const subscribeGroupMessages = useCallback((listener: (msg: GroupMessagePayload) => void) => {
+    groupMessageListeners.current.add(listener);
+    return () => { groupMessageListeners.current.delete(listener); };
+  }, []);
 
   const eventResponseListeners = useRef(new Set<(event: GroupEventResponseUpdatedPayload) => void>());
   const subscribeEventResponses = useCallback((listener: (event: GroupEventResponseUpdatedPayload) => void) => {
@@ -151,6 +159,14 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
               setLastMessage(data.payload as MessagePayload);
               setErrorMessage(null);
               break;
+            case "group_message": {
+              const groupMsg = data.payload as GroupMessagePayload;
+              setLastGroupMessage(groupMsg);
+              groupMessageListeners.current.forEach((listener) =>
+                listener(groupMsg)
+              );
+              break;
+            }
             case "typing":
               setTypingStatus(data.payload as TypingPayload);
               break;
@@ -246,12 +262,14 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
       isConnected,
       onlineUserIDs,
       lastMessage,
+      lastGroupMessage,
       typingStatus,
       lastReadReceipt,
       errorMessage,
       inviteSearchResults,
       lastNotification,
       lastEventResponseUpdate,
+      subscribeGroupMessages,
       subscribeEventResponses,
       subscribeNotifications,
       sendEvent,
@@ -260,12 +278,14 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
       isConnected,
       onlineUserIDs,
       lastMessage,
+      lastGroupMessage,
       typingStatus,
       lastReadReceipt,
       errorMessage,
       inviteSearchResults,
       lastNotification,
       lastEventResponseUpdate,
+      subscribeGroupMessages,
       subscribeNotifications,
       subscribeEventResponses,
       sendEvent,

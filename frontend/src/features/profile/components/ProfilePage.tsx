@@ -9,11 +9,13 @@ import {
   getMyProfile,
   getProfileByUsername,
   unfollowUser,
+  updateMyProfileDetails,
   updateMyProfilePrivacy,
 } from "../api/profiles";
 import { listPosts } from "@/features/posts/api/posts";
 import { getEligibleContacts } from "@/features/chat/api/chat";
 import type { Post } from "@/features/posts/types/post";
+import type { UpdateProfileDetailsInput } from "../api/profiles";
 import type {
   FollowStatus,
   Profile,
@@ -59,6 +61,8 @@ export default function ProfilePage({ username }: ProfilePageProps) {
       !profile.canViewFullProfile,
   );
   const [postsLoading, setPostsLoading] = useState(!isLocked);
+  const [detailsUpdating, setDetailsUpdating] = useState(false);
+  const [detailsError, setDetailsError] = useState<string | null>(null);
   const [privacyUpdating, setPrivacyUpdating] = useState(false);
   const [privacyError, setPrivacyError] = useState<string | null>(null);
 
@@ -363,6 +367,27 @@ export default function ProfilePage({ username }: ProfilePageProps) {
     }
   }
 
+  async function handleUpdateProfileDetails(input: UpdateProfileDetailsInput) {
+    if (!profile || !isOwnProfile || detailsUpdating) {
+      return;
+    }
+
+    setDetailsUpdating(true);
+    setDetailsError(null);
+
+    try {
+      const updatedProfile = await updateMyProfileDetails(input);
+      setProfile(updatedProfile);
+      setPrivacyOverride(updatedProfile.isPrivate);
+    } catch (err) {
+      setDetailsError(
+        err instanceof Error ? err.message : "Failed to update profile details",
+      );
+    } finally {
+      setDetailsUpdating(false);
+    }
+  }
+
   function handlePostDeleted(deletedId: number) {
     setPosts((prev) => prev.filter((p) => p.id !== deletedId));
   }
@@ -424,6 +449,11 @@ export default function ProfilePage({ username }: ProfilePageProps) {
             onTogglePrivacy={isOwnProfile ? handleTogglePrivacy : undefined}
             privacyUpdating={privacyUpdating}
             privacyError={privacyError}
+            onUpdateProfileDetails={
+              isOwnProfile ? handleUpdateProfileDetails : undefined
+            }
+            detailsUpdating={detailsUpdating}
+            detailsError={detailsError}
             followers={followers}
             following={following}
             followDataLoading={followDataLoading}

@@ -251,6 +251,13 @@ export default function ProfileHeader({
           </div>
 
           <p className={styles.username}>@{profile.username}</p>
+          {profile.nickname && (
+            <p className={styles.nickname}>{profile.nickname}</p>
+          )}
+
+          {profile.aboutMe && (
+            <p className={styles.aboutMe}>{profile.aboutMe}</p>
+          )}
         </div>
 
         <ProfileStats

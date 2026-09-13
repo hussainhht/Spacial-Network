@@ -30,14 +30,14 @@ func setup(t *testing.T) fixture {
 	db := testutil.NewTestDB(t)
 
 	followersRepo := followers.NewRepository(db)
-	followersSvc := followers.NewService(followersRepo)
+	followersSvc := followers.NewService(followersRepo, nil)
 
 	notifRepo := notifications.NewRepository(db)
 	notifSvc := notifications.NewService(notifRepo, nil)
 
 	chatRepo := chat.NewRepository(db)
 	hub := websocket.NewHub()
-	chatSvc := chat.NewService(chatRepo, hub, notifSvc, followersSvc)
+	chatSvc := chat.NewService(chatRepo, hub, notifSvc, followersSvc, nil)
 
 	return fixture{db: db, chatSvc: chatSvc, chatRepo: chatRepo, followersSvc: followersSvc}
 }
@@ -174,4 +174,3 @@ func TestHandlePrivateMessage_RejectsSelfMessage(t *testing.T) {
 		t.Fatalf("expected no self-message to be persisted, got %d", len(history))
 	}
 }
-

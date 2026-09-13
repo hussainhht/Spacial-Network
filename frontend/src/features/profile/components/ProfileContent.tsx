@@ -3,7 +3,9 @@
 import PostCard from "@/features/posts/components/PostCard";
 import type { Post } from "@/features/posts/types/post";
 import { parseDate } from "@/lib/utils";
+import type { UpdateProfileDetailsInput } from "../api/profiles";
 import type { Profile, ProfileTab, ProfileUserSummary } from "../types/profile";
+import ProfileDetailsForm from "./ProfileDetailsForm";
 import ProfileFollowRequests from "./ProfileFollowRequests";
 import ProfilePrivacy from "./ProfilePrivacy";
 import ProfileUserList from "./ProfileUserList";
@@ -101,6 +103,9 @@ interface AboutTabProps {
   onTogglePrivacy?: () => Promise<void>;
   privacyUpdating?: boolean;
   privacyError?: string | null;
+  onUpdateProfileDetails?: (input: UpdateProfileDetailsInput) => Promise<void>;
+  detailsUpdating?: boolean;
+  detailsError?: string | null;
   followers: ProfileUserSummary[];
   following: ProfileUserSummary[];
   followDataLoading?: boolean;
@@ -114,6 +119,9 @@ function AboutTab({
   onTogglePrivacy,
   privacyUpdating = false,
   privacyError = null,
+  onUpdateProfileDetails,
+  detailsUpdating = false,
+  detailsError = null,
   followers,
   following,
   followDataLoading = false,
@@ -128,6 +136,14 @@ function AboutTab({
         day: "numeric",
       })
     : null;
+  const birthDate = parseDate(profile.dateOfBirth);
+  const formattedDateOfBirth = birthDate
+    ? birthDate.toLocaleDateString(undefined, {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      })
+    : null;
 
   return (
     <div
@@ -137,6 +153,23 @@ function AboutTab({
       className={styles.tabContent}
     >
       <div className={styles.aboutGrid}>
+        {isOwnProfile && onUpdateProfileDetails && (
+          <ProfileDetailsForm
+            key={[
+              profile.id,
+              profile.firstName,
+              profile.lastName,
+              profile.nickname,
+              profile.aboutMe,
+              profile.dateOfBirth,
+            ].join(":")}
+            profile={profile}
+            onSave={onUpdateProfileDetails}
+            saving={detailsUpdating}
+            error={detailsError}
+          />
+        )}
+
         <section
           className={styles.card}
           aria-labelledby="personal-info-heading"
@@ -166,6 +199,15 @@ function AboutTab({
                 <span className={styles.infoValue}>
                   {profile.gender.charAt(0).toUpperCase() +
                     profile.gender.slice(1)}
+                </span>
+              </div>
+            )}
+
+            {formattedDateOfBirth && (
+              <div className={styles.infoRow}>
+                <span className={styles.infoLabel}>Date of Birth</span>
+                <span className={styles.infoValue}>
+                  {formattedDateOfBirth}
                 </span>
               </div>
             )}
@@ -238,6 +280,9 @@ interface ProfileContentProps {
   onTogglePrivacy?: () => Promise<void>;
   privacyUpdating?: boolean;
   privacyError?: string | null;
+  onUpdateProfileDetails?: (input: UpdateProfileDetailsInput) => Promise<void>;
+  detailsUpdating?: boolean;
+  detailsError?: string | null;
   followers: ProfileUserSummary[];
   following: ProfileUserSummary[];
   followDataLoading?: boolean;
@@ -256,6 +301,9 @@ export default function ProfileContent({
   onTogglePrivacy,
   privacyUpdating,
   privacyError,
+  onUpdateProfileDetails,
+  detailsUpdating,
+  detailsError,
   followers,
   following,
   followDataLoading,
@@ -285,6 +333,9 @@ export default function ProfileContent({
           onTogglePrivacy={onTogglePrivacy}
           privacyUpdating={privacyUpdating}
           privacyError={privacyError}
+          onUpdateProfileDetails={onUpdateProfileDetails}
+          detailsUpdating={detailsUpdating}
+          detailsError={detailsError}
           followers={followers}
           following={following}
           followDataLoading={followDataLoading}

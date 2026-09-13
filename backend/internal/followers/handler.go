@@ -155,7 +155,8 @@ func (h *Handler) UnfollowUserHandler(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) GetFollowersHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	if _, ok := requestctx.UserID(r.Context()); !ok {
+	currentUserID, ok := requestctx.UserID(r.Context())
+	if !ok {
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode(FollowListResponse{
 			Success: false,
@@ -166,6 +167,25 @@ func (h *Handler) GetFollowersHandler(w http.ResponseWriter, r *http.Request) {
 
 	targetProfile, ok := h.targetProfileFromUsername(w, r)
 	if !ok {
+		return
+	}
+
+	canViewFullProfile, err := h.usersService.CanViewFullProfile(currentUserID, targetProfile)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(FollowListResponse{
+			Success: false,
+			Message: "Failed to check profile privacy",
+		})
+		return
+	}
+
+	if !canViewFullProfile {
+		w.WriteHeader(http.StatusForbidden)
+		json.NewEncoder(w).Encode(FollowListResponse{
+			Success: false,
+			Message: "You cannot view this private profile's followers",
+		})
 		return
 	}
 
@@ -189,7 +209,8 @@ func (h *Handler) GetFollowersHandler(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) GetFollowingHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	if _, ok := requestctx.UserID(r.Context()); !ok {
+	currentUserID, ok := requestctx.UserID(r.Context())
+	if !ok {
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode(FollowListResponse{
 			Success: false,
@@ -200,6 +221,25 @@ func (h *Handler) GetFollowingHandler(w http.ResponseWriter, r *http.Request) {
 
 	targetProfile, ok := h.targetProfileFromUsername(w, r)
 	if !ok {
+		return
+	}
+
+	canViewFullProfile, err := h.usersService.CanViewFullProfile(currentUserID, targetProfile)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(FollowListResponse{
+			Success: false,
+			Message: "Failed to check profile privacy",
+		})
+		return
+	}
+
+	if !canViewFullProfile {
+		w.WriteHeader(http.StatusForbidden)
+		json.NewEncoder(w).Encode(FollowListResponse{
+			Success: false,
+			Message: "You cannot view this private profile's following",
+		})
 		return
 	}
 

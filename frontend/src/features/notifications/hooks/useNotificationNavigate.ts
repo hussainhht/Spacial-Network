@@ -3,7 +3,11 @@
 import { useCallback } from "react";
 import { useRouter } from "next/navigation";
 
-import type { Notification } from "../types/notification";
+import {
+  getFollowNotificationData,
+  getGroupNotificationData,
+  type Notification,
+} from "../types/notification";
 
 export function useNotificationNavigate() {
   const router = useRouter();
@@ -11,21 +15,25 @@ export function useNotificationNavigate() {
   return useCallback(
     (notification: Notification) => {
       switch (notification.type) {
-        case "group_join_request":
-          if (notification.data) {
-            router.push(`/groups/${notification.data.group_id}#join-requests`);
+        case "group_join_request": {
+          const groupData = getGroupNotificationData(notification);
+          if (groupData) {
+            router.push(`/groups/${groupData.group_id}#join-requests`);
           } else {
             router.push("/groups");
           }
           break;
+        }
 
-        case "group_invitation":
-          if (notification.data) {
-            router.push(`/groups/${notification.data.group_id}#invitations`);
+        case "group_invitation": {
+          const groupData = getGroupNotificationData(notification);
+          if (groupData) {
+            router.push(`/groups/${groupData.group_id}#invitations`);
           } else {
             router.push("/groups");
           }
           break;
+        }
 
         case "private_message":
           if (notification.actorId) {
@@ -34,6 +42,22 @@ export function useNotificationNavigate() {
             router.push("/chat");
           }
           break;
+
+        case "follow_request":
+          router.push("/profile");
+          break;
+
+        case "new_follower": {
+          const followData = getFollowNotificationData(notification);
+          if (followData) {
+            router.push(
+              `/profile/${encodeURIComponent(followData.actor_username)}`,
+            );
+          } else {
+            router.push("/profile");
+          }
+          break;
+        }
 
         //todo add more notification types here in the future, such as post_comment, post_like, etc.
         /*
