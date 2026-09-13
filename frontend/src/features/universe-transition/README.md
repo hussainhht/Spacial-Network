@@ -7,6 +7,14 @@ Pages register their roots and existing orbit controllers; scoped
 `data-universe-*` hooks identify the animated elements. No APIs or data models
 are changed.
 
+> **For `/` and `/posts`, the Solar System navigation supersedes this
+> provider.** Those two routes share the persistent scene in
+> `features/solar-system`, mounted once by the app shell, and moves between them
+> are coordinated by `solar-system/navigation/UniverseNavigationProvider`. This
+> provider delegates `navigate()` for them, reports their moves through
+> `isTransitioning`, and never mounts its own canvas there. `/groups` is
+> unchanged. See `features/solar-system/navigation/README.md`.
+
 > **Universe Home v1 supersedes the two sections below at runtime.** The legacy
 > Earth cinematic and its Earth-anchor docking are retained but disabled; the
 > homepage is the three-planet universe track. Read

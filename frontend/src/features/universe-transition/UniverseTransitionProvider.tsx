@@ -32,6 +32,8 @@ import {
 } from "@/features/universe-home/navigation/planetDestinations";
 import { useUniverseHomeState } from "@/features/universe-home/navigation/useUniverseHomeState";
 import { groupsComposition } from "@/features/universe-home/scene/groupsStage";
+import { isUniverseRoute } from "@/features/solar-system/navigation/destinations";
+import { useUniverseNavigation } from "@/features/solar-system/navigation/UniverseNavigationProvider";
 import { center, enterScene, exitScene, moveEarth } from "./animation";
 import { useStageTravel } from "./useStageTravel";
 import type {
@@ -140,6 +142,13 @@ export default function UniverseTransitionProvider({
     () => false,
   );
   const router = useRouter();
+  // Home and Posts belong to the solar system's own coordinator, which moves
+  // the persistent scene's camera between them. This provider hands those
+  // navigations over and reports its moves as transitions too, so the navbar
+  // and sidebar keep reading one flag.
+  const universe = useUniverseNavigation();
+  const universeNavigate = universe.navigate;
+  const universeTransitioning = universe.isTransitioning;
   const [direction, setDirection] = useState<UniverseTransitionDirection | null>(
     null,
   );
@@ -677,6 +686,7 @@ export default function UniverseTransitionProvider({
 
   const navigate = useCallback(
     (href: string) => {
+    if (universeNavigate(href)) return true;
     // A move already owns the scene. Claiming its own destination is what stops
     // a second click from pushing the route twice.
     if (run.current) return href === run.current.to;
@@ -977,7 +987,7 @@ export default function UniverseTransitionProvider({
     }
     return true;
     },
-    [pathname, router, openStage, returnHome],
+    [pathname, router, openStage, returnHome, universeNavigate],
   );
 
   const onEarthReady = useCallback(
@@ -989,6 +999,11 @@ export default function UniverseTransitionProvider({
   );
 
   const composed = stageForRoute(pathname);
+  // The legacy payload's compositions, minus the universe routes. Home and
+  // Posts are drawn by the shell's persistent solar system scene
+  // (`solar-system/PersistentUniverseScene`); mounting this payload behind them
+  // as well would mean a second canvas and a second Earth.
+  const legacyComposed = isUniverseRoute(pathname) ? null : composed;
   // `/` only asks for the persistent canvas while it is the planet loop. Under
   // the Solar System home it owns its own scene, and mounting this one as well
   // would put a second WebGL context behind it.
@@ -999,13 +1014,13 @@ export default function UniverseTransitionProvider({
   // Groups consumers of the unchanged transition API, and vice versa.
   const transitionApi = useMemo<API>(
     () => ({
-      isTransitioning: active,
+      isTransitioning: active || universeTransitioning,
       transitionState,
       navigate,
       register,
       orbitPosition,
     }),
-    [active, transitionState, navigate, register],
+    [active, universeTransitioning, transitionState, navigate, register],
   );
   const homeApi = useMemo<UniverseHomeAPI>(
     () => ({
@@ -1070,7 +1085,7 @@ export default function UniverseTransitionProvider({
         </div>
         <UniverseTransitionLayer layerRef={layer} glowRef={glow} />
         {host &&
-          (loopHome || composed !== null || active) &&
+          (loopHome || legacyComposed !== null || active) &&
           createPortal(
             // One payload, never both: a second HomeEarth Canvas alongside
             // UniverseCanvas would mean two WebGL contexts on the same route.
@@ -1083,7 +1098,7 @@ export default function UniverseTransitionProvider({
                 // Mars is the section's anchor and has to keep turning. This is
                 // independent of reduced motion, which stops spin and orbit
                 // inside the scene without blanking it.
-                renderActive={loopHome || composed !== null || active}
+                renderActive={loopHome || legacyComposed !== null || active}
                 reducedMotion={reducedMotion}
                 phase={homeTrack.phase}
                 stage={homeTrack.stage}

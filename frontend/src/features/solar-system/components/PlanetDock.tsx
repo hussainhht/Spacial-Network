@@ -1,7 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { PLANETS, SUN, type SolarBodyId } from "../config/planets";
+import { destinationForBody } from "../navigation/destinations";
+import { useUniverseNavigation } from "../navigation/UniverseNavigationProvider";
 import styles from "../styles/PlanetDock.module.css";
 
 /** The Sun leads, then the planets outward. Derived from the same configuration
@@ -15,14 +18,15 @@ const BODIES: readonly { id: SolarBodyId; name: string; glyph: string }[] = [
 /**
  * The bottom bar.
  *
- * A visual prototype: selecting an entry moves the highlight and nothing else.
- * It holds its own selection in local state on purpose — the bar is where the
- * fast-travel controls will live, and this is the shape of them, but none of the
- * navigation, camera travel or routing behind it exists yet, and wiring it into
- * the scene now would be inventing the interaction model before it is designed.
+ * A body with a destination is a real link to its section: a primary click hands
+ * the navigation to the universe camera, which travels there and changes the
+ * route on the way, while a modified click still opens the section in a new tab
+ * like any link. The remaining bodies are still the visual prototype — selecting
+ * one moves the highlight and nothing else — until their destinations exist.
  */
 export default function PlanetDock() {
   const [selected, setSelected] = useState<SolarBodyId>("earth");
+  const { navigate } = useUniverseNavigation();
 
   return (
     <div className={styles.dock}>
@@ -31,21 +35,51 @@ export default function PlanetDock() {
         role="group"
         aria-label="Bodies in this system"
       >
-        {BODIES.map((body) => (
-          <button
-            key={body.id}
-            type="button"
-            className={styles.body}
-            data-selected={body.id === selected}
-            aria-pressed={body.id === selected}
-            onClick={() => setSelected(body.id)}
-          >
-            <span className={styles.glyph} aria-hidden="true">
-              {body.glyph}
-            </span>
-            <span className={styles.name}>{body.name}</span>
-          </button>
-        ))}
+        {BODIES.map((body) => {
+          const destination = destinationForBody(body.id);
+          const label = (
+            <>
+              <span className={styles.glyph} aria-hidden="true">
+                {body.glyph}
+              </span>
+              <span className={styles.name}>{body.name}</span>
+            </>
+          );
+
+          if (destination) {
+            return (
+              <Link
+                key={body.id}
+                href={destination.route}
+                scroll={false}
+                className={styles.body}
+                data-selected={body.id === selected}
+                data-destination
+                aria-label={`${body.name}: open ${destination.label}`}
+                title={`Open ${destination.label}`}
+                onNavigate={(event) => {
+                  setSelected(body.id);
+                  if (navigate(destination.route)) event.preventDefault();
+                }}
+              >
+                {label}
+              </Link>
+            );
+          }
+
+          return (
+            <button
+              key={body.id}
+              type="button"
+              className={styles.body}
+              data-selected={body.id === selected}
+              aria-pressed={body.id === selected}
+              onClick={() => setSelected(body.id)}
+            >
+              {label}
+            </button>
+          );
+        })}
       </div>
     </div>
   );

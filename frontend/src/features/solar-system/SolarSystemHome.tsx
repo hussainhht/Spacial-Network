@@ -1,27 +1,23 @@
 "use client";
 
-import dynamic from "next/dynamic";
+import { useRef } from "react";
 import PlanetDock from "./components/PlanetDock";
-import { useReducedMotion } from "./hooks/useReducedMotion";
+import { useDestinationPresence } from "./navigation/useDestinationPresence";
 import styles from "./styles/SolarSystemHome.module.css";
 
-// Client-only. The scene measures its pane and creates a WebGL context, so
-// there is nothing useful to prerender; the starfield behind it is server
-// rendered, which is what the reader sees first.
-const SolarSystemCanvas = dynamic(
-  () => import("./components/SolarSystemCanvas"),
-  { ssr: false },
-);
-
 /**
- * The home page: one locked pane holding the solar system.
+ * The home page: the chrome over the whole solar system.
  *
- * Phase 1 — the composition only. The scene is fixed and ambient: it turns, it
- * never travels, and nothing in it is a control. The chrome is deliberately
- * thin, two lines of type and the dock, because the planets are the page.
+ * The system itself is not in here. It is the persistent universe scene in the
+ * app shell (`PersistentUniverseScene`), mounted behind Home and Posts alike, so
+ * that selecting Earth travels through the scene instead of swapping it for
+ * another. What Home owns is deliberately thin — two lines of type and the dock —
+ * and it is shown only while the camera is framing the system.
  */
 export default function SolarSystemHome() {
-  const reducedMotion = useReducedMotion();
+  const viewport = useRef<HTMLDivElement>(null);
+  const title = useRef<HTMLHeadingElement>(null);
+  const presence = useDestinationPresence("home", viewport, title);
 
   return (
     <main
@@ -29,10 +25,11 @@ export default function SolarSystemHome() {
       aria-labelledby="app-page-title"
       data-solar-scene="home"
     >
-      <div className={styles.viewport}>
-        <SolarSystemCanvas reducedMotion={reducedMotion} />
+      <div ref={viewport} className={styles.viewport} {...presence}>
         <div className={styles.caption}>
-          <h2 className={styles.title}>Your solar system</h2>
+          <h2 ref={title} tabIndex={-1} className={styles.title}>
+            Your solar system
+          </h2>
           <p className={styles.subtitle}>
             Every destination in the network orbits the same star.
           </p>

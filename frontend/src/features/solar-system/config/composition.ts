@@ -3,10 +3,12 @@ import { MOON, PLANETS, SUN, type PlanetConfig } from "./planets";
 /**
  * Camera framing for the home scene.
  *
- * The camera never moves during a session: the composition in `planets.ts` was
- * authored against one viewpoint, and travelling it is the next phase's job.
- * What does change is the viewport, so this module turns a measured pane into
- * the one camera that frames the same composition inside it.
+ * This is the `home` destination of the universe camera. The composition in
+ * `planets.ts` was authored against this one viewpoint, and the camera returns
+ * to it whenever the reader is on Home; the destinations it travels to from
+ * here live in `navigation/destinations.ts`. What changes with the viewport is
+ * handled here: this module turns a measured pane into the one camera that
+ * frames the same composition inside it.
  *
  * The camera looks along -Z from above the orbital plane, which is why every
  * ring reads as an ellipse and why a planet on the far side of its orbit sits

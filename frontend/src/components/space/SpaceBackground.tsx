@@ -2,6 +2,7 @@
 
 import { memo, useId } from "react";
 import { usePathname } from "next/navigation";
+import { isUniverseRoute } from "@/features/solar-system/navigation/destinations";
 import { STAR_FIELD, batchStars } from "./starData";
 import styles from "./SpaceBackground.module.css";
 
@@ -14,12 +15,14 @@ function StarPaths({ paths }: { paths: typeof distantPaths }) {
   ));
 }
 
-/** Which treatment the sky gets. Home is the one route whose subject is the
- * sky's own neighbourhood — a solar system, lit by its own star — so it drops
- * the drifting haze and keeps stars only; anything cloudy behind the planets
- * would read as atmosphere in a vacuum and flatten their depth. */
+/** Which treatment the sky gets. The universe routes — Home and Posts — are the
+ * ones whose subject is the sky's own neighbourhood, a solar system lit by its
+ * own star, so they drop the drifting haze and keep stars only; anything cloudy
+ * behind the planets would read as atmosphere in a vacuum and flatten their
+ * depth. Sharing one treatment also means the sky does not change under the
+ * camera when the route changes part way through a move. */
 function sceneFor(pathname: string): "home" | "groups" | undefined {
-  if (pathname === "/") return "home";
+  if (isUniverseRoute(pathname)) return "home";
   if (pathname === "/groups") return "groups";
   return undefined;
 }

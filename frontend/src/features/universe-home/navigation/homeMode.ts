@@ -23,12 +23,11 @@ export const UNIVERSE_HOME_V1_ENABLED: boolean = true;
  * prevent: the canvas is portalled from the shell provider, which wraps every
  * route, so without a flag it would keep drawing behind the new home.
  *
- * Posts and Groups are untouched. They dock the same persistent canvas as
- * before, and a route change into either still blends the scene into its
- * composition; only the loop homepage that used to launch that move is out of
- * the path. The loop implementation is left intact behind this switch for the
- * navigation phase, which will fold the solar system into the persistent scene
- * rather than rebuild it.
+ * Groups is untouched: it docks the same persistent canvas as before. Posts no
+ * longer does. Home and Posts share the solar system's own persistent scene,
+ * mounted once by the app shell (`solar-system/PersistentUniverseScene`), and
+ * the provider skips this canvas on both routes. The loop implementation is
+ * left intact behind this switch.
  *
  * A module constant, for the same reason as the switch above: a runtime flag
  * would behave differently on a direct load of `/posts` than on a visit to it

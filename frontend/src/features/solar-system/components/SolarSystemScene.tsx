@@ -1,15 +1,17 @@
 "use client";
 
-import { useMemo } from "react";
+import { useCallback, useMemo, useRef, type RefObject } from "react";
 import { useThree } from "@react-three/fiber";
+import type { Object3D } from "three";
 import { solveFraming } from "../config/composition";
-import { PLANETS, SUN } from "../config/planets";
-import Planet from "./Planet";
+import { PLANETS, SUN, type PlanetId } from "../config/planets";
+import type { CameraRig } from "../navigation/cameraPose";
+import Planet, { type BodyRegistrar } from "./Planet";
 import PlanetOrbit from "./PlanetOrbit";
 import type { AssetErrorReporter } from "./PlanetModel";
-import SolarCamera from "./SolarCamera";
 import SolarLighting from "./SolarLighting";
 import Sun from "./Sun";
+import UniverseCameraController from "./UniverseCameraController";
 
 /**
  * The solar system.
@@ -24,9 +26,11 @@ import Sun from "./Sun";
  */
 export default function SolarSystemScene({
   animate,
+  rigRef,
   onAssetError,
 }: {
   animate: boolean;
+  rigRef: RefObject<CameraRig>;
   onAssetError: AssetErrorReporter;
 }) {
   const size = useThree((state) => state.size);
@@ -35,21 +39,36 @@ export default function SolarSystemScene({
     [size.width, size.height],
   );
 
+  // Read only inside the camera's frame callback, so it is a plain mutable map
+  // rather than state: a body arriving must not re-render the scene.
+  const bodiesRef = useRef(new Map<PlanetId, Object3D>());
+  const registerBody = useCallback<BodyRegistrar>((id, node) => {
+    bodiesRef.current.set(id, node);
+    return () => {
+      if (bodiesRef.current.get(id) === node) bodiesRef.current.delete(id);
+    };
+  }, []);
+
   return (
     <>
-      <SolarCamera framing={framing} />
       <SolarLighting spread={framing.spread} />
       <Sun radius={SUN.radius} animate={animate} onAssetError={onAssetError} />
-      <PlanetOrbit spread={framing.spread} />
+      <PlanetOrbit spread={framing.spread} rigRef={rigRef} />
       {PLANETS.map((planet) => (
         <Planet
           key={planet.id}
           planet={planet}
           spread={framing.spread}
           animate={animate}
+          registerBody={registerBody}
           onAssetError={onAssetError}
         />
       ))}
+      <UniverseCameraController
+        framing={framing}
+        rigRef={rigRef}
+        bodiesRef={bodiesRef}
+      />
     </>
   );
 }

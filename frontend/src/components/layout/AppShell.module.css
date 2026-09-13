@@ -229,6 +229,17 @@
 .shell:not([data-ready="true"]) .mainArea {
   transition: none !important;
 }
+/* The pane under the navbar. It holds the route content and, on the universe
+   routes, the persistent scene behind it — one box for both, so a route change
+   never resizes the canvas. */
+.routeStage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
 .routeContent {
   position: relative;
   flex: 1;

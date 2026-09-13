@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useState, type RefObject } from "react";
 import { Canvas } from "@react-three/fiber";
 import type { DevModel } from "@/components/space/modelsRegistry";
 import SceneErrorBoundary from "@/features/universe-home/scene/SceneErrorBoundary";
@@ -10,11 +10,12 @@ import {
   NEAR_PLANE,
   SOFTWARE_DPR,
 } from "../config/composition";
+import type { CameraRig } from "../navigation/cameraPose";
 import SolarSystemScene from "./SolarSystemScene";
 import styles from "../styles/SolarSystemCanvas.module.css";
 
 /**
- * The renderer for the home scene.
+ * The renderer for the persistent universe scene.
  *
  * One WebGL context, and it is transparent: the stars behind it are the app's
  * existing DOM starfield, which costs no texture, no geometry and no frame time.
@@ -22,8 +23,10 @@ import styles from "../styles/SolarSystemCanvas.module.css";
  */
 export default function SolarSystemCanvas({
   reducedMotion,
+  rigRef,
 }: {
   reducedMotion: boolean;
+  rigRef: RefObject<CameraRig>;
 }) {
   const [softwareRenderer, setSoftwareRenderer] = useState(false);
   const [failedAssets, setFailedAssets] = useState<readonly string[]>([]);
@@ -47,8 +50,9 @@ export default function SolarSystemCanvas({
         fallback={unavailable}
       >
         <Canvas
-          // Replaced immediately by `SolarCamera` against the measured pane;
-          // this only keeps the first frame from being built at a default fov.
+          // Replaced immediately by `UniverseCameraController` against the
+          // measured pane; this only keeps the first frame from being built at
+          // a default fov.
           camera={{
             position: [6, 17.7, 31.1],
             fov: 30,
@@ -58,6 +62,7 @@ export default function SolarSystemCanvas({
           dpr={softwareRenderer ? SOFTWARE_DPR : HARDWARE_DPR}
           // Nothing here responds to input, so a still scene is genuinely still:
           // a reduced-motion reader gets the composition and no render loop.
+          // Camera moves ask for their frames through the rig.
           frameloop={reducedMotion ? "demand" : "always"}
           gl={{
             alpha: true,
@@ -80,6 +85,7 @@ export default function SolarSystemCanvas({
         >
           <SolarSystemScene
             animate={!reducedMotion}
+            rigRef={rigRef}
             onAssetError={reportAssetError}
           />
         </Canvas>

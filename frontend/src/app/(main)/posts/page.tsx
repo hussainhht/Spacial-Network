@@ -1,5 +1,5 @@
-import OrbitalPostsFeed from "@/features/posts/components/orbit/OrbitalPostsFeed";
+import PostsOverlay from "@/features/posts/components/universe/PostsOverlay";
 
 export default function PostsPage() {
-  return <OrbitalPostsFeed />;
+  return <PostsOverlay />;
 }
