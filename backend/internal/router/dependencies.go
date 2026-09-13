@@ -11,6 +11,7 @@ import (
 	"social/internal/groups"
 	"social/internal/notifications"
 	"social/internal/posts"
+	"social/internal/ratelimit"
 	"social/internal/upload"
 	"social/internal/users"
 	"social/internal/websocket"
@@ -38,6 +39,7 @@ type Dependencies struct {
 	GroupsService        *groups.Service
 	NotificationsService *notifications.Service
 	FollowersService     *followers.Service
+	RateLimiter          *ratelimit.Limiter
 
 	// Future shared services:
 	PostsService *posts.Service
@@ -48,6 +50,22 @@ type Dependencies struct {
 func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 	hub := websocket.NewHub()
 	wsHandler := websocket.NewHandler(hub)
+
+	// =========================
+	// Rate limiting
+	// =========================
+	// One Limiter is shared across every route: its global bucket is keyed
+	// per-user across all of them, and its endpoint bucket is keyed
+	// per-(user, endpoint) - see internal/ratelimit/README.md.
+
+	rateLimiter := ratelimit.NewLimiter(ratelimit.LimiterConfig{
+		GlobalCapacity:     cfg.RateLimitGlobalCapacity,
+		GlobalRefillRate:   cfg.RateLimitGlobalRefillRate,
+		GlobalPenalty:      cfg.RateLimitGlobalPenalty,
+		EndpointCapacity:   cfg.RateLimitEndpointCapacity,
+		EndpointRefillRate: cfg.RateLimitEndpointRefillRate,
+		EndpointPenalty:    cfg.RateLimitEndpointPenalty,
+	})
 
 	// =========================
 	// Notifications
@@ -193,6 +211,7 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 		GroupsService:        groupsService,
 		NotificationsService: notificationsService,
 		FollowersService:     followersService,
+		RateLimiter:          rateLimiter,
 
 		// PostsService: postsService,
 	}, nil
