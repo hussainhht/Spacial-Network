@@ -27,10 +27,10 @@ Authentication, Docker, and final project-wide integration are not included in t
 - [X] Return email
 - [X] Return first name
 - [X] Return last name
-- [ ] Return date of birth
+- [X] Return date of birth
 - [X] Return avatar
-- [ ] Return nickname
-- [ ] Return About Me
+- [X] Return nickname
+- [X] Return About Me
 - [ ] Return followers information
 - [ ] Return following information
 - [ ] Return user posts/activity information when needed
@@ -43,9 +43,9 @@ Authentication, Docker, and final project-wide integration are not included in t
 - [X] Create other-user Profile page
 - [X] Display profile avatar
 - [X] Display name
-- [ ] Display nickname
-- [ ] Display About Me
-- [ ] Display date of birth according to the required visibility rules
+- [X] Display nickname
+- [X] Display About Me
+- [X] Display date of birth according to the required visibility rules
 - [ ] Display followers
 - [ ] Display following
 - [ ] Display user posts/activity
@@ -153,8 +153,8 @@ Authentication, Docker, and final project-wide integration are not included in t
 ## 5. Avatar / Profile Data
 
 - [ ] Display avatar from registration/profile data
-- [ ] Make sure optional nickname is handled correctly
-- [ ] Make sure optional About Me is handled correctly
+- [X] Make sure optional nickname is handled correctly
+- [X] Make sure optional About Me is handled correctly
 - [ ] Handle users without an avatar
 - [ ] Reuse the project's existing image storage logic for avatar-related work when needed
 

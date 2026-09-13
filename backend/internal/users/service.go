@@ -1,6 +1,8 @@
 package users
 
 import (
+	"database/sql"
+
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -112,4 +114,26 @@ func comparePasswords(hashedPassword, plainPassword string) bool {
 
 func (s *Service) UpdateProfilePrivacy(userID int, isPrivate bool) error {
 	return s.repo.UpdateProfilePrivacy(userID, isPrivate)
+}
+
+func (s *Service) UpdateProfileDetails(userID int, req UpdateProfileDetailsRequest) (*Profile, error) {
+	return s.repo.UpdateProfileDetails(
+		userID,
+		req.FirstName,
+		req.LastName,
+		nullableProfileString(req.Nickname),
+		nullableProfileString(req.AboutMe),
+		nullableProfileString(req.DateOfBirth),
+	)
+}
+
+func nullableProfileString(value *string) sql.NullString {
+	if value == nil {
+		return sql.NullString{}
+	}
+
+	return sql.NullString{
+		String: *value,
+		Valid:  true,
+	}
 }

@@ -37,6 +37,20 @@ func toProfileResponse(profile *Profile, canViewFullProfile bool, includePersona
 		resp.Email = profile.Email
 		resp.CreatedAt = profile.CreatedAt.Format(time.RFC3339)
 		resp.UpdatedAt = profile.UpdatedAt.Format(time.RFC3339)
+
+		if profile.DateOfBirth.Valid {
+			resp.DateOfBirth = profile.DateOfBirth.String
+		}
+	}
+
+	if profile.Nickname.Valid {
+		resp.Nickname = profile.Nickname.String
+	}
+
+	if canViewFullProfile {
+		if profile.AboutMe.Valid {
+			resp.AboutMe = profile.AboutMe.String
+		}
 	}
 
 	return resp
@@ -160,6 +174,77 @@ func (h *Handler) GetProfileHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(GetProfileResponse{
 		Success: true,
+		Profile: &profileResponse,
+	})
+}
+
+// UpdateProfileDetailsHandler updates editable profile fields for the current user.
+func (h *Handler) UpdateProfileDetailsHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	if r.Method != http.MethodPatch {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		json.NewEncoder(w).Encode(UpdateProfileDetailsResponse{
+			Success: false,
+			Message: "Method not allowed",
+		})
+		return
+	}
+
+	userID, ok := requestctx.UserID(r.Context())
+	if !ok {
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(UpdateProfileDetailsResponse{
+			Success: false,
+			Message: "Not logged in",
+		})
+		return
+	}
+
+	var req UpdateProfileDetailsRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(UpdateProfileDetailsResponse{
+			Success: false,
+			Message: "Invalid request",
+		})
+		return
+	}
+
+	if err := ValidateUpdateProfileDetailsRequest(&req); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(UpdateProfileDetailsResponse{
+			Success: false,
+			Message: err.Error(),
+		})
+		return
+	}
+
+	profile, err := h.service.UpdateProfileDetails(userID, req)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			w.WriteHeader(http.StatusNotFound)
+			json.NewEncoder(w).Encode(UpdateProfileDetailsResponse{
+				Success: false,
+				Message: "User not found",
+			})
+			return
+		}
+
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(UpdateProfileDetailsResponse{
+			Success: false,
+			Message: "Failed to update profile details",
+		})
+		return
+	}
+
+	profileResponse := toProfileResponse(profile, true, true)
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(UpdateProfileDetailsResponse{
+		Success: true,
+		Message: "Profile details updated",
 		Profile: &profileResponse,
 	})
 }
