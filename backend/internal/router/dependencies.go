@@ -68,7 +68,7 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 	// =========================
 
 	followersRepo := followers.NewRepository(db)
-	followersService := followers.NewService(followersRepo)
+	followersService := followers.NewService(followersRepo, notificationsService)
 
 	// =========================
 	// Users

@@ -1,12 +1,24 @@
 package followers
 
-type Service struct {
-	repo *Repository
+import (
+	"log"
+
+	"social/internal/notifications"
+)
+
+type NotificationSender interface {
+	Notify(notifications.CreateNotificationRequest) error
 }
 
-func NewService(repo *Repository) *Service {
+type Service struct {
+	repo     *Repository
+	notifier NotificationSender
+}
+
+func NewService(repo *Repository, notifier NotificationSender) *Service {
 	return &Service{
-		repo: repo,
+		repo:     repo,
+		notifier: notifier,
 	}
 }
 
@@ -15,7 +27,21 @@ func (s *Service) FollowUser(followerID, followedID int) error {
 		return ErrCannotFollowSelf
 	}
 
-	return s.repo.FollowUser(followerID, followedID)
+	followID, err := s.repo.FollowUser(followerID, followedID)
+	if err != nil {
+		return err
+	}
+
+	s.notify(
+		followedID,
+		followerID,
+		notifications.NotificationNewFollower,
+		notifications.EntityFollow,
+		int(followID),
+		"started following you",
+	)
+
+	return nil
 }
 
 func (s *Service) UnfollowUser(followerID, followedID int) error {
@@ -55,7 +81,41 @@ func (s *Service) CreateFollowRequest(requesterID, targetID int) error {
 		return ErrAlreadyFollowing
 	}
 
-	return s.repo.CreateFollowRequest(requesterID, targetID)
+	requestID, err := s.repo.CreateFollowRequest(requesterID, targetID)
+	if err != nil {
+		return err
+	}
+
+	s.notify(
+		targetID,
+		requesterID,
+		notifications.NotificationFollowRequest,
+		notifications.EntityFollowRequest,
+		int(requestID),
+		"wants to follow you",
+	)
+
+	return nil
+}
+
+func (s *Service) notify(receiverID, actorID int, notifType notifications.NotificationType, entityType string, entityID int, message string) {
+	if s.notifier == nil {
+		return
+	}
+
+	actor := actorID
+	et := entityType
+	eid := entityID
+	if err := s.notifier.Notify(notifications.CreateNotificationRequest{
+		ReceiverID: receiverID,
+		ActorID:    &actor,
+		Type:       notifType,
+		EntityType: &et,
+		EntityID:   &eid,
+		Message:    message,
+	}); err != nil {
+		log.Printf("followers: %s notification for entity %d failed: %v", notifType, entityID, err)
+	}
 }
 
 func (s *Service) GetPendingFollowRequests(targetID int) ([]FollowRequestWithRequester, error) {
