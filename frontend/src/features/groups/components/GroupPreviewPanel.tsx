@@ -2,11 +2,10 @@
 
 import Link from "next/link";
 import { useEffect, useRef } from "react";
-import { gsap } from "gsap";
 import type { Group } from "../types/group";
 import GroupAvatar from "./GroupAvatar";
 import { MembershipBadge } from "./GroupPanels";
-import styles from "./galaxy/GroupGalaxy.module.css";
+import styles from "./GroupPreviewPanel.module.css";
 
 export default function GroupPreviewPanel({
   group,
@@ -15,64 +14,26 @@ export default function GroupPreviewPanel({
   group: Group;
   onClose: () => void;
 }) {
-  const panelRef = useRef<HTMLElement>(null);
-  const closingRef = useRef(false);
+  const closeButton = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    closingRef.current = false;
-    const media = gsap.matchMedia();
-    media.add("(prefers-reduced-motion: no-preference)", () => {
-      if (!panelRef.current) return;
-      gsap.fromTo(
-        panelRef.current,
-        { opacity: 0, x: 24, scale: 0.98 },
-        {
-          opacity: 1,
-          x: 0,
-          scale: 1,
-          duration: 0.4,
-          ease: "power2.out",
-        },
-      );
-    });
-    return () => media.revert();
+    closeButton.current?.focus();
   }, [group.id]);
-
-  function handleClose() {
-    if (closingRef.current) return;
-    closingRef.current = true;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      onClose();
-      return;
-    }
-    if (!panelRef.current) {
-      onClose();
-      return;
-    }
-    gsap.to(panelRef.current, {
-      opacity: 0,
-      x: 20,
-      scale: 0.98,
-      duration: 0.28,
-      ease: "power2.in",
-      onComplete: onClose,
-    });
-  }
 
   return (
     <aside
-      ref={panelRef}
       id="group-preview"
       className={styles.preview}
       aria-labelledby="group-preview-title"
     >
       <div className={styles.previewTop}>
-        <p className="group-eyebrow">In your orbit</p>
+        <p className="group-eyebrow">Community preview</p>
         <button
+          ref={closeButton}
           type="button"
           className={styles.close}
           aria-label="Close group preview"
-          onClick={handleClose}
+          onClick={onClose}
         >
           ×
         </button>

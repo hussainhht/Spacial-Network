@@ -76,64 +76,6 @@
   outline-offset: 2px;
 }
 
-/* The way back to the universe. Sits in the sidebar toggle's slot on the
-   navbar-only routes, and is deliberately a little wider than it: it is the one
-   piece of navigation those routes have, so it reads as a place rather than as
-   an icon button. Glass over the starfield, like the rest of the chrome. */
-.universeButton {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  height: 36px;
-  padding: 0 13px 0 10px;
-  border: 1px solid rgba(148, 163, 184, 0.18);
-  border-radius: 999px;
-  background: linear-gradient(
-    135deg,
-    rgba(23, 30, 66, 0.72),
-    rgba(13, 18, 42, 0.55)
-  );
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  color: var(--space-text-label, #c3c9dd);
-  font: inherit;
-  font-size: 13px;
-  font-weight: 500;
-  letter-spacing: -0.1px;
-  white-space: nowrap;
-  cursor: pointer;
-  flex-shrink: 0;
-  transition:
-    border-color 0.2s ease,
-    background 0.2s ease,
-    color 0.2s ease,
-    box-shadow 0.2s ease;
-}
-.universeButton:hover {
-  border-color: rgba(167, 139, 250, 0.42);
-  color: var(--space-text-heading, #f8fafc);
-  box-shadow: 0 0 18px rgba(139, 92, 246, 0.18);
-}
-.universeButton:focus-visible {
-  outline: 2px solid rgba(183, 161, 255, 0.7);
-  outline-offset: 2px;
-}
-.universeIcon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 16px;
-  height: 16px;
-  transition: transform 0.2s ease;
-}
-.universeIcon svg {
-  width: 16px;
-  height: 16px;
-}
-.universeButton:hover .universeIcon {
-  transform: translateX(-2px);
-}
-
 .contextText {
   display: flex;
   flex-direction: column;
@@ -590,12 +532,8 @@
 }
 
 @media (max-width: 480px) {
-  .newPostText,
-  .universeText {
+  .newPostText {
     display: none;
-  }
-  .universeButton {
-    padding-inline: 9px;
   }
   .newPostButton {
     padding: 7px 9px;
@@ -683,9 +621,7 @@
   .contextText {
     animation: none;
   }
-  .sidebarToggle,
-  .universeButton,
-  .universeIcon {
+  .sidebarToggle {
     transition: none;
     transform: none;
   }

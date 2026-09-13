@@ -32,7 +32,7 @@ export default function ChatPageContent() {
   const activeError = errorMessage && errorMessage !== dismissedError ? errorMessage : null;
 
   return (
-    <main className="chat-main flex flex-col h-screen h-[100dvh] w-full min-w-0 overflow-hidden bg-[#050816] text-slate-100 font-sans">
+    <main className="chat-main flex flex-col h-full w-full min-w-0 overflow-hidden bg-[#050816] text-slate-100 font-sans">
       {activeError && (
         <div className="px-4 py-2.5 bg-red-500/15 border-b border-red-500/30 text-red-300 text-sm flex items-center justify-between shrink-0">
           <span>⚠️ <strong>Notice:</strong> {activeError}</span>
@@ -58,7 +58,6 @@ export default function ChatPageContent() {
 
         {activePartnerId ? (
           <ChatWindow
-            partnerId={activePartnerId}
             partnerUsername={activePartnerUsername}
             partnerAvatar={activePartnerAvatar}
             isPartnerOnline={isPartnerOnline}

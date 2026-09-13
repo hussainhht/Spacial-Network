@@ -1,35 +1,19 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { getGroups } from "../api/groups";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { useGroupQuery, useMyGroups } from "../hooks/useGroupData";
 import { InvitationsPanel } from "./GroupPanels";
-import GroupGalaxy, { type GalaxyQueryState } from "./galaxy/GroupGalaxy";
-import { useGroupsComposition } from "./galaxy/useGroupsComposition";
 import { useGroupsSearch } from "../context/GroupsSearchProvider";
 import GroupsFilterTabs, { type GroupsTab } from "./GroupsFilterTabs";
-import styles from "./galaxy/GroupGalaxy.module.css";
+import GroupList, { type GroupQueryState } from "./GroupList";
 
-// Use the API's existing offset pagination to keep every galaxy readable.
+// Keep the existing API pagination and search behavior.
 const PAGE_SIZE = 12;
 const SEARCH_DEBOUNCE_MS = 300;
 
-/**
- * The Groups world: one locked pane, no sidebar.
- *
- * Mars docks into this pane as the section's anchor — the same WebGL object the
- * reader clicked on the homepage — and the galaxy's core star stands exactly
- * where the home planets were absorbed. Both positions come from one shared
- * composition (`universe-home/scene/groupsStage.ts`), published onto the pane as
- * custom properties by `useGroupsComposition`.
- *
- * Data, search, tabs and pagination are unchanged: this component still owns
- * them, and still drives the same API hooks.
- */
 export default function GroupsPageContent() {
-  const pane = useRef<HTMLElement>(null);
-  useGroupsComposition(pane);
   const [activeTab, setActiveTab] = useState<GroupsTab>("mine");
   const { search } = useGroupsSearch();
   const debouncedSearch = useDebouncedValue(search.trim(), SEARCH_DEBOUNCE_MS);
@@ -47,7 +31,6 @@ export default function GroupsPageContent() {
   }
   const collectionProps = {
     search: debouncedSearch,
-    rawSearch: search,
     page,
     onBrowseAll: () => changeTab("all"),
     onPageChange: (page: number) =>
@@ -55,29 +38,10 @@ export default function GroupsPageContent() {
   };
 
   return (
-    <main
-      ref={pane}
-      data-universe-scene="groups"
-      className={styles.page}
-      aria-labelledby="app-page-title"
-    >
-      {/* The persistent universe canvas docks here. Mars settles into the
-          upper-left anchor and keeps turning; the layer never takes the pointer,
-          because the galaxy below owns it. */}
-      <div
-        className={styles.marsLayer}
-        data-universe-viewport
-        aria-hidden="true"
-      />
-      <p className={styles.marsLabel} data-universe-ui>
-        <span>Mars</span>
-        <span>Groups</span>
-      </p>
-      <div className={styles.content}>
-        <div data-universe-ui className={styles.filters}>
-          <GroupsFilterTabs activeTab={activeTab} onTabChange={changeTab} />
-        </div>
-        <div className={styles.invitations}>
+    <main className="space-shell groups-page" aria-labelledby="app-page-title">
+      <div className="groups-container">
+        <GroupsFilterTabs activeTab={activeTab} onTabChange={changeTab} />
+        <div>
           <InvitationsPanel />
         </div>
         <section
@@ -85,7 +49,6 @@ export default function GroupsPageContent() {
           role="tabpanel"
           aria-labelledby={`groups-tab-${activeTab}`}
           tabIndex={0}
-          className={styles.tabPanel}
         >
           {activeTab === "mine" ? (
             <MyGroupsSection {...collectionProps} />
@@ -100,7 +63,6 @@ export default function GroupsPageContent() {
 
 type CollectionProps = {
   search: string;
-  rawSearch: string;
   page: number;
   onBrowseAll: () => void;
   onPageChange: (page: number) => void;
@@ -122,22 +84,20 @@ function GroupCollection({
   state,
   mine,
   search,
-  rawSearch,
   page,
   onBrowseAll,
   onPageChange,
-}: CollectionProps & { state: GalaxyQueryState; mine: boolean }) {
+}: CollectionProps & { state: GroupQueryState; mine: boolean }) {
   return (
     <>
-      <GroupGalaxy
+      <GroupList
         state={state}
         mine={mine}
         search={search}
-        rawSearch={rawSearch}
         onBrowseAll={onBrowseAll}
-        scope={`${mine}:${page}`}
+        key={`${mine}:${page}:${search}`}
       />
-      <div data-universe-ui className={styles.pagination}>
+      <div>
         <p className="group-muted" role="status">
           {state.loading
             ? "Loading groups…"
@@ -150,7 +110,7 @@ function GroupCollection({
                   : "No groups to show yet."}
         </p>
         {(page > 0 || state.data?.length === PAGE_SIZE) && (
-          <nav className="group-buttons" aria-label="Galaxy pages">
+          <nav className="group-buttons" aria-label="Group pages">
             <button
               type="button"
               className="group-button secondary"

@@ -2,8 +2,9 @@
 
 import { createContext, useContext, useState, type ReactNode } from "react";
 
-// The navbar and galaxy share only the input value. Debouncing, pagination,
-// membership filters and API queries remain owned by GroupsPageContent.
+// The navbar search input and the groups directory share only this value.
+// Debouncing, pagination, membership filters and API queries remain owned
+// by GroupsPageContent.
 const GroupsSearchContext = createContext<{
   search: string;
   setSearch: (value: string) => void;

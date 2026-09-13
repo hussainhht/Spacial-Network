@@ -83,13 +83,7 @@ main:not(.chat-main):has(> form) {
     sans-serif;
   line-height: 1.5;
   color-scheme: dark;
-  background: linear-gradient(
-    180deg,
-    var(--space-bg-deep) 0%,
-    var(--space-bg-mid) 45%,
-    var(--space-bg-soft) 75%,
-    var(--space-bg-elevated) 100%
-  );
+  background: transparent;
 
   --auth-card-width: 440px;
 }
@@ -99,169 +93,9 @@ main:not(.chat-main):has(> form:has(#firstName)) {
   --auth-card-width: 500px;
 }
 
-/* ============================ Stars / effects ============================ */
-
-/* Nebula glow — soft blurred color blobs behind the card */
-main:not(.chat-main):has(> form)::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -2;
-  pointer-events: none;
-  background:
-    radial-gradient(
-      38% 30% at 18% 22%,
-      rgba(99, 102, 241, 0.35),
-      transparent 70%
-    ),
-    radial-gradient(
-      32% 30% at 85% 15%,
-      rgba(34, 211, 238, 0.16),
-      transparent 70%
-    ),
-    radial-gradient(
-      45% 40% at 50% 92%,
-      rgba(139, 92, 246, 0.28),
-      transparent 70%
-    ),
-    radial-gradient(
-      30% 25% at 82% 82%,
-      rgba(59, 130, 246, 0.2),
-      transparent 70%
-    );
-  filter: blur(60px);
-  animation: nebula-breathe 20s ease-in-out infinite alternate;
-}
-
-/* Starfield — layered radial-gradient dots at three scales */
-main:not(.chat-main):has(> form)::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  opacity: 0.85;
-  background-repeat: repeat;
-  background-image:
-    radial-gradient(
-      1px 1px at 20px 30px,
-      rgba(255, 255, 255, 0.9),
-      transparent 100%
-    ),
-    radial-gradient(
-      1px 1px at 65px 12px,
-      rgba(255, 255, 255, 0.5),
-      transparent 100%
-    ),
-    radial-gradient(
-      1px 1px at 110px 70px,
-      rgba(255, 255, 255, 0.7),
-      transparent 100%
-    ),
-    radial-gradient(
-      1px 1px at 150px 40px,
-      rgba(255, 255, 255, 0.4),
-      transparent 100%
-    ),
-    radial-gradient(
-      1px 1px at 40px 110px,
-      rgba(255, 255, 255, 0.6),
-      transparent 100%
-    ),
-    radial-gradient(
-      1px 1px at 170px 150px,
-      rgba(255, 255, 255, 0.35),
-      transparent 100%
-    ),
-    radial-gradient(
-      1px 1px at 95px 170px,
-      rgba(255, 255, 255, 0.55),
-      transparent 100%
-    ),
-    radial-gradient(
-      1px 1px at 10px 160px,
-      rgba(255, 255, 255, 0.45),
-      transparent 100%
-    ),
-    radial-gradient(
-      1.5px 1.5px at 40px 60px,
-      rgba(255, 255, 255, 0.9),
-      transparent 100%
-    ),
-    radial-gradient(
-      1.5px 1.5px at 220px 140px,
-      rgba(255, 255, 255, 0.7),
-      transparent 100%
-    ),
-    radial-gradient(
-      1.5px 1.5px at 300px 40px,
-      rgba(255, 255, 255, 0.6),
-      transparent 100%
-    ),
-    radial-gradient(
-      1.5px 1.5px at 150px 260px,
-      rgba(255, 255, 255, 0.8),
-      transparent 100%
-    ),
-    radial-gradient(
-      2px 2px at 80px 90px,
-      rgba(255, 255, 255, 1),
-      transparent 100%
-    ),
-    radial-gradient(
-      2px 2px at 320px 260px,
-      rgba(224, 231, 255, 0.9),
-      transparent 100%
-    ),
-    radial-gradient(
-      2px 2px at 180px 380px,
-      rgba(203, 213, 255, 0.85),
-      transparent 100%
-    );
-  background-size:
-    200px 200px,
-    200px 200px,
-    200px 200px,
-    200px 200px,
-    200px 200px,
-    200px 200px,
-    200px 200px,
-    200px 200px,
-    340px 340px,
-    340px 340px,
-    340px 340px,
-    340px 340px,
-    480px 480px,
-    480px 480px,
-    480px 480px;
-  animation: star-twinkle 6s ease-in-out infinite alternate;
-}
-
 main:not(.chat-main):has(> form) ::selection {
   background: rgba(99, 102, 241, 0.35);
   color: #ffffff;
-}
-
-/* ============================== Animations ============================== */
-
-@keyframes star-twinkle {
-  from {
-    opacity: 0.7;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes nebula-breathe {
-  from {
-    opacity: 0.85;
-    transform: scale(1);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1.03);
-  }
 }
 
 /* ================================ Heading ================================ */
@@ -489,13 +323,6 @@ main:not(.chat-main):has(> form) form > p {
 /* ============================ Reduced motion ============================ */
 
 @media (prefers-reduced-motion: reduce) {
-  main:not(.chat-main):has(> form)::before,
-  main:not(.chat-main):has(> form)::after,
-  .space-shell::before,
-  .space-shell::after {
-    animation: none;
-  }
-
   main:not(.chat-main):has(> form) *,
   .space-shell * {
     animation-duration: 0.01ms !important;
@@ -1081,7 +908,7 @@ main:not(.chat-main):has(> form) form > p {
 }
 
 /* ================================================================== */
-/*  Space shell — starfield + nebula background shared by Groups pages */
+/*  Space shell — page layout over the shared global background */
 /* ================================================================== */
 
 .space-shell {
@@ -1103,12 +930,6 @@ main:not(.chat-main):has(> form) form > p {
   line-height: 1.5;
   color-scheme: dark;
   background: transparent;
-}
-
-.space-shell::before,
-.space-shell::after {
-  content: none;
-  display: none;
 }
 
 .space-shell ::selection {
@@ -1177,7 +998,9 @@ main:not(.chat-main):has(> form) form > p {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1rem;
-  margin-top: 1rem;
+  margin: 1rem 0;
+  padding: 0;
+  list-style: none;
 }
 .group-card,
 .group-panel,

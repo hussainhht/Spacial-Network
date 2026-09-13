@@ -13,33 +13,29 @@ interface NewChatModalProps {
   onlineUserIDs: number[];
 }
 
-export default function NewChatModal({
-  isOpen,
+export default function NewChatModal(props: NewChatModalProps) {
+  return props.isOpen ? <NewChatDialog {...props} /> : null;
+}
+
+function NewChatDialog({
   onClose,
   onSelectContact,
   onlineUserIDs,
 }: NewChatModalProps) {
   const [contacts, setContacts] = useState<EligibleContact[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    if (!isOpen) {
-      setSearchQuery("");
-      setContacts([]);
-      setLoading(false);
-      return;
-    }
-
     let isMounted = true;
-    setLoading(true);
-    setError(null);
 
     const trimmed = searchQuery.trim();
     const delay = trimmed ? 250 : 0;
 
     const timer = setTimeout(() => {
+      setLoading(true);
+      setError(null);
       getEligibleContacts(trimmed, 20, 0)
         .then((data) => {
           if (isMounted) {
@@ -62,12 +58,10 @@ export default function NewChatModal({
       isMounted = false;
       clearTimeout(timer);
     };
-  }, [isOpen, searchQuery]);
+  }, [searchQuery]);
 
   // Handle escape key
   useEffect(() => {
-    if (!isOpen) return;
-
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") {
         onClose();
@@ -76,9 +70,7 @@ export default function NewChatModal({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
-
-  if (!isOpen) return null;
+  }, [onClose]);
 
   const getFullPhotoUrl = (path: string) => {
     if (/^https?:\/\//i.test(path)) return path;

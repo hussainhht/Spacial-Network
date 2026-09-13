@@ -9,7 +9,6 @@ const MAX_MESSAGE_LENGTH = 2000;
 const NEAR_LIMIT_THRESHOLD = 1800;
 
 export default function ChatWindow({
-  partnerId,
   partnerUsername,
   partnerAvatar,
   isPartnerOnline,

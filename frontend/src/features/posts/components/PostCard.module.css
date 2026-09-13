@@ -35,32 +35,12 @@
   gap: 11px;
 }
 
-.avatar {
-  display: grid;
-  place-items: center;
-  flex: 0 0 40px;
-  width: 40px;
-  height: 40px;
-  border: 1px solid rgba(167, 139, 250, 0.25);
-  border-radius: 50%;
-  background: rgba(139, 92, 246, 0.09);
-  color: #c2b8e6;
-  box-shadow: inset 0 1px 0 rgba(226, 232, 255, 0.06);
-}
-
 .author {
   display: flex;
   flex: 1;
   flex-direction: column;
   gap: 3px;
   min-width: 0;
-}
-
-.authorName {
-  color: var(--space-text-heading);
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 1.4;
 }
 
 .timestamp {
@@ -173,15 +153,6 @@
   text-decoration: none;
 }
 
-.titleButton {
-  padding: 0;
-  border: 0;
-  background: none;
-  color: inherit;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
 
 .title a:hover {
   text-decoration: underline;

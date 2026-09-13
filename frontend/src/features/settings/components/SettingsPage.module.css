@@ -1,0 +1,89 @@
+.container {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  width: min(100%, 720px);
+  margin: 0 auto;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  border: 1px solid var(--space-border-strong);
+  border-radius: var(--space-radius-lg);
+  background: rgba(13, 17, 38, 0.75);
+  backdrop-filter: blur(20px);
+  padding: 22px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);
+}
+
+.sectionTitle {
+  margin: 0;
+  color: var(--space-text-heading);
+  font-size: 18px;
+}
+
+.sectionHint {
+  margin: -8px 0 0;
+  color: var(--space-text-muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.previewFrame {
+  align-self: center;
+  width: min(220px, 60vw);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  overflow: hidden;
+  background: radial-gradient(circle at 35% 30%, rgba(99, 102, 241, 0.18), rgba(5, 8, 22, 0.6) 70%);
+  border: 1px solid var(--space-border);
+}
+
+.previewFill {
+  width: 100%;
+  height: 100%;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 10px;
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0.6rem 0.75rem;
+  border-radius: var(--space-radius-md);
+  border: 1px solid var(--space-border-strong);
+  background: var(--space-input-bg-focus);
+  color: var(--space-text-label);
+  font: 500 0.85rem inherit;
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    background-color 0.15s,
+    color 0.15s;
+}
+
+.option:hover {
+  border-color: var(--space-accent-blue);
+  color: var(--space-text-heading);
+}
+
+.option:focus-visible {
+  outline: 2px solid var(--space-accent-blue);
+  outline-offset: 2px;
+}
+
+.optionSelected {
+  border-color: var(--space-accent-indigo);
+  background: rgba(99, 102, 241, 0.18);
+  color: var(--space-text-heading);
+}

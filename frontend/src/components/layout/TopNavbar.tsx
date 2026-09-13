@@ -1,12 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { getNavbarContext } from "./navbarContext";
-import { shellLayoutFor } from "./shellLayout";
 import { useGroupsSearch } from "@/features/groups/context/GroupsSearchProvider";
 import GroupSearchInput from "@/features/groups/components/GroupSearchInput";
-import { useUniverseTransition } from "@/features/universe-transition/UniverseTransitionProvider";
 import { useEffect, useRef, useState } from "react";
 import AppIcon from "./AppIcon";
 import { useNotifications } from "@/features/notifications/context/NotificationProvider";
@@ -17,22 +15,8 @@ import styles from "./TopNavbar.module.css";
 export default function TopNavbar() {
   const { isOpen: sidebarOpen, toggle: toggleSidebar } = useSidebar();
   const pathname = usePathname();
-  const router = useRouter();
   const context = getNavbarContext(pathname);
   const { search, setSearch } = useGroupsSearch();
-  const { isTransitioning, navigate } = useUniverseTransition();
-  // Navbar-only routes have no sidebar to toggle. The same slot carries the way
-  // back to the universe instead, which is the only navigation they need — see
-  // `shellLayout.ts`.
-  const universe = shellLayoutFor(pathname) === "universe";
-
-  function returnToUniverse() {
-    // A move already owns the scene; a second click must not start another.
-    if (isTransitioning) return;
-    // Ask the cinematic first, then navigate explicitly. Never `router.back()`:
-    // browser history can point at a login screen or another site entirely.
-    if (!navigate("/")) router.push("/");
-  }
   // Real notifications context
   const { unreadCount } = useNotifications();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -92,36 +76,19 @@ export default function TopNavbar() {
 
   return (
     <nav className={styles.navbar} aria-label="Top navigation">
-      {/* 1. Left Section: Universe return (or sidebar toggle) & page context */}
+      {/* 1. Left Section: Sidebar toggle & page context */}
       <div className={styles.contextSection}>
-        {universe ? (
-          pathname !== "/" && (
-            <button
-              type="button"
-              onClick={returnToUniverse}
-              className={styles.universeButton}
-              aria-label="Return to the universe"
-              title="Return to the universe"
-            >
-              <span className={styles.universeIcon} aria-hidden="true">
-                <AppIcon name="arrowLeft" />
-              </span>
-              <span className={styles.universeText}>Universe</span>
-            </button>
-          )
-        ) : (
-          <button
-            type="button"
-            onClick={toggleSidebar}
-            className={styles.sidebarToggle}
-            aria-label={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
-            aria-expanded={sidebarOpen}
-            aria-controls="app-sidebar"
-            title={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
-          >
-            <AppIcon name={sidebarOpen ? "panelLeftClose" : "panelLeftOpen"} />
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={toggleSidebar}
+          className={styles.sidebarToggle}
+          aria-label={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
+          aria-expanded={sidebarOpen}
+          aria-controls="app-sidebar"
+          title={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
+        >
+          <AppIcon name={sidebarOpen ? "panelLeftClose" : "panelLeftOpen"} />
+        </button>
         {/* Remounted per context so the section name crossfades with the route
             rather than swapping under the reader's eye. */}
         <div key={context.title} className={styles.contextText}>
@@ -133,7 +100,7 @@ export default function TopNavbar() {
       </div>
 
       {/* 2. Search Bar: Visual placeholder only */}
-      <div className={styles.searchSection} inert={isTransitioning}>
+      <div className={styles.searchSection}>
         {context.searchMode === "groups" ? (
           <GroupSearchInput value={search} onChange={setSearch} />
         ) : (
@@ -158,7 +125,7 @@ export default function TopNavbar() {
         {/* 3. New Post Button */}
         {context.action && (
           <Link
-            inert={isTransitioning}
+
             href={context.action.href}
             className={styles.newPostButton}
             aria-label={context.action.ariaLabel}
@@ -241,14 +208,14 @@ export default function TopNavbar() {
               >
                 Profile
               </Link>
-              <button
-                type="button"
+              <Link
+                href="/settings"
                 className={styles.dropdownItem}
                 role="menuitem"
                 onClick={() => setUserMenuOpen(false)}
               >
                 Settings
-              </button>
+              </Link>
               <div className={styles.dropdownDivider} role="separator" />
               <button
                 type="button"

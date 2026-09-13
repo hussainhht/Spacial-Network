@@ -21,16 +21,14 @@ const sections: Record<string, string> = {
   chat: "Messages",
   profile: "Profile",
   notifications: "Notifications",
-  dev: "3D Models",
+  settings: "Settings",
 };
 
 export function getNavbarContext(pathname: string): NavbarContext {
-  if (pathname === "/dev/planets")
-    return { title: "Planet Lab", eyebrow: "Development", searchMode: "global" };
   if (pathname === "/")
     return {
       title: "Home",
-      eyebrow: "Your orbit",
+      eyebrow: "Your community",
       searchMode: "global",
       action: newPost,
     };
@@ -50,7 +48,7 @@ export function getNavbarContext(pathname: string): NavbarContext {
         : (sections[section] ?? "Social Network");
   return {
     title,
-    eyebrow: section === "dev" ? "Development" : "Your universe",
+    eyebrow: "Your community",
     searchMode: "global",
     action: section === "posts" && !detail ? newPost : undefined,
   };

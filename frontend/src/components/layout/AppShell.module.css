@@ -1,4 +1,4 @@
-/* Temporary development shell. Theme overrides stay local to Home. */
+/* Shared application chrome and scrollable page content. */
 .shell {
   --sidebar-width: 244px;
   position: relative;
@@ -219,26 +219,13 @@
   transition: margin-left 300ms cubic-bezier(0.4, 0, 0.2, 1);
   will-change: margin-left;
 }
-/* No reserved column. Used both for a collapsed sidebar and for the navbar-only
-   routes, which never render one: the custom property is zeroed as well as the
-   margin, so nothing inside can compute a gutter for a panel that is absent. */
+/* Collapsing the existing sidebar gives the content its column back. */
 .mainAreaFull {
   margin-left: 0;
   --sidebar-width: 0px;
 }
 .shell:not([data-ready="true"]) .mainArea {
   transition: none !important;
-}
-/* The pane under the navbar. It holds the route content and, on the universe
-   routes, the persistent scene behind it — one box for both, so a route change
-   never resizes the canvas. */
-.routeStage {
-  position: relative;
-  flex: 1;
-  min-height: 0;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
 }
 .routeContent {
   position: relative;
@@ -249,8 +236,7 @@
   overflow-x: clip;
   overscroll-behavior-y: contain;
 }
-/* Feature pages use the available shell height; only this pane scrolls.
-   Home retains its existing internal orbital scroller and fits this pane. */
+/* Feature pages use the available shell height; only this pane scrolls. */
 .routeContent > :global(.space-shell),
 .routeContent > :global(.posts-page),
 .routeContent > :global(.new-post-page) {
@@ -260,74 +246,6 @@
   .mainArea {
     --app-navbar-height: 104px;
   }
-}
-.home {
-  position: relative;
-  isolation: isolate;
-  height: 100%;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  color: var(--space-text-body);
-  background: transparent;
-  font:
-    14px/1.6 ui-sans-serif,
-    system-ui,
-    -apple-system,
-    sans-serif;
-  color-scheme: dark;
-}
-.iconButton {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 40px;
-  min-height: 40px;
-  border: 0;
-  background: none;
-  color: var(--space-text-muted);
-  cursor: pointer;
-}
-.iconButton:hover:not(:disabled) {
-  color: var(--space-text-heading);
-}
-.iconButton:disabled {
-  cursor: not-allowed;
-}
-.notificationWrapper {
-  position: relative;
-  display: inline-flex;
-}
-.notificationBadge {
-  position: absolute;
-  top: 2px;
-  right: 2px;
-  min-width: 16px;
-  height: 16px;
-  padding: 0 4px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 999px;
-  background: linear-gradient(
-    135deg,
-    var(--space-accent-violet),
-    var(--space-accent-indigo)
-  );
-  color: #fff;
-  font-size: 9px;
-  font-weight: 600;
-  line-height: 1;
-  box-shadow: 0 0 0 2px rgba(5, 8, 22, 0.85);
-}
-.homeContent {
-  flex: 1;
-  position: relative;
-  min-height: 0;
-  overflow: hidden;
-  box-sizing: border-box;
 }
 @media (max-width: 760px) {
   .shell {
@@ -364,14 +282,6 @@
   .logoutError {
     overflow-wrap: anywhere;
     font-size: 10px;
-  }
-  .homeContent {
-    min-height: 0;
-  }
-}
-@media (max-width: 480px) {
-  .homeContent {
-    min-height: 0;
   }
 }
 @media (prefers-reduced-motion: reduce) {

@@ -41,7 +41,6 @@ export interface ChatSidebarProps {
 }
 
 export interface ChatWindowProps {
-  partnerId: number;
   partnerUsername: string;
   partnerAvatar?: string;
   isPartnerOnline: boolean;

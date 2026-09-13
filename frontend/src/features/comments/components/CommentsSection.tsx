@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createPortal } from "react-dom";
 import { createComment, listComments } from "@/features/comments/api/comments";
 import type { Comment } from "@/features/comments/types/comment";
 import CommentForm from "./CommentForm";
@@ -11,23 +10,15 @@ import styles from "./CommentsSection.module.css";
 interface CommentsSectionProps {
   postId: number;
   showAuthors?: boolean;
-  composerTarget?: HTMLElement | null;
 }
 
 export default function CommentsSection({
   postId,
   showAuthors = false,
-  composerTarget,
 }: CommentsSectionProps) {
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
   useEffect(() => {
     let cancelled = false;
 
@@ -90,11 +81,7 @@ export default function CommentsSection({
         />
       )}
 
-      {mounted && composerTarget ? (
-        createPortal(composerElement, composerTarget)
-      ) : (
-        <div className={styles.composerSticky}>{composerElement}</div>
-      )}
+      <div className={styles.composerSticky}>{composerElement}</div>
     </section>
   );
 }

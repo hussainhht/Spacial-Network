@@ -31,9 +31,7 @@ const WebSocketContext = createContext<WebSocketContextType | undefined>(
 export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   const [isConnected, setIsConnected] = useState(false);
   const [onlineUserIDs, setOnlineUserIDs] = useState<number[]>([]);
-  const [lastMessage, setLastMessage] = useState<MessagePayload | null>(null);
   const [typingStatus, setTypingStatus] = useState<TypingPayload | null>(null);
-  const [lastReadReceipt, setLastReadReceipt] = useState<MessagesReadPayload | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [inviteSearchResults, setInviteSearchResults] =
     useState<InviteUserSearchResultsPayload | null>(null);
@@ -41,6 +39,17 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     useState<NotificationEventPayload | null>(null);
   const [lastEventResponseUpdate, setLastEventResponseUpdate] =
     useState<GroupEventResponseUpdatedPayload | null>(null);
+
+  const messageListeners = useRef(new Set<(message: MessagePayload) => void>());
+  const subscribeMessages = useCallback((listener: (message: MessagePayload) => void) => {
+    messageListeners.current.add(listener);
+    return () => { messageListeners.current.delete(listener); };
+  }, []);
+  const readReceiptListeners = useRef(new Set<(receipt: MessagesReadPayload) => void>());
+  const subscribeReadReceipts = useCallback((listener: (receipt: MessagesReadPayload) => void) => {
+    readReceiptListeners.current.add(listener);
+    return () => { readReceiptListeners.current.delete(listener); };
+  }, []);
 
   const eventResponseListeners = useRef(new Set<(event: GroupEventResponseUpdatedPayload) => void>());
   const subscribeEventResponses = useCallback((listener: (event: GroupEventResponseUpdatedPayload) => void) => {
@@ -68,7 +77,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   const isConnectingRef = useRef(false);
   const pendingQueueRef = useRef<Array<{ type: EventType; payload: unknown }>>([]);
 
-  const connect = useCallback(() => {
+  const connect = useCallback(function connectSocket() {
     if (typeof window === "undefined") return;
 
     if (
@@ -116,7 +125,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
         if (reconnectTimeoutRef.current) {
           clearTimeout(reconnectTimeoutRef.current);
         }
-        reconnectTimeoutRef.current = setTimeout(connect, 1500);
+        reconnectTimeoutRef.current = setTimeout(connectSocket, 1500);
       };
 
       ws.onerror = () => {
@@ -148,14 +157,14 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
               break;
             }
             case "private_message":
-              setLastMessage(data.payload as MessagePayload);
+              messageListeners.current.forEach((listener) => listener(data.payload as MessagePayload));
               setErrorMessage(null);
               break;
             case "typing":
               setTypingStatus(data.payload as TypingPayload);
               break;
             case "messages_read":
-              setLastReadReceipt(data.payload as MessagesReadPayload);
+              readReceiptListeners.current.forEach((listener) => listener(data.payload as MessagesReadPayload));
               break;
             case "invite_user_search_results":
               setInviteSearchResults(
@@ -245,28 +254,28 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     () => ({
       isConnected,
       onlineUserIDs,
-      lastMessage,
       typingStatus,
-      lastReadReceipt,
       errorMessage,
       inviteSearchResults,
       lastNotification,
       lastEventResponseUpdate,
       subscribeEventResponses,
       subscribeNotifications,
+      subscribeMessages,
+      subscribeReadReceipts,
       sendEvent,
     }),
     [
       isConnected,
       onlineUserIDs,
-      lastMessage,
       typingStatus,
-      lastReadReceipt,
       errorMessage,
       inviteSearchResults,
       lastNotification,
       lastEventResponseUpdate,
       subscribeNotifications,
+      subscribeMessages,
+      subscribeReadReceipts,
       subscribeEventResponses,
       sendEvent,
     ],

@@ -6,7 +6,7 @@ import { useWebSocket } from "@/providers/WebSocketProvider";
 import { getCurrentUser } from "@/features/auth/api/getCurrentUser";
 import { getConversations, getChatHistory, getEligibleContacts } from "@/features/chat/api/chat";
 import { ApiError } from "@/lib/api/errors";
-import type { ConversationSummary, EligibleContact, PrivateMessage } from "@/features/chat/types/chat";
+import type { ConversationSummary, PrivateMessage } from "@/features/chat/types/chat";
 
 const HISTORY_PAGE_SIZE = 20;
 
@@ -16,9 +16,9 @@ export function useChat() {
   const {
     isConnected,
     onlineUserIDs,
-    lastMessage,
+    subscribeMessages,
     typingStatus,
-    lastReadReceipt,
+    subscribeReadReceipts,
     errorMessage,
     sendEvent,
   } = useWebSocket();
@@ -38,7 +38,9 @@ export function useChat() {
   const [historyOffset, setHistoryOffset] = useState(0);
 
   const conversationsRef = useRef<ConversationSummary[]>([]);
-  conversationsRef.current = conversations;
+  useEffect(() => {
+    conversationsRef.current = conversations;
+  }, [conversations]);
   const lastHandledMsgRef = useRef<string | null>(null);
   const lastHandledReceiptRef = useRef<string | null>(null);
 
@@ -84,10 +86,7 @@ export function useChat() {
 
   // Check eligibility for the active chat partner
   useEffect(() => {
-    if (!activePartnerId) {
-      setIsPartnerEligible(true);
-      return;
-    }
+    if (!activePartnerId) return;
 
     let isMounted = true;
     getEligibleContacts("", 1, 0, activePartnerId)
@@ -193,8 +192,7 @@ export function useChat() {
     }
   }, [activePartnerId, historyOffset, hasMoreHistory, loadingHistory, router]);
 
-  useEffect(() => {
-    if (!lastMessage) return;
+  useEffect(() => subscribeMessages((lastMessage) => {
 
     const msgKey = `${lastMessage.id || ""}-${lastMessage.sender_id}-${lastMessage.recipient_id}-${lastMessage.content}-${lastMessage.created_at || ""}`;
     if (lastHandledMsgRef.current === msgKey) return;
@@ -256,10 +254,9 @@ export function useChat() {
       };
       return [newItem, ...prev];
     });
-  }, [lastMessage, activePartnerId, myUserId, sendEvent]);
+  }), [subscribeMessages, activePartnerId, myUserId, sendEvent]);
 
-  useEffect(() => {
-    if (!lastReadReceipt) return;
+  useEffect(() => subscribeReadReceipts((lastReadReceipt) => {
     const { reader_id, sender_id, read_at } = lastReadReceipt;
 
     const receiptKey = `${reader_id}-${sender_id}-${read_at}`;
@@ -277,7 +274,7 @@ export function useChat() {
         )
       );
     }
-  }, [lastReadReceipt, activePartnerId, myUserId]);
+  }), [subscribeReadReceipts, activePartnerId, myUserId]);
 
   const sendMessage = useCallback(
     (content: string) => {
@@ -314,7 +311,7 @@ export function useChat() {
   );
 
   const isPermissionBlocked =
-    !isPartnerEligible ||
+    (activePartnerId !== null && !isPartnerEligible) ||
     Boolean(errorMessage && errorMessage.toLowerCase().includes("only message users you follow"));
 
   return {

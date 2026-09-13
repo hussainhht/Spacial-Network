@@ -49,31 +49,27 @@ export default function ProfilePage({ username }: ProfilePageProps) {
   const [followers, setFollowers] = useState<ProfileUserSummary[]>([]);
   const [following, setFollowing] = useState<ProfileUserSummary[]>([]);
   const [isFollowing, setIsFollowing] = useState(false);
-  const [canMessage, setCanMessage] = useState(false);
-  const [followDataLoading, setFollowDataLoading] = useState(!isLocked);
+  const [messagePermission, setMessagePermission] = useState<{ id: number; allowed: boolean } | null>(null);
+  const canMessage = Boolean(profile && !isOwnProfile &&
+    (isFollowing || (messagePermission?.id === profile.id && messagePermission.allowed)));
+  const [followDataProfile, setFollowDataProfile] = useState<Profile | null>(null);
+  const followDataLoading = !isLocked && followDataProfile !== profile;
   const [followLoading, setFollowLoading] = useState(false);
   const [followError, setFollowError] = useState<string | null>(null);
 
   // Determine messaging permission (User A follows User B OR User B follows User A)
   useEffect(() => {
-    if (!profile || isOwnProfile) {
-      setCanMessage(false);
-      return;
-    }
-    if (isFollowing) {
-      setCanMessage(true);
-      return;
-    }
+    if (!profile || isOwnProfile || isFollowing) return;
 
     let isMounted = true;
     getEligibleContacts("", 1, 0, profile.id)
       .then((contacts) => {
         if (isMounted) {
-          setCanMessage(contacts.length > 0 && contacts[0].id === profile.id);
+          setMessagePermission({ id: profile.id, allowed: contacts.length > 0 && contacts[0].id === profile.id });
         }
       })
       .catch(() => {
-        if (isMounted) setCanMessage(false);
+        if (isMounted) setMessagePermission({ id: profile.id, allowed: false });
       });
 
     return () => {
@@ -179,7 +175,6 @@ export default function ProfilePage({ username }: ProfilePageProps) {
 
     const profileUsername = profile.username;
     let isMounted = true;
-    setFollowDataLoading(true);
 
     async function loadFollowData() {
       try {
@@ -202,7 +197,7 @@ export default function ProfilePage({ username }: ProfilePageProps) {
         }
       } finally {
         if (isMounted) {
-          setFollowDataLoading(false);
+          setFollowDataProfile(profile);
         }
       }
     }

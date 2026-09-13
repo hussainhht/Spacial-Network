@@ -112,9 +112,7 @@ export interface GroupEventResponseUpdatedPayload {
 export interface WebSocketContextType {
   isConnected: boolean;
   onlineUserIDs: number[];
-  lastMessage: MessagePayload | null;
   typingStatus: TypingPayload | null;
-  lastReadReceipt: MessagesReadPayload | null;
   errorMessage: string | null;
   inviteSearchResults: InviteUserSearchResultsPayload | null;
   lastNotification: NotificationEventPayload | null;
@@ -123,5 +121,7 @@ export interface WebSocketContextType {
   subscribeNotifications: (
     listener: (notification: NotificationEventPayload) => void,
   ) => () => void;
+  subscribeMessages: (listener: (message: MessagePayload) => void) => () => void;
+  subscribeReadReceipts: (listener: (receipt: MessagesReadPayload) => void) => () => void;
   sendEvent: (type: EventType, payload: unknown) => void;
 }

@@ -13,12 +13,9 @@ import PostAuthorLink from "./PostAuthorLink";
 interface PostCardProps {
   post: Post;
   onDeleted: (id: number) => void;
-  onOpen?: () => void;
-  onComments?: () => void;
-  onEdit?: () => void;
 }
 
-export default function PostCard({ post, onDeleted, onOpen, onComments, onEdit }: PostCardProps) {
+export default function PostCard({ post, onDeleted }: PostCardProps) {
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
 
@@ -40,7 +37,7 @@ export default function PostCard({ post, onDeleted, onOpen, onComments, onEdit }
   }
 
   return (
-    <article className={`orbital-social-card ${styles.card}`}>
+    <article className={styles.card}>
       <header className={styles.header}>
         <PostAuthorLink author={post.author} />
         <div className={styles.author}>
@@ -81,12 +78,7 @@ export default function PostCard({ post, onDeleted, onOpen, onComments, onEdit }
               <span aria-hidden="true">•••</span>
             </summary>
             <div className={styles.actionMenu}>
-              {post.is_owner && (onEdit ? (
-                <button type="button" onClick={(event) => {
-                  event.currentTarget.closest("details")?.removeAttribute("open");
-                  onEdit();
-                }}>Edit post</button>
-              ) : <Link href={`/posts/${post.id}/edit`}>Edit post</Link>)}
+              {post.is_owner && <Link href={`/posts/${post.id}/edit`}>Edit post</Link>}
               {post.can_delete && (
                 <button
                   className={styles.deleteAction}
@@ -126,11 +118,7 @@ export default function PostCard({ post, onDeleted, onOpen, onComments, onEdit }
 
       <div className={styles.body}>
         <h2 className={styles.title}>
-          {onOpen ? (
-            <button className={styles.titleButton} type="button" onClick={onOpen}>
-              {post.title}
-            </button>
-          ) : <Link href={`/posts/${post.id}`}>{post.title}</Link>}
+          <Link href={`/posts/${post.id}`}>{post.title}</Link>
         </h2>
         <p className={styles.content}>{post.content}</p>
       </div>
@@ -147,15 +135,11 @@ export default function PostCard({ post, onDeleted, onOpen, onComments, onEdit }
       )}
 
       <footer className={styles.footer}>
-        {onComments ? <button className={styles.comments} type="button" onClick={onComments}>
+        <Link className={styles.comments} href={`/posts/${post.id}`}>
           <AppIcon name="chat" width={17} height={17} />
           Comments
           <AppIcon name="arrow" width={15} height={15} />
-        </button> : <Link className={styles.comments} href={`/posts/${post.id}`}>
-          <AppIcon name="chat" width={17} height={17} />
-          Comments
-          <AppIcon name="arrow" width={15} height={15} />
-        </Link>}
+        </Link>
         <span className={styles.privacy}>
           {post.visibility === "public" ? "Public" : "Private"}
         </span>
