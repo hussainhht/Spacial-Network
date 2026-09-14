@@ -4,6 +4,8 @@
   z-index: 1;
   overflow: hidden;
   pointer-events: none;
+  contain: layout paint;
+  transform: translateZ(0);
 }
 
 .planetFrame {

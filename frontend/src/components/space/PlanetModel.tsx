@@ -45,11 +45,9 @@ function EarthPlanetModel() {
     const hasCloud = cloudSource instanceof Mesh;
 
     const model = new Group();
-    let atmoMesh: Mesh | undefined;
     const shellSources: ReadonlyArray<readonly [string, Mesh]> = [
       ["surface", earthSource],
       ...(hasCloud ? ([["cloud", cloudSource]] as const) : []),
-      ["atmo", earthSource],
     ];
     for (const [name, source] of shellSources) {
       const mesh = source.clone();
@@ -57,11 +55,7 @@ function EarthPlanetModel() {
       source.matrixWorld.decompose(mesh.position, mesh.quaternion, mesh.scale);
       mesh.quaternion.copy(EARTH_TILT);
       model.add(mesh);
-      if (name === "atmo") atmoMesh = mesh;
     }
-    // Atmosphere has no baked geometry of its own: push it outward a little
-    // past the (already correctly sized) cloud shell.
-    atmoMesh?.scale.multiplyScalar(1.025);
 
     const bounds = new Box3().setFromObject(model);
     const center = bounds.getCenter(new Vector3());
@@ -79,17 +73,15 @@ function EarthPlanetModel() {
 
   useLayoutEffect(() => {
     const surface = model.getObjectByName("surface");
-    const atmo = model.getObjectByName("atmo");
     const earthSource = scene.getObjectByName("Earth_Earth_0");
 
     if (
       !(surface instanceof Mesh) ||
-      !(atmo instanceof Mesh) ||
       !(earthSource instanceof Mesh) ||
       !(earthSource.material instanceof MeshStandardMaterial) ||
       !earthSource.material.map
     ) {
-      throw new Error("Earth requires surface and atmo meshes and the source map.");
+      throw new Error("Earth requires surface mesh and the source map.");
     }
 
     // Clouds are optional: only wired up when both the shell and its source
@@ -105,8 +97,6 @@ function EarthPlanetModel() {
 
     const materials = createEarthMaterials(earthSource.material.map, cloudMap);
     surface.material = materials.surface;
-    atmo.material = materials.atmo;
-    atmo.renderOrder = 2;
 
     if (cloud instanceof Mesh && materials.cloud) {
       cloud.material = materials.cloud;
