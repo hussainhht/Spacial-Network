@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useSyncExternalStore } from "react";
 import { getApiUrl } from "@/lib/api";
+import { useSearchModal } from "@/features/search/context/SearchContext";
 import AppIcon, { type AppIconName } from "./AppIcon";
 import styles from "./AppShell.module.css";
 
@@ -36,6 +37,7 @@ function useHasMounted() {
 export default function AppSidebar() {
   const pathname = usePathname();
   const router = useRouter();
+  const { openSearch } = useSearchModal();
   const [loggingOut, setLoggingOut] = useState(false);
   const [error, setError] = useState("");
 
@@ -75,6 +77,47 @@ export default function AppSidebar() {
       <div className={styles.navSection}>
         <p className={styles.sidebarLabel}>EXPLORE</p>
         <nav aria-label="Main navigation">
+          <button
+            type="button"
+            className={styles.navLink}
+            onClick={openSearch}
+            aria-label="Search"
+            title="Universal Search (⌘K)"
+            style={{
+              width: "100%",
+              background: "none",
+              border: "none",
+              font: "inherit",
+              cursor: "pointer",
+              textAlign: "left",
+            }}
+          >
+            <AppIcon name="search" />
+            <span
+              className={styles.sidebarLabel}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                width: "100%",
+              }}
+            >
+              <span>Search</span>
+              <kbd
+                style={{
+                  fontSize: "10px",
+                  padding: "1px 5px",
+                  borderRadius: "4px",
+                  background: "rgba(255, 255, 255, 0.08)",
+                  border: "1px solid rgba(148, 163, 184, 0.2)",
+                  color: "#94a3b8",
+                  letterSpacing: "0.5px",
+                }}
+              >
+                ⌘K
+              </kbd>
+            </span>
+          </button>
           {navigation.map(({ href, label, icon }) => {
             const active =
               mounted &&

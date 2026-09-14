@@ -255,6 +255,15 @@ func NewRouter(db *sql.DB, cfg config.Config) (http.Handler, error) {
 		sessionMiddleware(http.HandlerFunc(deps.Handlers.Notifications.MarkAsReadHandler)),
 	)
 
+	// =========================
+	// Search Routes
+	// =========================
+
+	apiMux.Handle(
+		"GET /search",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Search.SearchHandler)),
+	)
+
 	handler := middleware.CORS(apiMux)
 
 	mux := http.NewServeMux()
