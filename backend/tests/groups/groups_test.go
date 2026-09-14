@@ -1,8 +1,8 @@
 // Package groups_test covers social/internal/groups: group creation,
-// invitations (only members/creator may invite, invitee must accept before
+// invitations (only the creator may invite, invitee must accept before
 // membership, declining doesn't add them), join requests (any non-member
-// can request, only the creator may accept/decline), and that creating
-// group posts/comments requires membership.
+// can request in public groups, only the creator may accept/decline), and that
+// creating or viewing group posts/comments requires membership.
 package groups_test
 
 import (
@@ -34,6 +34,7 @@ type fixture struct {
 	postsSvc         *posts.Service
 	postsHandler     *posts.Handler
 	commentsSvc      *comments.Service
+	groupsHandler    *groups.Handler
 }
 
 func setup(t *testing.T) fixture {
@@ -64,7 +65,11 @@ func setup(t *testing.T) fixture {
 	commentsRepo := comments.NewRepository(db)
 	commentsSvc := comments.NewService(commentsRepo, postsSvc)
 
-	return fixture{db: db, groupsSvc: groupsSvc, notificationsSvc: notifSvc, postsSvc: postsSvc, postsHandler: postsHandler, commentsSvc: commentsSvc}
+	return fixture{
+		db: db, groupsSvc: groupsSvc, notificationsSvc: notifSvc,
+		postsSvc: postsSvc, postsHandler: postsHandler, commentsSvc: commentsSvc,
+		groupsHandler: groups.NewHandler(groupsSvc, nil),
+	}
 }
 
 // newGroupPost creates a post inside groupID on behalf of authorID via the
@@ -106,7 +111,7 @@ func TestCreateGroup_StoresTitleDescriptionAndCreator(t *testing.T) {
 	f := setup(t)
 	creator := f.newUser(t, "groupcreator")
 
-	groupID, err := f.groupsSvc.CreateGroup(creator, "Book Club", "We read books", "")
+	groupID, err := f.groupsSvc.CreateGroup(creator, "Book Club", "We read books", "", groups.GroupPrivacyPrivate)
 	if err != nil {
 		t.Fatalf("CreateGroup: %v", err)
 	}
@@ -124,6 +129,9 @@ func TestCreateGroup_StoresTitleDescriptionAndCreator(t *testing.T) {
 	if g.CreatorID != creator {
 		t.Errorf("CreatorID = %d, want %d", g.CreatorID, creator)
 	}
+	if g.Privacy != groups.GroupPrivacyPrivate {
+		t.Errorf("Privacy = %q, want %q", g.Privacy, groups.GroupPrivacyPrivate)
+	}
 
 	isMember, err := f.groupsSvc.IsGroupMember(int(groupID), creator)
 	if err != nil {
@@ -134,24 +142,224 @@ func TestCreateGroup_StoresTitleDescriptionAndCreator(t *testing.T) {
 	}
 }
 
-func TestGroupInvitation_OnlyMembersCanInvite(t *testing.T) {
+func TestCreateGroup_PrivacyValidationAndDefault(t *testing.T) {
 	f := setup(t)
-	creator := f.newUser(t, "invcreator")
-	outsider := f.newUser(t, "invoutsider")
-	invitee := f.newUser(t, "invitee1")
+	creator := f.newUser(t, "privacycreator")
 
-	groupID, err := f.groupsSvc.CreateGroup(creator, "Private Group", "", "")
+	publicID, err := f.groupsSvc.CreateGroup(
+		creator,
+		"Public Group",
+		"Open membership",
+		"",
+		groups.GroupPrivacyPublic,
+	)
+	if err != nil {
+		t.Fatalf("create public group: %v", err)
+	}
+	publicGroup, err := f.groupsSvc.GetGroupByID(int(publicID))
+	if err != nil {
+		t.Fatalf("get public group: %v", err)
+	}
+	if publicGroup.Privacy != groups.GroupPrivacyPublic {
+		t.Fatalf("Privacy = %q, want public", publicGroup.Privacy)
+	}
+
+	defaultID, err := f.groupsSvc.CreateGroup(
+		creator,
+		"Legacy Client Group",
+		"",
+		"",
+		groups.GroupPrivacy(""),
+	)
+	if err != nil {
+		t.Fatalf("create group with omitted privacy: %v", err)
+	}
+	defaultGroup, err := f.groupsSvc.GetGroupByID(int(defaultID))
+	if err != nil {
+		t.Fatalf("get default-public group: %v", err)
+	}
+	if defaultGroup.Privacy != groups.GroupPrivacyPublic {
+		t.Fatalf("default Privacy = %q, want public", defaultGroup.Privacy)
+	}
+
+	if _, err := f.groupsSvc.CreateGroup(
+		creator,
+		"Invalid Privacy Group",
+		"",
+		"",
+		groups.GroupPrivacy("hidden"),
+	); err == nil {
+		t.Fatal("expected hidden privacy to be rejected")
+	}
+}
+
+func TestGroupDiscovery_ReturnsOnlyPublicGroups(t *testing.T) {
+	f := setup(t)
+	creator := f.newUser(t, "discoverycreator")
+	viewer := f.newUser(t, "discoveryviewer")
+
+	publicID, err := f.groupsSvc.CreateGroup(creator, "Visible Astronomy", "public search marker", "", groups.GroupPrivacyPublic)
+	if err != nil {
+		t.Fatalf("create public group: %v", err)
+	}
+	privateID, err := f.groupsSvc.CreateGroup(creator, "Hidden Astronomy", "private search marker", "", groups.GroupPrivacyPrivate)
+	if err != nil {
+		t.Fatalf("create private group: %v", err)
+	}
+
+	discovered, err := f.groupsSvc.GetAllGroups(20, 0, viewer, "")
+	if err != nil {
+		t.Fatalf("GetAllGroups: %v", err)
+	}
+	if len(discovered) != 1 || discovered[0].ID != int(publicID) {
+		t.Fatalf("discovered groups = %#v, want only public group %d", discovered, publicID)
+	}
+
+	privateSearch, err := f.groupsSvc.GetAllGroups(20, 0, viewer, "private search marker")
+	if err != nil {
+		t.Fatalf("search groups: %v", err)
+	}
+	if len(privateSearch) != 0 {
+		t.Fatalf("private search returned %d groups, want 0", len(privateSearch))
+	}
+
+	mine, err := f.groupsSvc.GetUserGroups(creator, 20, 0, "")
+	if err != nil {
+		t.Fatalf("GetUserGroups: %v", err)
+	}
+	if len(mine) != 2 {
+		t.Fatalf("creator's groups = %d, want public and private", len(mine))
+	}
+	seenPrivate := false
+	for _, group := range mine {
+		seenPrivate = seenPrivate || group.ID == int(privateID)
+	}
+	if !seenPrivate {
+		t.Fatal("My Groups must retain private groups for their members")
+	}
+}
+
+func TestPrivateGroup_IsHiddenAndRejectsJoinRequests(t *testing.T) {
+	f := setup(t)
+	creator := f.newUser(t, "privatecreator")
+	member := f.newUser(t, "privatemember")
+	outsider := f.newUser(t, "privateoutsider")
+
+	groupID, err := f.groupsSvc.CreateGroup(creator, "Invite Only", "", "", groups.GroupPrivacyPrivate)
+	if err != nil {
+		t.Fatalf("CreateGroup: %v", err)
+	}
+	if err := f.groupsSvc.AddMember(int(groupID), member); err != nil {
+		t.Fatalf("AddMember: %v", err)
+	}
+
+	if _, err := f.groupsSvc.GetGroupForUser(int(groupID), outsider); err != groups.ErrGroupNotFound {
+		t.Fatalf("private detail error = %v, want ErrGroupNotFound", err)
+	}
+	if _, err := f.groupsSvc.GetVisibleGroupMembers(int(groupID), outsider); err != groups.ErrGroupNotFound {
+		t.Fatalf("private members error = %v, want ErrGroupNotFound", err)
+	}
+	if _, err := f.groupsSvc.GetMembership(int(groupID), outsider); err != groups.ErrGroupNotFound {
+		t.Fatalf("private membership error = %v, want ErrGroupNotFound", err)
+	}
+	if _, err := f.groupsSvc.GetGroupForUser(int(groupID), member); err != nil {
+		t.Fatalf("member should see private group: %v", err)
+	}
+	if err := f.groupsSvc.RequestToJoin(int(groupID), outsider); err != groups.ErrJoinRequestNotAllowed {
+		t.Fatalf("private join request error = %v, want ErrJoinRequestNotAllowed", err)
+	}
+
+	req := httptest.NewRequest(http.MethodPost, "/api/groups/join-requests", nil)
+	req.SetPathValue("id", strconv.FormatInt(groupID, 10))
+	req = req.WithContext(requestctx.WithUserID(req.Context(), outsider))
+	rr := httptest.NewRecorder()
+	f.groupsHandler.CreateJoinRequestHandler(rr, req)
+	if rr.Code != http.StatusForbidden {
+		t.Fatalf("private join request status = %d, want %d", rr.Code, http.StatusForbidden)
+	}
+}
+
+func TestJoinRequest_PublicRemainsPendingUntilCreatorApproval(t *testing.T) {
+	f := setup(t)
+	creator := f.newUser(t, "publiccreator")
+	requester := f.newUser(t, "publicrequester")
+
+	groupID, err := f.groupsSvc.CreateGroup(
+		creator,
+		"Open Community",
+		"",
+		"",
+		groups.GroupPrivacyPublic,
+	)
 	if err != nil {
 		t.Fatalf("CreateGroup: %v", err)
 	}
 
-	// A non-member trying to invite someone must be rejected.
-	err = f.groupsSvc.CreateGroupInvitation(int(groupID), outsider, invitee)
-	if err != groups.ErrNotGroupMember {
-		t.Fatalf("expected ErrNotGroupMember for a non-member inviter, got %v", err)
+	if err := f.groupsSvc.RequestToJoin(int(groupID), requester); err != nil {
+		t.Fatalf("RequestToJoin: %v", err)
+	}
+	isMember, err := f.groupsSvc.IsGroupMember(int(groupID), requester)
+	if err != nil {
+		t.Fatalf("IsGroupMember: %v", err)
+	}
+	if isMember {
+		t.Fatal("public join request must not create membership before approval")
+	}
+	requests, err := f.groupsSvc.GetPendingJoinRequests(int(groupID), creator)
+	if err != nil {
+		t.Fatalf("GetPendingJoinRequests: %v", err)
+	}
+	if len(requests) != 1 {
+		t.Fatalf("public join created %d pending requests, want 1", len(requests))
+	}
+	if err := f.groupsSvc.RequestToJoin(int(groupID), requester); err != groups.ErrJoinRequestAlreadyPending {
+		t.Fatalf("duplicate public request error = %v, want ErrJoinRequestAlreadyPending", err)
+	}
+	if err := f.groupsSvc.AcceptJoinRequest(int(groupID), requests[0].ID, creator); err != nil {
+		t.Fatalf("AcceptJoinRequest: %v", err)
+	}
+	isMember, err = f.groupsSvc.IsGroupMember(int(groupID), requester)
+	if err != nil {
+		t.Fatalf("IsGroupMember after approval: %v", err)
+	}
+	if !isMember {
+		t.Fatal("approved public join request must create membership")
+	}
+}
+
+func TestGroupInvitation_OnlyCreatorCanInvite(t *testing.T) {
+	f := setup(t)
+	creator := f.newUser(t, "invcreator")
+	member := f.newUser(t, "invmember")
+	outsider := f.newUser(t, "invoutsider")
+	invitee := f.newUser(t, "invitee1")
+
+	groupID, err := f.groupsSvc.CreateGroup(creator, "Private Group", "", "", groups.GroupPrivacyPrivate)
+	if err != nil {
+		t.Fatalf("CreateGroup: %v", err)
 	}
 
-	// The creator (a member) can invite.
+	if err := f.groupsSvc.AddMember(int(groupID), member); err != nil {
+		t.Fatalf("AddMember: %v", err)
+	}
+
+	// Neither a regular member nor an unrelated user has invitation authority.
+	err = f.groupsSvc.CreateGroupInvitation(int(groupID), member, invitee)
+	if err != groups.ErrNotGroupCreator {
+		t.Fatalf("member invite error = %v, want ErrNotGroupCreator", err)
+	}
+	err = f.groupsSvc.CreateGroupInvitation(int(groupID), outsider, invitee)
+	if err != groups.ErrNotGroupCreator {
+		t.Fatalf("outsider invite error = %v, want ErrNotGroupCreator", err)
+	}
+	if _, err := f.groupsSvc.SearchInviteCandidates(int(groupID), member, "invite", 10); err != groups.ErrNotGroupCreator {
+		t.Fatalf("member candidate search error = %v, want ErrNotGroupCreator", err)
+	}
+
+	// The creator is the group's sole admin and can invite.
+	if _, err := f.groupsSvc.SearchInviteCandidates(int(groupID), creator, "invite", 10); err != nil {
+		t.Fatalf("creator candidate search: %v", err)
+	}
 	if err := f.groupsSvc.CreateGroupInvitation(int(groupID), creator, invitee); err != nil {
 		t.Fatalf("expected creator to be able to invite, got %v", err)
 	}
@@ -161,8 +369,9 @@ func TestGroupInvitation_MustBeAcceptedBeforeMembership(t *testing.T) {
 	f := setup(t)
 	creator := f.newUser(t, "acceptcreator")
 	invitee := f.newUser(t, "acceptinvitee")
+	otherUser := f.newUser(t, "acceptother")
 
-	groupID, err := f.groupsSvc.CreateGroup(creator, "Accept Group", "", "")
+	groupID, err := f.groupsSvc.CreateGroup(creator, "Accept Group", "", "", groups.GroupPrivacyPrivate)
 	if err != nil {
 		t.Fatalf("CreateGroup: %v", err)
 	}
@@ -186,6 +395,9 @@ func TestGroupInvitation_MustBeAcceptedBeforeMembership(t *testing.T) {
 	if len(pending) != 1 {
 		t.Fatalf("expected 1 pending invitation, got %d", len(pending))
 	}
+	if err := f.groupsSvc.AcceptGroupInvitation(pending[0].ID, otherUser); err != groups.ErrInvitationNotFound {
+		t.Fatalf("accepting another user's invitation error = %v, want ErrInvitationNotFound", err)
+	}
 
 	if err := f.groupsSvc.AcceptGroupInvitation(pending[0].ID, invitee); err != nil {
 		t.Fatalf("AcceptGroupInvitation: %v", err)
@@ -198,6 +410,9 @@ func TestGroupInvitation_MustBeAcceptedBeforeMembership(t *testing.T) {
 	if !isMember {
 		t.Fatalf("expected invitee to be a member after accepting")
 	}
+	if err := f.groupsSvc.AcceptGroupInvitation(pending[0].ID, invitee); err != groups.ErrInvitationNotPending {
+		t.Fatalf("accepting invitation twice error = %v, want ErrInvitationNotPending", err)
+	}
 }
 
 func TestGroupInvitation_Declining_DoesNotAddMember(t *testing.T) {
@@ -205,7 +420,7 @@ func TestGroupInvitation_Declining_DoesNotAddMember(t *testing.T) {
 	creator := f.newUser(t, "declinecreator")
 	invitee := f.newUser(t, "declineinvitee")
 
-	groupID, err := f.groupsSvc.CreateGroup(creator, "Decline Group", "", "")
+	groupID, err := f.groupsSvc.CreateGroup(creator, "Decline Group", "", "", groups.GroupPrivacyPrivate)
 	if err != nil {
 		t.Fatalf("CreateGroup: %v", err)
 	}
@@ -236,7 +451,7 @@ func TestJoinRequest_NonMemberCanRequest(t *testing.T) {
 	creator := f.newUser(t, "joincreator")
 	requester := f.newUser(t, "joinrequester")
 
-	groupID, err := f.groupsSvc.CreateGroup(creator, "Join Group", "", "")
+	groupID, err := f.groupsSvc.CreateGroup(creator, "Join Group", "", "", groups.GroupPrivacyPublic)
 	if err != nil {
 		t.Fatalf("CreateGroup: %v", err)
 	}
@@ -252,6 +467,17 @@ func TestJoinRequest_NonMemberCanRequest(t *testing.T) {
 	if len(pending) != 1 {
 		t.Fatalf("expected 1 pending join request, got %d", len(pending))
 	}
+
+	isMember, err := f.groupsSvc.IsGroupMember(int(groupID), requester)
+	if err != nil {
+		t.Fatalf("IsGroupMember: %v", err)
+	}
+	if isMember {
+		t.Fatal("public join request must not create membership before approval")
+	}
+	if err := f.groupsSvc.RequestToJoin(int(groupID), requester); err != groups.ErrJoinRequestAlreadyPending {
+		t.Fatalf("duplicate public request error = %v, want ErrJoinRequestAlreadyPending", err)
+	}
 }
 
 func TestJoinRequest_OnlyCreatorCanAcceptOrDecline(t *testing.T) {
@@ -260,7 +486,7 @@ func TestJoinRequest_OnlyCreatorCanAcceptOrDecline(t *testing.T) {
 	requester := f.newUser(t, "joinrequester2")
 	otherMember := f.newUser(t, "joinother2")
 
-	groupID, err := f.groupsSvc.CreateGroup(creator, "Join Group 2", "", "")
+	groupID, err := f.groupsSvc.CreateGroup(creator, "Join Group 2", "", "", groups.GroupPrivacyPublic)
 	if err != nil {
 		t.Fatalf("CreateGroup: %v", err)
 	}
@@ -288,7 +514,7 @@ func TestJoinRequest_Accepting_AddsMember(t *testing.T) {
 	creator := f.newUser(t, "joincreator3")
 	requester := f.newUser(t, "joinrequester3")
 
-	groupID, err := f.groupsSvc.CreateGroup(creator, "Join Group 3", "", "")
+	groupID, err := f.groupsSvc.CreateGroup(creator, "Join Group 3", "", "", groups.GroupPrivacyPublic)
 	if err != nil {
 		t.Fatalf("CreateGroup: %v", err)
 	}
@@ -318,7 +544,7 @@ func TestJoinRequest_Declining_DoesNotAddMember(t *testing.T) {
 	creator := f.newUser(t, "joincreator4")
 	requester := f.newUser(t, "joinrequester4")
 
-	groupID, err := f.groupsSvc.CreateGroup(creator, "Join Group 4", "", "")
+	groupID, err := f.groupsSvc.CreateGroup(creator, "Join Group 4", "", "", groups.GroupPrivacyPublic)
 	if err != nil {
 		t.Fatalf("CreateGroup: %v", err)
 	}
@@ -349,7 +575,7 @@ func TestGroupPost_RequiresMembership(t *testing.T) {
 	member := f.newUser(t, "gpmember")
 	nonMember := f.newUser(t, "gpnonmember")
 
-	groupID, err := f.groupsSvc.CreateGroup(creator, "GP Group", "", "")
+	groupID, err := f.groupsSvc.CreateGroup(creator, "GP Group", "", "", groups.GroupPrivacyPrivate)
 	if err != nil {
 		t.Fatalf("CreateGroup: %v", err)
 	}
@@ -357,12 +583,27 @@ func TestGroupPost_RequiresMembership(t *testing.T) {
 		t.Fatalf("AddMember: %v", err)
 	}
 
-	if _, status := f.newGroupPost(t, member, int(groupID)); status != http.StatusCreated {
+	postID, status := f.newGroupPost(t, member, int(groupID))
+	if status != http.StatusCreated {
 		t.Fatalf("expected a member to be able to post to the group, got status %d", status)
 	}
 
 	if _, status := f.newGroupPost(t, nonMember, int(groupID)); status != http.StatusForbidden {
 		t.Fatalf("expected a non-member's group post to be rejected, got status %d", status)
+	}
+
+	if _, err := f.postsSvc.ListGroupPosts(int(groupID), member, 50); err != nil {
+		t.Fatalf("member should be able to list group posts: %v", err)
+	}
+	if _, err := f.postsSvc.ListGroupPosts(int(groupID), nonMember, 50); err != groups.ErrNotGroupMember {
+		t.Fatalf("non-member list error = %v, want ErrNotGroupMember", err)
+	}
+	canAccess, err := f.postsSvc.CanAccess(nonMember, postID)
+	if err != nil {
+		t.Fatalf("CanAccess group post: %v", err)
+	}
+	if canAccess {
+		t.Fatal("non-member must not be able to read a group post or its comments")
 	}
 }
 
@@ -372,7 +613,7 @@ func TestGroupComment_RequiresMembership(t *testing.T) {
 	member := f.newUser(t, "gcmember")
 	nonMember := f.newUser(t, "gcnonmember")
 
-	groupID, err := f.groupsSvc.CreateGroup(creator, "GC Group", "", "")
+	groupID, err := f.groupsSvc.CreateGroup(creator, "GC Group", "", "", groups.GroupPrivacyPrivate)
 	if err != nil {
 		t.Fatalf("CreateGroup: %v", err)
 	}
@@ -391,5 +632,34 @@ func TestGroupComment_RequiresMembership(t *testing.T) {
 
 	if err := f.postsSvc.CanCreateComment(nonMember, postID); err != groups.ErrNotGroupMember {
 		t.Errorf("expected ErrNotGroupMember for a non-member commenter, got %v", err)
+	}
+}
+
+func TestPublicGroupContent_StillRequiresMembership(t *testing.T) {
+	f := setup(t)
+	creator := f.newUser(t, "publiccontentcreator")
+	outsider := f.newUser(t, "publiccontentoutsider")
+
+	groupID, err := f.groupsSvc.CreateGroup(creator, "Public Metadata Only", "", "", groups.GroupPrivacyPublic)
+	if err != nil {
+		t.Fatalf("CreateGroup: %v", err)
+	}
+	postID, status := f.newGroupPost(t, creator, int(groupID))
+	if status != http.StatusCreated {
+		t.Fatalf("failed to seed public-group post, status %d", status)
+	}
+
+	if _, err := f.postsSvc.ListGroupPosts(int(groupID), outsider, 50); err != groups.ErrNotGroupMember {
+		t.Fatalf("public-group post list error = %v, want ErrNotGroupMember", err)
+	}
+	canAccess, err := f.postsSvc.CanAccess(outsider, postID)
+	if err != nil {
+		t.Fatalf("CanAccess public-group post: %v", err)
+	}
+	if canAccess {
+		t.Fatal("public privacy must not expose group post or comment content")
+	}
+	if err := f.postsSvc.CanCreateComment(outsider, postID); err != groups.ErrNotGroupMember {
+		t.Fatalf("public-group comment error = %v, want ErrNotGroupMember", err)
 	}
 }

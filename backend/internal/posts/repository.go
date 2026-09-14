@@ -147,8 +147,7 @@ func (r *Repository) ListPosts(viewerID, limit int, feed string) ([]*post, error
 }
 
 // ListPostsByGroup returns up to limit posts belonging to groupID, newest
-// first. Open to any caller - viewing a group's posts doesn't require
-// membership.
+// first. The service verifies membership before reaching this data query.
 func (r *Repository) ListPostsByGroup(groupID, limit int) ([]*post, error) {
 	rows, err := r.db.Query(`
 		SELECT id, user_id, visibility, title, content, image_path, group_id, created_at, updated_at

@@ -45,11 +45,11 @@ subtests, e.g. `TestValidateRegisterRequest_MissingFields` runs 11 cases and
 - ✅ **Comments attach to existing post; fail on non-existent post**: `comments/comments_test.go: TestCreateComment_AttachesToExistingPost`, `TestCreateComment_NonExistentPost_Fails`
 - ✅ **Image/GIF upload accepted (JPEG/PNG/GIF/WebP), rejected for disallowed types, path persisted**: `comments/comments_test.go: TestCreateComment_ImageAttachment_*` (end-to-end through the comment handler) + `upload/media_test.go` (direct `MediaStorage.Save` content-sniffing and size-limit tests)
 - ✅ **Group creation stores title/description/creator**: `groups/groups_test.go: TestCreateGroup_StoresTitleDescriptionAndCreator`
-- ✅ **Group invite/join flow (only members invite, invitee must accept, decline doesn't add member; non-member can request to join, only creator accepts/declines)**: `groups/groups_test.go: TestGroupInvitation_*`, `TestJoinRequest_*` (7 tests)
-- ✅ **Group posts/comments require membership to create**: `TestGroupPost_RequiresMembership`, `TestGroupComment_RequiresMembership`. Note: *viewing* a group's post list intentionally does not require membership in this codebase (`posts.Service.ListGroupPosts` doc comment) — see Known gaps.
+- ✅ **Group privacy and membership flow (public discovery with creator-approved join requests; private groups hidden and invite-only; only creators invite; invitees accept/decline)**: `groups/groups_test.go: TestGroupPrivacy_*`, `TestGroupInvitation_*`, `TestJoinRequest_*`
+- ✅ **Group posts/comments require membership to create and view**: `TestGroupPost_RequiresMembership`, `TestGroupComment_RequiresMembership`, `TestPublicGroupContent_StillRequiresMembership`.
 - ✅ **Event creation requires title/description/time and going/not-going options; member response recorded and updatable; non-member cannot create/respond**: `groups/events_test.go` (6 tests)
 - ✅ **Direct message permission rules (only connected users; sender/recipient/content/timestamp persisted; emoji round-trips)**: `chat/chat_test.go` (5 tests)
-- ⚠️ **Group chat messages scoped to members**: not implemented in this codebase — there is no group-chat/`group_messages` feature at all (only 1:1 `private_messages`). Not testable; see Known gaps.
+- ✅ **Group chat messages scoped to members**: `chat/chat_test.go` covers member-only group history and message handling.
 - ✅ **Follow request to private profile → notification for recipient**: **not actually true in this codebase** — see Bugs found below. Covered instead by testing the `notifications` package directly plus the two flows that *do* wire a notifier correctly, so the gap is documented rather than silently assumed.
 - ✅ **Group invitation → notification for invitee**: `notifications/notifications_test.go: TestGroupInvitation_GeneratesNotificationForInvitee`
 - ✅ **Group join request → notification for creator**: `TestGroupJoinRequest_GeneratesNotificationForCreator`
@@ -59,7 +59,6 @@ subtests, e.g. `TestValidateRegisterRequest_MissingFields` runs 11 cases and
 ## Known gaps
 
 - **Real-time WebSocket delivery**: `internal/websocket.Hub` fan-out and the actual `internal/chat` / `internal/groups` WS handlers that push live events to connected clients are not unit-testable without a running server and real socket connections. The tests instead cover the message-persistence and permission-check functions those handlers call (`chat.Service.HandlePrivateMessage`, `followers.Service.CanMessage`), per the task's own scoping note. Needs an integration/e2e test with a real WS client.
-- **Group chat**: no group-chat feature exists in the backend (no `group_messages` table, no service/handler) — group members currently only get group *posts/comments* and *events*, not a live chat. Nothing to test here; flagged instead of fabricated.
 - **Docker container checks, cross-browser/session checks, OAuth bonus**: out of scope for Go unit tests entirely — these require the actual container build, a browser automation harness, and a configured OAuth provider respectively. Need manual/e2e coverage.
 - **Follow-request notification**: technically "coverable" but the underlying feature doesn't fire a notification at all — see Bugs found.
 
