@@ -1,22 +1,28 @@
 /**
  * API & WebSocket configuration helper.
- * Configured for localhost on port 8080.
+ * Configured for localhost on port 8080 by default. Docker and deployed
+ * environments can override these with NEXT_PUBLIC_BACKEND_ORIGIN and
+ * NEXT_PUBLIC_BACKEND_WS_ORIGIN.
  */
 
-export const BACKEND_PORT = 8080;
+const DEFAULT_BACKEND_ORIGIN = "http://localhost:8080";
 
-/**
- * Returns the backend hostname ("localhost").
- */
-export function getBackendHost(): string {
-  return "localhost";
+function cleanOrigin(origin: string): string {
+  return origin.replace(/\/+$/, "");
 }
 
 /**
- * Returns the backend HTTP base URL ("http://localhost:8080").
+ * Returns the backend hostname.
+ */
+export function getBackendHost(): string {
+  return new URL(getBackendBaseUrl()).hostname;
+}
+
+/**
+ * Returns the backend HTTP base URL.
  */
 export function getBackendBaseUrl(): string {
-  return `http://${getBackendHost()}:${BACKEND_PORT}`;
+  return `http://localhost:${BACKEND_PORT}`;
 }
 
 /**
@@ -44,11 +50,11 @@ export function getUploadsBaseUrl(): string {
 }
 
 /**
- * Returns the WebSocket URL ("ws://localhost:8080/api/ws").
+ * Returns the WebSocket URL.
  */
 export function getWebSocketUrl(path: string = "/api/ws"): string {
   const cleanPath = path.startsWith("/") ? path : `/${path}`;
-  return `ws://${getBackendHost()}:${BACKEND_PORT}${cleanPath}`;
+  return `ws://localhost:${BACKEND_PORT}${cleanPath}`;
 }
 
 /**

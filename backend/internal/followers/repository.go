@@ -18,21 +18,24 @@ func NewRepository(db *sql.DB) *Repository {
 	}
 }
 
-func (r *Repository) FollowUser(followerID, followedID int) error {
-	_, err := r.db.Exec(`
+func (r *Repository) FollowUser(followerID, followedID int) (int64, error) {
+	var followID int64
+
+	err := r.db.QueryRow(`
 		INSERT INTO followers (follower_id, followed_id)
 		VALUES (?, ?)
-	`, followerID, followedID)
+		RETURNING id
+	`, followerID, followedID).Scan(&followID)
 	if err != nil {
 		var sqliteErr sqlite3.Error
 		if errors.As(err, &sqliteErr) && sqliteErr.ExtendedCode == sqlite3.ErrConstraintUnique {
-			return ErrAlreadyFollowing
+			return 0, ErrAlreadyFollowing
 		}
 
-		return err
+		return 0, err
 	}
 
-	return nil
+	return followID, nil
 }
 
 func (r *Repository) UnfollowUser(followerID, followedID int) error {
@@ -236,8 +239,10 @@ func escapeLikePattern(s string) string {
 	return replacer.Replace(s)
 }
 
-func (r *Repository) CreateFollowRequest(requesterID, targetID int) error {
-	result, err := r.db.Exec(`
+func (r *Repository) CreateFollowRequest(requesterID, targetID int) (int64, error) {
+	var requestID int64
+
+	err := r.db.QueryRow(`
 		INSERT INTO follow_requests (requester_id, target_id, status)
 		VALUES (?, ?, ?)
 		ON CONFLICT(requester_id, target_id) DO UPDATE SET
@@ -245,21 +250,16 @@ func (r *Repository) CreateFollowRequest(requesterID, targetID int) error {
 			updated_at = CURRENT_TIMESTAMP, 
 			created_at = CURRENT_TIMESTAMP
 		WHERE follow_requests.status != ?
-		`, requesterID, targetID, FollowRequestStatusPending, FollowRequestStatusPending)
+		RETURNING id
+		`, requesterID, targetID, FollowRequestStatusPending, FollowRequestStatusPending).Scan(&requestID)
+	if err == sql.ErrNoRows {
+		return 0, ErrFollowRequestAlreadyPending
+	}
 	if err != nil {
-		return err
+		return 0, err
 	}
 
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-
-	if rowsAffected == 0 {
-		return ErrFollowRequestAlreadyPending
-	}
-
-	return nil
+	return requestID, nil
 }
 
 func (r *Repository) GetPendingFollowRequests(targetID int) ([]FollowRequestWithRequester, error) {
