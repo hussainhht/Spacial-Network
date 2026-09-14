@@ -2,15 +2,28 @@
 
 import { useLayoutEffect, useMemo } from "react";
 import { useGLTF } from "@react-three/drei";
-import { Box3, DoubleSide, Group, Mesh, MeshStandardMaterial, Quaternion, Vector3 } from "three";
+import {
+  Box3,
+  DoubleSide,
+  Euler,
+  Group,
+  Mesh,
+  MeshStandardMaterial,
+  Quaternion,
+  Vector3,
+} from "three";
 import { createEarthMaterials } from "./earthMaterials";
 import { EARTH_MODEL_PATH, type SpaceModel } from "./modelsRegistry";
 
 // Both meshes are exported as concentric, correctly-sized spheres (Clouds is
 // already authored a bit larger than Earth), so each keeps its own geometry
-// and radius. Only the tilt is overridden, and identically for both, so the
-// cloud texture stays aligned with the surface texture beneath it.
-const EARTH_TILT = new Quaternion(-0.135598958, 0.9884727, -0.0124000078, 0.0661882833).normalize();
+// and radius. Only the base orientation is overridden, and identically for
+// both, so the cloud texture stays aligned with the surface texture beneath
+// it. The Sketchfab export's own pole axis points at the camera (+Z); this
+// +90° X rotation lays it onto world +Y instead, matching AxialRotation's
+// Y-axis spin (PlanetMotion.tsx) so the globe turns on its real polar axis
+// with the equator running horizontally, poles at top/bottom.
+const EARTH_TILT = new Quaternion().setFromEuler(new Euler(Math.PI / 2, 0, 0));
 
 /**
  * Isolated Earth model component preserving custom shaders and atmospheric
@@ -121,7 +134,7 @@ function EarthPlanetModel() {
  * Preserves original materials, textures, alpha transparency, and ring geometry.
  */
 function GenericPlanetModel({ modelConfig }: { modelConfig: SpaceModel }) {
-  const { scene } = useGLTF(modelConfig.path);
+  const { scene } = useGLTF(modelConfig.modelPath);
 
   const { model, center, scale } = useMemo(() => {
     // Clone scene to avoid mutating GLTF loader cache
@@ -150,33 +163,59 @@ function GenericPlanetModel({ modelConfig }: { modelConfig: SpaceModel }) {
     const extent = Math.max(size.x, size.y, size.z);
 
     if (!Number.isFinite(extent) || extent <= 0) {
-      throw new Error(`Model "${modelConfig.name}" has no visible bounds.`);
+      throw new Error(`Model "${modelConfig.label}" has no visible bounds.`);
     }
 
-    const baseScale = (modelConfig.defaultScale ?? 1) * (2 / extent);
+    const baseScale = 2 / extent;
     return { model, center, scale: baseScale };
   }, [scene, modelConfig]);
 
   useLayoutEffect(() => {
-    if (modelConfig.id !== "saturn") return;
     const restore: (() => void)[] = [];
     model.traverse((child) => {
-      if (!(child instanceof Mesh) || Array.isArray(child.material) || child.material.name !== "rings") return;
+      if (!(child instanceof Mesh)) return;
+
+      const sourceMaterials = Array.isArray(child.material)
+        ? child.material
+        : [child.material];
+      const shouldAdjust = sourceMaterials.some(
+        (material) =>
+          (modelConfig.id === "saturn" && material.name === "rings") ||
+          (modelConfig.material?.emissiveIntensity !== undefined &&
+            material instanceof MeshStandardMaterial),
+      );
+      if (!shouldAdjust) return;
+
+      const adjustedMaterials = sourceMaterials.map((source) => {
+        const material = source.clone();
+        if (modelConfig.id === "saturn" && material.name === "rings") {
+          material.side = DoubleSide;
+          material.transparent = true;
+          material.depthWrite = false;
+        }
+        if (
+          material instanceof MeshStandardMaterial &&
+          modelConfig.material?.emissiveIntensity !== undefined
+        ) {
+          material.emissiveIntensity = modelConfig.material.emissiveIntensity;
+        }
+        return material;
+      });
+
       const source = child.material;
-      const material = source.clone();
-      material.side = DoubleSide;
-      material.transparent = true;
-      material.depthWrite = false;
-      child.material = material;
-      restore.push(() => { child.material = source; material.dispose(); });
+      child.material = Array.isArray(source)
+        ? adjustedMaterials
+        : adjustedMaterials[0];
+      restore.push(() => {
+        child.material = source;
+        adjustedMaterials.forEach((material) => material.dispose());
+      });
     });
     return () => restore.forEach((dispose) => dispose());
-  }, [model, modelConfig.id]);
-
-  const rotation = modelConfig.defaultRotation ?? [0, 0, 0];
+  }, [model, modelConfig.id, modelConfig.material?.emissiveIntensity]);
 
   return (
-    <group rotation={rotation} scale={scale} dispose={null}>
+    <group scale={scale} dispose={null}>
       <group position={[-center.x, -center.y, -center.z]}>
         <primitive object={model} />
       </group>

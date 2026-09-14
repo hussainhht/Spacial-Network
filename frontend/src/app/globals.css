@@ -61,8 +61,8 @@ body {
 }
 
 /*
-  Planet accent layer. Earth is the root default; an explicit data attribute
-  supports future planet scopes without changing component styles.
+  Planet accent layer. Earth is the root fallback; authenticated shells receive
+  the active registry theme through their data-planet scope and CSS variables.
 */
 :where(:root, [data-planet="earth"]) {
   --planet-accent: #69aef0;

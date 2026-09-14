@@ -47,10 +47,7 @@ export default function GroupsPageContent() {
       <div className={styles.container}>
         <header className={styles.intro}>
           <p className={styles.eyebrow}>Your communities</p>
-          <h1 id="groups-heading">Groups</h1>
-          <p className={styles.description}>
-            Discover communities, connect with people, and find the spaces that match your interests.
-          </p>
+
         </header>
         <div className={styles.toolbar}>
           <GroupSearchInput value={search} onChange={setSearch} />
