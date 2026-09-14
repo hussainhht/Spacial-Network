@@ -391,6 +391,37 @@ main:not(.chat-main):has(> form) form > p {
   margin: 0 auto;
 }
 
+/*
+  Home feed positioning only - .home-feed-page/.home-feed-container are
+  additional classes layered onto .posts-page/.posts-container on the Home
+  route alone, so /posts and other pages sharing those base classes are
+  unaffected. Below 760px nothing here applies and the base classes'
+  existing mobile layout (full width, centered) is used as-is.
+
+  The Earth graphic (PlanetBackground.module.css .planetFrame) is pinned to
+  the right edge of the whole viewport, independent of this grid column, so
+  its left edge can't be read off this layout alone. margin-right below is
+  tuned empirically (via screenshots at common desktop widths) to clear it
+  rather than derived from .planetFrame's own clamp() values.
+*/
+@media (min-width: 761px) {
+  .home-feed-page {
+    padding-top: clamp(64px, 8vh, 110px);
+  }
+
+  .home-feed-container {
+    width: auto;
+    max-width: clamp(440px, 34vw, 580px);
+    margin: 0 clamp(240px, 40vw, 480px) 0 clamp(24px, 4vw, 64px);
+  }
+
+  /* Extra breathing room below the filter tabs, above the base 1.25rem,
+     so posts don't start immediately under them on the wider layout. */
+  .home-feed-container .feed-filter {
+    margin-bottom: 2rem;
+  }
+}
+
 .posts-page-header {
   display: flex;
   align-items: center;
