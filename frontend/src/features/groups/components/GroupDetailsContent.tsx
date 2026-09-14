@@ -22,6 +22,7 @@ import {
   MembershipPanel,
 } from "./GroupPanels";
 import GroupTabs, { type ActiveGroupTab } from "./GroupTabs";
+import GroupPrivacyBadge from "./GroupPrivacyBadge";
 
 export default function GroupDetailsContent() {
   const { groupId } = useParams<{ groupId: string }>();
@@ -79,6 +80,7 @@ function GroupDetails({ groupId }: { groupId: number }) {
             </p>
             <p className="group-detail-description">{group.data.description}</p>
             <div className="group-header-meta">
+              <GroupPrivacyBadge privacy={group.data.privacy} detailed />
               <span>
                 {members.data?.length ?? group.data.memberCount}{" "}
                 {(members.data?.length ?? group.data.memberCount) === 1
@@ -120,7 +122,10 @@ function GroupDetails({ groupId }: { groupId: number }) {
               className="group-details-grid"
             >
               <div className="group-main-column">
-                <MembershipPanel groupId={groupId} />
+                <MembershipPanel
+                  groupId={groupId}
+                  privacy={group.data.privacy}
+                />
               </div>
               <MembersPanel
                 groupId={groupId}

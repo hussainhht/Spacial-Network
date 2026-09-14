@@ -11,7 +11,12 @@ import PrimaryNavigation from "./PrimaryNavigation/PrimaryNavigation";
 import styles from "./AppShell.module.css";
 
 function PlanetAwareShell({ children }: { children: React.ReactNode }) {
-  const { selectedPlanetId, themeStyle } = usePlanetPreference();
+  const {
+    selectedPlanetId,
+    planetModelEnabled,
+    preferenceReady,
+    themeStyle,
+  } = usePlanetPreference();
 
   return (
     <GroupsSearchProvider>
@@ -20,7 +25,9 @@ function PlanetAwareShell({ children }: { children: React.ReactNode }) {
         data-planet={selectedPlanetId}
         style={themeStyle}
       >
-        <PlanetBackground />
+        {preferenceReady && planetModelEnabled ? (
+          <PlanetBackground />
+        ) : null}
         <a href="#page-content" className={styles.skipLink}>
           Skip to content
         </a>

@@ -91,6 +91,7 @@
 }
 .card:focus-within { border-color: var(--planet-border-strong); }
 .identity { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
+.badges { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px; }
 .identity :global(.group-badge) { font-size: 0.6875rem; }
 .title { margin: 0 0 8px; font-size: 1.1875rem; line-height: 1.4; letter-spacing: -0.015em; overflow-wrap: anywhere; }
 .title a { color: var(--space-text-heading); text-decoration: none; }
@@ -109,6 +110,9 @@
 .creator { margin: auto 0 20px; font-size: 0.8125rem; color: var(--space-text-muted); overflow-wrap: anywhere; }
 .creator span { color: var(--space-text-label); }
 .cardFooter { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-top: auto; padding-top: 16px; border-top: 1px solid var(--space-border); }
+.cardActions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px; }
+.cardActions :global(.group-join) { display: contents; }
+.cardActions :global(.group-button) { min-height: 36px; padding: 8px 12px; }
 .members { display: inline-flex; align-items: center; gap: 8px; font-size: 0.8125rem; color: var(--space-text-muted); }
 .members svg { flex-shrink: 0; }
 .page .preview { gap: 8px; padding: 8px 12px; color: var(--planet-accent-hover); border-color: var(--planet-border); }

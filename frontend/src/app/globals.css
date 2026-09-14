@@ -1138,7 +1138,7 @@ main:not(.chat-main):has(> form) form > p {
   width: min(100%, 1120px);
 }
 .group-create-container {
-  width: min(100%, 860px);
+  width: min(100%, 1120px);
 }
 .groups-list {
   display: grid;
@@ -1318,6 +1318,31 @@ main:not(.chat-main):has(> form) form > p {
   line-height: 1.7;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+}
+
+.group-member-only {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.7rem;
+  padding: clamp(2.5rem, 8vw, 5rem);
+  text-align: center;
+}
+
+.group-member-only h2,
+.group-member-only p {
+  margin: 0;
+}
+
+.group-member-only-icon {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border: 1px solid var(--planet-border);
+  border-radius: 50%;
+  background: var(--planet-accent-soft);
+  font-size: 1.15rem;
 }
 .group-header-meta {
   padding-top: 0.8rem;

@@ -5,6 +5,7 @@ import { useEffect, useRef } from "react";
 import type { Group } from "../types/group";
 import GroupAvatar from "./GroupAvatar";
 import { MembershipBadge } from "./GroupPanels";
+import GroupPrivacyBadge from "./GroupPrivacyBadge";
 import styles from "./GroupPreviewPanel.module.css";
 
 export default function GroupPreviewPanel({
@@ -39,6 +40,7 @@ export default function GroupPreviewPanel({
         </button>
       </div>
       <GroupAvatar group={group} size={64} />
+      <GroupPrivacyBadge privacy={group.privacy} detailed />
       <MembershipBadge
         role={group.membershipRole}
         invited={group.hasPendingInvitation}

@@ -83,6 +83,7 @@ function toGroup(g: ApiGroup): Group {
     creatorId: g.creator_id,
     title: g.title,
     description: g.description,
+    privacy: g.privacy,
     groupPhoto: g.group_photo,
     createdAt: g.created_at,
     updatedAt: g.updated_at,
@@ -138,6 +139,7 @@ export async function createGroup(input: CreateGroupInput): Promise<Group> {
   const formData = new FormData();
   formData.append("title", input.title);
   formData.append("description", input.description);
+  formData.append("privacy", input.privacy);
   if (input.photo) {
     formData.append("groupPhoto", input.photo);
   }
@@ -212,6 +214,7 @@ export async function getPendingInvitations(): Promise<GroupInvitation[]> {
     createdAt: i.created_at,
     updatedAt: i.updated_at,
     groupTitle: i.group_title,
+    groupPrivacy: i.group_privacy,
     inviterUsername: i.inviter_username,
   }));
 }

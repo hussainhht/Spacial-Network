@@ -23,8 +23,13 @@ function createOptionStyle(theme: PlanetTheme): OptionStyle {
 }
 
 export default function SettingsPage() {
-  const { selectedPlanetId, selectedPlanet, selectPlanet } =
-    usePlanetPreference();
+  const {
+    selectedPlanetId,
+    selectedPlanet,
+    planetModelEnabled,
+    selectPlanet,
+    setPlanetModelEnabled,
+  } = usePlanetPreference();
 
   return (
     <main className="settings-page space-shell" aria-labelledby="app-page-title">
@@ -36,19 +41,42 @@ export default function SettingsPage() {
                 Planet
               </h2>
               <p id="planet-hint" className={styles.sectionHint}>
-                Choose the celestial body and accent used across your space.
+                Choose the celestial theme used across your space, with or
+                without its 3D model.
               </p>
             </div>
             <span className={styles.currentPlanet} aria-live="polite">
-              {selectedPlanet.label} active
+              {selectedPlanet.label} theme · 3D{" "}
+              {planetModelEnabled ? "on" : "off"}
             </span>
           </div>
+
+          <label
+            className={styles.modelToggle}
+            data-enabled={planetModelEnabled}
+          >
+            <span className={styles.toggleText}>
+              <strong>Show 3D model</strong>
+              <span id="model-toggle-hint">
+                {planetModelEnabled
+                  ? `Display the ${selectedPlanet.label} model.`
+                  : `Keep the ${selectedPlanet.label} theme without WebGL rendering.`}
+              </span>
+            </span>
+            <input
+              className={styles.modelCheckbox}
+              type="checkbox"
+              checked={planetModelEnabled}
+              aria-describedby="model-toggle-hint"
+              onChange={(event) => setPlanetModelEnabled(event.target.checked)}
+            />
+          </label>
 
           <fieldset
             className={styles.planetFieldset}
             aria-describedby="planet-hint"
           >
-            <legend className={styles.srOnly}>Active celestial body</legend>
+            <legend className={styles.srOnly}>Planet appearance</legend>
             <div className={styles.planetGrid}>
               {SELECTABLE_PLANETS.map((planet) => {
                 const selected = planet.id === selectedPlanetId;

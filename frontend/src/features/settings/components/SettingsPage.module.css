@@ -64,6 +64,70 @@
   border: 0;
 }
 
+.modelToggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  min-height: 68px;
+  border: 1px solid rgba(255, 255, 255, 0.075);
+  border-radius: 15px;
+  background: rgba(8, 12, 29, 0.58);
+  padding: 13px 15px;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.modelToggle:hover,
+.modelToggle:focus-within,
+.modelToggle[data-enabled="true"] {
+  border-color: var(--planet-border-strong);
+  background-color: color-mix(
+    in srgb,
+    var(--planet-accent) 5%,
+    rgba(8, 12, 29, 0.72)
+  );
+}
+
+.modelToggle[data-enabled="true"] {
+  box-shadow: inset 0 0 0 1px var(--planet-border);
+}
+
+.toggleText {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.toggleText strong {
+  color: var(--space-text-heading);
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.toggleText span {
+  color: var(--space-text-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.modelCheckbox {
+  flex: 0 0 20px;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  cursor: pointer;
+}
+
+.modelCheckbox:focus-visible {
+  outline: 2px solid var(--planet-focus-ring);
+  outline-offset: 3px;
+}
+
 .planetGrid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(156px, 1fr));
@@ -234,6 +298,10 @@
 
 @media (prefers-reduced-motion: reduce) {
   .optionCard {
+    transition: none;
+  }
+
+  .modelToggle {
     transition: none;
   }
 

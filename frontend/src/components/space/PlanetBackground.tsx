@@ -15,7 +15,6 @@ import { Canvas } from "@react-three/fiber";
 import PlanetSystem from "./PlanetSystem";
 import { SUN_POSITION } from "./earthMaterials";
 import {
-  DEFAULT_PLANET_ID,
   PLANET_REGISTRY,
   type PlanetConfig,
   type PlanetId,
@@ -161,7 +160,7 @@ function PlanetBackground() {
     getServerReadySnapshot,
   );
   const [displayedPlanetId, setDisplayedPlanetId] =
-    useState<PlanetId>(DEFAULT_PLANET_ID);
+    useState<PlanetId>(selectedPlanetId);
 
   const handleAssetReady = useCallback((planetId: PlanetId) => {
     if (selectedPlanetId === planetId) {
