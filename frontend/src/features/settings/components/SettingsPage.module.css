@@ -1,0 +1,36 @@
+.container {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  width: min(100%, 720px);
+  margin: 0 auto;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  border: 1px solid var(--planet-border);
+  border-radius: var(--space-radius-lg);
+  background:
+    linear-gradient(var(--planet-surface-tint), var(--planet-surface-tint)),
+    rgba(13, 17, 38, 0.75);
+  backdrop-filter: blur(20px);
+  padding: 22px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);
+}
+
+.sectionTitle {
+  margin: 0;
+  color: var(--space-text-heading);
+  font-size: 18px;
+}
+
+.sectionHint {
+  margin: -8px 0 0;
+  color: var(--space-text-muted);
+  font-size: 13px;
+  line-height: 1.6;
+}

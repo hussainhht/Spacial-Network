@@ -1,0 +1,49 @@
+.bottomNav {
+  --nav-node-size: 30px;
+  --nav-create-size: 36px;
+  --nav-icon-size: 18px;
+  display: none;
+  position: fixed;
+  inset: auto max(12px, env(safe-area-inset-right, 0px)) calc(8px + env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px));
+  z-index: 3;
+  height: var(--nav-bottom-height);
+  max-width: 480px;
+  margin-inline: auto;
+  padding-inline: 6px;
+  border: 1px solid var(--planet-border);
+  border-radius: 24px;
+  background:
+    linear-gradient(var(--planet-surface-tint), var(--planet-surface-tint)),
+    rgba(6, 10, 24, 0.94);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), 0 0 20px var(--planet-glow);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+.navList {
+  display: flex;
+  width: 100%;
+  height: 100%;
+}
+.navItem {
+  flex: 1 1 0;
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border-radius: 16px;
+}
+.navLabel {
+  font-size: 10px;
+}
+.navItem[aria-current="page"] .navLabel::after {
+  bottom: -3px;
+  left: calc(50% - 9px);
+}
+@media (max-width: 760px), (max-height: 430px) {
+  .bottomNav {
+    display: flex;
+  }
+}

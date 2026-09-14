@@ -3,10 +3,13 @@ export type EventType =
   | "user_offline"
   | "online_users"
   | "private_message"
+  | "group_message"
   | "typing"
-  | "error"
+  | "mark_read"
+  | "messages_read"
   | "invite_user_search"
   | "invite_user_search_results"
+  | "error"
   | "notification"
   | "group_event_response_updated";
 
@@ -23,10 +26,32 @@ export interface MessagePayload {
   created_at?: string;
 }
 
+export interface GroupMessagePayload {
+  id?: number;
+  group_id: number;
+  user_id: number;
+  username?: string;
+  first_name?: string;
+  last_name?: string;
+  avatar?: string;
+  content: string;
+  created_at?: string;
+}
+
 export interface TypingPayload {
   sender_id: number;
   recipient_id: number;
   is_typing: boolean;
+}
+
+export interface MarkReadPayload {
+  sender_id: number;
+}
+
+export interface MessagesReadPayload {
+  reader_id: number;
+  sender_id: number;
+  read_at: string;
 }
 
 export interface UserStatusPayload {
@@ -100,15 +125,17 @@ export interface GroupEventResponseUpdatedPayload {
 export interface WebSocketContextType {
   isConnected: boolean;
   onlineUserIDs: number[];
-  lastMessage: MessagePayload | null;
   typingStatus: TypingPayload | null;
   errorMessage: string | null;
   inviteSearchResults: InviteUserSearchResultsPayload | null;
   lastNotification: NotificationEventPayload | null;
   lastEventResponseUpdate: GroupEventResponseUpdatedPayload | null;
+  subscribeGroupMessages: (listener: (msg: GroupMessagePayload) => void) => () => void;
   subscribeEventResponses: (listener: (event: GroupEventResponseUpdatedPayload) => void) => () => void;
   subscribeNotifications: (
     listener: (notification: NotificationEventPayload) => void,
   ) => () => void;
+  subscribeMessages: (listener: (message: MessagePayload) => void) => () => void;
+  subscribeReadReceipts: (listener: (receipt: MessagesReadPayload) => void) => () => void;
   sendEvent: (type: EventType, payload: unknown) => void;
 }

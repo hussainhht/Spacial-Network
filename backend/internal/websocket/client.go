@@ -102,6 +102,9 @@ func (c *Client) ReadPump() {
 	for {
 		_, message, err := c.Conn.ReadMessage()
 		if err != nil {
+			if websocket.ErrReadLimit == err {
+				log.Printf("ws client %d read limit exceeded: %v", c.UserID, err)
+			}
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 				log.Printf("ws client %d read error: %v", c.UserID, err)
 			}

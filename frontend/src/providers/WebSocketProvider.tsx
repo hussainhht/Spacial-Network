@@ -7,11 +7,13 @@ import React, {
   useRef,
   useState,
   useCallback,
+  useMemo,
 } from "react";
 import { getWebSocketUrl } from "@/lib/api";
 import type {
   EventType,
   MessagePayload,
+  MessagesReadPayload,
   OnlineUsersPayload,
   TypingPayload,
   UserStatusPayload,
@@ -20,6 +22,7 @@ import type {
   InviteUserSearchResultsPayload,
   NotificationEventPayload,
   GroupEventResponseUpdatedPayload,
+  GroupMessagePayload,
 } from "@/lib/websocket/types";
 
 const WebSocketContext = createContext<WebSocketContextType | undefined>(
@@ -29,7 +32,6 @@ const WebSocketContext = createContext<WebSocketContextType | undefined>(
 export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   const [isConnected, setIsConnected] = useState(false);
   const [onlineUserIDs, setOnlineUserIDs] = useState<number[]>([]);
-  const [lastMessage, setLastMessage] = useState<MessagePayload | null>(null);
   const [typingStatus, setTypingStatus] = useState<TypingPayload | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [inviteSearchResults, setInviteSearchResults] =
@@ -38,6 +40,22 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     useState<NotificationEventPayload | null>(null);
   const [lastEventResponseUpdate, setLastEventResponseUpdate] =
     useState<GroupEventResponseUpdatedPayload | null>(null);
+
+  const messageListeners = useRef(new Set<(message: MessagePayload) => void>());
+  const subscribeMessages = useCallback((listener: (message: MessagePayload) => void) => {
+    messageListeners.current.add(listener);
+    return () => { messageListeners.current.delete(listener); };
+  }, []);
+  const readReceiptListeners = useRef(new Set<(receipt: MessagesReadPayload) => void>());
+  const subscribeReadReceipts = useCallback((listener: (receipt: MessagesReadPayload) => void) => {
+    readReceiptListeners.current.add(listener);
+    return () => { readReceiptListeners.current.delete(listener); };
+  }, []);
+  const groupMessageListeners = useRef(new Set<(msg: GroupMessagePayload) => void>());
+  const subscribeGroupMessages = useCallback((listener: (msg: GroupMessagePayload) => void) => {
+    groupMessageListeners.current.add(listener);
+    return () => { groupMessageListeners.current.delete(listener); };
+  }, []);
 
   const eventResponseListeners = useRef(new Set<(event: GroupEventResponseUpdatedPayload) => void>());
   const subscribeEventResponses = useCallback((listener: (event: GroupEventResponseUpdatedPayload) => void) => {
@@ -63,8 +81,9 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     null,
   );
   const isConnectingRef = useRef(false);
+  const pendingQueueRef = useRef<Array<{ type: EventType; payload: unknown }>>([]);
 
-  const connect = useCallback(() => {
+  const connect = useCallback(function connectSocket() {
     if (typeof window === "undefined") return;
 
     if (
@@ -90,15 +109,29 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
           clearTimeout(reconnectTimeoutRef.current);
           reconnectTimeoutRef.current = null;
         }
+
+        // Flush any queued events
+        if (pendingQueueRef.current.length > 0) {
+          const queued = [...pendingQueueRef.current];
+          pendingQueueRef.current = [];
+          for (const item of queued) {
+            try {
+              ws.send(JSON.stringify(item));
+            } catch (err) {
+              console.error("Failed to send queued WebSocket event:", err);
+            }
+          }
+        }
       };
 
       ws.onclose = () => {
         isConnectingRef.current = false;
         setIsConnected(false);
+        socketRef.current = null;
         if (reconnectTimeoutRef.current) {
           clearTimeout(reconnectTimeoutRef.current);
         }
-        reconnectTimeoutRef.current = setTimeout(connect, 300);
+        reconnectTimeoutRef.current = setTimeout(connectSocket, 1500);
       };
 
       ws.onerror = () => {
@@ -130,11 +163,21 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
               break;
             }
             case "private_message":
-              setLastMessage(data.payload as MessagePayload);
+              messageListeners.current.forEach((listener) => listener(data.payload as MessagePayload));
               setErrorMessage(null);
               break;
+            case "group_message": {
+              const groupMsg = data.payload as GroupMessagePayload;
+              groupMessageListeners.current.forEach((listener) =>
+                listener(groupMsg)
+              );
+              break;
+            }
             case "typing":
               setTypingStatus(data.payload as TypingPayload);
+              break;
+            case "messages_read":
+              readReceiptListeners.current.forEach((listener) => listener(data.payload as MessagesReadPayload));
               break;
             case "invite_user_search_results":
               setInviteSearchResults(
@@ -195,47 +238,66 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   // recreate this function, and any consumer effect that depends on it
   // (like a debounced search) would spuriously re-fire on every message.
   const sendEvent = useCallback(
-    function sendEvent(type: EventType, payload: unknown) {
-      if (
-        !socketRef.current ||
-        socketRef.current.readyState !== WebSocket.OPEN
-      ) {
-        if (socketRef.current?.readyState === WebSocket.CONNECTING) {
-          // If connecting, retry in 500ms
-          setTimeout(() => sendEvent(type, payload), 500);
-          return;
+    (type: EventType, payload: unknown) => {
+      const eventItem = { type, payload };
+
+      if (!socketRef.current || socketRef.current.readyState !== WebSocket.OPEN) {
+        // Queue the event so it is sent as soon as the connection is open
+        pendingQueueRef.current.push(eventItem);
+
+        if (!socketRef.current || socketRef.current.readyState === WebSocket.CLOSED) {
+          connect();
         }
-        console.warn(
-          "WebSocket is not connected (readyState:",
-          socketRef.current?.readyState,
-          ")",
-        );
-        setErrorMessage("WebSocket is not connected. Reconnecting...");
-        connect();
         return;
       }
+
       setErrorMessage(null);
-      socketRef.current.send(JSON.stringify({ type, payload }));
+      try {
+        socketRef.current.send(JSON.stringify(eventItem));
+      } catch (err) {
+        console.error("Failed to send WebSocket event:", err);
+        pendingQueueRef.current.push(eventItem);
+        connect();
+      }
     },
     [connect],
   );
 
+  const contextValue = useMemo(
+    () => ({
+      isConnected,
+      onlineUserIDs,
+      typingStatus,
+      errorMessage,
+      inviteSearchResults,
+      lastNotification,
+      lastEventResponseUpdate,
+      subscribeGroupMessages,
+      subscribeEventResponses,
+      subscribeNotifications,
+      subscribeMessages,
+      subscribeReadReceipts,
+      sendEvent,
+    }),
+    [
+      isConnected,
+      onlineUserIDs,
+      typingStatus,
+      errorMessage,
+      inviteSearchResults,
+      lastNotification,
+      lastEventResponseUpdate,
+      subscribeGroupMessages,
+      subscribeNotifications,
+      subscribeMessages,
+      subscribeReadReceipts,
+      subscribeEventResponses,
+      sendEvent,
+    ],
+  );
+
   return (
-    <WebSocketContext.Provider
-      value={{
-        isConnected,
-        onlineUserIDs,
-        lastMessage,
-        typingStatus,
-        errorMessage,
-        inviteSearchResults,
-        lastNotification,
-        lastEventResponseUpdate,
-        subscribeNotifications,
-        subscribeEventResponses,
-        sendEvent,
-      }}
-    >
+    <WebSocketContext.Provider value={contextValue}>
       {children}
     </WebSocketContext.Provider>
   );

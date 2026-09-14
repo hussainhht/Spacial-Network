@@ -1,0 +1,66 @@
+.planetLayer {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.planetFrame {
+  position: absolute;
+  top: clamp(72px, 8vh, 112px);
+  right: clamp(-280px, -12vw, -112px);
+  width: clamp(600px, 58vw, 960px);
+  aspect-ratio: 1;
+  opacity: 0.82;
+  pointer-events: none;
+}
+
+/*
+  The canvas renders at 160% of .planetFrame's box, centered on it, so the
+  Moon's orbit has room to clear the render area instead of being cut at
+  the edge. PlanetBackground.tsx moves the camera back by the same 1.6x
+  factor, which keeps Earth (and the Moon) the same apparent size/position
+  as before - only the transparent margin around them grows.
+*/
+.planetCanvasWrapper {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 160%;
+  height: 160%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.planetFrame canvas {
+  display: block;
+  pointer-events: none;
+}
+
+@media (max-width: 1100px) {
+  .planetFrame {
+    top: 88px;
+    right: clamp(-220px, -16vw, -96px);
+    width: clamp(500px, 65vw, 720px);
+    opacity: 0.74;
+  }
+}
+
+@media (max-width: 760px) {
+  .planetFrame {
+    top: 112px;
+    right: -40vw;
+    width: min(126vw, 540px);
+    opacity: 0.62;
+  }
+}
+
+@media (max-height: 430px) {
+  .planetFrame {
+    top: 64px;
+    right: -14vw;
+    width: min(74vw, 430px);
+    opacity: 0.58;
+  }
+}

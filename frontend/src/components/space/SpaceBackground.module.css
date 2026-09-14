@@ -1,0 +1,73 @@
+/* Shared by the app shell: no canvas, texture downloads or animation loop. */
+.spaceContainer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse at 78% 18%, #0c1628 0%, transparent 52%),
+    radial-gradient(ellipse at 18% 82%, #0b1020 0%, transparent 55%),
+    linear-gradient(155deg, #03050b 5%, #060b15 48%, #020409 100%);
+}
+
+/* Overlapping, asymmetrical gradients supply soft dust without large blur filters. */
+.cosmicHazeLayer {
+  position: absolute;
+  inset: -4%;
+  background:
+    radial-gradient(ellipse 19% 9% at 81% 27%, #728da51c, transparent 74%),
+    radial-gradient(ellipse 29% 13% at 69% 34%, #58758e25, transparent 73%),
+    radial-gradient(ellipse 22% 12% at 54% 44%, #56667e20, transparent 74%),
+    radial-gradient(ellipse 30% 15% at 34% 58%, #536d8c24, transparent 75%),
+    radial-gradient(ellipse 24% 12% at 17% 70%, #65748f1c, transparent 72%),
+    radial-gradient(ellipse 35% 23% at 84% 22%, #384a7629, transparent 76%),
+    radial-gradient(ellipse 24% 20% at 25% 61%, #62507616, transparent 74%);
+  animation: hazeDrift 110s ease-in-out infinite alternate;
+}
+
+/* Dark pockets interrupt the luminous band instead of producing a smooth stripe. */
+.dustVeil {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 22% 5% at 73% 40%, #02050bd9, transparent 74%),
+    radial-gradient(ellipse 17% 7% at 46% 49%, #03060bc4, transparent 76%),
+    radial-gradient(ellipse 20% 6% at 27% 65%, #03060bba, transparent 72%);
+}
+
+.starSvg { width: 100%; height: 100%; display: block; }
+.layerDistant, .layerMedium, .layerBright { position: absolute; inset: -12px; }
+.layerDistant { opacity: 0.88; }
+.layerMedium { opacity: 0.8; }
+.layerBright { opacity: 0.85; animation: foregroundDrift 120s ease-in-out infinite alternate; }
+
+/* Animate a small minority of points; the bulk of the sky stays still.
+   Fill opacity modulates each path without overriding its base brightness. */
+.twinkleA { animation: twinkleA 19s ease-in-out infinite alternate; }
+.twinkleB { animation: twinkleB 31s ease-in-out -11s infinite alternate; }
+
+.vignetteOverlay {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 54% 48%, transparent 28%, #02040a66 100%),
+    linear-gradient(180deg, #02040a38, transparent 22%, transparent 80%, #02040a40);
+}
+
+@keyframes hazeDrift {
+  from { transform: translate3d(-0.4%, 0.2%, 0); opacity: 0.78; }
+  to { transform: translate3d(0.6%, -0.3%, 0); opacity: 1; }
+}
+@keyframes foregroundDrift {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(3px, -2px, 0); }
+}
+@keyframes twinkleA { from { fill-opacity: 0.68; } to { fill-opacity: 1; } }
+@keyframes twinkleB { from { fill-opacity: 1; } to { fill-opacity: 0.72; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .spaceContainer *, .spaceContainer *::before, .spaceContainer *::after {
+    animation: none !important;
+  }
+}

@@ -1,6 +1,10 @@
 package posts
 
-import "social/internal/validation"
+import (
+	"errors"
+
+	"social/internal/validation"
+)
 
 const (
 	MaxTitleLength   = 200
@@ -24,6 +28,28 @@ func ValidateContent(content string) (string, error) {
 	})
 }
 
+func ValidateVisibility(visibility string) error {
+	switch visibility {
+	case VisibilityPublic, VisibilityFollowers, VisibilityCustom:
+		return nil
+	default:
+		return errors.New("visibility must be one of: public, followers, custom")
+	}
+}
+
+// ValidateFeedScope normalizes and validates the "feed" query parameter for
+// ListPostsHandler. An empty value defaults to FeedAll.
+func ValidateFeedScope(feed string) (string, error) {
+	switch feed {
+	case "":
+		return FeedAll, nil
+	case FeedAll, FeedFollowing, FeedFriends:
+		return feed, nil
+	default:
+		return "", errors.New("feed must be one of: all, following, friends")
+	}
+}
+
 func ValidateNewPostRequest(req *NewPostRequest) error {
 	var err error
 
@@ -33,7 +59,11 @@ func ValidateNewPostRequest(req *NewPostRequest) error {
 	}
 
 	req.Content, err = ValidateContent(req.Content)
-	return err
+	if err != nil {
+		return err
+	}
+
+	return ValidateVisibility(req.Visibility)
 }
 
 func ValidateEditPostRequest(req *EditPostRequest) error {
@@ -45,5 +75,9 @@ func ValidateEditPostRequest(req *EditPostRequest) error {
 	}
 
 	req.Content, err = ValidateContent(req.Content)
-	return err
+	if err != nil {
+		return err
+	}
+
+	return ValidateVisibility(req.Visibility)
 }

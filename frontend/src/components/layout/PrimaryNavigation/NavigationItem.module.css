@@ -1,0 +1,91 @@
+.link {
+  color: var(--nav-label-muted);
+  text-decoration: none;
+  font: 500 14px/1.4 ui-sans-serif, system-ui, sans-serif;
+  transition: color 180ms ease;
+}
+.node {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: var(--nav-node-size);
+  height: var(--nav-node-size);
+  border-radius: 50%;
+  border: 1px solid var(--planet-border-strong);
+  background: var(--nav-node-bg);
+  color: var(--space-text-label);
+  box-shadow: 0 0 0 3px var(--planet-surface-tint), 0 0 18px var(--planet-glow);
+  transition: border-color 200ms ease, box-shadow 200ms ease, color 200ms ease, transform 200ms ease;
+}
+.node svg {
+  width: var(--nav-icon-size);
+  height: var(--nav-icon-size);
+}
+.emphasis .node {
+  width: var(--nav-create-size);
+  height: var(--nav-create-size);
+  border-color: var(--planet-accent);
+  color: var(--space-text-heading);
+  background: radial-gradient(circle at 35% 25%, var(--planet-accent-soft), var(--nav-node-bg) 75%);
+  box-shadow: 0 0 0 4px var(--planet-surface-tint), 0 0 22px var(--planet-glow);
+}
+.label {
+  position: relative;
+  transition: transform 180ms ease;
+}
+.link[aria-current="page"] {
+  color: var(--nav-label);
+}
+.link[aria-current="page"] .node {
+  border-color: var(--planet-accent);
+  color: var(--planet-accent-hover);
+  background: radial-gradient(circle at 35% 25%, var(--planet-accent-soft), var(--nav-node-bg) 75%);
+  box-shadow: 0 0 0 4px var(--planet-surface-tint), 0 0 24px var(--planet-glow);
+}
+.link[aria-current="page"] .node::after {
+  content: "";
+  position: absolute;
+  inset: -7px;
+  border: 1px dashed var(--planet-border-strong);
+  border-radius: 50%;
+  pointer-events: none;
+}
+.link[aria-current="page"] .label::after {
+  content: "";
+  position: absolute;
+  bottom: -5px;
+  left: 0;
+  width: 18px;
+  height: 1px;
+  background: var(--planet-accent);
+  pointer-events: none;
+}
+.link:focus-visible {
+  outline: 2px solid var(--planet-focus-ring);
+  outline-offset: 5px;
+}
+@media (hover: hover) {
+  .link:hover {
+    color: var(--space-text-heading);
+  }
+  .link:hover .node {
+    transform: scale(1.04);
+    border-color: var(--planet-accent);
+  }
+  .link[aria-current="page"]:hover .node {
+    border-color: var(--planet-accent-hover);
+  }
+  .link:hover .label {
+    transform: translateX(2px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .link, .node, .label {
+    transition: none;
+  }
+  .link:hover .node, .link:hover .label {
+    transform: none;
+  }
+}

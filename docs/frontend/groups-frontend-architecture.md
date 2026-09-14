@@ -9,12 +9,12 @@
 > `features/groups/api/groups.ts`, `features/groups/hooks/useGroupData.ts`,
 > and `features/groups/hooks/useGroupAction.ts`. Treat every mention of
 > "mock", "simulated", or `localStorage`-backed join requests below as
-> historical context for *why* the code evolved the way it did, not as a
+> historical context for _why_ the code evolved the way it did, not as a
 > description of current behavior.
 
 This document explains, in detail, how the Groups feature on the frontend
 (`frontend/src/app/groups/` and `frontend/src/features/groups/`) is built and
-*why* it's organized the way it is. It's written for someone learning
+_why_ it's organized the way it is. It's written for someone learning
 Next.js + React + TypeScript, not just as a reference — every claim below is
 checked against the actual code, not assumed.
 
@@ -24,12 +24,12 @@ checked against the actual code, not assumed.
 
 ### Why two folders instead of one?
 
-Look at what each folder is *for*:
+Look at what each folder is _for_:
 
 - **`app/`** — this is Next.js's **routing** folder. Every folder inside
   `app/` becomes a URL. Next.js looks at this folder structure to decide
   what page loads for what address in the browser. It does not care what's
-  *inside* the page — only that a `page.tsx` exists at a given path.
+  _inside_ the page — only that a `page.tsx` exists at a given path.
 - **`features/groups/`** — this is a folder invented by convention, not by
   Next.js. Next.js has no idea it exists. It's where the actual "Groups"
   feature — its UI pieces, its data-fetching functions, its TypeScript
@@ -38,15 +38,15 @@ Look at what each folder is *for*:
 Why not just write everything inside `app/groups/page.tsx`? Because a route
 file has one job: **be an address that Next.js can find**. If all the logic
 is stuffed into it, the file becomes a dumping ground, and — more
-importantly — Next.js has strict rules about *how* route files can behave
+importantly — Next.js has strict rules about _how_ route files can behave
 (see [Section 8](#8-server-components-vs-client-components)), which
 conflicts with writing interactive UI code freely.
 
 So the split is:
 
-| Folder | Owns |
-|---|---|
-| `app/` | **Where** things live (URLs, layouts, routing) |
+| Folder             | Owns                                                                         |
+| ------------------ | ---------------------------------------------------------------------------- |
+| `app/`             | **Where** things live (URLs, layouts, routing)                               |
 | `features/groups/` | **What** the Groups feature actually does (components, data fetching, types) |
 
 `app/groups/page.tsx` is deliberately almost empty — it just says "when
@@ -66,10 +66,10 @@ flowchart TD
     Fetch --> Backend["Go Backend\nhandler.go -> service.go -> repository.go -> SQLite"]
 ```
 
-TypeScript's role doesn't sit in this vertical chain — it sits *beside* it.
+TypeScript's role doesn't sit in this vertical chain — it sits _beside_ it.
 Every arrow above carries data (a list of groups, a group ID, a form's
 title/description), and `features/groups/types/group.ts` is the shared
-vocabulary that describes the *shape* of that data so every file in the
+vocabulary that describes the _shape_ of that data so every file in the
 chain agrees on what a "Group" looks like. TypeScript checks this agreement
 at compile time, before the code ever runs.
 
@@ -92,7 +92,7 @@ export default function GroupsPage() {
 }
 ```
 
-- **What it represents**: this file *is* the route. In the App Router, a
+- **What it represents**: this file _is_ the route. In the App Router, a
   file literally named `page.tsx` inside a folder is what makes that folder
   a visitable URL.
 - **What URL creates it**: `app/groups/page.tsx` → `/groups`. The folder
@@ -119,7 +119,11 @@ export default function GroupsPage() {
 ```tsx
 import "./groups.css";
 
-export default function GroupsLayout({ children }: { children: React.ReactNode }) {
+export default function GroupsLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return <main className="groups-shell">{children}</main>;
 }
 ```
@@ -145,8 +149,8 @@ export default function GroupsLayout({ children }: { children: React.ReactNode }
   layouts automatically based on folder nesting; there's no manual
   "attach this layout" step.
 - **How it differs from `src/app/layout.tsx`**: the root layout applies to
-  the *entire app* — it has `<html>`/`<body>` and is mandatory.
-  `app/groups/layout.tsx` is a *nested* layout — it only applies inside
+  the _entire app_ — it has `<html>`/`<body>` and is mandatory.
+  `app/groups/layout.tsx` is a _nested_ layout — it only applies inside
   `/groups/*`, and renders **inside** the root layout's `<body>`, not
   instead of it:
 
@@ -160,7 +164,7 @@ RootLayout (<html><body>)
 ### `src/app/groups/create/page.tsx`
 
 ```tsx
-import CreateGroupForm from "@/features/groups/components/CreateGroupForm";
+import CreateGroupForm from "@/features/groups/components/management/CreateGroupForm";
 
 export default function CreateGroupPage() {
   return <CreateGroupForm />;
@@ -184,7 +188,9 @@ interface GroupDetailsPageProps {
   params: Promise<{ groupId: string }>;
 }
 
-export default async function GroupDetailsPage({ params }: GroupDetailsPageProps) {
+export default async function GroupDetailsPage({
+  params,
+}: GroupDetailsPageProps) {
   const { groupId } = await params;
   const parsedId = Number(groupId);
 
@@ -198,7 +204,7 @@ export default async function GroupDetailsPage({ params }: GroupDetailsPageProps
 
 **What `[groupId]` means**: square brackets around a folder name create a
 **dynamic route segment**. Instead of one fixed URL, this folder matches
-*any* value in that position:
+_any_ value in that position:
 
 ```text
 URL                  →  groupId (as received by the page)
@@ -306,9 +312,9 @@ live together. This gives:
 - **Clear ownership** — matches the project's own docs, where one person
   owns the entire Groups feature end-to-end.
 
-This doesn't mean *everything* shared goes away — if two features truly
+This doesn't mean _everything_ shared goes away — if two features truly
 need the same generic button, that could live in a top-level
-`components/ui/` folder later. But feature-*specific* things (a `GroupCard`
+`components/ui/` folder later. But feature-_specific_ things (a `GroupCard`
 is meaningless outside Groups) stay inside that feature's folder.
 
 ---
@@ -329,7 +335,7 @@ is meaningless outside Groups) stay inside that feature's folder.
 5. **Props**: none.
 6. **TypeScript types used**: a local
    `interface FormErrors { title?: string; description?: string }` — the
-   `?` makes each field *optional*, since most of the time there are no
+   `?` makes each field _optional_, since most of the time there are no
    errors at all.
 7. **State**: five `useState` calls — `title`, `description`, `errors`,
    `submitError`, `submitting`.
@@ -394,19 +400,19 @@ is meaningless outside Groups) stay inside that feature's folder.
 9. **Client or Server**: not marked `"use client"` itself (see
    [Section 8](#8-server-components-vs-client-components) for why that's
    fine).
-11. **Events**: none directly — forwards a callback (`onRequestSent`) down
+10. **Events**: none directly — forwards a callback (`onRequestSent`) down
     into `GroupMembershipAction`, where the actual click happens.
-12. **Data in**: the full `group` object.
-13. **Renders**: cover image or placeholder, `<h1>` title, member count
+11. **Data in**: the full `group` object.
+12. **Renders**: cover image or placeholder, `<h1>` title, member count
     text, "Created by X" text, and `<GroupMembershipAction variant="detail">`.
-14. **If it didn't exist**: its markup would just be inlined directly into
+13. **If it didn't exist**: its markup would just be inlined directly into
     `GroupDetailsContent`, mixing "how do I fetch this group" with "how do
     I lay out its header."
 
 ### `GroupMembershipAction.tsx`
 
-1. **Responsibility**: the single place that decides *which button to
-   show* based on `membershipState`, and what happens when it's clicked.
+1. **Responsibility**: the single place that decides _which button to
+   show_ based on `membershipState`, and what happens when it's clicked.
 2. **Why separate**: this exact decision (not_member → "Request to Join",
    pending → disabled "Request Pending", member → disabled "Joined",
    creator → disabled "Creator") is needed in **two** places —
@@ -421,7 +427,7 @@ is meaningless outside Groups) stay inside that feature's folder.
    is disabled while the mock request runs).
 8. **Hooks**: `useState`.
 9. **Client or Server**: **Client Component**.
-10. **Why**: it's the one component that actually *performs an action* —
+10. **Why**: it's the one component that actually _performs an action_ —
     an `onClick` that calls an async function and updates local state.
     Textbook reason for `"use client"`.
 11. **Events**: clicking the button (only does something when
@@ -447,13 +453,13 @@ is meaningless outside Groups) stay inside that feature's folder.
 6. **Types used**: `Group`, `MembershipState`, React's built-in
    `ReactNode` ("anything React can render").
 7. **State/hooks**: none.
-9. **Client or Server**: not a Client Component itself.
-11. **Events**: none of its own — `onMembershipChange` is a pass-through
-    prop handed to each `GroupCard`.
-12. **Data in**: the already filtered/searched array of groups.
-13. **Renders**: either the `emptyState` node, or a `<div className="groups-grid">`
+8. **Client or Server**: not a Client Component itself.
+9. **Events**: none of its own — `onMembershipChange` is a pass-through
+   prop handed to each `GroupCard`.
+10. **Data in**: the already filtered/searched array of groups.
+11. **Renders**: either the `emptyState` node, or a `<div className="groups-grid">`
     of `GroupCard`s.
-14. **If it didn't exist**: the "is the list empty?" check and `.map()`
+12. **If it didn't exist**: the "is the list empty?" check and `.map()`
     loop would live directly inside `GroupsPageContent`.
 
 ### `GroupsPageContent.tsx`
@@ -504,21 +510,21 @@ GroupsPageContent
 1. **Responsibility**: render the search `<input>` and report every
    keystroke to its parent.
 2. **Why separate**: isolates the search box's markup/accessibility (the
-   visually-hidden `<label>`) from the filtering *logic*, which lives in
+   visually-hidden `<label>`) from the filtering _logic_, which lives in
    `GroupsPageContent`.
 3. **Who imports it**: only `GroupsPageContent.tsx`.
-5. **Props**: `{ value: string; onChange: (value: string) => void }`.
-6. **Types**: plain `string` and a function type.
-7/8. **No state, no hooks** — this is a **controlled input**: the parent
+4. **Props**: `{ value: string; onChange: (value: string) => void }`.
+5. **Types**: plain `string` and a function type.
+   7/8. **No state, no hooks** — this is a **controlled input**: the parent
    owns the actual `searchTerm` state; this component just displays
    whatever `value` it's given and calls `onChange` on every keystroke.
-9. **Client or Server**: not marked `"use client"` itself — see
+6. **Client or Server**: not marked `"use client"` itself — see
    [Section 8](#8-server-components-vs-client-components).
-11. **Events**: `onChange` on the `<input>`.
-12. **Data in**: the current search string.
-13. **Renders**: a hidden `<label>` (for screen readers) + one
-    `<input type="search">`.
-14. **If it didn't exist**: the search `<input>` and its label would be
+7. **Events**: `onChange` on the `<input>`.
+8. **Data in**: the current search string.
+9. **Renders**: a hidden `<label>` (for screen readers) + one
+   `<input type="search">`.
+10. **If it didn't exist**: the search `<input>` and its label would be
     inlined into `GroupsPageContent`, and couldn't be reused elsewhere.
 
 ### `GroupsTabs.tsx`
@@ -526,17 +532,17 @@ GroupsPageContent
 1. **Responsibility**: render the three tab buttons (All Groups / My
    Groups / Joined) and report which one was clicked.
 2. **Why separate**: display logic here, filtering decision (what "My
-   Groups" actually *means*) in `GroupsPageContent`.
+   Groups" actually _means_) in `GroupsPageContent`.
 3. **Who imports it**: only `GroupsPageContent.tsx`.
-5. **Props**: `{ active: GroupsTab; onChange: (tab: GroupsTab) => void }`.
-6. **Types**: `GroupsTab` (union: `"all" | "mine" | "joined"`).
-7/8. **No state** — `active` is passed in, not tracked internally.
-9. **Client or Server**: not marked `"use client"`.
-11. **Events**: `onClick` on each tab button.
-12. **Data in**: which tab is currently active.
-13. **Renders**: a `<div role="tablist">` with one `<button role="tab">`
-    per entry in a hardcoded `TABS` array.
-14. **If it didn't exist**: same story — this markup would move into
+4. **Props**: `{ active: GroupsTab; onChange: (tab: GroupsTab) => void }`.
+5. **Types**: `GroupsTab` (union: `"all" | "mine" | "joined"`).
+   7/8. **No state** — `active` is passed in, not tracked internally.
+6. **Client or Server**: not marked `"use client"`.
+7. **Events**: `onClick` on each tab button.
+8. **Data in**: which tab is currently active.
+9. **Renders**: a `<div role="tablist">` with one `<button role="tab">`
+   per entry in a hardcoded `TABS` array.
+10. **If it didn't exist**: same story — this markup would move into
     `GroupsPageContent`.
 
 ### `MemberItem.tsx`
@@ -546,15 +552,15 @@ GroupsPageContent
 2. **Why separate**: the smallest reusable unit — `MembersList` repeats
    this markup once per member.
 3. **Who imports it**: only `MembersList.tsx`.
-5. **Props**: `{ member: GroupMember }`.
-6. **Types**: `GroupMember`.
-7/8. **No state, no hooks.**
-9. **Client or Server**: not a Client Component.
-11. **Events**: none.
-12. **Data in**: one member object.
-13. **Renders**: an `<li>` with a circular initial avatar, username, and
-    "Creator"/"Member" text.
-14. **If it didn't exist**: `MembersList` would inline this markup inside
+4. **Props**: `{ member: GroupMember }`.
+5. **Types**: `GroupMember`.
+   7/8. **No state, no hooks.**
+6. **Client or Server**: not a Client Component.
+7. **Events**: none.
+8. **Data in**: one member object.
+9. **Renders**: an `<li>` with a circular initial avatar, username, and
+   "Creator"/"Member" text.
+10. **If it didn't exist**: `MembersList` would inline this markup inside
     its own `.map()`.
 
 ### `MembersList.tsx`
@@ -569,14 +575,14 @@ GroupsPageContent
 4. **What it imports**: `MemberItem`.
 5. **Props**: `{ members: GroupMember[] }`.
 6. **Types**: `GroupMember[]`.
-7/8. **No state, no hooks** — sorting happens fresh on every render with a
+   7/8. **No state, no hooks** — sorting happens fresh on every render with a
    plain `.sort()` call, not memoized state.
-9. **Client or Server**: not a Client Component.
-11. **Events**: none.
-12. **Data in**: the full members array for one group.
-13. **Renders**: either `"No members yet."` or a `<ul>` of sorted
+7. **Client or Server**: not a Client Component.
+8. **Events**: none.
+9. **Data in**: the full members array for one group.
+10. **Renders**: either `"No members yet."` or a `<ul>` of sorted
     `MemberItem`s.
-14. **If it didn't exist**: the sort-then-map logic would live inside
+11. **If it didn't exist**: the sort-then-map logic would live inside
     `GroupDetailsContent`.
 
 ### `StateMessage.tsx`
@@ -589,23 +595,23 @@ GroupsPageContent
    joined any groups yet.") would need its own bespoke markup.
 3. **Who imports it**: `GroupsPageContent.tsx`, `GroupDetailsContent.tsx`,
    and `app/groups/[groupId]/page.tsx` (for the invalid-ID case).
-5. **Props**: `{ title: string; description?: ReactNode; action?: ReactNode }`.
-6. **Types**: React's `ReactNode` for the two optional slots — meaning
+4. **Props**: `{ title: string; description?: ReactNode; action?: ReactNode }`.
+5. **Types**: React's `ReactNode` for the two optional slots — meaning
    "the caller can pass in literally anything renderable," which is why
    one call site passes a `<button>` and another passes a `<div>`
    containing two links.
-7/8. **No state, no hooks.**
-9. **Client or Server**: not a Client Component itself — notably it's
+   7/8. **No state, no hooks.**
+6. **Client or Server**: not a Client Component itself — notably it's
    imported directly by `app/groups/[groupId]/page.tsx`, a genuine Server
-   Component, which works precisely *because* `StateMessage` has no hooks
+   Component, which works precisely _because_ `StateMessage` has no hooks
    or event handlers of its own.
-11. **Events**: none of its own — whatever `action` it's given might
-    contain a button with a click handler, but that's the caller's
-    concern.
-12. **Data in**: a title string plus two optional "slots."
-13. **Renders**: `<div className="groups-state-message">` with the title,
-    optional description, and optional action.
-14. **If it didn't exist**: every loading/error/empty case across four
+7. **Events**: none of its own — whatever `action` it's given might
+   contain a button with a click handler, but that's the caller's
+   concern.
+8. **Data in**: a title string plus two optional "slots."
+9. **Renders**: `<div className="groups-state-message">` with the title,
+   optional description, and optional action.
+10. **If it didn't exist**: every loading/error/empty case across four
     different components would duplicate near-identical markup.
 
 ---
@@ -673,16 +679,16 @@ inconsistently. Centralizing all of this in `api/groups.ts` means:
 
 ### Function-by-function map
 
-| Function | HTTP call | Backend endpoint | Purpose |
-|---|---|---|---|
-| `fetchGroupsList()` (private) | `GET` | `/api/groups` | raw list of groups |
-| `fetchGroup(id)` (private) | `GET` | `/api/groups/{id}` | one raw group |
-| `fetchGroupMembers(id)` (private) | `GET` | `/api/groups/{id}/members` | raw member list |
-| `fetchMembership(id)` (private) | `GET` | `/api/groups/{id}/membership` | is the current user a member, and what role? |
-| `createGroup(input)` (exported) | `POST` | `/api/groups` | creates a group, returns its new numeric ID |
-| `listGroupsWithDetails()` (exported) | *(combines the above)* | — | what `GroupsPageContent` actually calls |
-| `getGroupDetails(id)` (exported) | *(combines the above)* | — | what `GroupDetailsContent` actually calls |
-| `requestToJoinGroup(id)` (exported) | none — **mocked** | *(doesn't exist yet)* | see below |
+| Function                             | HTTP call              | Backend endpoint              | Purpose                                      |
+| ------------------------------------ | ---------------------- | ----------------------------- | -------------------------------------------- |
+| `fetchGroupsList()` (private)        | `GET`                  | `/api/groups`                 | raw list of groups                           |
+| `fetchGroup(id)` (private)           | `GET`                  | `/api/groups/{id}`            | one raw group                                |
+| `fetchGroupMembers(id)` (private)    | `GET`                  | `/api/groups/{id}/members`    | raw member list                              |
+| `fetchMembership(id)` (private)      | `GET`                  | `/api/groups/{id}/membership` | is the current user a member, and what role? |
+| `createGroup(input)` (exported)      | `POST`                 | `/api/groups`                 | creates a group, returns its new numeric ID  |
+| `listGroupsWithDetails()` (exported) | _(combines the above)_ | —                             | what `GroupsPageContent` actually calls      |
+| `getGroupDetails(id)` (exported)     | _(combines the above)_ | —                             | what `GroupDetailsContent` actually calls    |
+| `requestToJoinGroup(id)` (exported)  | none — **mocked**      | _(doesn't exist yet)_         | see below                                    |
 
 The four `fetch...` functions are private simply by **not being exported**
 — nothing outside this file can call them directly. Components only ever
@@ -735,12 +741,12 @@ So `requestToJoinGroup(groupId)` in `groups.ts` doesn't make a network call
 at all — it calls `markJoinRequestPending(groupId)`, which saves the
 group's ID into the browser's `localStorage` under the key
 `"social-network:mock-group-join-requests"`. When deciding what membership
-state to show, `resolveMembershipState()` checks: *is the backend saying
-"not a member"? If so, is this ID sitting in that localStorage list?* If
+state to show, `resolveMembershipState()` checks: _is the backend saying
+"not a member"? If so, is this ID sitting in that localStorage list?_ If
 yes → show `"pending"`.
 
-This lets anyone testing the UI click "Request to Join" and actually *see*
-the button change to "Request Pending," and see it *stay* pending across a
+This lets anyone testing the UI click "Request to Join" and actually _see_
+the button change to "Request Pending," and see it _stay_ pending across a
 page reload — without needing the backend team to have finished the
 join-request feature first. That's the whole value of mock data: it
 decouples frontend progress from backend progress.
@@ -782,7 +788,7 @@ export interface GroupMember {
 ```
 
 **`MembershipState`** — a **union type** of four exact string literals. It
-does *not* mean "any string" — TypeScript rejects `"not_member2"` or
+does _not_ mean "any string" — TypeScript rejects `"not_member2"` or
 `"Member"` (wrong case) anywhere this type is expected. There are
 genuinely only four valid values, and this lets TypeScript catch typos at
 compile time and lets the `switch` in `GroupMembershipAction` be checked
@@ -793,7 +799,7 @@ components.
 **`GroupsTab`** — same idea, three literals, used only for the tab state
 (`GroupsPageContent`'s `activeTab`, `GroupsTabs`'s props).
 
-**`interface Group`** — describes the *shape* every group object must
+**`interface Group`** — describes the _shape_ every group object must
 have, once the frontend has cleaned it up (this is **not** the backend's
 raw JSON — that's the private `ApiGroup` type in `groups.ts`). Field by
 field:
@@ -832,9 +838,9 @@ const example: Group = {
 
 **`interface GroupMember`** — one row in a group's member list: `userId`,
 `username`, a `role` (a smaller two-value union, `"creator" | "member"` —
-*not* the same type as `MembershipState`, even though they overlap,
+_not_ the same type as `MembershipState`, even though they overlap,
 because a member row can never be `"pending"` or `"not_member"` — those
-states only make sense from the *current user's* point of view, not as a
+states only make sense from the _current user's_ point of view, not as a
 property of a member row), and `joinedAt`.
 
 **`interface` vs `type` here**: both `Group` and `GroupMember` use
@@ -850,10 +856,10 @@ anything else (unions, aliases) → `type`.
   code (TypeScript compiles it away — it doesn't exist at runtime).
 - **Props** are the actual values a component receives when rendered —
   e.g. `GroupCardProps` in `GroupCard.tsx` is an interface describing what
-  props that component accepts; the *props themselves* are the real
+  props that component accepts; the _props themselves_ are the real
   object passed in like `<GroupCard group={someGroup} />`.
 - An **API response** is real JSON data that arrived over the network at
-  runtime — TypeScript can *say* it should match `ApiGroup`, but that's a
+  runtime — TypeScript can _say_ it should match `ApiGroup`, but that's a
   promise, not a guarantee (if the backend changed its response shape
   tomorrow, TypeScript wouldn't know until the type was updated by hand —
   which is why `groups.ts` has a comment pointing at
@@ -897,7 +903,7 @@ has `"use client"` at the top**. This is not a bug.
 
 `"use client"` doesn't mark an individual component as "interactive." It
 marks a **boundary** in the file dependency graph. Once one file declares
-it, *everything that file imports* — directly or indirectly — is
+it, _everything that file imports_ — directly or indirectly — is
 automatically bundled and treated as client code too, even if those
 imported files never say `"use client"` themselves. Since `GroupsTabs` and
 `GroupsSearch` are only ever imported by `GroupsPageContent` (which does
@@ -909,7 +915,7 @@ Component (like `app/groups/page.tsx`, bypassing `GroupsPageContent`
 entirely), Next.js would fail to build — a function can't be serialized
 across the server→client boundary.
 
-Practical rule for this codebase: a component only needs its *own*
+Practical rule for this codebase: a component only needs its _own_
 `"use client"` line if it might ever be rendered directly by a Server
 Component. Since `GroupsSearch`, `GroupsTabs`, `GroupsGrid`, `GroupCard`,
 `GroupHeader`, `MembersList`, `MemberItem`, and `StateMessage` are all
@@ -919,7 +925,7 @@ directive of their own — the "keep client boundaries small" principle in
 practice.
 
 `StateMessage` is the cleanest proof: it's used both inside client trees
-*and* directly by `app/groups/[groupId]/page.tsx`, a real Server
+_and_ directly by `app/groups/[groupId]/page.tsx`, a real Server
 Component — which works precisely because `StateMessage` has zero hooks
 and zero event handlers of its own.
 
@@ -990,7 +996,7 @@ request approval is a separate, not-yet-implemented task).
 **Components** — every file in `components/` is a function that returns
 JSX (e.g. `MemberItem.tsx` is the smallest one).
 
-**Props** — data passed *into* a component from its parent
+**Props** — data passed _into_ a component from its parent
 (`GroupCard.tsx`):
 
 ```tsx
@@ -1005,7 +1011,7 @@ export default function GroupCard({ group, onMembershipChange }: GroupCardProps)
 can change itself. `CreateGroupForm.tsx` has five: `title`, `description`,
 `errors`, `submitError`, `submitting`.
 
-**`useEffect`** — run code *after* a render, typically to talk to the
+**`useEffect`** — run code _after_ a render, typically to talk to the
 outside world (here: fetch data). `GroupsPageContent.tsx`:
 
 ```tsx
@@ -1019,13 +1025,13 @@ useEffect(() => {
 ```
 
 The `cancelled` flag is an important pattern: if the user clicks "Try
-Again" (changing `reloadToken`, which re-runs this effect) *before* the
+Again" (changing `reloadToken`, which re-runs this effect) _before_ the
 first fetch has finished, the cleanup function marks the old, now-outdated
 request as cancelled, so its `.then()` won't overwrite fresher state with
 stale data.
 
 **Derived state via `useMemo`** — instead of storing `visibleGroups` in
-its own `useState` (which would then need manual syncing), it's *computed*
+its own `useState` (which would then need manual syncing), it's _computed_
 from other state every render, only recalculating when its dependencies
 change:
 
@@ -1033,8 +1039,11 @@ change:
 const visibleGroups = useMemo(() => {
   const term = searchTerm.trim().toLowerCase();
   if (!term) return tabFilteredGroups;
-  return tabFilteredGroups.filter((group) =>
-    group.title.toLowerCase().includes(term) || group.description.toLowerCase().includes(term));
+  return tabFilteredGroups.filter(
+    (group) =>
+      group.title.toLowerCase().includes(term) ||
+      group.description.toLowerCase().includes(term),
+  );
 }, [tabFilteredGroups, searchTerm]);
 ```
 
@@ -1092,7 +1101,7 @@ return <GroupDetailsContent key={parsedId} groupId={parsedId} />;
 
 Normally `key` is only needed inside `.map()`. Here it's used on a single
 element deliberately: if a user navigates from `/groups/1` straight to
-`/groups/2` via client-side navigation, Next.js would normally *reuse* the
+`/groups/2` via client-side navigation, Next.js would normally _reuse_ the
 same `GroupDetailsContent` instance and just give it a new `groupId` prop.
 Changing `key` tells React "treat this as a completely different
 component" — React throws away the old instance (with its stale `group`/
@@ -1125,7 +1134,7 @@ manual reset code in a `useEffect`.
   `interface XProps { ... }` right above it, e.g. `GroupHeaderProps`,
   `MembersListProps`.
 - **Generics** — `parseJsonResponse<T>(response: Response): Promise<T>` in
-  `groups.ts`. This function doesn't know or care *what* shape of data
+  `groups.ts`. This function doesn't know or care _what_ shape of data
   it's parsing — `T` is a placeholder filled in by whoever calls it:
   `parseJsonResponse<ListGroupsApiResponse>(response)` vs
   `parseJsonResponse<CreateGroupApiResponse>(response)`. One function
@@ -1167,7 +1176,7 @@ manual reset code in a `useEffect`.
   "Back to Groups".
 - **`useRouter` (from `next/navigation`)** — used once, in
   `CreateGroupForm.tsx`, to programmatically navigate (`router.push(...)`)
-  *after* an async action succeeds — something a plain `<Link>` can't do,
+  _after_ an async action succeeds — something a plain `<Link>` can't do,
   since there's no link to click; the navigation only happens as a result
   of code running.
 - **`metadata` export** — `app/groups/page.tsx` and
@@ -1206,7 +1215,7 @@ import GroupsPageContent from "@/features/groups/components/GroupsPageContent";
   on the left is a local choice, not forced by the file).
 - **Named export** — e.g. `export interface Group { ... }` and
   `export type MembershipState = ...` in `types/group.ts`. A file can have
-  *many* named exports, imported using their exact name in curly braces:
+  _many_ named exports, imported using their exact name in curly braces:
   `import type { Group, GroupMember, MembershipState } from "../types/group";`.
 - **`import type`** — tells TypeScript "I only need this for
   type-checking, not at runtime" — the compiler strips these imports out
@@ -1217,7 +1226,7 @@ import GroupsPageContent from "@/features/groups/components/GroupsPageContent";
 
 Convention in this codebase: files in `app/` import from
 `features/groups/` using the `@/` alias (crossing a folder boundary),
-while files *inside* `features/groups/` import each other using relative
+while files _inside_ `features/groups/` import each other using relative
 paths like `"../types/group"` or `"./GroupCard"` (staying within the same
 feature). Deliberate, not accidental.
 
@@ -1225,29 +1234,29 @@ feature). Deliberate, not accidental.
 
 ## 14. File responsibility
 
-| File | Responsibility | Should contain | Should NOT contain |
-|---|---|---|---|
-| `app/groups/page.tsx` | Route entry for `/groups` | One import + one render | State, fetching, markup |
-| `app/groups/layout.tsx` | Shared wrapper for all `/groups/*` routes | CSS import, `<main>` wrapper | Page-specific content |
-| `app/groups/create/page.tsx` | Route entry for `/groups/create` | One import + one render | Form logic |
-| `app/groups/[groupId]/page.tsx` | Route entry + param parsing/validation | `await params`, ID validation | Fetching group data itself |
-| `app/groups/groups.css` | Visual styling for `/groups/*` | CSS rules scoped to `.groups-shell` | JS/TS logic |
-| `features/groups/types/group.ts` | Shape of Groups data | Interfaces/type aliases | React UI, fetch calls |
-| `features/groups/api/groups.ts` | Backend communication | `fetch()` calls, response parsing | JSX, component state |
-| `features/groups/api/mockJoinRequests.ts` | Temporary local join-request simulation | `localStorage` reads/writes | Real network calls |
-| `GroupsPageContent.tsx` | `/groups` page logic | Fetch, search/tab state, orchestration | Backend request details |
-| `GroupsSearch.tsx` | Search input UI | A controlled `<input>` | Filtering logic |
-| `GroupsTabs.tsx` | Tab bar UI | Tab buttons | What each tab means |
-| `GroupsGrid.tsx` | Grid layout + empty state | `.map()` over groups | Fetching, filtering |
-| `GroupCard.tsx` | One group's summary card | Title/description/meta/action | Fetching |
-| `GroupCardSkeleton.tsx` | Loading placeholder card | Static placeholder markup | Real data |
-| `GroupMembershipAction.tsx` | Membership button + click behavior | The 4-way state switch | Layout of the surrounding page |
-| `GroupDetailsContent.tsx` | `/groups/[groupId]` page logic | Fetch, loading/error state | Backend request details |
-| `GroupHeader.tsx` | Details page's top section | Cover/title/meta/creator/action | Members list rendering |
-| `MembersList.tsx` | Sort + list members | Sorting, `.map()`, empty state | One member's markup |
-| `MemberItem.tsx` | One member's row | Avatar/name/role | List logic |
-| `CreateGroupForm.tsx` | Create-group form | Fields, validation, submit | Route-level metadata |
-| `StateMessage.tsx` | Generic loading/error/empty box | Title/description/action slots | Feature-specific logic |
+| File                                      | Responsibility                            | Should contain                         | Should NOT contain             |
+| ----------------------------------------- | ----------------------------------------- | -------------------------------------- | ------------------------------ |
+| `app/groups/page.tsx`                     | Route entry for `/groups`                 | One import + one render                | State, fetching, markup        |
+| `app/groups/layout.tsx`                   | Shared wrapper for all `/groups/*` routes | CSS import, `<main>` wrapper           | Page-specific content          |
+| `app/groups/create/page.tsx`              | Route entry for `/groups/create`          | One import + one render                | Form logic                     |
+| `app/groups/[groupId]/page.tsx`           | Route entry + param parsing/validation    | `await params`, ID validation          | Fetching group data itself     |
+| `app/groups/groups.css`                   | Visual styling for `/groups/*`            | CSS rules scoped to `.groups-shell`    | JS/TS logic                    |
+| `features/groups/types/group.ts`          | Shape of Groups data                      | Interfaces/type aliases                | React UI, fetch calls          |
+| `features/groups/api/groups.ts`           | Backend communication                     | `fetch()` calls, response parsing      | JSX, component state           |
+| `features/groups/api/mockJoinRequests.ts` | Temporary local join-request simulation   | `localStorage` reads/writes            | Real network calls             |
+| `GroupsPageContent.tsx`                   | `/groups` page logic                      | Fetch, search/tab state, orchestration | Backend request details        |
+| `GroupsSearch.tsx`                        | Search input UI                           | A controlled `<input>`                 | Filtering logic                |
+| `GroupsTabs.tsx`                          | Tab bar UI                                | Tab buttons                            | What each tab means            |
+| `GroupsGrid.tsx`                          | Grid layout + empty state                 | `.map()` over groups                   | Fetching, filtering            |
+| `GroupCard.tsx`                           | One group's summary card                  | Title/description/meta/action          | Fetching                       |
+| `GroupCardSkeleton.tsx`                   | Loading placeholder card                  | Static placeholder markup              | Real data                      |
+| `GroupMembershipAction.tsx`               | Membership button + click behavior        | The 4-way state switch                 | Layout of the surrounding page |
+| `GroupDetailsContent.tsx`                 | `/groups/[groupId]` page logic            | Fetch, loading/error state             | Backend request details        |
+| `GroupHeader.tsx`                         | Details page's top section                | Cover/title/meta/creator/action        | Members list rendering         |
+| `MembersList.tsx`                         | Sort + list members                       | Sorting, `.map()`, empty state         | One member's markup            |
+| `MemberItem.tsx`                          | One member's row                          | Avatar/name/role                       | List logic                     |
+| `CreateGroupForm.tsx`                     | Create-group form                         | Fields, validation, submit             | Route-level metadata           |
+| `StateMessage.tsx`                        | Generic loading/error/empty box           | Title/description/action slots         | Feature-specific logic         |
 
 ---
 
@@ -1284,21 +1293,21 @@ concretely what breaks:
 - **Future maintenance**: when Join Requests, Events, Posts, and Chat get
   built on top of this (per the project's TODO), a single giant
   `page.tsx` would keep growing forever. With the current structure, each
-  new feature adds its *own* `features/<name>/` folder, and Groups stays
+  new feature adds its _own_ `features/<name>/` folder, and Groups stays
   exactly as complex as it is today.
 
 ---
 
 ## 16. Backend connection
 
-| Endpoint | Method | Frontend function that calls it | Component(s) that trigger it |
-|---|---|---|---|
-| `/groups` | `GET` | `fetchGroupsList()` → used by `listGroupsWithDetails()` | `GroupsPageContent` (on mount) |
-| `/groups` | `POST` | `createGroup()` | `CreateGroupForm` (on submit) |
-| `/groups/{id}` | `GET` | `fetchGroup()` → used by `getGroupDetails()` | `GroupDetailsContent` (on mount) |
-| `/groups/{id}/members` | `GET` | `fetchGroupMembers()` → used by both `listGroupsWithDetails()` and `getGroupDetails()` | `GroupsPageContent`, `GroupDetailsContent` |
-| `/groups/{id}/membership` | `GET` | `fetchMembership()` → used by both of the above | `GroupsPageContent`, `GroupDetailsContent` |
-| *(does not exist yet)* join endpoint | `POST` | **mocked**: `requestToJoinGroup()` just writes to `localStorage` | `GroupMembershipAction` |
+| Endpoint                             | Method | Frontend function that calls it                                                        | Component(s) that trigger it               |
+| ------------------------------------ | ------ | -------------------------------------------------------------------------------------- | ------------------------------------------ |
+| `/groups`                            | `GET`  | `fetchGroupsList()` → used by `listGroupsWithDetails()`                                | `GroupsPageContent` (on mount)             |
+| `/groups`                            | `POST` | `createGroup()`                                                                        | `CreateGroupForm` (on submit)              |
+| `/groups/{id}`                       | `GET`  | `fetchGroup()` → used by `getGroupDetails()`                                           | `GroupDetailsContent` (on mount)           |
+| `/groups/{id}/members`               | `GET`  | `fetchGroupMembers()` → used by both `listGroupsWithDetails()` and `getGroupDetails()` | `GroupsPageContent`, `GroupDetailsContent` |
+| `/groups/{id}/membership`            | `GET`  | `fetchMembership()` → used by both of the above                                        | `GroupsPageContent`, `GroupDetailsContent` |
+| _(does not exist yet)_ join endpoint | `POST` | **mocked**: `requestToJoinGroup()` just writes to `localStorage`                       | `GroupMembershipAction`                    |
 
 Everything in the first five rows is real, tested, working communication
 with the Go backend. Only the last row — "Request to Join" — is currently
@@ -1401,6 +1410,7 @@ Everything else in the model holds up exactly as stated.
 ## 19. Learning checklist
 
 **Next.js** (most important first):
+
 1. App Router file conventions (`page.tsx`, `layout.tsx`) and how folder
    nesting maps to URLs and shared layouts.
 2. Dynamic routes (`[param]`) and that `params` is a `Promise` you must
@@ -1412,6 +1422,7 @@ Everything else in the model holds up exactly as stated.
 5. The `metadata` export for page titles.
 
 **React**:
+
 1. Props and one-way data flow (parent → child; child reports back up via
    callback functions like `onChange`/`onRequestSent`).
 2. `useState` and controlled inputs.
@@ -1419,13 +1430,14 @@ Everything else in the model holds up exactly as stated.
    `cancelled` cleanup trick.
 4. Conditional rendering (`{condition && <X/>}`) and rendering lists with
    `.map()` + `key`.
-5. `useMemo` for derived data (don't reach for it *everywhere* — only
+5. `useMemo` for derived data (don't reach for it _everywhere_ — only
    where recomputation is worth avoiding or where you're building a new
    object/array other hooks depend on).
 6. The `key` prop's deeper meaning (forcing remount), beyond just "list
    rendering needs it."
 
 **TypeScript**:
+
 1. `interface` for object shapes vs `type` for unions/aliases.
 2. Union types of string literals (`"a" | "b" | "c"`) and how `switch`
    narrows them.
@@ -1435,6 +1447,7 @@ Everything else in the model holds up exactly as stated.
 5. `unknown` vs `any` — and why this codebase never uses `any`.
 
 **Frontend architecture**:
+
 1. Feature-based folder organization vs type-based (`components/`,
    `api/`, `types/` at the root).
 2. Why route files (`app/`) should stay thin, delegating to feature
@@ -1443,6 +1456,7 @@ Everything else in the model holds up exactly as stated.
    components combine into a page.
 
 **API/backend communication**:
+
 1. Why `fetch()` calls belong in a dedicated layer, not scattered across
    components.
 2. `credentials: "include"` and cookie-based sessions (why it's required
@@ -1460,7 +1474,7 @@ Everything else in the model holds up exactly as stated.
 Answer these in your own words before checking your understanding against
 the code — start easy, get harder:
 
-1. Why does `app/groups/page.tsx` exist as a *separate* file from
+1. Why does `app/groups/page.tsx` exist as a _separate_ file from
    `GroupsPageContent.tsx`, instead of just writing everything in one of
    them?
 2. What does the `[groupId]` folder name actually do, and what would

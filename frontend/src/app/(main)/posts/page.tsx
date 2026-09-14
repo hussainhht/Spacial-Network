@@ -1,15 +1,13 @@
-import Link from "next/link";
+import { Suspense } from "react";
 import PostFeed from "@/features/posts/components/PostFeed";
 
-export default function PostsPage() {
+export default function Page() {
   return (
-    <main className="posts-page">
+    <main className="posts-page" aria-labelledby="app-page-title">
       <div className="posts-container">
-        <header className="posts-page-header">
-          <h1>Posts</h1>
-          <Link href="/posts/new" className="new-post-link">New post</Link>
-        </header>
-        <PostFeed />
+        <Suspense fallback={null}>
+          <PostFeed />
+        </Suspense>
       </div>
     </main>
   );

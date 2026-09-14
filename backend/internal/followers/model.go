@@ -29,7 +29,45 @@ type FollowResponse struct {
 }
 
 type FollowStatusResponse struct {
-	Success     bool   `json:"success"`
-	Message     string `json:"message,omitempty"`
-	IsFollowing bool   `json:"is_following"`
+	Success           bool   `json:"success"`
+	Message           string `json:"message,omitempty"`
+	IsFollowing       bool   `json:"is_following"`
+	HasPendingRequest bool   `json:"has_pending_request"`
+}
+
+const (
+	FollowRequestStatusPending  = "pending"
+	FollowRequestStatusAccepted = "accepted"
+	FollowRequestStatusDeclined = "declined"
+)
+
+type FollowRequest struct {
+	ID          int       `db:"id"`
+	RequesterID int       `db:"requester_id"`
+	TargetID    int       `db:"target_id"`
+	Status      string    `db:"status"`
+	CreatedAt   time.Time `db:"created_at"`
+	UpdatedAt   time.Time `db:"updated_at"`
+}
+
+type FollowRequestWithRequester struct {
+	ID        int
+	Requester UserSummary
+	Status    string
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+type FollowRequestResponse struct {
+	ID        int         `json:"id"`
+	Requester UserSummary `json:"requester"`
+	Status    string      `json:"status"`
+	CreatedAt string      `json:"created_at"`
+	UpdatedAt string      `json:"updated_at"`
+}
+
+type FollowRequestsResponse struct {
+	Success  bool                    `json:"success"`
+	Message  string                  `json:"message,omitempty"`
+	Requests []FollowRequestResponse `json:"requests"`
 }

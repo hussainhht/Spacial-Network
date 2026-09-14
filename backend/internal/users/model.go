@@ -19,6 +19,9 @@ type User struct {
 	CreatedAt    time.Time      `db:"created_at"`
 	UpdatedAt    time.Time      `db:"updated_at"`
 	IsPrivate    bool           `db:"is_private"`
+	Nickname     sql.NullString `db:"nickname"`
+	AboutMe      sql.NullString `db:"about_me"`
+	DateOfBirth  sql.NullString `db:"date_of_birth"`
 }
 
 type Profile struct {
@@ -34,22 +37,29 @@ type Profile struct {
 	CreatedAt    time.Time      `db:"created_at"`
 	UpdatedAt    time.Time      `db:"updated_at"`
 	IsPrivate    bool           `db:"is_private"`
+	Nickname     sql.NullString `db:"nickname"`
+	AboutMe      sql.NullString `db:"about_me"`
+	DateOfBirth  sql.NullString `db:"date_of_birth"`
 }
 
 // ProfileResponse is the JSON profile data sent to the frontend.
 type ProfileResponse struct {
-	ID           int    `json:"id"`
-	UUID         string `json:"uuid"`
-	Username     string `json:"username"`
-	Age          int    `json:"age"`
-	Gender       string `json:"gender"`
-	FirstName    string `json:"first_name"`
-	LastName     string `json:"last_name"`
-	Email        string `json:"email"`
-	ProfilePhoto string `json:"profile_photo,omitempty"`
-	CreatedAt    string `json:"created_at"`
-	UpdatedAt    string `json:"updated_at"`
-	IsPrivate    bool   `json:"is_private"`
+	ID                 int    `json:"id"`
+	UUID               string `json:"uuid,omitempty"`
+	Username           string `json:"username"`
+	Age                int    `json:"age,omitempty"`
+	Gender             string `json:"gender,omitempty"`
+	FirstName          string `json:"first_name"`
+	LastName           string `json:"last_name"`
+	Email              string `json:"email,omitempty"`
+	ProfilePhoto       string `json:"profile_photo,omitempty"`
+	CreatedAt          string `json:"created_at,omitempty"`
+	UpdatedAt          string `json:"updated_at,omitempty"`
+	IsPrivate          bool   `json:"is_private"`
+	CanViewFullProfile bool   `json:"can_view_full_profile"`
+	Nickname           string `json:"nickname,omitempty"`
+	AboutMe            string `json:"about_me,omitempty"`
+	DateOfBirth        string `json:"date_of_birth,omitempty"`
 }
 
 type GetProfileResponse struct {
@@ -62,6 +72,20 @@ type UpdateProfilePrivacyRequest struct {
 	IsPrivate *bool `json:"is_private"`
 }
 
+type UpdateProfileDetailsRequest struct {
+	FirstName   string  `json:"first_name"`
+	LastName    string  `json:"last_name"`
+	Nickname    *string `json:"nickname"`
+	AboutMe     *string `json:"about_me"`
+	DateOfBirth *string `json:"date_of_birth"`
+}
+
+type UpdateProfileDetailsResponse struct {
+	Success bool             `json:"success"`
+	Message string           `json:"message,omitempty"`
+	Profile *ProfileResponse `json:"profile,omitempty"`
+}
+
 type UpdateProfilePrivacyResponse struct {
 	Success   bool   `json:"success"`
 	Message   string `json:"message,omitempty"`
@@ -70,4 +94,14 @@ type UpdateProfilePrivacyResponse struct {
 
 type Handler struct {
 	service *Service
+}
+
+// Summary is a lightweight, publicly-safe view of a user for embedding in
+// other features' responses (e.g. a post's author).
+type Summary struct {
+	ID           int    `json:"id"`
+	Username     string `json:"username"`
+	FirstName    string `json:"first_name"`
+	LastName     string `json:"last_name"`
+	ProfilePhoto string `json:"profile_photo,omitempty"`
 }

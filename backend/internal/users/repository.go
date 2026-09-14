@@ -2,6 +2,7 @@ package users
 
 import (
 	"database/sql"
+	"strings"
 )
 
 type Repository struct {
@@ -121,12 +122,55 @@ func (r *Repository) GetUserIDByUsername(username string) (int, error) {
 	return userID, nil
 }
 
+// GetSummariesByIDs returns a lightweight Summary for each of ids, keyed by
+// user ID. IDs that don't exist are simply absent from the result.
+func (r *Repository) GetSummariesByIDs(ids []int) (map[int]Summary, error) {
+	summaries := make(map[int]Summary, len(ids))
+	if len(ids) == 0 {
+		return summaries, nil
+	}
+
+	placeholders := make([]string, len(ids))
+	args := make([]any, len(ids))
+	for i, id := range ids {
+		placeholders[i] = "?"
+		args[i] = id
+	}
+
+	rows, err := r.db.Query(`
+		SELECT id, username, first_name, last_name, COALESCE(profile_photo, '')
+		FROM users
+		WHERE id IN (`+strings.Join(placeholders, ",")+`)
+	`, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var s Summary
+		var profilePhoto string
+		if err := rows.Scan(&s.ID, &s.Username, &s.FirstName, &s.LastName, &profilePhoto); err != nil {
+			return nil, err
+		}
+		if profilePhoto != "" {
+			s.ProfilePhoto = "/uploads/" + profilePhoto
+		}
+		summaries[s.ID] = s
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return summaries, nil
+}
+
 // GetProfileByID returns profile data for a user ID.
 func (r *Repository) GetProfileByID(userID int) (*Profile, error) {
 	profile := &Profile{}
 
 	err := r.db.QueryRow(`
-		SELECT id, uuid, username, age, gender, first_name, last_name, email, profile_photo, created_at, updated_at, is_private
+		SELECT id, uuid, username, age, gender, first_name, last_name, email, profile_photo, created_at, updated_at, is_private, nickname, about_me, date_of_birth
 		FROM users
 		WHERE id = ?
 	`, userID).Scan(
@@ -142,6 +186,9 @@ func (r *Repository) GetProfileByID(userID int) (*Profile, error) {
 		&profile.CreatedAt,
 		&profile.UpdatedAt,
 		&profile.IsPrivate,
+		&profile.Nickname,
+		&profile.AboutMe,
+		&profile.DateOfBirth,
 	)
 
 	if err != nil {
@@ -156,7 +203,7 @@ func (r *Repository) GetProfileByUsername(username string) (*Profile, error) {
 	profile := &Profile{}
 
 	err := r.db.QueryRow(`
-		SELECT id, uuid, username, age, gender, first_name, last_name, email, profile_photo, created_at, updated_at, is_private
+		SELECT id, uuid, username, age, gender, first_name, last_name, email, profile_photo, created_at, updated_at, is_private, nickname, about_me, date_of_birth
 		FROM users
 		WHERE username = ?
 	`, username).Scan(
@@ -172,6 +219,9 @@ func (r *Repository) GetProfileByUsername(username string) (*Profile, error) {
 		&profile.CreatedAt,
 		&profile.UpdatedAt,
 		&profile.IsPrivate,
+		&profile.Nickname,
+		&profile.AboutMe,
+		&profile.DateOfBirth,
 	)
 
 	if err != nil {
@@ -207,4 +257,33 @@ func (r *Repository) UpdateProfilePrivacy(userID int, isPrivate bool) error {
 	}
 
 	return nil
+}
+
+func (r *Repository) UpdateProfileDetails(
+	userID int,
+	firstName string,
+	lastName string,
+	nickname sql.NullString,
+	aboutMe sql.NullString,
+	dateOfBirth sql.NullString,
+) (*Profile, error) {
+	result, err := r.db.Exec(`
+		UPDATE users
+		SET first_name = ?, last_name = ?, nickname = ?, about_me = ?, date_of_birth = ?, updated_at = CURRENT_TIMESTAMP
+		WHERE id = ?
+	`, firstName, lastName, nickname, aboutMe, dateOfBirth, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return nil, err
+	}
+
+	if rowsAffected == 0 {
+		return nil, sql.ErrNoRows
+	}
+
+	return r.GetProfileByID(userID)
 }

@@ -86,7 +86,7 @@ export default function LoginPage() {
         <button type="submit" disabled={loading}>
           {loading ? "Logging in..." : "Login"}
         </button>
-        <a href="/register">Don't have an account? Register</a>
+        <a href="/register">Don’t have an account? Register</a>
       </form>
     </main>
   );

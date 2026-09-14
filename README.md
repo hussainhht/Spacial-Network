@@ -22,6 +22,33 @@ Uploads
 
 Social Network
 
+## Docker
+
+Run the full app with Docker Compose from the project root:
+
+```bash
+docker compose up --build
+```
+
+Then open:
+
+- Frontend: `http://localhost:3000`
+- Backend API: `http://localhost:8080/api`
+
+The backend stores its SQLite database and uploaded files in the
+`backend-data` Docker volume. To stop the containers without deleting that
+data:
+
+```bash
+docker compose down
+```
+
+To stop the containers and delete the Docker database/uploads volume:
+
+```bash
+docker compose down -v
+```
+
 ```
 │
 ├── Frontend

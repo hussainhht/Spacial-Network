@@ -1,0 +1,63 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  margin-top: 4px;
+}
+
+.separator {
+  height: 1px;
+  background: rgba(148, 163, 184, 0.14);
+  margin: 0 0 16px;
+  border: none;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--space-text-heading);
+  letter-spacing: -0.01em;
+}
+
+.count {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--space-text-muted);
+  background: var(--planet-accent-soft);
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--planet-border);
+}
+
+.loading {
+  font-size: 13px;
+  color: var(--space-text-muted);
+  margin: 12px 0;
+  text-align: center;
+}
+
+.composerSticky {
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  padding: 12px 0 4px;
+  margin-top: 16px;
+  background: rgba(10, 15, 32, 0.94);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-top: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.error {
+  margin: 8px 0;
+  font-size: 12px;
+  color: var(--space-error-text);
+}

@@ -1,64 +1,104 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { listPosts } from "@/features/posts/api/posts";
-import { ApiError } from "@/lib/api/errors";
-import type { Post } from "@/features/posts/types/post";
+import { useEffect } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useFeed } from "@/features/posts/hooks/useFeed";
+import type { FeedScope } from "@/features/posts/types/post";
 import PostCard from "@/features/posts/components/PostCard";
+import FeedFilter from "@/features/posts/components/FeedFilter";
+
+const FEED_SCOPES: FeedScope[] = ["all", "following", "friends"];
+
+function parseFeed(value: string | null): FeedScope {
+  return (FEED_SCOPES as string[]).includes(value ?? "")
+    ? (value as FeedScope)
+    : "all";
+}
+
+const EMPTY_COPY: Record<FeedScope, { title: string; body: string }> = {
+  all: {
+    title: "No posts to show yet.",
+    body: "Be the first to share something.",
+  },
+  following: {
+    title: "No posts from people you follow yet.",
+    body: "Follow people to see their posts here.",
+  },
+  friends: {
+    title: "No posts from friends yet.",
+    body: "Friends are people who follow each other back. Once you have a mutual follow, their posts will show up here.",
+  },
+};
 
 export default function PostFeed() {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const feed = parseFeed(searchParams.get("feed"));
 
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const { posts, loading, error, unauthorized, retry, removePost } =
+    useFeed(feed);
 
   useEffect(() => {
-    let cancelled = false;
+    if (unauthorized) router.push("/login");
+  }, [unauthorized, router]);
 
-    async function load() {
-      try {
-        const data = await listPosts();
-        if (!cancelled) setPosts(data);
-      } catch (err) {
-        if (cancelled) return;
-
-        if (err instanceof ApiError && err.status === 401) {
-          router.push("/login");
-          return;
-        }
-
-        setError(err instanceof Error ? err.message : "Failed to load posts");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-
-    load();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [router]);
-
-  function handleDeleted(id: number) {
-    setPosts((current) => current.filter((post) => post.id !== id));
+  function handleFeedChange(next: FeedScope) {
+    if (next === feed) return;
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("feed", next);
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
   }
 
+  const empty = !loading && !error && posts.length === 0;
+  const copy = EMPTY_COPY[feed];
+
   return (
-    <div aria-busy={loading}>
-      {loading && <p role="status">Loading posts...</p>}
-      {error && <p className="form-error" role="alert">{error}</p>}
+    <div>
+      <FeedFilter active={feed} onChange={handleFeedChange} />
 
-      {!loading && !error && posts.length === 0 && (
-        <p>No posts yet. Be the first to share something.</p>
-      )}
+      <div
+        id="feed-tabpanel"
+        role="tabpanel"
+        aria-labelledby={`feed-tab-${feed}`}
+        aria-busy={loading}
+      >
+        {loading && (
+          <>
+            <p className="sr-only" role="status">
+              Loading posts...
+            </p>
+            <div className="feed-skeleton" aria-hidden="true">
+              <div className="feed-skeleton-card" />
+              <div className="feed-skeleton-card" />
+              <div className="feed-skeleton-card" />
+            </div>
+          </>
+        )}
 
-      <div className="posts-list">
-        {posts.map((post) => (
-          <PostCard key={post.id} post={post} onDeleted={handleDeleted} />
-        ))}
+        {!loading && error && (
+          <div className="feed-error" role="alert">
+            <span>{error}</span>
+            <button type="button" className="feed-retry" onClick={retry}>
+              Retry
+            </button>
+          </div>
+        )}
+
+        {empty && (
+          <div className="feed-empty">
+            <h2>{copy.title}</h2>
+            <p>{copy.body}</p>
+          </div>
+        )}
+
+        {!loading && !error && posts.length > 0 && (
+          <div className="posts-list">
+            {posts.map((post) => (
+              <PostCard key={post.id} post={post} onDeleted={removePost} />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

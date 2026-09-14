@@ -11,6 +11,10 @@ export interface Profile {
   createdAt: string;
   updatedAt: string;
   isPrivate: boolean;
+  canViewFullProfile: boolean;
+  nickname: string;
+  aboutMe: string;
+  dateOfBirth: string;
 }
 
 export type ProfileTab = "posts" | "about";
@@ -21,4 +25,17 @@ export interface ProfileUserSummary {
   firstName: string;
   lastName: string;
   profilePhoto?: string;
+}
+
+export interface FollowStatus {
+  isFollowing: boolean;
+  hasPendingRequest: boolean;
+}
+
+export interface FollowRequest {
+  id: number;
+  requester: ProfileUserSummary;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
 }

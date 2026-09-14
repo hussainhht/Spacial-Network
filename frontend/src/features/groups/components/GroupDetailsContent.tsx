@@ -9,10 +9,12 @@ import {
   useMembership,
   usePendingInvitations,
 } from "../hooks/useGroupData";
-import EditGroupForm from "./EditGroupForm";
+import EditGroupForm from "./management/EditGroupForm";
 import GroupAvatar from "./GroupAvatar";
-import GroupDangerZone from "./GroupDangerZone";
-import GroupEvents from "./GroupEvents";
+import GroupChatPanel from "./GroupChatPanel";
+import GroupDangerZone from "./management/GroupDangerZone";
+import GroupEvents from "./events/GroupEvents";
+import GroupPosts from "./GroupPosts";
 import {
   GroupLoadError,
   MembersPanel,
@@ -126,6 +128,18 @@ function GroupDetails({ groupId }: { groupId: number }) {
               />
             </div>
           )}
+          {activeTab === "posts" && (
+            <div
+              id="group-tabpanel-posts"
+              role="tabpanel"
+              aria-labelledby="group-tab-posts"
+            >
+              <GroupPosts
+                groupId={groupId}
+                isMember={Boolean(membership.data?.isMember)}
+              />
+            </div>
+          )}
           {activeTab === "events" && (
             <div
               id="group-tabpanel-events"
@@ -136,6 +150,18 @@ function GroupDetails({ groupId }: { groupId: number }) {
                 groupId={groupId}
                 isMember={Boolean(membership.data?.isMember)}
                 members={members.data}
+              />
+            </div>
+          )}
+          {activeTab === "chat" && (
+            <div
+              id="group-tabpanel-chat"
+              role="tabpanel"
+              aria-labelledby="group-tab-chat"
+            >
+              <GroupChatPanel
+                groupId={groupId}
+                isMember={Boolean(membership.data?.isMember)}
               />
             </div>
           )}

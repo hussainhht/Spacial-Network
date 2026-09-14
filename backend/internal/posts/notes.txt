@@ -1,12 +1,29 @@
 endpoints - method - purpose :
 
 .../posts       -> POST              -> create a new post
-.../posts       -> GET               -> list posts visible to you (public posts + your own private posts), newest first, up to 50 (use ?limit=N to ask for fewer)
-.../posts/{id}  -> GET               -> fetch a single post by id (private posts: 404 unless you're the owner)
-.../posts/{id}  -> PUT or PATCH      -> edit a post (owner only, otherwise 403)
+.../posts       -> GET               -> list posts visible to you, newest first, up to 50 (use ?limit=N to ask for fewer, ?feed=all|following|friends to narrow author scope)
+.../posts/{id}  -> GET               -> fetch a single post by id (posts you can't see: 404, same as one that doesn't exist)
+.../posts/{id}  -> PUT or PATCH      -> edit a post (owner only, otherwise 403) - also updates visibility and, for custom, the allowed-viewer list
 .../posts/{id}  -> DELETE            -> delete a post (owner only, otherwise 403)
+
+visibility:
+- every post has a "visibility": "public" | "followers" | "custom".
+  - public: visible to everyone.
+  - followers: visible to the owner's followers only.
+  - custom: visible to whichever of the owner's followers are on the post's allowed-viewer list (set via "viewer_ids").
+  - the owner can always see and edit their own post, regardless of visibility.
+- creating a post: multipart form field "visibility" (default validation requires one of the three values above), plus a repeated "viewer_ids" form field (one per allowed viewer) when visibility is "custom".
+- editing a post: JSON body field "visibility", plus a "viewer_ids" array when visibility is "custom" - this replaces the post's entire allowed-viewer list. Switching away from "custom" leaves the stored allowed-viewer list untouched (it's simply not enforced), so switching back to "custom" without resending viewer_ids restores the previous list rather than resetting it.
+- viewer_ids values that aren't currently followers of the post owner are silently dropped - only actual followers can ever be granted access.
+- if a user on a post's allowed-viewer list unfollows (or is no longer followed by) the owner, they lose access immediately; their entry is also cleaned out of the allowed-viewer list when the unfollow happens.
+- GET .../posts/{id} response includes "viewer_ids" (the current allowed-viewer list) only when the requester owns a custom-visibility post, so an edit form can prefill it.
 
 notes:
 - all routes are behind sessionMiddleware, so a valid session cookie is required (401 if missing/invalid).
 - any other method on these paths gets an automatic 405 from the router (see internal/router/router.go).
 - GET .../posts is capped at 50 posts per call (posts.MaxListPosts); ?limit=N requests fewer (N must be a positive integer, else 400).
+- ?feed=all|following|friends narrows GET .../posts to an author scope before the usual visibility rules are applied (default "all" if omitted; unrecognized value -> 400):
+  - all: no author restriction (unchanged behavior).
+  - following: only posts whose author the caller follows.
+  - friends: only posts whose author is in a mutual follow with the caller (each follows the other).
+  the feed filter never grants access to a post the caller couldn't otherwise see - it only narrows which authors are considered.

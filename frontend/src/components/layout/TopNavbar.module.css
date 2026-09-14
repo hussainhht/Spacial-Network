@@ -1,0 +1,582 @@
+.navbar {
+  font:
+    14px/1.4 ui-sans-serif,
+    system-ui,
+    -apple-system,
+    sans-serif;
+  color-scheme: dark;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  width: 100%;
+  height: var(--app-navbar-height, 64px);
+  flex-shrink: 0;
+  box-sizing: border-box;
+  padding: 10px clamp(16px, 3vw, 36px);
+  background:
+    linear-gradient(var(--planet-surface-tint), var(--planet-surface-tint)),
+    rgba(6, 8, 24, 0.6);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--planet-border);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
+  user-select: none;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease;
+}
+
+/* ================= Left Section (Page Context) ================= */
+.contextSection {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+.contextText {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  /* Keyed on the section, so a route change crossfades the context in rather
+     than swapping the words in place. */
+  animation: context-arrival 280ms ease-out both;
+}
+@keyframes context-arrival {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.contextEyebrow {
+  margin: 0;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+  color: var(--space-text-muted);
+  line-height: 1.2;
+}
+
+.contextTitle {
+  margin: 2px 0 0;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+  color: var(--space-text-heading, #f8fafc);
+  line-height: 1.2;
+}
+
+/* ================= Center Section (Search Bar) ================= */
+.searchSection {
+  flex: 1;
+  max-width: 420px;
+  display: flex;
+  align-items: center;
+  margin: 0 12px;
+}
+
+.searchBar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 14px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 10px;
+  background: rgba(13, 18, 42, 0.55);
+  backdrop-filter: blur(8px);
+  color: var(--space-text-muted, #94a3b8);
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.searchBar:hover {
+  border-color: var(--planet-border-strong);
+  background: rgba(17, 23, 52, 0.65);
+}
+
+.searchBar:focus-within {
+  border-color: var(--planet-accent);
+  background: rgba(18, 24, 55, 0.8);
+  box-shadow: 0 0 0 3px var(--planet-border), 0 0 16px var(--planet-glow);
+}
+
+.searchIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--space-text-muted, #94a3b8);
+  width: 16px;
+  height: 16px;
+}
+
+.searchIcon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.searchInput {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--space-text-heading, #f8fafc);
+  font: inherit;
+  font-size: 13px;
+}
+
+.searchInput::placeholder {
+  color: var(--space-text-placeholder, #64748b);
+  opacity: 1;
+}
+
+.searchInput:focus {
+  outline: none;
+}
+
+/* ================= Right Section (Actions) ================= */
+.actionsSection {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+}
+
+/* New Post Button */
+.newPostButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border: 1px solid var(--planet-border-strong);
+  border-radius: 9px;
+  background: var(--planet-accent-active);
+  backdrop-filter: blur(8px);
+  color: var(--space-text-heading);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.3;
+  box-shadow: 0 2px 10px var(--planet-glow);
+  cursor: pointer;
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.15s ease,
+    filter 0.18s ease;
+}
+
+.newPostButton:hover {
+  border-color: var(--planet-accent-hover);
+  box-shadow: 0 0 14px var(--planet-glow);
+  filter: brightness(1.08);
+}
+
+.newPostButton:active {
+  transform: scale(0.98);
+}
+
+.newPostButton:focus-visible {
+  outline: 2px solid var(--planet-focus-ring);
+  outline-offset: 2px;
+}
+
+.newPostIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+}
+
+.newPostIcon svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Notification Button */
+.bellWrapper {
+  position: relative;
+  display: inline-flex;
+}
+
+.bellButton {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--space-text-muted, #94a3b8);
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    background 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.bellButton:hover {
+  color: var(--space-text-heading, #f8fafc);
+  background: var(--planet-accent-soft);
+  border-color: var(--planet-border);
+  transform: translateY(-1px);
+}
+
+.bellButton:active {
+  transform: translateY(0);
+}
+
+.bellButton:focus-visible {
+  outline: 2px solid var(--planet-focus-ring);
+  outline-offset: 2px;
+}
+
+.bellButton svg {
+  width: 18px;
+  height: 18px;
+}
+
+.notificationBadge {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--planet-accent-active);
+  color: #ffffff;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+  box-shadow: 0 0 0 2px rgba(6, 8, 24, 0.9);
+  pointer-events: none;
+}
+
+.bellWrapper :global(.notification-dropdown) {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: -8px;
+  z-index: 50;
+  animation: dropdown-fade-in 0.15s ease-out;
+}
+
+@media (max-width: 600px) {
+  .bellWrapper :global(.notification-dropdown) {
+    right: -42px;
+    width: min(320px, calc(100vw - 88px));
+  }
+}
+
+/* User Area & Dropdown */
+.userWrapper {
+  position: relative;
+  display: inline-flex;
+}
+
+.userButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px 4px 4px;
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  border-radius: 999px;
+  background: rgba(13, 18, 42, 0.4);
+  color: var(--space-text-heading, #f8fafc);
+  font: inherit;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.userButton:hover {
+  border-color: var(--planet-border-strong);
+  background: rgba(23, 27, 56, 0.65);
+  box-shadow: 0 0 12px var(--planet-glow);
+}
+
+.userButton:focus-visible {
+  outline: 2px solid var(--planet-focus-ring);
+  outline-offset: 2px;
+}
+
+.userAvatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--planet-border-strong);
+  background:
+    linear-gradient(var(--planet-accent-soft), var(--planet-accent-soft)),
+    var(--space-bg-elevated);
+  color: var(--planet-accent-hover);
+}
+
+.userAvatar svg {
+  width: 15px;
+  height: 15px;
+}
+
+.userName {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--space-text-heading, #f8fafc);
+}
+
+.chevronIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--space-text-muted, #94a3b8);
+  transition: transform 0.2s ease;
+}
+
+.chevronIcon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.userButton[aria-expanded="true"] .chevronIcon {
+  transform: rotate(180deg);
+}
+
+/* User Dropdown Menu */
+.userDropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 50;
+  min-width: 168px;
+  padding: 6px;
+  border: 1px solid var(--planet-border);
+  border-radius: 12px;
+  background:
+    linear-gradient(var(--planet-surface-tint), var(--planet-surface-tint)),
+    rgba(11, 15, 36, 0.95);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow:
+    0 16px 36px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  animation: dropdown-fade-in 0.15s ease-out;
+}
+
+@keyframes dropdown-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dropdownItem {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--space-text-body, #d8def0);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background 0.12s ease,
+    color 0.12s ease;
+}
+
+.dropdownItem:hover,
+.dropdownItem:focus-visible {
+  background: var(--planet-accent-soft);
+  color: var(--space-text-heading, #f8fafc);
+  outline: none;
+}
+
+.dropdownDivider {
+  height: 1px;
+  margin: 4px 6px;
+  background: rgba(148, 163, 184, 0.12);
+}
+
+.dropdownItemLogout {
+  color: var(--space-error-text, #fca5a5);
+}
+
+.dropdownItemLogout:hover,
+.dropdownItemLogout:focus-visible {
+  background: var(--space-error-bg, rgba(248, 113, 113, 0.12));
+  color: #fca5a5;
+}
+
+.dropdownItemLogout:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.dropdownError {
+  margin: 4px 10px 2px;
+  font-size: 11px;
+  color: var(--space-error-text, #fca5a5);
+}
+
+/* ================= Responsive Design ================= */
+@media (max-width: 900px) {
+  .contextEyebrow,
+  .userName {
+    display: none;
+  }
+  .searchSection {
+    max-width: 280px;
+    margin: 0 8px;
+  }
+  .navbar {
+    gap: 12px;
+    padding-inline: 20px;
+  }
+}
+
+@media (max-width: 760px) {
+  .searchSection {
+    display: none;
+  }
+  .contextEyebrow {
+    display: none;
+  }
+  .contextTitle {
+    font-size: 16px;
+  }
+  .userName {
+    display: none;
+  }
+  .userButton {
+    padding: 3px;
+  }
+  .navbar {
+    gap: 10px;
+    padding-inline: 16px;
+    min-height: 56px;
+  }
+}
+
+@media (max-width: 480px) {
+  .newPostText {
+    display: none;
+  }
+  .newPostButton {
+    padding: 7px 9px;
+  }
+  .navbar {
+    padding-inline: 12px;
+  }
+}
+
+/* The same navbar remains mounted in the shell across every main route. */
+.contextSection {
+  min-width: 0;
+}
+.contextTitle {
+  white-space: nowrap;
+}
+.searchSection {
+  min-width: 0;
+}
+.searchSection :global(.group-search) {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  min-width: 0;
+}
+.searchSection :global(.group-search-input) {
+  width: 100%;
+  min-width: 0;
+  font-size: 13px;
+}
+@media (max-width: 1100px) {
+  .actionsSection {
+    gap: 8px;
+  }
+  .searchSection {
+    margin-inline: 0;
+  }
+  .newPostButton {
+    white-space: nowrap;
+    padding-inline: 10px;
+  }
+}
+@media (max-width: 760px) {
+  .navbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: 36px 36px;
+    gap: 8px 10px;
+    padding-block: 12px;
+  }
+  .searchSection {
+    display: flex;
+    grid-column: 1 / -1;
+    grid-row: 2;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+  }
+  .actionsSection {
+    grid-column: 2;
+    grid-row: 1;
+    gap: 6px;
+  }
+  .contextTitle {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .chevronIcon {
+    display: none;
+  }
+  .searchBar {
+    padding-block: 7px;
+  }
+  .searchSection :global(.group-search) {
+    height: 36px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .userDropdown,
+  .bellWrapper :global(.notification-dropdown),
+  .contextText {
+    animation: none;
+  }
+}

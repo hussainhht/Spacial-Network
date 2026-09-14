@@ -27,10 +27,10 @@ Authentication, Docker, and final project-wide integration are not included in t
 - [X] Return email
 - [X] Return first name
 - [X] Return last name
-- [ ] Return date of birth
+- [X] Return date of birth
 - [X] Return avatar
-- [ ] Return nickname
-- [ ] Return About Me
+- [X] Return nickname
+- [X] Return About Me
 - [ ] Return followers information
 - [ ] Return following information
 - [ ] Return user posts/activity information when needed
@@ -43,9 +43,9 @@ Authentication, Docker, and final project-wide integration are not included in t
 - [X] Create other-user Profile page
 - [X] Display profile avatar
 - [X] Display name
-- [ ] Display nickname
-- [ ] Display About Me
-- [ ] Display date of birth according to the required visibility rules
+- [X] Display nickname
+- [X] Display About Me
+- [X] Display date of birth according to the required visibility rules
 - [ ] Display followers
 - [ ] Display following
 - [ ] Display user posts/activity
@@ -66,17 +66,17 @@ Authentication, Docker, and final project-wide integration are not included in t
 
 - [X] Change profile from Public to Private
 - [X] Change profile from Private to Public
-- [ ] Check profile privacy before exposing protected information
-- [ ] Allow followers to view permitted private-profile information
-- [ ] Prevent non-followers from viewing protected private-profile information
-- [ ] Allow the profile owner to view their own information
+- [X] Check profile privacy before exposing protected information
+- [X] Allow followers to view permitted private-profile information
+- [X] Prevent non-followers from viewing protected private-profile information
+- [X] Allow the profile owner to view their own information
 
 ### Frontend
 
 - [X] Add profile privacy control
 - [X] Show current privacy state
 - [X] Allow user to switch Public ↔ Private
-- [ ] Update visible actions based on target profile privacy
+- [X] Update visible actions based on target profile privacy
 
 ---
 
@@ -98,7 +98,7 @@ Authentication, Docker, and final project-wide integration are not included in t
 - [X] Get followers list
 - [X] Get following list
 - [X] Check whether User A follows User B
-- [ ] Check whether at least one user follows the other when needed by chat
+- [X] Check whether at least one user follows the other when needed by chat
 - [X] Handle invalid follow operations safely
 
 ### Public Profile Follow Flow
@@ -121,40 +121,40 @@ Authentication, Docker, and final project-wide integration are not included in t
 
 ### Database
 
-- [ ] Create `follow_requests` table migration
-- [ ] Store requester user ID
-- [ ] Store target user ID
-- [ ] Store request status if needed
-- [ ] Prevent duplicate active requests
-- [ ] Create matching `.down.sql` migration
+- [X] Create `follow_requests` table migration
+- [X] Store requester user ID
+- [X] Store target user ID
+- [X] Store request status if needed
+- [X] Prevent duplicate active requests
+- [X] Create matching `.down.sql` migration
 
 ### Backend
 
-- [ ] Send follow request when target profile is Private
-- [ ] Prevent duplicate pending requests
-- [ ] Get incoming pending follow requests
-- [ ] Accept follow request
-- [ ] Create follower relationship after acceptance
-- [ ] Decline follow request
-- [ ] Remove/update completed request correctly
-- [ ] Prevent unauthorized users from accepting/declining another user's requests
+- [X] Send follow request when target profile is Private
+- [X] Prevent duplicate pending requests
+- [X] Get incoming pending follow requests
+- [X] Accept follow request
+- [X] Create follower relationship after acceptance
+- [X] Decline follow request
+- [X] Remove/update completed request correctly
+- [X] Prevent unauthorized users from accepting/declining another user's requests
 
 ### Frontend
 
-- [ ] Show Request Follow button for private profiles
-- [ ] Show Requested/Pending state
-- [ ] Create Follow Requests UI
-- [ ] Add Accept button
-- [ ] Add Decline button
-- [ ] Update follower state after acceptance
+- [X] Show Request Follow button for private profiles
+- [X] Show Requested/Pending state
+- [X] Create Follow Requests UI
+- [X] Add Accept button
+- [X] Add Decline button
+- [X] Update follower state after acceptance
 
 ---
 
 ## 5. Avatar / Profile Data
 
 - [ ] Display avatar from registration/profile data
-- [ ] Make sure optional nickname is handled correctly
-- [ ] Make sure optional About Me is handled correctly
+- [X] Make sure optional nickname is handled correctly
+- [X] Make sure optional About Me is handled correctly
 - [ ] Handle users without an avatar
 - [ ] Reuse the project's existing image storage logic for avatar-related work when needed
 
@@ -164,13 +164,13 @@ Authentication, Docker, and final project-wide integration are not included in t
 
 For Person 2 — Posts:
 
-- [ ] Provide a reusable follower check
-- [ ] Provide a way to get a user's followers for Private post selection
+- [X] Provide a reusable follower check
+- [X] Provide a way to get a user's followers for Private post selection
 
 For Person 4 — Chat:
 
-- [ ] Provide a reusable check for whether User A follows User B
-- [ ] Provide a reusable check for whether either user follows the other
+- [X] Provide a reusable check for whether User A follows User B
+- [X] Provide a reusable check for whether either user follows the other
 - [ ] Provide target profile privacy information when required by chat rules
 
 Suggested responsibility boundary:

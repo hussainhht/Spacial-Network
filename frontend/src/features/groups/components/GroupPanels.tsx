@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import { getInitials } from "@/lib/utils";
 import { createPortal } from "react-dom";
 import { avatarUrl, removeMember } from "../api/groups";
 import { useGroupAction } from "../hooks/useGroupAction";
@@ -12,7 +13,7 @@ import {
   usePendingInvitations,
   usePendingJoinRequests,
 } from "../hooks/useGroupData";
-import GroupInviteModal from "./GroupInviteModal";
+import GroupInviteModal from "./management/GroupInviteModal";
 import GroupJoinButton from "./GroupJoinButton";
 import { InvitationActions, JoinRequestActions } from "./GroupResponseActions";
 
@@ -135,7 +136,7 @@ export function MembersPanel({
                   className="group-member-avatar fallback"
                   aria-hidden="true"
                 >
-                  {member.username.charAt(0).toUpperCase()}
+                  {getInitials("", "", member.username)}
                 </span>
               )}
               <Link
@@ -215,10 +216,7 @@ function RemoveMemberDialog({
   }
 
   return createPortal(
-    <div
-      className="group-modal-overlay"
-      onClick={() => !busy && onClose()}
-    >
+    <div className="group-modal-overlay" onClick={() => !busy && onClose()}>
       <div
         className="group-modal"
         role="alertdialog"
@@ -240,8 +238,8 @@ function RemoveMemberDialog({
         </div>
         <div className="group-modal-body">
           <p className="group-muted">
-            Are you sure you want to remove @{target.username} from this
-            group? They will lose access to group-only content and chat.
+            Are you sure you want to remove @{target.username} from this group?
+            They will lose access to group-only content and chat.
           </p>
           {error && (
             <p className="form-error" role="alert">
@@ -303,7 +301,7 @@ export function JoinRequestsPanel({ groupId }: { groupId: number }) {
           <li key={request.id} className="group-attempt-row">
             <div className="group-person">
               <span className="group-member-avatar fallback" aria-hidden="true">
-                {request.username.charAt(0).toUpperCase()}
+                {getInitials("", "", request.username)}
               </span>
               <span>@{request.username}</span>
             </div>

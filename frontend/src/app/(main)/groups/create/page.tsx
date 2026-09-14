@@ -1,5 +1,5 @@
 import Link from "next/link";
-import CreateGroupForm from "@/features/groups/components/CreateGroupForm";
+import CreateGroupForm from "@/features/groups/components/management/CreateGroupForm";
 
 export default function CreateGroupPage() {
   return (
@@ -12,7 +12,9 @@ export default function CreateGroupPage() {
         <header className="group-create-header">
           <p className="group-eyebrow">New community</p>
           <h1>Create your group</h1>
-          <p className="group-muted">Bring people together around something you care about.</p>
+          <p className="group-muted">
+            Bring people together around something you care about.
+          </p>
         </header>
 
         <CreateGroupForm />
