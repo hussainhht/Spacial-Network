@@ -1,12 +1,52 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { ChatWindowProps } from "../types/chat";
-import { formatMessageDateTime, getInitials } from "@/lib/utils";
+import { formatMessageTime, parseDate, getInitials } from "@/lib/utils";
+import styles from "./Chat.module.css";
 
 const MAX_MESSAGE_LENGTH = 2000;
 const NEAR_LIMIT_THRESHOLD = 1800;
+
+function isDifferentDay(dateStr1?: string, dateStr2?: string): boolean {
+  if (!dateStr1 || !dateStr2) return true;
+  const d1 = parseDate(dateStr1);
+  const d2 = parseDate(dateStr2);
+  if (!d1 || !d2) return true;
+  return (
+    d1.getFullYear() !== d2.getFullYear() ||
+    d1.getMonth() !== d2.getMonth() ||
+    d1.getDate() !== d2.getDate()
+  );
+}
+
+function formatDateDivider(dateStr?: string): string {
+  const d = parseDate(dateStr);
+  if (!d) return "";
+  const now = new Date();
+  const isToday =
+    d.getDate() === now.getDate() &&
+    d.getMonth() === now.getMonth() &&
+    d.getFullYear() === now.getFullYear();
+
+  if (isToday) return "Today";
+
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  const isYesterday =
+    d.getDate() === yesterday.getDate() &&
+    d.getMonth() === yesterday.getMonth() &&
+    d.getFullYear() === yesterday.getFullYear();
+
+  if (isYesterday) return "Yesterday";
+
+  if (d.getFullYear() === now.getFullYear()) {
+    return d.toLocaleDateString([], { month: "short", day: "numeric" });
+  }
+
+  return d.toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" });
+}
 
 export default function ChatWindow({
   partnerUsername,
@@ -21,9 +61,11 @@ export default function ChatWindow({
   onLoadMore,
   onSendMessage,
   onTyping,
+  onBack,
 }: ChatWindowProps) {
   const [inputText, setInputText] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const typingTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
 
   const charCount = inputText.length;
@@ -34,8 +76,17 @@ export default function ChatWindow({
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }, [messages, isPartnerTyping]);
 
-  function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
+  const adjustTextareaHeight = useCallback(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    textarea.style.height = "auto";
+    const nextHeight = Math.min(Math.max(textarea.scrollHeight, 40), 120);
+    textarea.style.height = `${nextHeight}px`;
+  }, []);
+
+  function handleInputChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
     setInputText(e.target.value);
+    adjustTextareaHeight();
 
     onTyping(true);
 
@@ -48,12 +99,23 @@ export default function ChatWindow({
     }, 1500);
   }
 
+  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit(e);
+    }
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!inputText.trim() || isOverLimit) return;
 
     onSendMessage(inputText.trim());
     setInputText("");
+
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "40px";
+    }
 
     if (typingTimerRef.current) {
       clearTimeout(typingTimerRef.current);
@@ -64,113 +126,137 @@ export default function ChatWindow({
   const initials = getInitials("", "", partnerUsername);
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-[#080b1a]/95 min-w-0">
-      <header className="flex items-center justify-between px-6 py-3.5 border-b border-slate-700/30 bg-[#0b1026]/80 min-w-0 shrink-0">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="relative w-10 h-10 shrink-0">
+    <section className={styles.floatingCard}>
+      {/* Transmission Header */}
+      <header className={styles.windowHeader}>
+        <div className={styles.headerLeft}>
+          <button
+            type="button"
+            onClick={() => onBack?.()}
+            className={styles.backButton}
+            aria-label="Back to conversations"
+            title="Back to conversations"
+          >
+            ←
+          </button>
+
+          <div className={styles.avatarWrapper}>
             {partnerAvatar ? (
               <img
                 src={partnerAvatar}
                 alt={partnerUsername}
-                className="w-10 h-10 rounded-full object-cover"
+                className={styles.avatarImg}
               />
             ) : (
-              <div className="w-10 h-10 rounded-full bg-[var(--planet-accent-active)] text-white flex items-center justify-center font-semibold text-sm">
-                {initials}
-              </div>
+              <div className={styles.avatarFallback}>{initials}</div>
             )}
             <span
-              className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full ring-2 ring-[#080b1a] ${
-                isPartnerOnline ? "bg-emerald-500" : "bg-slate-400"
-              }`}
+              className={isPartnerOnline ? styles.onlineRing : styles.offlineDot}
               title={isPartnerOnline ? "Online" : "Offline"}
             />
           </div>
 
-          <div className="min-w-0">
-            <h3 className="m-0 text-base font-semibold text-slate-100 truncate">{partnerUsername}</h3>
-            <span className="text-xs truncate block">
+          <div className={styles.headerProfile}>
+            <h3 className={styles.partnerName}>{partnerUsername}</h3>
+            <div className={styles.partnerStatus}>
               {isPartnerTyping ? (
-                <span className="text-[var(--planet-accent)] italic">✍️ typing...</span>
+                <span className={styles.typingIndicatorText}>
+                  typing
+                  <span className={styles.typingDotsInline}>
+                    <span className={styles.typingDot} />
+                    <span className={styles.typingDot} />
+                    <span className={styles.typingDot} />
+                  </span>
+                </span>
               ) : isPartnerOnline ? (
-                <span className="text-emerald-500 font-medium">Online</span>
+                <span className={styles.statusOnline}>Online now</span>
               ) : (
-                <span className="text-slate-400">Offline</span>
+                <span>Offline</span>
               )}
-            </span>
+            </div>
           </div>
+        </div>
+
+        <div className={styles.headerRight}>
+          <Link href={`/profile/${partnerUsername}`} className={styles.profileLinkBtn}>
+            View Profile
+          </Link>
         </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto overflow-x-hidden p-6 flex flex-col gap-2.5 min-w-0">
+      {/* Message Stream */}
+      <div className={styles.messagesContainer}>
         {hasMoreHistory && (
-          <div className="flex justify-center mb-2 shrink-0">
-            <button
-              type="button"
-              onClick={onLoadMore}
-              disabled={loadingHistory}
-              className="bg-slate-800/60 hover:bg-slate-700/60 disabled:opacity-50 text-slate-300 border border-slate-700/40 px-3.5 py-1.5 rounded-full text-xs font-medium cursor-pointer transition-colors"
-            >
-              {loadingHistory ? "Loading older messages..." : "↑ Load older messages"}
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={onLoadMore}
+            disabled={loadingHistory}
+            className={styles.loadMoreBtn}
+          >
+            {loadingHistory ? "Loading older messages..." : "↑ Load older messages"}
+          </button>
         )}
 
         {messages.length === 0 && !loadingHistory && (
-          <div className="m-auto text-center text-slate-400">
-            <p className="text-sm">No messages with {partnerUsername} yet.</p>
-            <p className="text-xs text-slate-500 mt-1">Say hello to start the conversation!</p>
+          <div className={styles.emptyNotice}>
+            <p>No messages with {partnerUsername} yet.</p>
+            <p style={{ marginTop: "4px", fontSize: "12px", opacity: 0.8 }}>
+              Say hello to start the conversation!
+            </p>
           </div>
         )}
 
         {messages.map((msg, index) => {
           const isMine = myUserId !== null && msg.sender_id === myUserId;
           const isRead = Boolean(msg.read_at);
+          const showDateDivider =
+            index === 0 || isDifferentDay(messages[index - 1]?.created_at, msg.created_at);
 
           return (
-            <div
-              key={msg.id || index}
-              className={`flex w-full min-w-0 ${isMine ? "justify-end" : "justify-start"}`}
-            >
-              <div
-                className={`chat-bubble max-w-[70%] sm:max-w-[65%] min-w-0 px-3.5 py-2.5 rounded-2xl break-words [overflow-wrap:anywhere] [word-break:break-word] leading-relaxed shadow-sm ${
-                  isMine
-                    ? "rounded-br-xs bg-[var(--planet-accent-active)] text-white"
-                    : "rounded-bl-xs bg-slate-800 text-slate-100 border border-slate-700/50"
-                }`}
-              >
-                <div className="chat-message-content text-sm whitespace-pre-wrap break-words [overflow-wrap:anywhere] [word-break:break-word]">
-                  {msg.content}
+            <Fragment key={msg.id || index}>
+              {showDateDivider && (
+                <div className={styles.dateDivider}>
+                  <span className={styles.dateDividerText}>
+                    {formatDateDivider(msg.created_at)}
+                  </span>
                 </div>
+              )}
 
-                <div
-                  className={`flex items-center gap-1 mt-1 shrink-0 ${
-                    isMine ? "justify-end" : "justify-start"
-                  }`}
-                >
-                  <time className="text-[11px] opacity-75 shrink-0">
-                    {formatMessageDateTime(msg.created_at)}
-                  </time>
-                  {isMine && (
-                    <span
-                      className={`text-xs font-bold ml-0.5 shrink-0 ${
-                        isRead ? "text-slate-200" : "text-slate-400"
-                      }`}
-                      title={isRead ? `Seen at ${msg.read_at}` : "Delivered"}
-                    >
-                      {isRead ? "✓✓" : "✓"}
-                    </span>
-                  )}
+              <div className={isMine ? styles.messageRowMine : styles.messageRowPartner}>
+                <div className={isMine ? styles.bubbleMine : styles.bubblePartner}>
+                  <div className={styles.messageContent}>{msg.content}</div>
+
+                  <div
+                    className={`${styles.bubbleMeta} ${
+                      isMine ? styles.bubbleMetaMine : styles.bubbleMetaPartner
+                    }`}
+                  >
+                    <time className={styles.bubbleTime}>
+                      {formatMessageTime(msg.created_at)}
+                    </time>
+                    {isMine && (
+                      <span
+                        className={`${styles.readReceipt} ${
+                          isRead ? styles.receiptSeen : styles.receiptDelivered
+                        }`}
+                        title={isRead ? `Seen at ${msg.read_at}` : "Delivered"}
+                      >
+                        {isRead ? "✓✓" : "✓"}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
+            </Fragment>
           );
         })}
 
         {isPartnerTyping && (
-          <div className="flex w-full justify-start min-w-0">
-            <div className="max-w-[70%] min-w-0 px-3.5 py-2 rounded-2xl rounded-bl-xs bg-slate-800/85 border border-slate-700/50 text-slate-300 text-xs italic truncate">
-              {partnerUsername} is typing...
+          <div className={styles.messageRowPartner}>
+            <div className={styles.typingWaveBubble} aria-label={`${partnerUsername} is typing`}>
+              <span className={styles.waveDot} />
+              <span className={styles.waveDot} />
+              <span className={styles.waveDot} />
             </div>
           </div>
         )}
@@ -178,69 +264,67 @@ export default function ChatWindow({
         <div ref={messagesEndRef} />
       </div>
 
+      {/* Restricted Follow Notice or Modern Composer */}
       {!isEligible ? (
-        <div className="p-4 border-t border-slate-700/30 bg-[#0b1026]/90 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left min-w-0 shrink-0">
-          <div className="flex items-center gap-2 text-slate-300 text-sm min-w-0">
-            <span className="text-base shrink-0">🔒</span>
-            <span className="truncate">
-              You can only message users you follow or who follow you.
-            </span>
+        <div className={styles.ineligibleBanner}>
+          <div className={styles.ineligibleText}>
+            <span>🔒 Mutual follow required to exchange direct messages.</span>
           </div>
-          <Link
-            href={`/profile/${partnerUsername}`}
-            className="shrink-0 px-4 py-2 rounded-full font-semibold text-xs bg-[var(--planet-accent-active)] hover:brightness-110 text-white transition-[filter] shadow-sm"
-          >
+          <Link href={`/profile/${partnerUsername}`} className={styles.followBtn}>
             Follow @{partnerUsername}
           </Link>
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="flex items-center gap-2.5 px-6 py-4 border-t border-slate-700/30 bg-[#0b1026]/90 min-w-0 shrink-0">
-          <div className="flex-1 relative flex items-center min-w-0">
-            <input
-              type="text"
+        <form onSubmit={handleSubmit} className={styles.composer}>
+          <div className={styles.composerInputWrapper}>
+            <textarea
+              ref={textareaRef}
+              rows={1}
               placeholder={`Message ${partnerUsername}...`}
               value={inputText}
               onChange={handleInputChange}
-              className={`w-full min-w-0 py-2.5 rounded-full border bg-[#10152f]/80 text-slate-100 placeholder-slate-400 text-sm focus:outline-none transition-colors ${
-                isNearLimit ? "pr-20" : "pr-4"
-              } pl-4.5 ${
-                isOverLimit
-                  ? "border-red-500 focus:border-red-500"
-                  : isNearLimit
-                  ? "border-amber-500 focus:border-amber-500"
-                  : "border-slate-700/60 focus:border-[var(--planet-accent)] focus:ring-2 focus:ring-[var(--planet-border)]"
-              }`}
+              onKeyDown={handleKeyDown}
+              className={styles.composerTextarea}
             />
-            {isNearLimit && (
-              <span
-                className={`absolute right-3.5 text-xs font-semibold pointer-events-none select-none bg-[#0b1026]/90 px-1.5 py-0.5 rounded-md shrink-0 ${
-                  isOverLimit ? "text-red-400" : "text-amber-400"
-                }`}
-                title={
-                  isOverLimit
-                    ? `${charCount - MAX_MESSAGE_LENGTH} characters over limit`
-                    : `${MAX_MESSAGE_LENGTH - charCount} characters remaining`
-                }
-              >
-                {isOverLimit
-                  ? `-${charCount - MAX_MESSAGE_LENGTH}`
-                  : `${charCount}/${MAX_MESSAGE_LENGTH}`}
-              </span>
-            )}
+            <span
+              className={`${styles.charCounter} ${
+                isOverLimit
+                  ? styles.charCounterOver
+                  : isNearLimit
+                  ? styles.charCounterNear
+                  : ""
+              }`}
+              aria-live="polite"
+            >
+              {isOverLimit
+                ? `-${charCount - MAX_MESSAGE_LENGTH}`
+                : `${charCount}/${MAX_MESSAGE_LENGTH}`}
+            </span>
           </div>
+
           <button
             type="submit"
             disabled={!inputText.trim() || isOverLimit}
-            className={`shrink-0 px-5 py-2.5 rounded-full font-semibold text-sm transition-all duration-200 ${
-              !inputText.trim() || isOverLimit
-                ? "bg-slate-700 text-slate-400 opacity-50 cursor-not-allowed"
-                : "bg-[var(--planet-accent-active)] hover:brightness-110 text-white cursor-pointer shadow-sm"
-            }`}
+            className={styles.sendButton}
+            aria-label="Send message"
+            title="Send message"
           >
-            Send
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <line x1="22" y1="2" x2="11" y2="13" />
+              <polygon points="22 2 15 22 11 13 2 9 22 2" />
+            </svg>
           </button>
         </form>
       )}
-    </div>
+    </section>
   );
 }

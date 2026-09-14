@@ -5,6 +5,7 @@ import { useChat } from "../hooks/useChat";
 import ChatSidebar from "./ChatSidebar";
 import ChatWindow from "./ChatWindow";
 import EmptyChat from "./EmptyChat";
+import styles from "./Chat.module.css";
 
 export default function ChatPageContent() {
   const [dismissedError, setDismissedError] = useState<string | null>(null);
@@ -32,14 +33,14 @@ export default function ChatPageContent() {
   const activeError = errorMessage && errorMessage !== dismissedError ? errorMessage : null;
 
   return (
-    <main className="chat-main flex flex-col h-full w-full min-w-0 overflow-hidden bg-[#050816] text-slate-100 font-sans">
+    <main className={styles.chatContainer}>
       {activeError && (
-        <div className="px-4 py-2.5 bg-red-500/15 border-b border-red-500/30 text-red-300 text-sm flex items-center justify-between shrink-0">
+        <div className={styles.errorBanner}>
           <span>⚠️ <strong>Notice:</strong> {activeError}</span>
           <button
             type="button"
             onClick={() => setDismissedError(activeError)}
-            className="text-red-300 hover:text-red-100 text-lg cursor-pointer px-1 leading-none ml-3"
+            className={styles.dismissErrorBtn}
             aria-label="Dismiss notice"
           >
             &times;
@@ -47,33 +48,38 @@ export default function ChatPageContent() {
         </div>
       )}
 
-      <div className="flex-1 flex overflow-hidden min-w-0">
-        <ChatSidebar
-          conversations={conversations}
-          activeUserId={activePartnerId}
-          onlineUserIDs={onlineUserIDs}
-          loading={loadingConversations}
-          onSelectConversation={selectConversation}
-        />
-
-        {activePartnerId ? (
-          <ChatWindow
-            partnerUsername={activePartnerUsername}
-            partnerAvatar={activePartnerAvatar}
-            isPartnerOnline={isPartnerOnline}
-            isPartnerTyping={isPartnerTyping}
-            isEligible={isPartnerEligible}
-            myUserId={myUserId}
-            messages={messages}
-            loadingHistory={loadingHistory}
-            hasMoreHistory={hasMoreHistory}
-            onLoadMore={loadMoreHistory}
-            onSendMessage={sendMessage}
-            onTyping={sendTyping}
+      <div className={styles.cardsWrapper}>
+        <div className={`${styles.sidebarCard} ${activePartnerId ? styles.hideOnMobile : ""}`}>
+          <ChatSidebar
+            conversations={conversations}
+            activeUserId={activePartnerId}
+            onlineUserIDs={onlineUserIDs}
+            loading={loadingConversations}
+            onSelectConversation={selectConversation}
           />
-        ) : (
-          <EmptyChat />
-        )}
+        </div>
+
+        <div className={`${styles.chatCard} ${!activePartnerId ? styles.hideOnMobile : ""}`}>
+          {activePartnerId ? (
+            <ChatWindow
+              partnerUsername={activePartnerUsername}
+              partnerAvatar={activePartnerAvatar}
+              isPartnerOnline={isPartnerOnline}
+              isPartnerTyping={isPartnerTyping}
+              isEligible={isPartnerEligible}
+              myUserId={myUserId}
+              messages={messages}
+              loadingHistory={loadingHistory}
+              hasMoreHistory={hasMoreHistory}
+              onLoadMore={loadMoreHistory}
+              onSendMessage={sendMessage}
+              onTyping={sendTyping}
+              onBack={() => selectConversation(0, "")}
+            />
+          ) : (
+            <EmptyChat />
+          )}
+        </div>
       </div>
     </main>
   );

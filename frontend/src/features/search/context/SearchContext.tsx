@@ -7,7 +7,6 @@ import {
   useEffect,
   type ReactNode,
 } from "react";
-import UniversalSearchModal from "../components/UniversalSearchModal";
 
 interface SearchContextValue {
   isOpen: boolean;
@@ -54,7 +53,6 @@ export function SearchProvider({ children }: { children: ReactNode }) {
       value={{ isOpen, openSearch, closeSearch, toggleSearch }}
     >
       {children}
-      <UniversalSearchModal isOpen={isOpen} onClose={closeSearch} />
     </SearchContext.Provider>
   );
 }

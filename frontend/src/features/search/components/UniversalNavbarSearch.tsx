@@ -2,14 +2,13 @@
 
 import { useEffect, useRef } from "react";
 import AppIcon from "@/components/layout/AppIcon";
-import { useUniversalSearch, type NavigableItem } from "../hooks/useUniversalSearch";
+import { useSearchModal } from "../context/SearchContext";
+import {
+  useUniversalSearch,
+  type NavigableItem,
+} from "../hooks/useUniversalSearch";
 import type { SearchCategory } from "../types/search";
-import styles from "./UniversalSearchModal.module.css";
-
-interface UniversalSearchModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
+import styles from "./UniversalNavbarSearch.module.css";
 
 const CATEGORIES: { id: SearchCategory; label: string }[] = [
   { id: "all", label: "All" },
@@ -20,12 +19,11 @@ const CATEGORIES: { id: SearchCategory; label: string }[] = [
   { id: "events", label: "Events" },
 ];
 
-export default function UniversalSearchModal({
-  isOpen,
-  onClose,
-}: UniversalSearchModalProps) {
+export default function UniversalNavbarSearch() {
+  const { isOpen, openSearch, closeSearch } = useSearchModal();
   const inputRef = useRef<HTMLInputElement>(null);
   const activeItemRef = useRef<HTMLDivElement>(null);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
 
   const {
     query,
@@ -41,30 +39,19 @@ export default function UniversalSearchModal({
     setActiveIndex,
     selectItem,
     handleKeyDown,
-  } = useUniversalSearch(onClose);
+  } = useUniversalSearch(closeSearch);
 
+  // Auto-focus input when search opens
   useEffect(() => {
     if (isOpen) {
-      setTimeout(() => {
+      const timeoutId = setTimeout(() => {
         inputRef.current?.focus();
       }, 50);
+      return () => clearTimeout(timeoutId);
     }
   }, [isOpen]);
 
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        onClose();
-      }
-    };
-
-    window.addEventListener("keydown", handleGlobalKeyDown);
-    return () => window.removeEventListener("keydown", handleGlobalKeyDown);
-  }, [isOpen, onClose]);
-
+  // Scroll active item into view
   useEffect(() => {
     if (activeItemRef.current) {
       activeItemRef.current.scrollIntoView({
@@ -74,7 +61,35 @@ export default function UniversalSearchModal({
     }
   }, [activeIndex]);
 
-  if (!isOpen) return null;
+  // Close on Escape or click outside
+  useEffect(() => {
+    if (!isOpen) return;
+
+    function handleGlobalKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        closeSearch();
+      }
+    }
+
+    function handleClickOutside(e: MouseEvent | TouchEvent) {
+      if (
+        searchContainerRef.current &&
+        !searchContainerRef.current.contains(e.target as Node)
+      ) {
+        closeSearch();
+      }
+    }
+
+    window.addEventListener("keydown", handleGlobalKeyDown);
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+    return () => {
+      window.removeEventListener("keydown", handleGlobalKeyDown);
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
+  }, [isOpen, closeSearch]);
 
   const renderItemIcon = (item: NavigableItem) => {
     switch (item.type) {
@@ -94,11 +109,11 @@ export default function UniversalSearchModal({
         const user = item.data as { profile_photo?: string; username: string };
         if (user.profile_photo) {
           return (
+            /* eslint-disable-next-line @next/next/no-img-element */
             <img
               src={user.profile_photo}
               alt={item.title}
               onError={(e) => {
-                // Hide broken image
                 (e.target as HTMLElement).style.display = "none";
               }}
             />
@@ -110,6 +125,7 @@ export default function UniversalSearchModal({
         const group = item.data as { group_photo?: string };
         if (group.group_photo) {
           return (
+            /* eslint-disable-next-line @next/next/no-img-element */
             <img
               src={group.group_photo}
               alt={item.title}
@@ -130,58 +146,95 @@ export default function UniversalSearchModal({
     }
   };
 
+  // When closed: show the sleek trigger button in the navbar
+  if (!isOpen) {
+    return (
+      <div className={styles.searchContainer}>
+        <button
+          type="button"
+          className={styles.searchTriggerButton}
+          onClick={openSearch}
+          aria-label="Open universal search (⌘K)"
+          title="Open universal search (⌘K)"
+        >
+          <span className={styles.searchIconWrapper} aria-hidden="true">
+            <AppIcon name="search" />
+          </span>
+          <span className={styles.searchTriggerPlaceholder}>
+            Search people, posts, groups...
+          </span>
+          <kbd className={styles.kbdBadge}>⌘K</kbd>
+        </button>
+      </div>
+    );
+  }
+
+  // When open: active input in navbar with connected dropdown extending downwards
   return (
     <div
-      className={styles.overlay}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) {
-          onClose();
-        }
-      }}
-      role="dialog"
-      aria-modal="true"
-      aria-label="Universal Search Command Palette"
+      ref={searchContainerRef}
+      className={styles.searchContainer}
+      role="combobox"
+      aria-expanded="true"
+      aria-haspopup="listbox"
     >
-      <div className={styles.modal} onKeyDown={handleKeyDown}>
-        {/* Top Search Input */}
-        <div className={styles.header}>
-          <div className={styles.searchIconWrapper}>
-            {isLoading ? (
-              <div className={styles.spinner} aria-label="Loading" />
-            ) : (
-              <AppIcon name="search" />
-            )}
-          </div>
-          <input
-            ref={inputRef}
-            type="search"
-            className={styles.searchInput}
-            placeholder="Search people, groups, posts, events, shortcuts..."
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            aria-label="Search across the platform"
-            autoComplete="off"
-            spellCheck={false}
-          />
-          {query ? (
-            <button
-              type="button"
-              className={styles.clearButton}
-              onClick={() => {
-                setQuery("");
-                inputRef.current?.focus();
-              }}
-              title="Clear search"
-              aria-label="Clear search"
-            >
-              ×
-            </button>
+      {/* 1. Active Search Input Bar connected in the TopNavbar */}
+      <div className={styles.searchBarActive}>
+        <span className={styles.searchIconWrapper} aria-hidden="true">
+          {isLoading ? (
+            <span className={styles.spinner} aria-label="Searching..." />
           ) : (
-            <span className={styles.escPill}>ESC</span>
+            <AppIcon name="search" />
           )}
-        </div>
+        </span>
+        <input
+          ref={inputRef}
+          type="search"
+          className={styles.searchInput}
+          placeholder="Search people, groups, posts, events, shortcuts..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={handleKeyDown}
+          autoComplete="off"
+          spellCheck={false}
+          aria-label="Search across the platform"
+        />
+        {query ? (
+          <button
+            type="button"
+            className={styles.clearButton}
+            onClick={() => {
+              setQuery("");
+              inputRef.current?.focus();
+            }}
+            title="Clear search"
+            aria-label="Clear search"
+          >
+            ×
+          </button>
+        ) : (
+          <span
+            className={styles.escPill}
+            onClick={closeSearch}
+            title="Close search (Esc)"
+          >
+            ESC
+          </span>
+        )}
+      </div>
 
-        <div className={styles.tabsBar} role="tablist" aria-label="Search filter categories">
+      {/* 2. Connected Dropdown Tray extending downwards from the top bar */}
+      <div
+        className={styles.dropdownTray}
+        role="listbox"
+        aria-label="Search results"
+      >
+        {/* Category filter tabs */}
+        <div
+          className={styles.tabsBar}
+          role="tablist"
+          aria-label="Filter categories"
+        >
           {CATEGORIES.map((tab) => (
             <button
               key={tab.id}
@@ -201,6 +254,7 @@ export default function UniversalSearchModal({
           ))}
         </div>
 
+        {/* Results List */}
         <div className={styles.resultsContent}>
           {!query.trim() && recentSearches.length > 0 && (
             <div>
@@ -262,7 +316,9 @@ export default function UniversalSearchModal({
                     role="option"
                     aria-selected={isActive}
                   >
-                    <div className={styles.itemAvatar}>{renderItemIcon(item)}</div>
+                    <div className={styles.itemAvatar}>
+                      {renderItemIcon(item)}
+                    </div>
                     <div className={styles.itemInfo}>
                       <div className={styles.itemTitleRow}>
                         <span className={styles.itemTitle}>{item.title}</span>
@@ -271,7 +327,9 @@ export default function UniversalSearchModal({
                         )}
                       </div>
                       {item.subtitle && (
-                        <span className={styles.itemSubtitle}>{item.subtitle}</span>
+                        <span className={styles.itemSubtitle}>
+                          {item.subtitle}
+                        </span>
                       )}
                     </div>
                     <div className={styles.itemActionIcon}>
@@ -288,13 +346,15 @@ export default function UniversalSearchModal({
               </div>
               <div className={styles.stateTitle}>No results found</div>
               <div className={styles.stateSubtitle}>
-                We couldn&apos;t find anything matching &ldquo;{query.trim()}&rdquo;. Try another term or switch categories.
+                We couldn&apos;t find anything matching &ldquo;{query.trim()}
+                &rdquo;. Try another term or switch categories.
               </div>
             </div>
           ) : null}
         </div>
 
-        <div className={styles.footer}>
+        {/* Dropdown Footer hints */}
+        <div className={styles.dropdownFooter}>
           <div className={styles.footerHints}>
             <span className={styles.hintItem}>
               <kbd className={styles.kbd}>↑</kbd>
@@ -310,7 +370,7 @@ export default function UniversalSearchModal({
               <span>close</span>
             </span>
           </div>
-          <div>
+          <div className={styles.footerBrand}>
             <span>Cosmic Universal Search</span>
           </div>
         </div>

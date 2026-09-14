@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import type { ChatSidebarProps } from "../types/chat";
 import { formatConversationDate, getDisplayName, getInitials } from "@/lib/utils";
 import NewChatModal from "./NewChatModal";
+import styles from "./Chat.module.css";
 
 export default function ChatSidebar({
   conversations,
@@ -14,62 +15,121 @@ export default function ChatSidebar({
 }: ChatSidebarProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [isNewChatOpen, setIsNewChatOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<"all" | "unread" | "online">("all");
+
+  const totalUnread = useMemo(
+    () => conversations.reduce((sum, c) => sum + (c.unread_count || 0), 0),
+    [conversations]
+  );
 
   const filteredConversations = useMemo(() => {
-    if (!searchQuery.trim()) return conversations;
-    const q = searchQuery.toLowerCase();
-    return conversations.filter(
-      (c) =>
+    return conversations.filter((c) => {
+      if (activeTab === "unread" && (!c.unread_count || c.unread_count <= 0)) {
+        return false;
+      }
+      if (activeTab === "online" && !onlineUserIDs.includes(c.partner_id)) {
+        return false;
+      }
+
+      if (!searchQuery.trim()) return true;
+      const q = searchQuery.toLowerCase();
+      return (
         c.partner_username.toLowerCase().includes(q) ||
         c.partner_first_name.toLowerCase().includes(q) ||
         c.partner_last_name.toLowerCase().includes(q)
-    );
-  }, [conversations, searchQuery]);
+      );
+    });
+  }, [conversations, activeTab, onlineUserIDs, searchQuery]);
 
   return (
-    <aside className="w-80 flex flex-col border-r border-[var(--planet-border)] bg-[#0b1026]/70 backdrop-blur-md h-full shrink-0">
-      <div className="p-4 border-b border-slate-700/30">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="m-0 text-lg font-bold text-slate-100">Messages</h2>
+    <aside className={styles.floatingCard}>
+      <div className={styles.sidebarHeader}>
+        <div className={styles.sidebarTitleRow}>
+          <div className={styles.sidebarTitleGroup}>
+            <h2 className={styles.sidebarTitle}>Messages</h2>
+            {totalUnread > 0 && (
+              <span className={styles.unreadCountBadge}>{totalUnread}</span>
+            )}
+          </div>
           <button
             type="button"
             onClick={() => setIsNewChatOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-[var(--planet-accent-active)] hover:brightness-110 text-white shadow-sm transition-[filter] cursor-pointer"
+            className={styles.newChatBtn}
             title="Start a new chat"
           >
             <span>+</span> New Chat
           </button>
         </div>
-        <div className="relative flex items-center">
+
+        <div className={styles.searchWrapper}>
+          <span className={styles.searchIcon} aria-hidden="true">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+          </span>
           <input
             type="text"
             placeholder="Search conversations..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full px-3 py-2 rounded-lg border border-slate-700/60 bg-[#10152f]/80 text-slate-100 placeholder-slate-400 text-sm focus:outline-none focus:border-[var(--planet-accent)] focus:ring-2 focus:ring-[var(--planet-border)] transition-colors"
+            className={styles.searchInput}
           />
           {searchQuery && (
             <button
               type="button"
               onClick={() => setSearchQuery("")}
-              className="absolute right-2 text-slate-400 hover:text-slate-200 text-base cursor-pointer px-1 leading-none"
+              className={styles.searchClearBtn}
+              aria-label="Clear search"
             >
               &times;
             </button>
           )}
         </div>
+
+        <div className={styles.filterChips}>
+          {(["all", "unread", "online"] as const).map((tab) => {
+            const label = tab.charAt(0).toUpperCase() + tab.slice(1);
+            const isActive = activeTab === tab;
+            return (
+              <button
+                key={tab}
+                type="button"
+                onClick={() => setActiveTab(tab)}
+                className={`${styles.filterChip} ${isActive ? styles.filterChipActive : ""}`}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto divide-y divide-slate-800/40">
+      <div className={styles.conversationsList}>
         {loading && (
-          <p className="py-8 px-4 text-center text-slate-400 text-sm">
+          <p className={styles.loadingNotice}>
             Loading conversations...
           </p>
         )}
 
         {!loading && filteredConversations.length === 0 && (
-          <p className="py-8 px-4 text-center text-slate-400 text-sm">
-            {searchQuery ? "No matching contacts found." : "No conversations yet."}
+          <p className={styles.emptyNotice}>
+            {searchQuery
+              ? "No matching contacts found."
+              : activeTab === "unread"
+              ? "No unread messages."
+              : activeTab === "online"
+              ? "No contacts currently online."
+              : "No conversations yet."}
           </p>
         )}
 
@@ -91,49 +151,57 @@ export default function ChatSidebar({
             return (
               <div
                 key={c.partner_id}
-                onClick={() => onSelectConversation(c.partner_id, c.partner_username)}
-                className={`flex items-center px-3.5 py-2.5 gap-3 cursor-pointer transition-colors border-l-[3px] ${
-                  isActive
-                    ? "bg-[var(--planet-accent-soft)] border-[var(--planet-accent)]"
-                    : "border-transparent hover:bg-slate-800/40"
+                onClick={() => onSelectConversation(c.partner_id, c.partner_username, c.partner_avatar)}
+                className={`${styles.conversationItem} ${
+                  isActive ? styles.conversationItemActive : ""
                 }`}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    onSelectConversation(c.partner_id, c.partner_username, c.partner_avatar);
+                  }
+                }}
               >
-                <div className="relative shrink-0 w-11 h-11">
+                <div className={styles.avatarWrapper}>
                   {c.partner_avatar ? (
                     <img
                       src={c.partner_avatar}
                       alt={displayName}
-                      className="w-11 h-11 rounded-full object-cover"
+                      className={styles.avatarImg}
                     />
                   ) : (
-                    <div className="w-11 h-11 rounded-full bg-[var(--planet-accent-active)] text-white flex items-center justify-center font-semibold text-sm">
+                    <div className={styles.avatarFallback}>
                       {initials}
                     </div>
                   )}
                   <span
-                    className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full ring-2 ring-[#0b1026] ${
-                      isOnline ? "bg-emerald-500" : "bg-slate-400"
-                    }`}
+                    className={isOnline ? styles.onlineRing : styles.offlineDot}
                     title={isOnline ? "Online" : "Offline"}
                   />
                 </div>
 
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-baseline justify-between mb-1">
-                    <span className="font-semibold text-sm text-slate-100 truncate">
+                <div className={styles.itemInfo}>
+                  <div className={styles.itemHeader}>
+                    <span className={styles.itemName}>
                       {displayName}
                     </span>
-                    <span className="text-xs text-slate-400 shrink-0 ml-2">
+                    <span className={styles.itemTime}>
                       {formatConversationDate(c.last_message_at)}
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between gap-1.5">
-                    <span className="text-xs text-slate-400 truncate">
+                  <div className={styles.itemFooter}>
+                    <span
+                      className={`${styles.itemSnippet} ${
+                        c.unread_count > 0 ? styles.itemSnippetUnread : ""
+                      }`}
+                    >
                       {c.last_message || "No messages yet"}
                     </span>
                     {c.unread_count > 0 && (
-                      <span className="bg-[var(--planet-accent-active)] text-white text-[11px] font-bold px-1.5 py-0.5 rounded-full shrink-0">
+                      <span className={styles.itemUnreadPill}>
                         {c.unread_count}
                       </span>
                     )}

@@ -84,18 +84,16 @@ export function useUniversalSearch(onClose?: () => void) {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [recentSearches, setRecentSearches] = useState<string[]>([]);
-  const [activeIndex, setActiveIndex] = useState<number>(0);
-
-  useEffect(() => {
+  const [recentSearches, setRecentSearches] = useState<string[]>(() => {
+    if (typeof window === "undefined") return [];
     try {
       const stored = localStorage.getItem(RECENT_SEARCHES_KEY);
-      if (stored) {
-        setRecentSearches(JSON.parse(stored));
-      }
+      return stored ? JSON.parse(stored) : [];
     } catch {
+      return [];
     }
-  }, []);
+  });
+  const [activeIndex, setActiveIndex] = useState<number>(0);
 
   const saveRecentSearch = (term: string) => {
     const trimmed = term.trim();
@@ -318,3 +316,4 @@ export function useUniversalSearch(onClose?: () => void) {
     handleKeyDown,
   };
 }
+

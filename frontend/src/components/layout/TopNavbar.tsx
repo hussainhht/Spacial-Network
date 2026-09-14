@@ -10,6 +10,7 @@ import AppIcon from "./AppIcon";
 import { useNotifications } from "@/features/notifications/context/NotificationProvider";
 import NotificationDropdown from "@/features/notifications/components/NotificationDropdown";
 import { useSearchModal } from "@/features/search/context/SearchContext";
+import UniversalNavbarSearch from "@/features/search/components/UniversalNavbarSearch";
 import { useLogout } from "./useLogout";
 import styles from "./TopNavbar.module.css";
 
@@ -17,7 +18,7 @@ export default function TopNavbar() {
   const pathname = usePathname();
   const context = getNavbarContext(pathname);
   const { search, setSearch } = useGroupsSearch();
-  const { openSearch } = useSearchModal();
+  const { isOpen, closeSearch } = useSearchModal();
   // Real notifications context
   const { unreadCount } = useNotifications();
   const { logout, loggingOut, error: logoutError } = useLogout();
@@ -32,7 +33,15 @@ export default function TopNavbar() {
     setMenuRoute(pathname);
     setNotificationsOpen(false);
     setUserMenuOpen(false);
+    closeSearch();
   }
+
+  useEffect(() => {
+    if (isOpen) {
+      setNotificationsOpen(false);
+      setUserMenuOpen(false);
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (!userMenuOpen && !notificationsOpen) return;
@@ -88,53 +97,15 @@ export default function TopNavbar() {
       </div>
 
       {/* 2. Search Bar: Universal Search Trigger (⌘K) */}
-      <div className={styles.searchSection}>
-        {context.searchMode === "groups" ? (
+      <div
+        className={`${styles.searchSection} ${
+          isOpen ? styles.searchSectionOpen : ""
+        }`}
+      >
+        {context.searchMode === "groups" && !isOpen ? (
           <GroupSearchInput value={search} onChange={setSearch} />
         ) : (
-          <button
-            type="button"
-            className={styles.searchBar}
-            onClick={openSearch}
-            aria-label="Open universal search (⌘K)"
-            title="Open universal search (⌘K)"
-            style={{
-              cursor: "pointer",
-              textAlign: "left",
-              font: "inherit",
-              width: "100%",
-            }}
-          >
-            <span className={styles.searchIcon} aria-hidden="true">
-              <AppIcon name="search" />
-            </span>
-            <span
-              style={{
-                flex: 1,
-                fontSize: "13px",
-                color: "var(--space-text-muted, #94a3b8)",
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-              }}
-            >
-              Search people, posts, groups...
-            </span>
-            <kbd
-              style={{
-                padding: "2px 6px",
-                borderRadius: "5px",
-                background: "rgba(255, 255, 255, 0.08)",
-                border: "1px solid rgba(148, 163, 184, 0.2)",
-                fontSize: "10px",
-                fontWeight: 600,
-                color: "#94a3b8",
-                letterSpacing: "0.5px",
-              }}
-            >
-              ⌘K
-            </kbd>
-          </button>
+          <UniversalNavbarSearch />
         )}
       </div>
 
@@ -143,10 +114,10 @@ export default function TopNavbar() {
         {/* 3. New Post Button */}
         {context.action && (
           <Link
-
             href={context.action.href}
             className={styles.newPostButton}
             aria-label={context.action.ariaLabel}
+            onClick={() => closeSearch()}
           >
             <span className={styles.newPostIcon} aria-hidden="true">
               <AppIcon name="plus" />
@@ -161,6 +132,7 @@ export default function TopNavbar() {
             type="button"
             className={styles.bellButton}
             onClick={() => {
+              closeSearch();
               setMenuRoute(pathname);
               setNotificationsOpen((prev) => !(prev && menuRoute === pathname));
               setUserMenuOpen(false);
@@ -195,6 +167,7 @@ export default function TopNavbar() {
             type="button"
             className={styles.userButton}
             onClick={() => {
+              closeSearch();
               setMenuRoute(pathname);
               setUserMenuOpen((prev) => !(prev && menuRoute === pathname));
               setNotificationsOpen(false);
