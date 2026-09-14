@@ -6,9 +6,16 @@ import { Box3, DoubleSide, Group, Mesh, MeshStandardMaterial, Quaternion, Vector
 import { createEarthMaterials } from "./earthMaterials";
 import { EARTH_MODEL_PATH, type SpaceModel } from "./modelsRegistry";
 
+// Both meshes are exported as concentric, correctly-sized spheres (Clouds is
+// already authored a bit larger than Earth), so each keeps its own geometry
+// and radius. Only the tilt is overridden, and identically for both, so the
+// cloud texture stays aligned with the surface texture beneath it.
+const EARTH_TILT = new Quaternion(-0.135598958, 0.9884727, -0.0124000078, 0.0661882833).normalize();
+
 /**
- * Isolated Earth model component preserving custom shaders,
- * procedural clouds, and atmospheric scattering.
+ * Isolated Earth model component preserving custom shaders and atmospheric
+ * scattering. Surface and clouds render their own baked source textures;
+ * only the atmosphere shell has no baked counterpart and stays procedural.
  */
 function EarthPlanetModel() {
   const { scene } = useGLTF(EARTH_MODEL_PATH);
@@ -16,19 +23,33 @@ function EarthPlanetModel() {
   const { model, center, scale } = useMemo(() => {
     // Read export transforms without changing cached materials or geometry.
     scene.updateMatrixWorld(true);
-    const source = scene.getObjectByName("Surface_Material001_0");
-    if (!(source instanceof Mesh)) throw new Error("Earth surface mesh is missing.");
-    // Flatten the export hierarchy and reuse its surface geometry for the existing
-    // procedural shells. Exported opaque atmosphere meshes must not cover it.
+    const earthSource = scene.getObjectByName("Earth_Earth_0");
+    if (!(earthSource instanceof Mesh)) {
+      throw new Error("Earth surface mesh is missing.");
+    }
+    // Clouds are optional: render without them if the model doesn't have one.
+    const cloudSource = scene.getObjectByName("Clouds_Clouds_0");
+    const hasCloud = cloudSource instanceof Mesh;
+
     const model = new Group();
-    for (const name of ["surface", "cloud", "atmo"]) {
+    let atmoMesh: Mesh | undefined;
+    const shellSources: ReadonlyArray<readonly [string, Mesh]> = [
+      ["surface", earthSource],
+      ...(hasCloud ? ([["cloud", cloudSource]] as const) : []),
+      ["atmo", earthSource],
+    ];
+    for (const [name, source] of shellSources) {
       const mesh = source.clone();
       mesh.name = name;
       source.matrixWorld.decompose(mesh.position, mesh.quaternion, mesh.scale);
-      // Keep the original Earth tilt and procedural cloud orientation.
-      mesh.quaternion.set(-0.135598958, 0.9884727, -0.0124000078, 0.0661882833).normalize();
+      mesh.quaternion.copy(EARTH_TILT);
       model.add(mesh);
+      if (name === "atmo") atmoMesh = mesh;
     }
+    // Atmosphere has no baked geometry of its own: push it outward a little
+    // past the (already correctly sized) cloud shell.
+    atmoMesh?.scale.multiplyScalar(1.025);
+
     const bounds = new Box3().setFromObject(model);
     const center = bounds.getCenter(new Vector3());
     const size = bounds.getSize(new Vector3());
@@ -45,39 +66,44 @@ function EarthPlanetModel() {
 
   useLayoutEffect(() => {
     const surface = model.getObjectByName("surface");
-    const cloud = model.getObjectByName("cloud");
     const atmo = model.getObjectByName("atmo");
-    const source = scene.getObjectByName("Surface_Material001_0");
+    const earthSource = scene.getObjectByName("Earth_Earth_0");
 
     if (
       !(surface instanceof Mesh) ||
-      !(cloud instanceof Mesh) ||
       !(atmo instanceof Mesh) ||
-      !(source instanceof Mesh) ||
-      !(source.material instanceof MeshStandardMaterial) ||
-      !source.material.map
+      !(earthSource instanceof Mesh) ||
+      !(earthSource.material instanceof MeshStandardMaterial) ||
+      !earthSource.material.map
     ) {
-      throw new Error("Earth requires surface, cloud, atmo meshes and the source coastline map.");
+      throw new Error("Earth requires surface and atmo meshes and the source map.");
     }
 
-    const materials = createEarthMaterials(source.material.map);
+    // Clouds are optional: only wired up when both the shell and its source
+    // texture are present.
+    const cloud = model.getObjectByName("cloud");
+    const cloudSource = scene.getObjectByName("Clouds_Clouds_0");
+    const cloudMap =
+      cloudSource instanceof Mesh &&
+      cloudSource.material instanceof MeshStandardMaterial &&
+      cloudSource.material.map
+        ? cloudSource.material.map
+        : undefined;
+
+    const materials = createEarthMaterials(earthSource.material.map, cloudMap);
     surface.material = materials.surface;
-    cloud.material = materials.cloud;
     atmo.material = materials.atmo;
-
-    for (const [shell, factor] of [
-      [cloud, 1.008],
-      [atmo, 1.025],
-    ] as const) {
-      shell.position.copy(surface.position);
-      shell.quaternion.copy(surface.quaternion);
-      shell.scale.copy(surface.scale).multiplyScalar(factor);
-    }
-    cloud.renderOrder = 1;
     atmo.renderOrder = 2;
 
+    if (cloud instanceof Mesh && materials.cloud) {
+      cloud.material = materials.cloud;
+      cloud.renderOrder = 1;
+    }
+
     return () => {
-      Object.values(materials).forEach((mat) => mat.dispose());
+      materials.surface.dispose();
+      materials.atmo.dispose();
+      materials.cloud?.dispose();
     };
   }, [model, scene]);
 
