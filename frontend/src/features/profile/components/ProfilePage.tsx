@@ -9,13 +9,17 @@ import {
   getMyProfile,
   getProfileByUsername,
   unfollowUser,
+  updateMyProfileAvatar,
   updateMyProfileDetails,
   updateMyProfilePrivacy,
 } from "../api/profiles";
 import { listPosts } from "@/features/posts/api/posts";
 import { getEligibleContacts } from "@/features/chat/api/chat";
 import type { Post } from "@/features/posts/types/post";
-import type { UpdateProfileDetailsInput } from "../api/profiles";
+import type {
+  UpdateProfileAvatarInput,
+  UpdateProfileDetailsInput,
+} from "../api/profiles";
 import type {
   FollowStatus,
   Profile,
@@ -61,6 +65,8 @@ export default function ProfilePage({ username }: ProfilePageProps) {
       !profile.canViewFullProfile,
   );
   const [postsLoading, setPostsLoading] = useState(!isLocked);
+  const [avatarUpdating, setAvatarUpdating] = useState(false);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
   const [detailsUpdating, setDetailsUpdating] = useState(false);
   const [detailsError, setDetailsError] = useState<string | null>(null);
   const [privacyUpdating, setPrivacyUpdating] = useState(false);
@@ -388,6 +394,28 @@ export default function ProfilePage({ username }: ProfilePageProps) {
     }
   }
 
+  async function handleUpdateProfileAvatar(input: UpdateProfileAvatarInput) {
+    if (!profile || !isOwnProfile || avatarUpdating) {
+      return;
+    }
+
+    setAvatarUpdating(true);
+    setAvatarError(null);
+
+    try {
+      const updatedProfile = await updateMyProfileAvatar(input);
+      setProfile(updatedProfile);
+      setPrivacyOverride(updatedProfile.isPrivate);
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Failed to update profile photo";
+      setAvatarError(message);
+      throw new Error(message);
+    } finally {
+      setAvatarUpdating(false);
+    }
+  }
+
   function handlePostDeleted(deletedId: number) {
     setPosts((prev) => prev.filter((p) => p.id !== deletedId));
   }
@@ -449,6 +477,11 @@ export default function ProfilePage({ username }: ProfilePageProps) {
             onTogglePrivacy={isOwnProfile ? handleTogglePrivacy : undefined}
             privacyUpdating={privacyUpdating}
             privacyError={privacyError}
+            onUpdateProfileAvatar={
+              isOwnProfile ? handleUpdateProfileAvatar : undefined
+            }
+            avatarUpdating={avatarUpdating}
+            avatarError={avatarError}
             onUpdateProfileDetails={
               isOwnProfile ? handleUpdateProfileDetails : undefined
             }

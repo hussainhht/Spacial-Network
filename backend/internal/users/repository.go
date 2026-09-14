@@ -287,3 +287,48 @@ func (r *Repository) UpdateProfileDetails(
 
 	return r.GetProfileByID(userID)
 }
+
+func (r *Repository) UpdateProfilePhoto(
+	userID int,
+	profilePhoto sql.NullString,
+) (*Profile, string, error) {
+	current, err := r.GetProfileByID(userID)
+	if err != nil {
+		return nil, "", err
+	}
+
+	oldPhoto := ""
+	if current.ProfilePhoto.Valid {
+		oldPhoto = current.ProfilePhoto.String
+	}
+
+	nextPhoto := ""
+	if profilePhoto.Valid {
+		nextPhoto = profilePhoto.String
+	}
+
+	result, err := r.db.Exec(`
+		UPDATE users
+		SET profile_photo = NULLIF(?, ''), updated_at = CURRENT_TIMESTAMP
+		WHERE id = ?
+	`, nextPhoto, userID)
+	if err != nil {
+		return nil, "", err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return nil, "", err
+	}
+
+	if rowsAffected == 0 {
+		return nil, "", sql.ErrNoRows
+	}
+
+	updated, err := r.GetProfileByID(userID)
+	if err != nil {
+		return nil, "", err
+	}
+
+	return updated, oldPhoto, nil
+}

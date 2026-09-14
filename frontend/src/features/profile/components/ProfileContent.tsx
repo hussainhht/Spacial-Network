@@ -3,8 +3,12 @@
 import PostCard from "@/features/posts/components/PostCard";
 import type { Post } from "@/features/posts/types/post";
 import { parseDate } from "@/lib/utils";
-import type { UpdateProfileDetailsInput } from "../api/profiles";
+import type {
+  UpdateProfileAvatarInput,
+  UpdateProfileDetailsInput,
+} from "../api/profiles";
 import type { Profile, ProfileTab, ProfileUserSummary } from "../types/profile";
+import ProfileAvatarForm from "./ProfileAvatarForm";
 import ProfileDetailsForm from "./ProfileDetailsForm";
 import ProfileFollowRequests from "./ProfileFollowRequests";
 import ProfilePrivacy from "./ProfilePrivacy";
@@ -103,6 +107,9 @@ interface AboutTabProps {
   onTogglePrivacy?: () => Promise<void>;
   privacyUpdating?: boolean;
   privacyError?: string | null;
+  onUpdateProfileAvatar?: (input: UpdateProfileAvatarInput) => Promise<void>;
+  avatarUpdating?: boolean;
+  avatarError?: string | null;
   onUpdateProfileDetails?: (input: UpdateProfileDetailsInput) => Promise<void>;
   detailsUpdating?: boolean;
   detailsError?: string | null;
@@ -119,6 +126,9 @@ function AboutTab({
   onTogglePrivacy,
   privacyUpdating = false,
   privacyError = null,
+  onUpdateProfileAvatar,
+  avatarUpdating = false,
+  avatarError = null,
   onUpdateProfileDetails,
   detailsUpdating = false,
   detailsError = null,
@@ -153,6 +163,16 @@ function AboutTab({
       className={styles.tabContent}
     >
       <div className={styles.aboutGrid}>
+        {isOwnProfile && onUpdateProfileAvatar && (
+          <ProfileAvatarForm
+            key={`${profile.id}:${profile.profilePhoto ?? ""}`}
+            profile={profile}
+            onSave={onUpdateProfileAvatar}
+            saving={avatarUpdating}
+            error={avatarError}
+          />
+        )}
+
         {isOwnProfile && onUpdateProfileDetails && (
           <ProfileDetailsForm
             key={[
@@ -280,6 +300,9 @@ interface ProfileContentProps {
   onTogglePrivacy?: () => Promise<void>;
   privacyUpdating?: boolean;
   privacyError?: string | null;
+  onUpdateProfileAvatar?: (input: UpdateProfileAvatarInput) => Promise<void>;
+  avatarUpdating?: boolean;
+  avatarError?: string | null;
   onUpdateProfileDetails?: (input: UpdateProfileDetailsInput) => Promise<void>;
   detailsUpdating?: boolean;
   detailsError?: string | null;
@@ -301,6 +324,9 @@ export default function ProfileContent({
   onTogglePrivacy,
   privacyUpdating,
   privacyError,
+  onUpdateProfileAvatar,
+  avatarUpdating,
+  avatarError,
   onUpdateProfileDetails,
   detailsUpdating,
   detailsError,
@@ -333,6 +359,9 @@ export default function ProfileContent({
           onTogglePrivacy={onTogglePrivacy}
           privacyUpdating={privacyUpdating}
           privacyError={privacyError}
+          onUpdateProfileAvatar={onUpdateProfileAvatar}
+          avatarUpdating={avatarUpdating}
+          avatarError={avatarError}
           onUpdateProfileDetails={onUpdateProfileDetails}
           detailsUpdating={detailsUpdating}
           detailsError={detailsError}
