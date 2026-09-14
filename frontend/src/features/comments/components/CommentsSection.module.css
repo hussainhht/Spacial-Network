@@ -31,10 +31,10 @@
   font-size: 12px;
   font-weight: 500;
   color: var(--space-text-muted);
-  background: rgba(139, 92, 246, 0.1);
+  background: var(--planet-accent-soft);
   padding: 2px 8px;
   border-radius: 999px;
-  border: 1px solid rgba(167, 139, 250, 0.18);
+  border: 1px solid var(--planet-border);
 }
 
 .loading {

@@ -75,7 +75,7 @@ export default function ChatWindow({
                 className="w-10 h-10 rounded-full object-cover"
               />
             ) : (
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-blue-500 text-white flex items-center justify-center font-semibold text-sm">
+              <div className="w-10 h-10 rounded-full bg-[var(--planet-accent-active)] text-white flex items-center justify-center font-semibold text-sm">
                 {initials}
               </div>
             )}
@@ -91,7 +91,7 @@ export default function ChatWindow({
             <h3 className="m-0 text-base font-semibold text-slate-100 truncate">{partnerUsername}</h3>
             <span className="text-xs truncate block">
               {isPartnerTyping ? (
-                <span className="text-indigo-400 italic">✍️ typing...</span>
+                <span className="text-[var(--planet-accent)] italic">✍️ typing...</span>
               ) : isPartnerOnline ? (
                 <span className="text-emerald-500 font-medium">Online</span>
               ) : (
@@ -135,7 +135,7 @@ export default function ChatWindow({
               <div
                 className={`chat-bubble max-w-[70%] sm:max-w-[65%] min-w-0 px-3.5 py-2.5 rounded-2xl break-words [overflow-wrap:anywhere] [word-break:break-word] leading-relaxed shadow-sm ${
                   isMine
-                    ? "rounded-br-xs bg-gradient-to-br from-indigo-600 to-blue-600 text-white"
+                    ? "rounded-br-xs bg-[var(--planet-accent-active)] text-white"
                     : "rounded-bl-xs bg-slate-800 text-slate-100 border border-slate-700/50"
                 }`}
               >
@@ -154,7 +154,7 @@ export default function ChatWindow({
                   {isMine && (
                     <span
                       className={`text-xs font-bold ml-0.5 shrink-0 ${
-                        isRead ? "text-blue-300" : "text-slate-400"
+                        isRead ? "text-slate-200" : "text-slate-400"
                       }`}
                       title={isRead ? `Seen at ${msg.read_at}` : "Delivered"}
                     >
@@ -188,7 +188,7 @@ export default function ChatWindow({
           </div>
           <Link
             href={`/profile/${partnerUsername}`}
-            className="shrink-0 px-4 py-2 rounded-full font-semibold text-xs bg-indigo-600 hover:bg-indigo-500 text-white transition-colors shadow-sm"
+            className="shrink-0 px-4 py-2 rounded-full font-semibold text-xs bg-[var(--planet-accent-active)] hover:brightness-110 text-white transition-[filter] shadow-sm"
           >
             Follow @{partnerUsername}
           </Link>
@@ -208,7 +208,7 @@ export default function ChatWindow({
                   ? "border-red-500 focus:border-red-500"
                   : isNearLimit
                   ? "border-amber-500 focus:border-amber-500"
-                  : "border-slate-700/60 focus:border-indigo-500"
+                  : "border-slate-700/60 focus:border-[var(--planet-accent)] focus:ring-2 focus:ring-[var(--planet-border)]"
               }`}
             />
             {isNearLimit && (
@@ -234,7 +234,7 @@ export default function ChatWindow({
             className={`shrink-0 px-5 py-2.5 rounded-full font-semibold text-sm transition-all duration-200 ${
               !inputText.trim() || isOverLimit
                 ? "bg-slate-700 text-slate-400 opacity-50 cursor-not-allowed"
-                : "bg-indigo-600 hover:bg-indigo-500 text-white cursor-pointer shadow-sm"
+                : "bg-[var(--planet-accent-active)] hover:brightness-110 text-white cursor-pointer shadow-sm"
             }`}
           >
             Send

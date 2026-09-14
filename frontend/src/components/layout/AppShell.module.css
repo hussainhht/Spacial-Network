@@ -13,7 +13,7 @@
 }
 .shell a:focus-visible,
 .shell button:focus-visible {
-  outline: 2px solid var(--nav-orbit-blue);
+  outline: 2px solid var(--planet-focus-ring);
   outline-offset: 4px;
 }
 .skipLink {

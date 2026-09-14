@@ -12,9 +12,11 @@
   display: flex;
   flex-direction: column;
   gap: 14px;
-  border: 1px solid var(--space-border-strong);
+  border: 1px solid var(--planet-border);
   border-radius: var(--space-radius-lg);
-  background: rgba(13, 17, 38, 0.75);
+  background:
+    linear-gradient(var(--planet-surface-tint), var(--planet-surface-tint)),
+    rgba(13, 17, 38, 0.75);
   backdrop-filter: blur(20px);
   padding: 22px;
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);

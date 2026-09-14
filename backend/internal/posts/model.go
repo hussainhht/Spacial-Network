@@ -11,6 +11,18 @@ const (
 	VisibilityCustom    = "custom"
 )
 
+// Feed scopes for ListPosts - which authors' posts are candidates before
+// the usual visibility rules are applied.
+const (
+	// FeedAll is the default: every post the viewer is authorized to see.
+	FeedAll = "all"
+	// FeedFollowing restricts candidates to authors the viewer follows.
+	FeedFollowing = "following"
+	// FeedFriends restricts candidates to authors in a mutual follow with
+	// the viewer (the viewer follows them and they follow the viewer back).
+	FeedFriends = "friends"
+)
+
 type post struct {
 	ID         int            `db:"id"`
 	User_ID    int            `db:"user_id"`

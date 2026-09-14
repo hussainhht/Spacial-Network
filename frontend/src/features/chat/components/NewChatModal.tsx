@@ -87,7 +87,7 @@ function NewChatDialog({
       aria-labelledby="new-chat-title"
     >
       <div
-        className="w-full max-w-md bg-[#0b1026] border border-slate-700/60 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh]"
+        className="w-full max-w-md bg-[#0b1026] border border-[var(--planet-border)] rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -117,11 +117,11 @@ function NewChatDialog({
               placeholder="Search people you follow or followers..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-3 pr-10 py-2 rounded-lg border border-slate-700/60 bg-[#10152f]/80 text-slate-100 placeholder-slate-400 text-sm focus:outline-none focus:border-indigo-500 transition-colors"
+              className="w-full pl-3 pr-10 py-2 rounded-lg border border-slate-700/60 bg-[#10152f]/80 text-slate-100 placeholder-slate-400 text-sm focus:outline-none focus:border-[var(--planet-accent)] focus:ring-2 focus:ring-[var(--planet-border)] transition-colors"
             />
             <div className="absolute right-2.5 flex items-center gap-1.5">
               {loading && (
-                <div className="w-3.5 h-3.5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                <div className="w-3.5 h-3.5 border-2 border-[var(--planet-accent)] border-t-transparent rounded-full animate-spin" />
               )}
               {searchQuery && (
                 <button
@@ -141,7 +141,7 @@ function NewChatDialog({
         <div className="flex-1 overflow-y-auto divide-y divide-slate-800/40 p-1">
           {loading && contacts.length === 0 && (
             <div className="py-12 text-center text-slate-400 text-sm">
-              <div className="inline-block w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mb-2" />
+              <div className="inline-block w-5 h-5 border-2 border-[var(--planet-accent)] border-t-transparent rounded-full animate-spin mb-2" />
               <p>{searchQuery.trim() ? "Searching contacts..." : "Finding eligible contacts..."}</p>
             </div>
           )}
@@ -159,7 +159,7 @@ function NewChatDialog({
                     .catch((e) => setError(e instanceof Error ? e.message : "Failed to load contacts"))
                     .finally(() => setLoading(false));
                 }}
-                className="mt-2 text-xs text-indigo-400 hover:underline cursor-pointer"
+                className="mt-2 text-xs text-[var(--planet-accent)] hover:underline cursor-pointer"
               >
                 Try again
               </button>
@@ -223,7 +223,7 @@ function NewChatDialog({
                         className="w-10 h-10 rounded-full object-cover"
                       />
                     ) : (
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-blue-500 text-white flex items-center justify-center font-semibold text-xs">
+                      <div className="w-10 h-10 rounded-full bg-[var(--planet-accent-active)] text-white flex items-center justify-center font-semibold text-xs">
                         {initials}
                       </div>
                     )}
@@ -237,7 +237,7 @@ function NewChatDialog({
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-baseline justify-between gap-1">
-                      <span className="font-medium text-sm text-slate-100 group-hover:text-indigo-300 transition-colors truncate">
+                      <span className="font-medium text-sm text-slate-100 group-hover:text-[var(--planet-accent-hover)] transition-colors truncate">
                         {displayName}
                       </span>
                     </div>
@@ -246,7 +246,7 @@ function NewChatDialog({
                     </span>
                   </div>
 
-                  <span className="text-xs font-medium text-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 px-2 py-1 rounded-md bg-indigo-500/10">
+                  <span className="text-xs font-medium text-[var(--planet-accent)] opacity-0 group-hover:opacity-100 transition-opacity shrink-0 px-2 py-1 rounded-md bg-[var(--planet-accent-soft)]">
                     Chat &rarr;
                   </span>
                 </div>

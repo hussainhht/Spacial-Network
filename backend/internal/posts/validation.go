@@ -37,6 +37,19 @@ func ValidateVisibility(visibility string) error {
 	}
 }
 
+// ValidateFeedScope normalizes and validates the "feed" query parameter for
+// ListPostsHandler. An empty value defaults to FeedAll.
+func ValidateFeedScope(feed string) (string, error) {
+	switch feed {
+	case "":
+		return FeedAll, nil
+	case FeedAll, FeedFollowing, FeedFriends:
+		return feed, nil
+	default:
+		return "", errors.New("feed must be one of: all, following, friends")
+	}
+}
+
 func ValidateNewPostRequest(req *NewPostRequest) error {
 	var err error
 

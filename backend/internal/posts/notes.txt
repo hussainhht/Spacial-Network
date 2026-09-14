@@ -1,7 +1,7 @@
 endpoints - method - purpose :
 
 .../posts       -> POST              -> create a new post
-.../posts       -> GET               -> list posts visible to you, newest first, up to 50 (use ?limit=N to ask for fewer)
+.../posts       -> GET               -> list posts visible to you, newest first, up to 50 (use ?limit=N to ask for fewer, ?feed=all|following|friends to narrow author scope)
 .../posts/{id}  -> GET               -> fetch a single post by id (posts you can't see: 404, same as one that doesn't exist)
 .../posts/{id}  -> PUT or PATCH      -> edit a post (owner only, otherwise 403) - also updates visibility and, for custom, the allowed-viewer list
 .../posts/{id}  -> DELETE            -> delete a post (owner only, otherwise 403)
@@ -22,3 +22,8 @@ notes:
 - all routes are behind sessionMiddleware, so a valid session cookie is required (401 if missing/invalid).
 - any other method on these paths gets an automatic 405 from the router (see internal/router/router.go).
 - GET .../posts is capped at 50 posts per call (posts.MaxListPosts); ?limit=N requests fewer (N must be a positive integer, else 400).
+- ?feed=all|following|friends narrows GET .../posts to an author scope before the usual visibility rules are applied (default "all" if omitted; unrecognized value -> 400):
+  - all: no author restriction (unchanged behavior).
+  - following: only posts whose author the caller follows.
+  - friends: only posts whose author is in a mutual follow with the caller (each follows the other).
+  the feed filter never grants access to a post the caller couldn't otherwise see - it only narrows which authors are considered.

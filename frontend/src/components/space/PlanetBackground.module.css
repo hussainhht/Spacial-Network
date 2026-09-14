@@ -16,6 +16,23 @@
   pointer-events: none;
 }
 
+/*
+  The canvas renders at 160% of .planetFrame's box, centered on it, so the
+  Moon's orbit has room to clear the render area instead of being cut at
+  the edge. PlanetBackground.tsx moves the camera back by the same 1.6x
+  factor, which keeps Earth (and the Moon) the same apparent size/position
+  as before - only the transparent margin around them grows.
+*/
+.planetCanvasWrapper {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 160%;
+  height: 160%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
 .planetFrame canvas {
   display: block;
   pointer-events: none;

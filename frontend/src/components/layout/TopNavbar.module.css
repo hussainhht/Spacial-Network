@@ -14,10 +14,12 @@
   flex-shrink: 0;
   box-sizing: border-box;
   padding: 10px clamp(16px, 3vw, 36px);
-  background: rgba(6, 8, 24, 0.6);
+  background:
+    linear-gradient(var(--planet-surface-tint), var(--planet-surface-tint)),
+    rgba(6, 8, 24, 0.6);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  border-bottom: 1px solid rgba(140, 110, 255, 0.12);
+  border-bottom: 1px solid var(--planet-border);
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
   user-select: none;
   transition:
@@ -60,7 +62,7 @@
   font-weight: 600;
   letter-spacing: 1.8px;
   text-transform: uppercase;
-  color: #a79fc2;
+  color: var(--space-text-muted);
   line-height: 1.2;
 }
 
@@ -101,14 +103,14 @@
 }
 
 .searchBar:hover {
-  border-color: rgba(167, 139, 250, 0.32);
+  border-color: var(--planet-border-strong);
   background: rgba(17, 23, 52, 0.65);
 }
 
 .searchBar:focus-within {
-  border-color: rgba(167, 139, 250, 0.45);
+  border-color: var(--planet-accent);
   background: rgba(18, 24, 55, 0.8);
-  box-shadow: 0 0 16px rgba(139, 92, 246, 0.18);
+  box-shadow: 0 0 0 3px var(--planet-border), 0 0 16px var(--planet-glow);
 }
 
 .searchIcon {
@@ -160,20 +162,16 @@
   align-items: center;
   gap: 6px;
   padding: 7px 14px;
-  border: 1px solid rgba(167, 139, 250, 0.32);
+  border: 1px solid var(--planet-border-strong);
   border-radius: 9px;
-  background: linear-gradient(
-    135deg,
-    rgba(139, 92, 246, 0.25),
-    rgba(99, 102, 241, 0.15)
-  );
+  background: var(--planet-accent-active);
   backdrop-filter: blur(8px);
-  color: #ede9fe;
+  color: var(--space-text-heading);
   text-decoration: none;
   font-size: 13px;
   font-weight: 500;
   line-height: 1.3;
-  box-shadow: 0 2px 10px rgba(99, 102, 241, 0.1);
+  box-shadow: 0 2px 10px var(--planet-glow);
   cursor: pointer;
   transition:
     background 0.18s ease,
@@ -184,13 +182,8 @@
 }
 
 .newPostButton:hover {
-  background: linear-gradient(
-    135deg,
-    rgba(139, 92, 246, 0.38),
-    rgba(99, 102, 241, 0.22)
-  );
-  border-color: rgba(196, 181, 253, 0.5);
-  box-shadow: 0 0 14px rgba(139, 92, 246, 0.28);
+  border-color: var(--planet-accent-hover);
+  box-shadow: 0 0 14px var(--planet-glow);
   filter: brightness(1.08);
 }
 
@@ -199,7 +192,7 @@
 }
 
 .newPostButton:focus-visible {
-  outline: 2px solid rgba(183, 161, 255, 0.7);
+  outline: 2px solid var(--planet-focus-ring);
   outline-offset: 2px;
 }
 
@@ -243,8 +236,8 @@
 
 .bellButton:hover {
   color: var(--space-text-heading, #f8fafc);
-  background: rgba(148, 163, 184, 0.08);
-  border-color: rgba(167, 139, 250, 0.2);
+  background: var(--planet-accent-soft);
+  border-color: var(--planet-border);
   transform: translateY(-1px);
 }
 
@@ -253,7 +246,7 @@
 }
 
 .bellButton:focus-visible {
-  outline: 2px solid rgba(183, 161, 255, 0.7);
+  outline: 2px solid var(--planet-focus-ring);
   outline-offset: 2px;
 }
 
@@ -273,11 +266,7 @@
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  background: linear-gradient(
-    135deg,
-    var(--space-accent-violet, #8b5cf6),
-    var(--space-accent-indigo, #6366f1)
-  );
+  background: var(--planet-accent-active);
   color: #ffffff;
   font-size: 9px;
   font-weight: 700;
@@ -325,13 +314,13 @@
 }
 
 .userButton:hover {
-  border-color: rgba(167, 139, 250, 0.35);
+  border-color: var(--planet-border-strong);
   background: rgba(23, 27, 56, 0.65);
-  box-shadow: 0 0 12px rgba(139, 92, 246, 0.12);
+  box-shadow: 0 0 12px var(--planet-glow);
 }
 
 .userButton:focus-visible {
-  outline: 2px solid rgba(183, 161, 255, 0.7);
+  outline: 2px solid var(--planet-focus-ring);
   outline-offset: 2px;
 }
 
@@ -342,9 +331,11 @@
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  border: 1px solid rgba(167, 139, 250, 0.35);
-  background: linear-gradient(135deg, #2d2350, #141c38);
-  color: #ddd6fe;
+  border: 1px solid var(--planet-border-strong);
+  background:
+    linear-gradient(var(--planet-accent-soft), var(--planet-accent-soft)),
+    var(--space-bg-elevated);
+  color: var(--planet-accent-hover);
 }
 
 .userAvatar svg {
@@ -383,9 +374,11 @@
   z-index: 50;
   min-width: 168px;
   padding: 6px;
-  border: 1px solid rgba(167, 139, 250, 0.22);
+  border: 1px solid var(--planet-border);
   border-radius: 12px;
-  background: rgba(11, 15, 36, 0.95);
+  background:
+    linear-gradient(var(--planet-surface-tint), var(--planet-surface-tint)),
+    rgba(11, 15, 36, 0.95);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
   box-shadow:
@@ -429,7 +422,7 @@
 
 .dropdownItem:hover,
 .dropdownItem:focus-visible {
-  background: rgba(139, 92, 246, 0.14);
+  background: var(--planet-accent-soft);
   color: var(--space-text-heading, #f8fafc);
   outline: none;
 }

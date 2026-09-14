@@ -55,17 +55,58 @@ func (r *Repository) GetPostByID(id int) (*post, error) {
 	return &p, nil
 }
 
-// ListPosts returns up to limit posts visible to viewerID, newest first:
-// every public post, the viewer's own posts regardless of visibility,
-// followers-only posts from creators the viewer follows, custom-visibility
-// posts where the viewer is both on the allowed-viewer list and still a
-// follower of the creator, and group posts from groups the viewer belongs
-// to.
-func (r *Repository) ListPosts(viewerID, limit int) ([]*post, error) {
+// authorScopeClause returns the extra SQL condition (ANDed onto the usual
+// visibility rules) that narrows ListPosts candidates to a feed's author
+// scope, plus the placeholder args it needs. feed must already be
+// validated (see ValidateFeedScope) - an unrecognized value is treated the
+// same as FeedAll.
+func authorScopeClause(feed string, viewerID int) (clause string, args []any) {
+	switch feed {
+	case FeedFollowing:
+		return `AND EXISTS (
+			SELECT 1 FROM followers f2
+			WHERE f2.follower_id = ? AND f2.followed_id = p.user_id
+		)`, []any{viewerID}
+	case FeedFriends:
+		return `AND EXISTS (
+			SELECT 1 FROM followers f2
+			WHERE f2.follower_id = ? AND f2.followed_id = p.user_id
+		) AND EXISTS (
+			SELECT 1 FROM followers f3
+			WHERE f3.follower_id = p.user_id AND f3.followed_id = ?
+		)`, []any{viewerID, viewerID}
+	default:
+		return "", nil
+	}
+}
+
+// ListPosts returns up to limit posts visible to viewerID, newest first,
+// restricted to feed's author scope (see authorScopeClause):
+//
+//   - FeedAll (default): every public post, the viewer's own posts
+//     regardless of visibility, followers-only posts from creators the
+//     viewer follows, custom-visibility posts where the viewer is both on
+//     the allowed-viewer list and still a follower of the creator, and
+//     group posts from groups the viewer belongs to.
+//   - FeedFollowing: the same visibility rules, but only for posts whose
+//     author the viewer follows (which excludes the viewer's own posts).
+//   - FeedFriends: the same visibility rules, but only for posts whose
+//     author is in a mutual follow with the viewer.
+//
+// The feed filter only narrows which authors are considered - it never
+// grants access to a post the viewer couldn't otherwise see.
+func (r *Repository) ListPosts(viewerID, limit int, feed string) ([]*post, error) {
+	scopeClause, scopeArgs := authorScopeClause(feed, viewerID)
+
+	args := []any{viewerID, viewerID, viewerID, viewerID}
+	args = append(args, scopeArgs...)
+	args = append(args, limit)
+
 	rows, err := r.db.Query(`
 		SELECT id, user_id, visibility, title, content, image_path, group_id, created_at, updated_at
 		FROM posts p
-		WHERE p.user_id = ?
+		WHERE (
+			p.user_id = ?
 			OR (p.group_id IS NULL AND p.visibility = 'public')
 			OR (p.visibility = 'followers' AND EXISTS (
 				SELECT 1 FROM followers f
@@ -80,9 +121,11 @@ func (r *Repository) ListPosts(viewerID, limit int) ([]*post, error) {
 				SELECT 1 FROM group_members gm
 				WHERE gm.group_id = p.group_id AND gm.user_id = ?
 			))
+		)
+		`+scopeClause+`
 		ORDER BY p.created_at DESC
 		LIMIT ?
-	`, viewerID, viewerID, viewerID, viewerID, limit)
+	`, args...)
 	if err != nil {
 		return nil, err
 	}

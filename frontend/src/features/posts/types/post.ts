@@ -1,5 +1,9 @@
 export type PostVisibility = "public" | "followers" | "custom";
 
+// FeedScope narrows which authors' posts a feed request considers - it
+// never bypasses a post's own visibility rules (see Post.visibility).
+export type FeedScope = "all" | "following" | "friends";
+
 export interface PostAuthor {
   id: number;
   username: string;

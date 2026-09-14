@@ -1,10 +1,8 @@
 "use client";
 
-import { useFrame } from "@react-three/fiber";
-import { useRef, type ReactNode } from "react";
+import { useFrame, useThree } from "@react-three/fiber";
+import { useRef, useState, type ReactNode } from "react";
 import { Group, MathUtils } from "three";
-
-type Vector3Tuple = [number, number, number];
 
 const MAX_FRAME_DELTA = 0.1;
 const FULL_ROTATION = Math.PI * 2;
@@ -13,16 +11,16 @@ function boundedDelta(delta: number) {
   return Math.min(delta, MAX_FRAME_DELTA);
 }
 
-function easeOutQuart(progress: number) {
-  return 1 - Math.pow(1 - progress, 4);
+function easeOutCubic(progress: number) {
+  return 1 - Math.pow(1 - progress, 3);
 }
 
 interface PlanetEntranceProps {
   children: ReactNode;
   reducedMotion: boolean;
   duration?: number;
-  fromPosition?: Vector3Tuple;
-  fromScale?: number;
+  offscreenRadius?: number;
+  edgePadding?: number;
 }
 
 /**
@@ -32,12 +30,16 @@ interface PlanetEntranceProps {
 export function PlanetEntrance({
   children,
   reducedMotion,
-  duration = 1.8,
-  fromPosition = [0, -0.04, -3.2],
-  fromScale = 0.28,
+  duration = 2.1,
+  offscreenRadius = 1,
+  edgePadding = 0.16,
 }: PlanetEntranceProps) {
   const root = useRef<Group>(null);
   const elapsed = useRef(0);
+  const viewportWidth = useThree((state) => state.viewport.width);
+  const [startX] = useState(
+    () => viewportWidth / 2 + offscreenRadius + edgePadding,
+  );
 
   useFrame((_, delta) => {
     const group = root.current;
@@ -45,21 +47,19 @@ export function PlanetEntrance({
 
     elapsed.current = Math.min(elapsed.current + boundedDelta(delta), duration);
     const progress = elapsed.current / duration;
-    const easedProgress = easeOutQuart(progress);
+    const easedProgress = easeOutCubic(progress);
 
-    group.position.set(
-      MathUtils.lerp(fromPosition[0], 0, easedProgress),
-      MathUtils.lerp(fromPosition[1], 0, easedProgress),
-      MathUtils.lerp(fromPosition[2], 0, easedProgress),
-    );
-    group.scale.setScalar(MathUtils.lerp(fromScale, 1, easedProgress));
+    group.position.x = MathUtils.lerp(startX, 0, easedProgress);
+
+    if (elapsed.current === duration) {
+      group.position.x = 0;
+    }
   });
 
   return (
     <group
       ref={root}
-      position={reducedMotion ? [0, 0, 0] : fromPosition}
-      scale={reducedMotion ? 1 : fromScale}
+      position={reducedMotion ? [0, 0, 0] : [startX, 0, 0]}
     >
       {children}
     </group>

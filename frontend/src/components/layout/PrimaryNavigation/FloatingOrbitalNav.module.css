@@ -20,7 +20,7 @@
   overflow: visible;
   pointer-events: none;
   fill: none;
-  stroke: var(--nav-orbit-blue);
+  stroke: var(--planet-accent);
   stroke-width: 1;
 }
 .primaryOrbit {
@@ -30,7 +30,7 @@
   opacity: 0.13;
 }
 .satellites {
-  fill: var(--nav-orbit-blue);
+  fill: var(--planet-accent);
   opacity: 0.5;
 }
 .destinations {

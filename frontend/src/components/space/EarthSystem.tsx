@@ -15,6 +15,7 @@ const EARTH_ROTATION_SPEED = 0.018;
 const MOON_ORBIT_RADIUS = 1.5;
 const MOON_ORBIT_SPEED = 0.055;
 const MOON_SCALE = 0.18;
+const EARTH_SYSTEM_OFFSCREEN_RADIUS = MOON_ORBIT_RADIUS + MOON_SCALE;
 
 class CompanionBoundary extends Component<
   { children: ReactNode },
@@ -58,7 +59,10 @@ export default function EarthSystem({
   reducedMotion: boolean;
 }) {
   return (
-    <PlanetEntrance reducedMotion={reducedMotion}>
+    <PlanetEntrance
+      reducedMotion={reducedMotion}
+      offscreenRadius={EARTH_SYSTEM_OFFSCREEN_RADIUS}
+    >
       <PlanetIdleMotion reducedMotion={reducedMotion}>
         <group>
           <AxialRotation

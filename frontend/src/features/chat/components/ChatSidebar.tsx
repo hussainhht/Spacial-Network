@@ -27,14 +27,14 @@ export default function ChatSidebar({
   }, [conversations, searchQuery]);
 
   return (
-    <aside className="w-80 flex flex-col border-r border-slate-700/40 bg-[#0b1026]/70 backdrop-blur-md h-full shrink-0">
+    <aside className="w-80 flex flex-col border-r border-[var(--planet-border)] bg-[#0b1026]/70 backdrop-blur-md h-full shrink-0">
       <div className="p-4 border-b border-slate-700/30">
         <div className="flex items-center justify-between mb-3">
           <h2 className="m-0 text-lg font-bold text-slate-100">Messages</h2>
           <button
             type="button"
             onClick={() => setIsNewChatOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-indigo-600/90 hover:bg-indigo-600 text-white shadow-sm transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-[var(--planet-accent-active)] hover:brightness-110 text-white shadow-sm transition-[filter] cursor-pointer"
             title="Start a new chat"
           >
             <span>+</span> New Chat
@@ -46,7 +46,7 @@ export default function ChatSidebar({
             placeholder="Search conversations..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full px-3 py-2 rounded-lg border border-slate-700/60 bg-[#10152f]/80 text-slate-100 placeholder-slate-400 text-sm focus:outline-none focus:border-indigo-500 transition-colors"
+            className="w-full px-3 py-2 rounded-lg border border-slate-700/60 bg-[#10152f]/80 text-slate-100 placeholder-slate-400 text-sm focus:outline-none focus:border-[var(--planet-accent)] focus:ring-2 focus:ring-[var(--planet-border)] transition-colors"
           />
           {searchQuery && (
             <button
@@ -94,7 +94,7 @@ export default function ChatSidebar({
                 onClick={() => onSelectConversation(c.partner_id, c.partner_username)}
                 className={`flex items-center px-3.5 py-2.5 gap-3 cursor-pointer transition-colors border-l-[3px] ${
                   isActive
-                    ? "bg-indigo-500/15 border-indigo-500"
+                    ? "bg-[var(--planet-accent-soft)] border-[var(--planet-accent)]"
                     : "border-transparent hover:bg-slate-800/40"
                 }`}
               >
@@ -106,7 +106,7 @@ export default function ChatSidebar({
                       className="w-11 h-11 rounded-full object-cover"
                     />
                   ) : (
-                    <div className="w-11 h-11 rounded-full bg-gradient-to-br from-indigo-500 to-blue-500 text-white flex items-center justify-center font-semibold text-sm">
+                    <div className="w-11 h-11 rounded-full bg-[var(--planet-accent-active)] text-white flex items-center justify-center font-semibold text-sm">
                       {initials}
                     </div>
                   )}
@@ -133,7 +133,7 @@ export default function ChatSidebar({
                       {c.last_message || "No messages yet"}
                     </span>
                     {c.unread_count > 0 && (
-                      <span className="bg-indigo-500 text-white text-[11px] font-bold px-1.5 py-0.5 rounded-full shrink-0">
+                      <span className="bg-[var(--planet-accent-active)] text-white text-[11px] font-bold px-1.5 py-0.5 rounded-full shrink-0">
                         {c.unread_count}
                       </span>
                     )}

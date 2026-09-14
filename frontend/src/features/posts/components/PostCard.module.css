@@ -5,12 +5,11 @@
   min-width: 0;
   width: 100%;
   padding: 22px;
-  border: 1px solid rgba(148, 163, 184, 0.18);
-  border-top-color: rgba(184, 171, 226, 0.32);
-  border-left-color: rgba(164, 159, 205, 0.24);
+  border: 1px solid var(--planet-border);
+  border-top-color: var(--planet-border-strong);
   border-radius: calc(var(--space-radius-lg) + 2px);
   background:
-    radial-gradient(ellipse at top left, rgba(139, 92, 246, 0.07), transparent 65%),
+    radial-gradient(ellipse at top left, var(--planet-surface-tint), transparent 65%),
     rgba(10, 15, 32, 0.88);
   box-shadow: 0 14px 34px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(226, 232, 255, 0.035);
   -webkit-backdrop-filter: blur(16px);
@@ -26,7 +25,7 @@
 }
 
 .card:focus-within {
-  border-color: rgba(167, 139, 250, 0.42);
+  border-color: var(--planet-border-strong);
 }
 
 .header {
@@ -156,7 +155,7 @@
 
 .title a:hover {
   text-decoration: underline;
-  text-decoration-color: rgba(167, 139, 250, 0.6);
+  text-decoration-color: var(--planet-accent);
   text-underline-offset: 4px;
 }
 
@@ -208,11 +207,11 @@
 }
 
 .comments svg:last-child {
-  color: #afa1d3;
+  color: var(--planet-accent);
 }
 
 .comments:hover {
-  background: rgba(167, 139, 250, 0.07);
+  background: var(--planet-accent-soft);
   color: var(--space-text-heading);
 }
 
@@ -227,7 +226,7 @@
 }
 
 .card :is(a, button, summary):focus-visible {
-  outline: 2px solid #b5a2e8;
+  outline: 2px solid var(--planet-focus-ring);
   outline-offset: 3px;
 }
 
@@ -240,7 +239,7 @@
 
 @media (hover: hover) {
   .card:hover {
-    border-color: rgba(167, 139, 250, 0.4);
+    border-color: var(--planet-border-strong);
     background-color: rgba(15, 20, 40, 0.94);
   }
 }

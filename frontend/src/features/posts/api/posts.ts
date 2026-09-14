@@ -2,15 +2,27 @@
 
 import { apiRequest } from "@/lib/api/client";
 import type {
+  FeedScope,
   NewGroupPostInput,
   NewPostInput,
   Post,
   PostInput,
 } from "../types/post";
 
-export function listPosts(limit?: number): Promise<Post[]> {
-  const query = limit != null ? `?limit=${encodeURIComponent(limit)}` : "";
-  return apiRequest<Post[]>(`/posts${query}`);
+export interface ListPostsOptions {
+  // feed narrows the result to an author scope ("all" is the default on
+  // the backend if omitted); post visibility rules always still apply.
+  feed?: FeedScope;
+  limit?: number;
+}
+
+export function listPosts(options?: ListPostsOptions): Promise<Post[]> {
+  const params = new URLSearchParams();
+  if (options?.feed) params.set("feed", options.feed);
+  if (options?.limit != null) params.set("limit", String(options.limit));
+
+  const query = params.toString();
+  return apiRequest<Post[]>(`/posts${query ? `?${query}` : ""}`);
 }
 
 export function getPost(id: number): Promise<Post> {

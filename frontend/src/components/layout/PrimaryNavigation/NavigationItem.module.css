@@ -13,10 +13,10 @@
   width: var(--nav-node-size);
   height: var(--nav-node-size);
   border-radius: 50%;
-  border: 1px solid var(--nav-node-border);
+  border: 1px solid var(--planet-border-strong);
   background: var(--nav-node-bg);
-  color: #cfe0ff;
-  box-shadow: 0 0 0 3px rgba(71, 139, 255, 0.06), 0 0 18px rgba(71, 139, 255, 0.12);
+  color: var(--space-text-label);
+  box-shadow: 0 0 0 3px var(--planet-surface-tint), 0 0 18px var(--planet-glow);
   transition: border-color 200ms ease, box-shadow 200ms ease, color 200ms ease, transform 200ms ease;
 }
 .node svg {
@@ -26,10 +26,10 @@
 .emphasis .node {
   width: var(--nav-create-size);
   height: var(--nav-create-size);
-  border-color: var(--nav-orbit-blue);
-  color: #eaf3ff;
-  background: radial-gradient(circle at 35% 25%, #17385a, var(--nav-node-bg) 75%);
-  box-shadow: 0 0 0 4px rgba(71, 139, 255, 0.08), 0 0 22px var(--nav-node-glow);
+  border-color: var(--planet-accent);
+  color: var(--space-text-heading);
+  background: radial-gradient(circle at 35% 25%, var(--planet-accent-soft), var(--nav-node-bg) 75%);
+  box-shadow: 0 0 0 4px var(--planet-surface-tint), 0 0 22px var(--planet-glow);
 }
 .label {
   position: relative;
@@ -39,16 +39,16 @@
   color: var(--nav-label);
 }
 .link[aria-current="page"] .node {
-  border-color: var(--nav-active-warm);
-  color: var(--nav-active-warm-strong);
-  background: radial-gradient(circle at 35% 25%, #493127, #151522 75%);
-  box-shadow: 0 0 0 4px rgba(255, 154, 95, 0.08), 0 0 24px rgba(255, 154, 95, 0.2);
+  border-color: var(--planet-accent);
+  color: var(--planet-accent-hover);
+  background: radial-gradient(circle at 35% 25%, var(--planet-accent-soft), var(--nav-node-bg) 75%);
+  box-shadow: 0 0 0 4px var(--planet-surface-tint), 0 0 24px var(--planet-glow);
 }
 .link[aria-current="page"] .node::after {
   content: "";
   position: absolute;
   inset: -7px;
-  border: 1px dashed rgba(255, 171, 115, 0.3);
+  border: 1px dashed var(--planet-border-strong);
   border-radius: 50%;
   pointer-events: none;
 }
@@ -59,11 +59,11 @@
   left: 0;
   width: 18px;
   height: 1px;
-  background: var(--nav-active-warm);
+  background: var(--planet-accent);
   pointer-events: none;
 }
 .link:focus-visible {
-  outline: 2px solid var(--nav-orbit-blue);
+  outline: 2px solid var(--planet-focus-ring);
   outline-offset: 5px;
 }
 @media (hover: hover) {
@@ -72,10 +72,10 @@
   }
   .link:hover .node {
     transform: scale(1.04);
-    border-color: var(--nav-orbit-blue);
+    border-color: var(--planet-accent);
   }
   .link[aria-current="page"]:hover .node {
-    border-color: var(--nav-active-warm-strong);
+    border-color: var(--planet-accent-hover);
   }
   .link:hover .label {
     transform: translateX(2px);

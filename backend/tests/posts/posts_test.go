@@ -253,11 +253,195 @@ func TestListPosts_IncludesOwnPostsRegardlessOfVisibility(t *testing.T) {
 	createPost(t, f, author, "T1", "C1", posts.VisibilityPublic, nil)
 	createPost(t, f, author, "T2", "C2", posts.VisibilityCustom, nil)
 
-	list, err := f.postsSvc.ListPosts(author, 10)
+	list, err := f.postsSvc.ListPosts(author, 10, posts.FeedAll)
 	if err != nil {
 		t.Fatalf("ListPosts: %v", err)
 	}
 	if len(list) != 2 {
 		t.Errorf("ListPosts for own user returned %d posts, want 2", len(list))
+	}
+}
+
+func postIDs(list []posts.PostResponse) map[int]bool {
+	ids := make(map[int]bool, len(list))
+	for _, p := range list {
+		ids[p.ID] = true
+	}
+	return ids
+}
+
+// listFeed drives ListPostsHandler directly (rather than the unexported
+// Service.ListPosts) so these tests exercise feed-scope validation and
+// response shaping exactly as the real API does.
+func listFeed(t *testing.T, f fixture, viewerID int, feed string) (*httptest.ResponseRecorder, []posts.PostResponse) {
+	t.Helper()
+
+	query := ""
+	if feed != "" {
+		query = "?feed=" + feed
+	}
+	req := httptest.NewRequest(http.MethodGet, "/api/posts"+query, nil)
+	req = req.WithContext(requestctx.WithUserID(req.Context(), viewerID))
+
+	rr := httptest.NewRecorder()
+	f.postsHandler.ListPostsHandler(rr, req)
+
+	var list []posts.PostResponse
+	if rr.Code == http.StatusOK {
+		if err := json.Unmarshal(rr.Body.Bytes(), &list); err != nil {
+			t.Fatalf("unmarshal feed response: %v", err)
+		}
+	}
+	return rr, list
+}
+
+func TestListPosts_FeedFollowing_IncludesFollowedExcludesOthers(t *testing.T) {
+	f := setup(t)
+	viewer := f.newUser(t, "followingviewer")
+	followed := f.newUser(t, "followingfollowed")
+	stranger := f.newUser(t, "followingstranger")
+
+	if err := f.followersSvc.FollowUser(viewer, followed); err != nil {
+		t.Fatalf("FollowUser: %v", err)
+	}
+
+	followedPost := createPost(t, f, followed, "T1", "from followed", posts.VisibilityPublic, nil)
+	createPost(t, f, stranger, "T2", "from stranger", posts.VisibilityPublic, nil)
+	createPost(t, f, viewer, "T3", "own post", posts.VisibilityPublic, nil)
+
+	rr, list := listFeed(t, f, viewer, "following")
+	if rr.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d; body=%s", rr.Code, http.StatusOK, rr.Body.String())
+	}
+
+	ids := postIDs(list)
+	if !ids[followedPost.ID] {
+		t.Errorf("following feed must include a post from a followed author")
+	}
+	if len(list) != 1 {
+		t.Errorf("following feed = %d posts, want exactly 1 (got %v)", len(list), ids)
+	}
+}
+
+func TestListPosts_FeedFollowing_StillRespectsPrivacy(t *testing.T) {
+	f := setup(t)
+	viewer := f.newUser(t, "followingprivviewer")
+	followed := f.newUser(t, "followingprivfollowed")
+
+	// viewer follows followed, but followed does not follow back, so a
+	// followers-only post from followed must stay hidden from viewer even
+	// though followed is in the "following" author scope.
+	if err := f.followersSvc.FollowUser(viewer, followed); err != nil {
+		t.Fatalf("FollowUser: %v", err)
+	}
+
+	// followed's custom post only grants access to their own followers -
+	// viewer isn't one, so it must not leak into the following feed either.
+	otherFollowerOfFollowed := f.newUser(t, "followingprivother")
+	if err := f.followersSvc.FollowUser(otherFollowerOfFollowed, followed); err != nil {
+		t.Fatalf("FollowUser other: %v", err)
+	}
+	customPost := createPost(t, f, followed, "T", "custom", posts.VisibilityCustom, []int{otherFollowerOfFollowed})
+
+	rr, list := listFeed(t, f, viewer, "following")
+	if rr.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d; body=%s", rr.Code, http.StatusOK, rr.Body.String())
+	}
+
+	if postIDs(list)[customPost.ID] {
+		t.Errorf("following feed must not leak a custom post the viewer isn't an allowed viewer of")
+	}
+}
+
+func TestListPosts_FeedFriends_RequiresMutualFollow(t *testing.T) {
+	f := setup(t)
+	viewer := f.newUser(t, "friendsviewer")
+	mutual := f.newUser(t, "friendsmutual")
+	oneWayOut := f.newUser(t, "friendsonewayout") // viewer follows them, they don't follow back
+	oneWayIn := f.newUser(t, "friendsonewayin")   // they follow viewer, viewer doesn't follow back
+
+	if err := f.followersSvc.FollowUser(viewer, mutual); err != nil {
+		t.Fatalf("FollowUser viewer->mutual: %v", err)
+	}
+	if err := f.followersSvc.FollowUser(mutual, viewer); err != nil {
+		t.Fatalf("FollowUser mutual->viewer: %v", err)
+	}
+	if err := f.followersSvc.FollowUser(viewer, oneWayOut); err != nil {
+		t.Fatalf("FollowUser viewer->oneWayOut: %v", err)
+	}
+	if err := f.followersSvc.FollowUser(oneWayIn, viewer); err != nil {
+		t.Fatalf("FollowUser oneWayIn->viewer: %v", err)
+	}
+
+	mutualPost := createPost(t, f, mutual, "T1", "mutual friend", posts.VisibilityPublic, nil)
+	createPost(t, f, oneWayOut, "T2", "one-way out", posts.VisibilityPublic, nil)
+	createPost(t, f, oneWayIn, "T3", "one-way in", posts.VisibilityPublic, nil)
+
+	rr, list := listFeed(t, f, viewer, "friends")
+	if rr.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d; body=%s", rr.Code, http.StatusOK, rr.Body.String())
+	}
+
+	ids := postIDs(list)
+	if !ids[mutualPost.ID] {
+		t.Errorf("friends feed must include a post from a mutual follow")
+	}
+	if len(list) != 1 {
+		t.Errorf("friends feed = %d posts, want exactly 1 (got %v)", len(list), ids)
+	}
+}
+
+func TestListPosts_FeedFriends_StillRespectsPrivacy(t *testing.T) {
+	f := setup(t)
+	viewer := f.newUser(t, "friendsprivviewer")
+	mutual := f.newUser(t, "friendsprivmutual")
+
+	if err := f.followersSvc.FollowUser(viewer, mutual); err != nil {
+		t.Fatalf("FollowUser viewer->mutual: %v", err)
+	}
+	if err := f.followersSvc.FollowUser(mutual, viewer); err != nil {
+		t.Fatalf("FollowUser mutual->viewer: %v", err)
+	}
+
+	// A custom post from the mutual friend that doesn't include viewer on
+	// its allowed-viewer list must still be hidden, even though viewer and
+	// mutual are friends.
+	otherFollower := f.newUser(t, "friendsprivother")
+	if err := f.followersSvc.FollowUser(otherFollower, mutual); err != nil {
+		t.Fatalf("FollowUser other->mutual: %v", err)
+	}
+	customPost := createPost(t, f, mutual, "T", "custom", posts.VisibilityCustom, []int{otherFollower})
+
+	rr, list := listFeed(t, f, viewer, "friends")
+	if rr.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d; body=%s", rr.Code, http.StatusOK, rr.Body.String())
+	}
+
+	if postIDs(list)[customPost.ID] {
+		t.Errorf("friends feed must not leak a custom post the viewer isn't an allowed viewer of")
+	}
+}
+
+func TestListPosts_FeedAll_DefaultsWhenFeedParamOmitted(t *testing.T) {
+	f := setup(t)
+	author := f.newUser(t, "feedalldefault")
+	createPost(t, f, author, "T", "C", posts.VisibilityPublic, nil)
+
+	rr, list := listFeed(t, f, author, "")
+	if rr.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d; body=%s", rr.Code, http.StatusOK, rr.Body.String())
+	}
+	if len(list) != 1 {
+		t.Errorf("default feed = %d posts, want 1", len(list))
+	}
+}
+
+func TestListPosts_InvalidFeedValue_Returns400(t *testing.T) {
+	f := setup(t)
+	viewer := f.newUser(t, "feedinvalid")
+
+	rr, _ := listFeed(t, f, viewer, "trending")
+	if rr.Code != http.StatusBadRequest {
+		t.Errorf("status = %d, want %d", rr.Code, http.StatusBadRequest)
 	}
 }

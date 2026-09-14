@@ -377,7 +377,10 @@ func (h *Handler) GetPostByIDHandler(w http.ResponseWriter, r *http.Request) {
 
 // ListPostsHandler returns up to 50 posts visible to the logged-in user,
 // newest first. The optional "limit" query parameter requests fewer posts
-// (capped at 50).
+// (capped at 50). The optional "feed" query parameter narrows the result to
+// an author scope - "all" (default), "following", or "friends" - while
+// still applying the normal post-visibility rules; an unrecognized value
+// is rejected with 400.
 func (h *Handler) ListPostsHandler(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requestctx.UserID(r.Context())
 	if !ok {
@@ -397,7 +400,14 @@ func (h *Handler) ListPostsHandler(w http.ResponseWriter, r *http.Request) {
 		limit = parsed
 	}
 
-	posts, err := h.service.ListPosts(userID, limit)
+	feed, err := ValidateFeedScope(r.URL.Query().Get("feed"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(Response{Error: err.Error()})
+		return
+	}
+
+	posts, err := h.service.ListPosts(userID, limit, feed)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(Response{Error: "Server error"})

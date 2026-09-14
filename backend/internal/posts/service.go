@@ -91,14 +91,15 @@ func (s *Service) GetAllowedViewerIDs(postID int) ([]int, error) {
 // MaxListPosts is the most posts ListPosts will ever return in one call.
 const MaxListPosts = 50
 
-// ListPosts returns up to limit posts visible to viewerID, newest first.
-// limit is clamped to the range [1, MaxListPosts]; a limit <= 0 defaults to
-// MaxListPosts.
-func (s *Service) ListPosts(viewerID, limit int) ([]*post, error) {
+// ListPosts returns up to limit posts visible to viewerID, newest first,
+// restricted to feed's author scope (FeedAll, FeedFollowing, or
+// FeedFriends - see Repository.ListPosts). limit is clamped to the range
+// [1, MaxListPosts]; a limit <= 0 defaults to MaxListPosts.
+func (s *Service) ListPosts(viewerID, limit int, feed string) ([]*post, error) {
 	if limit <= 0 || limit > MaxListPosts {
 		limit = MaxListPosts
 	}
-	return s.repo.ListPosts(viewerID, limit)
+	return s.repo.ListPosts(viewerID, limit, feed)
 }
 
 // UpdatePost updates a post's editable fields, provided userID owns it. If

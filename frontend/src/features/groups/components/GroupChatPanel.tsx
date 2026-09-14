@@ -56,7 +56,7 @@ export default function GroupChatPanel({ groupId, isMember }: GroupChatPanelProp
 
   if (!isMember) {
     return (
-      <div className="p-10 text-center bg-[#0b1026]/70 border border-slate-700/40 rounded-2xl shadow-lg my-4">
+      <div className="p-10 text-center bg-[#0b1026]/70 border border-[var(--planet-border)] rounded-2xl shadow-lg my-4">
         <div className="text-4xl mb-3">🔒</div>
         <h3 className="text-base font-semibold text-slate-100 mb-1.5">Group Chat is Member-Only</h3>
         <p className="text-sm text-slate-400 max-w-md mx-auto mb-0 leading-relaxed">
@@ -67,7 +67,7 @@ export default function GroupChatPanel({ groupId, isMember }: GroupChatPanelProp
   }
 
   return (
-    <div className="flex flex-col h-[650px] max-h-[75vh] bg-[#080b1a]/95 border border-slate-700/40 rounded-2xl overflow-hidden shadow-xl my-4 min-w-0">
+    <div className="flex flex-col h-[650px] max-h-[75vh] bg-[#080b1a]/95 border border-[var(--planet-border)] rounded-2xl overflow-hidden shadow-xl my-4 min-w-0">
       {/* Header */}
       <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-700/30 bg-[#0f1533]">
         <div className="flex items-center gap-2.5">
@@ -100,7 +100,7 @@ export default function GroupChatPanel({ groupId, isMember }: GroupChatPanelProp
               type="button"
               onClick={loadMoreHistory}
               disabled={loadingMore}
-              className="text-xs text-indigo-400 hover:text-indigo-300 font-medium px-3.5 py-1.5 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 transition-colors disabled:opacity-50 cursor-pointer"
+              className="text-xs text-[var(--planet-accent)] hover:text-[var(--planet-accent-hover)] font-medium px-3.5 py-1.5 rounded-lg bg-[var(--planet-accent-soft)] hover:bg-[var(--planet-border)] transition-colors disabled:opacity-50 cursor-pointer"
             >
               {loadingMore ? "Loading older messages..." : "↑ Load older messages"}
             </button>
@@ -109,7 +109,7 @@ export default function GroupChatPanel({ groupId, isMember }: GroupChatPanelProp
 
         {loading && (
           <div className="py-16 text-center text-slate-400 text-sm">
-            <div className="inline-block w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mb-2" />
+            <div className="inline-block w-5 h-5 border-2 border-[var(--planet-accent)] border-t-transparent rounded-full animate-spin mb-2" />
             <p className="m-0 text-xs text-slate-400">Loading chat history...</p>
           </div>
         )}
@@ -153,7 +153,7 @@ export default function GroupChatPanel({ groupId, isMember }: GroupChatPanelProp
                         className="w-7 h-7 rounded-full object-cover"
                       />
                     ) : (
-                      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-500 to-blue-500 text-white flex items-center justify-center font-bold text-[10px]">
+                      <div className="w-7 h-7 rounded-full bg-[var(--planet-accent-active)] text-white flex items-center justify-center font-bold text-[10px]">
                         {initials}
                       </div>
                     )}
@@ -165,7 +165,7 @@ export default function GroupChatPanel({ groupId, isMember }: GroupChatPanelProp
                     <div className="flex items-baseline gap-1.5 mb-1 px-1">
                       <Link
                         href={`/profile/${msg.username}`}
-                        className="text-xs font-semibold text-slate-200 hover:text-indigo-400 transition-colors truncate"
+                        className="text-xs font-semibold text-slate-200 hover:text-[var(--planet-accent)] transition-colors truncate"
                       >
                         {displayName}
                       </Link>
@@ -180,7 +180,7 @@ export default function GroupChatPanel({ groupId, isMember }: GroupChatPanelProp
                   <div
                     className={`px-3.5 py-2 rounded-2xl text-sm min-w-0 ${
                       isMine
-                        ? "rounded-br-xs bg-indigo-600 text-white"
+                        ? "rounded-br-xs bg-[var(--planet-accent-active)] text-white"
                         : "rounded-bl-xs bg-slate-800/90 text-slate-100 border border-slate-700/50"
                     }`}
                   >
@@ -189,7 +189,7 @@ export default function GroupChatPanel({ groupId, isMember }: GroupChatPanelProp
                     </div>
                     <div
                       className={`text-[10px] mt-1 text-right shrink-0 ${
-                        isMine ? "text-indigo-200" : "text-slate-400"
+                        isMine ? "text-slate-200" : "text-slate-400"
                       }`}
                     >
                       {msg.created_at ? formatMessageDateTime(msg.created_at) : ""}
@@ -221,7 +221,7 @@ export default function GroupChatPanel({ groupId, isMember }: GroupChatPanelProp
                 ? "border-red-500 focus:border-red-500"
                 : isNearLimit
                 ? "border-amber-500 focus:border-amber-500"
-                : "border-slate-700/60 focus:border-indigo-500"
+                : "border-slate-700/60 focus:border-[var(--planet-accent)] focus:ring-2 focus:ring-[var(--planet-border)]"
             }`}
           />
           {isNearLimit && (
@@ -242,7 +242,7 @@ export default function GroupChatPanel({ groupId, isMember }: GroupChatPanelProp
           className={`shrink-0 px-4.5 py-2 rounded-full font-semibold text-xs transition-all duration-150 ${
             !inputText.trim() || isOverLimit
               ? "bg-slate-700 text-slate-400 opacity-50 cursor-not-allowed"
-              : "bg-indigo-600 hover:bg-indigo-500 text-white cursor-pointer shadow-sm"
+              : "bg-[var(--planet-accent-active)] hover:brightness-110 text-white cursor-pointer shadow-sm"
           }`}
         >
           Send

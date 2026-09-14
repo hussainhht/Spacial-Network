@@ -7,8 +7,15 @@ import { SUN_POSITION } from "./earthMaterials";
 import useReducedMotion from "./useReducedMotion";
 import styles from "./PlanetBackground.module.css";
 
+// The canvas is rendered larger than Earth's own on-screen footprint (see
+// .planetCanvasWrapper) so the Moon's orbit has room to clear the frustum
+// edge. The camera is moved back by the same factor the canvas grows by,
+// which keeps Earth's (and the Moon's) apparent size/position on screen
+// unchanged - it only grows the margin around them.
+const CANVAS_SCALE = 1.6;
+
 const CAMERA = {
-  position: [0, 0, 4] as [number, number, number],
+  position: [0, 0, 4 * CANVAS_SCALE] as [number, number, number],
   fov: 45,
   near: 0.01,
   far: 100,
@@ -66,9 +73,11 @@ function PlanetBackground() {
       aria-hidden="true"
     >
       <div className={styles.planetFrame}>
-        <SceneBoundary>
-          <EarthScene reducedMotion={reducedMotion} />
-        </SceneBoundary>
+        <div className={styles.planetCanvasWrapper}>
+          <SceneBoundary>
+            <EarthScene reducedMotion={reducedMotion} />
+          </SceneBoundary>
+        </div>
       </div>
     </div>
   );
