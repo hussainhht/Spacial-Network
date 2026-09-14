@@ -8,16 +8,18 @@ export interface SpaceModel {
 
 export const EARTH_MODEL_PATH = "/models/planets/earth-final.glb";
 
-// Source of truth for which model a planet preference defaults/falls back to.
+// Canonical Earth identifier retained alongside the model inventory.
 export const DEFAULT_MODEL_ID = "earth";
 
+export const EARTH_MODEL: SpaceModel = {
+  id: DEFAULT_MODEL_ID,
+  name: "Earth",
+  path: EARTH_MODEL_PATH,
+  defaultRotation: [0, 0, 0],
+};
+
 export const SPACE_MODELS: SpaceModel[] = [
-  {
-    id: "earth",
-    name: "Earth",
-    path: EARTH_MODEL_PATH,
-    defaultRotation: [0, 0, 0],
-  },
+  EARTH_MODEL,
   {
     id: "moon",
     name: "Moon",

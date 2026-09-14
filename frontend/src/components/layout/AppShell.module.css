@@ -5,6 +5,7 @@
   position: relative;
   height: 100dvh;
   min-height: 100svh;
+  isolation: isolate;
   display: grid;
   grid-template-columns: var(--orbital-nav-space) minmax(0, 1fr);
   grid-template-rows: var(--app-navbar-height) minmax(0, 1fr);
@@ -46,6 +47,7 @@
   min-width: 0;
   height: calc(100svh - var(--app-navbar-height));
   overflow: hidden;
+  z-index: 3;
 }
 .routeContent {
   grid-column: 2;
@@ -56,6 +58,7 @@
   overflow-y: auto;
   overflow-x: clip;
   overscroll-behavior-y: contain;
+  z-index: 2;
 }
 /* Feature pages use the available shell height; only this pane scrolls. */
 .routeContent > :global(.space-shell),

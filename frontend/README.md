@@ -1,6 +1,6 @@
 # Social Network frontend
 
-A Next.js App Router social network with one shared SVG/CSS space background. Page navigation uses ordinary Next.js links. No page depends on a planet or a 3D transition.
+A Next.js App Router social network with one shared SVG/CSS space background and one global Earth scene for authenticated routes. Page navigation uses ordinary Next.js links. No page depends on a planet or a 3D transition.
 
 From this directory:
 
@@ -20,7 +20,7 @@ The Go backend serves the existing API and WebSocket endpoints on `localhost:808
 - `src/providers`: the shared WebSocket connection.
 - `public/models/planets`: preserved optimized GLB assets.
 
-The root layout mounts SpaceBackground and WebSocketProvider. The main layout adds NotificationProvider, GroupStateSync and AppShell. AppShell retains GroupsSearchProvider and composes the full-width navbar, permanent desktop orbital navigation, responsive mobile dock, and route content. Models are not loaded by the running application.
+The root layout mounts SpaceBackground and WebSocketProvider. The main layout adds NotificationProvider, GroupStateSync and AppShell. AppShell retains GroupsSearchProvider and composes one persistent Earth background, the full-width navbar, permanent desktop orbital navigation, responsive mobile dock, and route content.
 
 ## Validation
 
