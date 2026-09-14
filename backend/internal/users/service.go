@@ -127,6 +127,10 @@ func (s *Service) UpdateProfileDetails(userID int, req UpdateProfileDetailsReque
 	)
 }
 
+func (s *Service) UpdateProfilePhoto(userID int, profilePhotoPath string) (*Profile, string, error) {
+	return s.repo.UpdateProfilePhoto(userID, nullableProfileString(&profilePhotoPath))
+}
+
 func nullableProfileString(value *string) sql.NullString {
 	if value == nil {
 		return sql.NullString{}

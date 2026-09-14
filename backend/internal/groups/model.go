@@ -6,19 +6,27 @@ import (
 	"social/internal/upload"
 )
 
+type GroupPrivacy string
+
+const (
+	GroupPrivacyPublic  GroupPrivacy = "public"
+	GroupPrivacyPrivate GroupPrivacy = "private"
+)
+
 type Group struct {
 	CreatorUsername       string
 	MemberCount           int
 	MembershipRole        string
 	HasPendingJoinRequest bool
 	HasPendingInvitation  bool
-	ID                    int       `db:"id"`
-	CreatorID             int       `db:"creator_id"`
-	Title                 string    `db:"title"`
-	Description           string    `db:"description"`
-	GroupPhoto            string    `db:"group_photo"`
-	CreatedAt             time.Time `db:"created_at"`
-	UpdatedAt             time.Time `db:"updated_at"`
+	ID                    int          `db:"id"`
+	CreatorID             int          `db:"creator_id"`
+	Title                 string       `db:"title"`
+	Description           string       `db:"description"`
+	Privacy               GroupPrivacy `db:"privacy"`
+	GroupPhoto            string       `db:"group_photo"`
+	CreatedAt             time.Time    `db:"created_at"`
+	UpdatedAt             time.Time    `db:"updated_at"`
 }
 
 type GroupMember struct {
@@ -37,18 +45,19 @@ const (
 )
 
 type GroupInvitation struct {
-	GroupTitle      string    `json:"group_title"`
-	InviterUsername string    `json:"inviter_username"`
-	ID              int       `db:"id"`
-	GroupID         int       `db:"group_id"`
-	InvitedBy       int       `db:"invited_by"`
-	InvitedUserID   int       `db:"invited_user_id"`
-	Status          string    `db:"status"`
-	CreatedAt       time.Time `db:"created_at"`
-	UpdatedAt       time.Time `db:"updated_at"`
+	GroupTitle      string       `json:"group_title"`
+	GroupPrivacy    GroupPrivacy `json:"group_privacy"`
+	InviterUsername string       `json:"inviter_username"`
+	ID              int          `db:"id"`
+	GroupID         int          `db:"group_id"`
+	InvitedBy       int          `db:"invited_by"`
+	InvitedUserID   int          `db:"invited_user_id"`
+	Status          string       `db:"status"`
+	CreatedAt       time.Time    `db:"created_at"`
+	UpdatedAt       time.Time    `db:"updated_at"`
 }
 
-// InviteCandidate is a user who can be shown as a match when a group member
+// InviteCandidate is a user who can be shown as a match when the group creator
 // searches for someone to invite.
 type InviteCandidate struct {
 	ID           int    `db:"id"`
@@ -75,18 +84,19 @@ type CreateGroupResponse struct {
 }
 
 type GroupResponse struct {
-	CreatorUsername       string `json:"creator_username"`
-	MemberCount           int    `json:"member_count"`
-	MembershipRole        string `json:"membership_role,omitempty"`
-	HasPendingJoinRequest bool   `json:"has_pending_join_request"`
-	HasPendingInvitation  bool   `json:"has_pending_invitation"`
-	ID                    int    `json:"id"`
-	CreatorID             int    `json:"creator_id"`
-	Title                 string `json:"title"`
-	Description           string `json:"description"`
-	GroupPhoto            string `json:"group_photo,omitempty"`
-	CreatedAt             string `json:"created_at"`
-	UpdatedAt             string `json:"updated_at"`
+	CreatorUsername       string       `json:"creator_username"`
+	MemberCount           int          `json:"member_count"`
+	MembershipRole        string       `json:"membership_role,omitempty"`
+	HasPendingJoinRequest bool         `json:"has_pending_join_request"`
+	HasPendingInvitation  bool         `json:"has_pending_invitation"`
+	ID                    int          `json:"id"`
+	CreatorID             int          `json:"creator_id"`
+	Title                 string       `json:"title"`
+	Description           string       `json:"description"`
+	Privacy               GroupPrivacy `json:"privacy"`
+	GroupPhoto            string       `json:"group_photo,omitempty"`
+	CreatedAt             string       `json:"created_at"`
+	UpdatedAt             string       `json:"updated_at"`
 }
 
 type ListGroupsResponse struct {
@@ -161,15 +171,16 @@ type CreateGroupInvitationResponse struct {
 }
 
 type GroupInvitationResponse struct {
-	GroupTitle      string `json:"group_title"`
-	InviterUsername string `json:"inviter_username"`
-	ID              int    `json:"id"`
-	GroupID         int    `json:"group_id"`
-	InvitedBy       int    `json:"invited_by"`
-	InvitedUserID   int    `json:"invited_user_id"`
-	Status          string `json:"status"`
-	CreatedAt       string `json:"created_at"`
-	UpdatedAt       string `json:"updated_at"`
+	GroupTitle      string       `json:"group_title"`
+	GroupPrivacy    GroupPrivacy `json:"group_privacy"`
+	InviterUsername string       `json:"inviter_username"`
+	ID              int          `json:"id"`
+	GroupID         int          `json:"group_id"`
+	InvitedBy       int          `json:"invited_by"`
+	InvitedUserID   int          `json:"invited_user_id"`
+	Status          string       `json:"status"`
+	CreatedAt       string       `json:"created_at"`
+	UpdatedAt       string       `json:"updated_at"`
 }
 
 type GetGroupInvitationsResponse struct {

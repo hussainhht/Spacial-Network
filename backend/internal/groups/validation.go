@@ -40,6 +40,20 @@ func ValidateDescription(description string) (string, error) {
 	})
 }
 
+// ValidatePrivacy accepts the two supported membership modes. An omitted
+// value defaults to public because groups predating privacy were discoverable
+// and used creator-approved join requests.
+func ValidatePrivacy(privacy string) (GroupPrivacy, error) {
+	switch GroupPrivacy(privacy) {
+	case "":
+		return GroupPrivacyPublic, nil
+	case GroupPrivacyPublic, GroupPrivacyPrivate:
+		return GroupPrivacy(privacy), nil
+	default:
+		return "", errors.New("privacy must be public or private")
+	}
+}
+
 // ValidatePagination parses and validates the limit/offset query params for
 // listing groups. Blank values fall back to defaults.
 func ValidatePagination(limitParam, offsetParam string) (limit int, offset int, err error) {

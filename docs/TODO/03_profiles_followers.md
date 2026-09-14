@@ -152,11 +152,11 @@ Authentication, Docker, and final project-wide integration are not included in t
 
 ## 5. Avatar / Profile Data
 
-- [ ] Display avatar from registration/profile data
+- [X] Display avatar from registration/profile data
 - [X] Make sure optional nickname is handled correctly
 - [X] Make sure optional About Me is handled correctly
-- [ ] Handle users without an avatar
-- [ ] Reuse the project's existing image storage logic for avatar-related work when needed
+- [X] Handle users without an avatar
+- [X] Reuse the project's existing image storage logic for avatar-related work when needed
 
 ---
 

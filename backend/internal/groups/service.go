@@ -23,11 +23,9 @@ func NewService(
 	}
 }
 
-
 type NotificationSender interface {
 	Notify(notifications.CreateNotificationRequest) error
 }
-
 
 func (s *Service) notify(receiverID, actorID int, notifType notifications.NotificationType, entityType string, entityID int, message string) {
 	if s.notifier == nil {
@@ -50,8 +48,12 @@ func (s *Service) notify(receiverID, actorID int, notifType notifications.Notifi
 }
 
 // CreateGroup stores a new group owned by creatorID and returns its ID.
-func (s *Service) CreateGroup(creatorID int, title, description, photoPath string) (int64, error) {
-	return s.repo.InsertGroup(creatorID, title, description, photoPath)
+func (s *Service) CreateGroup(creatorID int, title, description, photoPath string, privacy GroupPrivacy) (int64, error) {
+	privacy, err := ValidatePrivacy(string(privacy))
+	if err != nil {
+		return 0, err
+	}
+	return s.repo.InsertGroup(creatorID, title, description, photoPath, privacy)
 }
 
 // GetAllGroups returns a page of groups, most recently created first.
@@ -74,6 +76,40 @@ func (s *Service) GetGroupByID(id int) (*Group, error) {
 	return s.repo.GetGroupByID(id)
 }
 
+// GetGroupForUser returns public group metadata to any authenticated user,
+// while hiding private groups from everyone except their creator or members.
+func (s *Service) GetGroupForUser(groupID, userID int) (*Group, error) {
+	group, err := s.repo.GetGroupByID(groupID)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.ensureCanViewGroup(group, userID); err != nil {
+		return nil, err
+	}
+	return group, nil
+}
+
+func (s *Service) ensureCanViewGroup(group *Group, userID int) error {
+	switch group.Privacy {
+	case GroupPrivacyPublic:
+		return nil
+	case GroupPrivacyPrivate:
+		if group.CreatorID == userID {
+			return nil
+		}
+		member, err := s.repo.GetMembership(group.ID, userID)
+		if err != nil {
+			return err
+		}
+		if member != nil {
+			return nil
+		}
+	}
+
+	// Use the existing hidden-resource convention so private group existence is
+	// not disclosed to unrelated users.
+	return ErrGroupNotFound
+}
 
 func (s *Service) UpdateGroup(groupID, userID int, title, description string, photoPath *string) (*Group, string, error) {
 	group, err := s.repo.GetGroupByID(groupID)
@@ -122,6 +158,19 @@ func (s *Service) GetGroupMembers(groupID int) ([]GroupMember, error) {
 	return s.repo.GetGroupMembers(groupID)
 }
 
+// GetVisibleGroupMembers protects the HTTP member-list endpoint for private
+// groups while retaining GetGroupMembers for internal member broadcasts.
+func (s *Service) GetVisibleGroupMembers(groupID, userID int) ([]GroupMember, error) {
+	group, err := s.repo.GetGroupByID(groupID)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.ensureCanViewGroup(group, userID); err != nil {
+		return nil, err
+	}
+	return s.repo.GetGroupMembers(groupID)
+}
+
 func (s *Service) IsGroupMember(groupID, userID int) (bool, error) {
 	member, err := s.repo.GetMembership(groupID, userID)
 	if err != nil {
@@ -131,10 +180,18 @@ func (s *Service) IsGroupMember(groupID, userID int) (bool, error) {
 }
 
 func (s *Service) GetMembership(groupID, userID int) (*GroupMember, error) {
-	if _, err := s.repo.GetGroupByID(groupID); err != nil {
+	group, err := s.repo.GetGroupByID(groupID)
+	if err != nil {
 		return nil, err
 	}
-	return s.repo.GetMembership(groupID, userID)
+	member, err := s.repo.GetMembership(groupID, userID)
+	if err != nil {
+		return nil, err
+	}
+	if group.Privacy == GroupPrivacyPrivate && group.CreatorID != userID && member == nil {
+		return nil, ErrGroupNotFound
+	}
+	return member, nil
 }
 
 func (s *Service) IsGroupCreator(groupID, userID int) (bool, error) {
@@ -182,10 +239,15 @@ func (s *Service) RemoveMember(groupID, actorID, memberID int) error {
 	return s.repo.RemoveMember(groupID, memberID)
 }
 
+// RequestToJoin creates an approval request for a public group. Private groups
+// are invite-only and can never be joined through this flow.
 func (s *Service) RequestToJoin(groupID, userID int) error {
 	group, err := s.repo.GetGroupByID(groupID)
 	if err != nil {
 		return err
+	}
+	if group.Privacy != GroupPrivacyPublic {
+		return ErrJoinRequestNotAllowed
 	}
 
 	member, err := s.repo.GetMembership(groupID, userID)
@@ -229,6 +291,9 @@ func (s *Service) GetPendingJoinRequests(groupID, creatorID int) ([]GroupJoinReq
 	if group.CreatorID != creatorID {
 		return nil, ErrNotGroupCreator
 	}
+	if group.Privacy != GroupPrivacyPublic {
+		return nil, ErrJoinRequestNotAllowed
+	}
 
 	return s.repo.GetPendingJoinRequestsByGroup(groupID)
 }
@@ -244,20 +309,16 @@ func (s *Service) HasPendingJoinRequest(groupID, userID int) (bool, error) {
 }
 
 func (s *Service) CreateGroupInvitation(groupID, inviterID, invitedUserID int) error {
-	if _, err := s.repo.GetGroupByID(groupID); err != nil {
+	group, err := s.repo.GetGroupByID(groupID)
+	if err != nil {
 		return err
+	}
+	if group.CreatorID != inviterID {
+		return ErrNotGroupCreator
 	}
 
 	if inviterID == invitedUserID {
 		return ErrCannotInviteSelf
-	}
-
-	inviter, err := s.repo.GetMembership(groupID, inviterID)
-	if err != nil {
-		return err
-	}
-	if inviter == nil {
-		return ErrNotGroupMember
 	}
 
 	exists, err := s.repo.UserExists(invitedUserID)
@@ -313,16 +374,12 @@ func (s *Service) DeclineGroupInvitation(invitationID, userID int) error {
 }
 
 func (s *Service) SearchInviteCandidates(groupID, currentUserID int, rawQuery string, limit int) ([]InviteCandidate, error) {
-	if _, err := s.repo.GetGroupByID(groupID); err != nil {
-		return nil, err
-	}
-
-	member, err := s.repo.GetMembership(groupID, currentUserID)
+	group, err := s.repo.GetGroupByID(groupID)
 	if err != nil {
 		return nil, err
 	}
-	if member == nil {
-		return nil, ErrNotGroupMember
+	if group.CreatorID != currentUserID {
+		return nil, ErrNotGroupCreator
 	}
 
 	query, err := ValidateInviteSearchQuery(rawQuery)

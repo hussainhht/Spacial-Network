@@ -133,7 +133,7 @@ func TestGroupInvitation_GeneratesNotificationForInvitee(t *testing.T) {
 	creator := f.newUser(t, "gninvcreator")
 	invitee := f.newUser(t, "gninvinvitee")
 
-	groupID, err := f.groupsSvc.CreateGroup(creator, "Notify Invite Group", "", "")
+	groupID, err := f.groupsSvc.CreateGroup(creator, "Notify Invite Group", "", "", groups.GroupPrivacyPrivate)
 	if err != nil {
 		t.Fatalf("CreateGroup: %v", err)
 	}
@@ -168,7 +168,7 @@ func TestGroupJoinRequest_GeneratesNotificationForCreator(t *testing.T) {
 	creator := f.newUser(t, "gnjrcreator")
 	requester := f.newUser(t, "gnjrrequester")
 
-	groupID, err := f.groupsSvc.CreateGroup(creator, "Notify Join Group", "", "")
+	groupID, err := f.groupsSvc.CreateGroup(creator, "Notify Join Group", "", "", groups.GroupPrivacyPublic)
 	if err != nil {
 		t.Fatalf("CreateGroup: %v", err)
 	}
@@ -195,7 +195,7 @@ func TestNewGroupEvent_GeneratesNotificationForMembers(t *testing.T) {
 	memberA := f.newUser(t, "gnevmemberA")
 	memberB := f.newUser(t, "gnevmemberB")
 
-	groupID, err := f.groupsSvc.CreateGroup(creator, "Notify Event Group", "", "")
+	groupID, err := f.groupsSvc.CreateGroup(creator, "Notify Event Group", "", "", groups.GroupPrivacyPrivate)
 	if err != nil {
 		t.Fatalf("CreateGroup: %v", err)
 	}

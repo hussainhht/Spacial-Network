@@ -38,6 +38,10 @@ var ErrCannotInviteSelf = errors.New("cannot invite yourself to a group")
 // pending join request for the group.
 var ErrJoinRequestAlreadyPending = errors.New("a pending join request already exists")
 
+// ErrJoinRequestNotAllowed is returned when a user attempts to request
+// membership in a private, invite-only group.
+var ErrJoinRequestNotAllowed = errors.New("join requests are not allowed for this group")
+
 // ErrJoinRequestNotPending is returned when trying to accept or reject a
 // join request that has already been resolved.
 var ErrJoinRequestNotPending = errors.New("join request is not pending")
@@ -76,6 +80,8 @@ func joinRequestErrorResponse(err error) (int, string) {
 		return http.StatusConflict, "User is already a member of this group"
 	case errors.Is(err, ErrJoinRequestAlreadyPending):
 		return http.StatusConflict, "A pending join request already exists"
+	case errors.Is(err, ErrJoinRequestNotAllowed):
+		return http.StatusForbidden, "Private groups are invite only"
 	case errors.Is(err, ErrJoinRequestNotPending):
 		return http.StatusConflict, "Join request has already been processed"
 	default:
@@ -97,6 +103,8 @@ func invitationErrorResponse(err error) (int, string) {
 		return http.StatusBadRequest, "Cannot invite yourself to a group"
 	case errors.Is(err, ErrNotGroupMember):
 		return http.StatusForbidden, "You must be a member of this group to do this"
+	case errors.Is(err, ErrNotGroupCreator):
+		return http.StatusForbidden, "Only the group creator can invite people"
 	case errors.Is(err, ErrAlreadyMember):
 		return http.StatusConflict, "User is already a member of this group"
 	case errors.Is(err, ErrInvitationAlreadyPending):
@@ -159,6 +167,8 @@ func inviteCandidateErrorResponse(err error) (int, string) {
 		return http.StatusNotFound, "Group not found"
 	case errors.Is(err, ErrNotGroupMember):
 		return http.StatusForbidden, "You must be a member of this group to do this"
+	case errors.Is(err, ErrNotGroupCreator):
+		return http.StatusForbidden, "Only the group creator can search for people to invite"
 	case errors.Is(err, ErrInvalidSearchQuery):
 		return http.StatusBadRequest, "Search query must be between 1 and 100 characters"
 	default:

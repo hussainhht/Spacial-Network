@@ -1,6 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+import AppIcon from "@/components/layout/AppIcon";
+import GroupSearchInput from "./GroupSearchInput";
+import styles from "./GroupsDirectory.module.css";
 import { getGroups } from "../api/groups";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { useGroupQuery, useMyGroups } from "../hooks/useGroupData";
@@ -15,7 +19,7 @@ const SEARCH_DEBOUNCE_MS = 300;
 
 export default function GroupsPageContent() {
   const [activeTab, setActiveTab] = useState<GroupsTab>("mine");
-  const { search } = useGroupsSearch();
+  const { search, setSearch } = useGroupsSearch();
   const debouncedSearch = useDebouncedValue(search.trim(), SEARCH_DEBOUNCE_MS);
   const [pagination, setPagination] = useState({
     search: debouncedSearch,
@@ -33,17 +37,30 @@ export default function GroupsPageContent() {
     search: debouncedSearch,
     page,
     onBrowseAll: () => changeTab("all"),
+    onClearSearch: () => setSearch(""),
     onPageChange: (page: number) =>
       setPagination({ search: debouncedSearch, page }),
   };
 
   return (
-    <main className="space-shell groups-page" aria-labelledby="app-page-title">
-      <div className="groups-container">
-        <GroupsFilterTabs activeTab={activeTab} onTabChange={changeTab} />
-        <div>
-          <InvitationsPanel />
+    <main className={`space-shell ${styles.page}`} aria-labelledby="groups-heading">
+      <div className={styles.container}>
+        <header className={styles.intro}>
+          <p className={styles.eyebrow}>Your communities</p>
+
+        </header>
+        <div className={styles.toolbar}>
+          <GroupSearchInput value={search} onChange={setSearch} />
+          <Link href="/groups/create" className={`group-button ${styles.create}`}>
+            <AppIcon name="plus" /> Create Group
+          </Link>
         </div>
+        <GroupsFilterTabs
+          activeTab={activeTab}
+          onTabChange={changeTab}
+          className={styles.filters}
+        />
+        <InvitationsPanel />
         <section
           id={`groups-tabpanel-${activeTab}`}
           role="tabpanel"
@@ -65,6 +82,7 @@ type CollectionProps = {
   search: string;
   page: number;
   onBrowseAll: () => void;
+  onClearSearch: () => void;
   onPageChange: (page: number) => void;
 };
 
@@ -86,6 +104,7 @@ function GroupCollection({
   search,
   page,
   onBrowseAll,
+  onClearSearch,
   onPageChange,
 }: CollectionProps & { state: GroupQueryState; mine: boolean }) {
   return (
@@ -95,9 +114,10 @@ function GroupCollection({
         mine={mine}
         search={search}
         onBrowseAll={onBrowseAll}
+        onClearSearch={onClearSearch}
         key={`${mine}:${page}:${search}`}
       />
-      <div>
+      <div className={styles.pagination}>
         <p className="group-muted" role="status">
           {state.loading
             ? "Loading groups…"

@@ -15,7 +15,9 @@ import {
 } from "../hooks/useGroupData";
 import GroupInviteModal from "./management/GroupInviteModal";
 import GroupJoinButton from "./GroupJoinButton";
+import GroupPrivacyBadge from "./GroupPrivacyBadge";
 import { InvitationActions, JoinRequestActions } from "./GroupResponseActions";
+import type { GroupPrivacy } from "../types/group";
 
 export function GroupLoadError({
   error,
@@ -79,7 +81,6 @@ export function MembersPanel({
   // Shares the same cached resource as MembershipPanel's useMembership call,
   // so this does not trigger a second membership request.
   const membership = useMembership(groupId);
-  const isMember = Boolean(membership.data?.isMember);
   const isCreator = membership.data?.role === "creator";
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const closeInviteModal = useCallback(() => setIsInviteModalOpen(false), []);
@@ -100,7 +101,7 @@ export function MembersPanel({
         </h2>
         <div className="group-members-header-actions">
           {state.loading && <span className="group-muted">Loading…</span>}
-          {isMember && (
+          {isCreator && (
             <button
               type="button"
               className="group-button secondary"
@@ -335,12 +336,19 @@ export function InvitationsPanel() {
         {state.data?.map((invitation) => (
           <li key={invitation.id} className="group-attempt-row">
             <div>
-              <Link
-                className="group-title-link"
-                href={`/groups/${invitation.groupId}#invitations`}
-              >
-                {invitation.groupTitle}
-              </Link>
+              {invitation.groupPrivacy === "public" ? (
+                <Link
+                  className="group-title-link"
+                  href={`/groups/${invitation.groupId}#invitations`}
+                >
+                  {invitation.groupTitle}
+                </Link>
+              ) : (
+                <span className="group-title-link">
+                  {invitation.groupTitle}
+                </span>
+              )}
+              <GroupPrivacyBadge privacy={invitation.groupPrivacy} />
               <p className="group-muted">
                 Invited by @{invitation.inviterUsername}
               </p>
@@ -356,7 +364,13 @@ export function InvitationsPanel() {
   );
 }
 
-export function MembershipPanel({ groupId }: { groupId: number }) {
+export function MembershipPanel({
+  groupId,
+  privacy,
+}: {
+  groupId: number;
+  privacy: GroupPrivacy;
+}) {
   const membership = useMembership(groupId);
   return (
     <>
@@ -383,19 +397,21 @@ export function MembershipPanel({ groupId }: { groupId: number }) {
               <p className="group-muted">
                 {membership.data.role === "creator"
                   ? "Manage requests and invite people to grow your community."
-                  : "You’re part of this community. Invite someone to join you."}
+                  : "You’re part of this community."}
               </p>
             </>
           ) : (
             <NonMemberActions
               groupId={groupId}
+              privacy={privacy}
               pending={membership.data.hasPendingJoinRequest}
             />
           ))}
       </section>
       {!membership.error &&
         membership.data?.isMember &&
-        membership.data.role === "creator" && (
+        membership.data.role === "creator" &&
+        privacy === "public" && (
           <JoinRequestsPanel groupId={groupId} />
         )}
     </>
@@ -404,9 +420,11 @@ export function MembershipPanel({ groupId }: { groupId: number }) {
 
 function NonMemberActions({
   groupId,
+  privacy,
   pending,
 }: {
   groupId: number;
+  privacy: GroupPrivacy;
   pending: boolean;
 }) {
   const invitations = usePendingInvitations();
@@ -429,14 +447,26 @@ function NonMemberActions({
       </div>
     );
 
+  if (privacy === "private") {
+    return (
+      <p className="group-muted">
+        This group is invite only. Only the group creator can invite new members.
+      </p>
+    );
+  }
+
   return (
     <>
       <p className="group-muted">
         {pending
           ? "Your request is with the group creator. Check back for their response."
-          : "Send a request to the creator to become a member."}
+          : "Request access to this group’s posts, events, and chat. The creator must approve your membership."}
       </p>
-      <GroupJoinButton groupId={groupId} />
+      <GroupJoinButton
+        groupId={groupId}
+        privacy={privacy}
+        pending={pending}
+      />
     </>
   );
 }

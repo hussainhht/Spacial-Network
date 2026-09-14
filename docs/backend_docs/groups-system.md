@@ -13,13 +13,14 @@ separate and shows the wiring for each.
 
 Implemented:
 
-- Groups: create, list (paginated), get-by-ID, list members, check the
+- Groups: create, public discovery/search (paginated), member-owned
+  group lists, privacy-aware get-by-ID, list members, and check the
   caller's own membership/role.
-- Join requests: a non-member asks to join; the group's creator
-  accepts or rejects.
-- Invitations: an existing member invites someone; the invited user
+- Join requests: a non-member asks to join a public group; the group's
+  creator accepts or rejects. Private groups reject this flow.
+- Invitations: the group creator invites someone; the invited user
   accepts or declines.
-- Real-time invite-candidate search: a member typing a name/username
+- Real-time invite-candidate search: the creator typing a name/username
   into the invite box gets results pushed back over the same
   WebSocket connection instead of polling an HTTP endpoint.
 - A notification is created (and pushed in real time if the receiver
@@ -44,6 +45,7 @@ id (PK)                   id (PK)                      id (PK)                  
 creator_id -> users(id)   group_id   -> groups(id)      group_id        -> groups(id)  group_id -> groups(id)
 title                     user_id    -> users(id)       invited_by      -> users(id)   user_id  -> users(id)
 description               role: 'creator' | 'member'    invited_user_id -> users(id)   status: pending|accepted|declined
+privacy: public|private
 created_at                joined_at                     status: pending|accepted|declined  created_at
 updated_at                                              created_at                     updated_at
                                                          updated_at
@@ -54,7 +56,7 @@ UNIQUE(group_id, user_id)                UNIQUE(group_id, invited_user_id)   UNI
 Migrations:
 `pkg/db/migrations/sqlite/20260829174143_create_groups_table.{up,down}.sql`,
 `..._create_group_members_table...`, `..._create_group_invitations_table...`,
-`..._create_group_join_requests_table...`.
+`..._create_group_join_requests_table...`, and `..._add_group_privacy...`.
 
 Two things are enforced at the schema level rather than only in Go:
 
@@ -103,6 +105,10 @@ Enforced in `service.go`, on top of the schema constraints above:
   redundantly** for membership checks - `Service.IsGroupCreator`
   compares `group.CreatorID` (from the `groups` row) against the
   caller.
+- **Public means discoverable with approval; private means hidden and
+  invite-only.** Normal list/search queries filter to public groups.
+  Private details, membership state, and member lists return the same
+  not-found response as an absent group for unrelated users.
 - **You can't invite or request-join your way into double membership**:
   `RequestToJoin` checks `GetMembership` first and returns
   `ErrAlreadyMember`; `CreateGroupInvitation` does the same for the
@@ -111,9 +117,9 @@ Enforced in `service.go`, on top of the schema constraints above:
   same group** - checked explicitly in Go (`HasPendingJoinRequest` /
   `HasPendingInvitation`) before insert, on top of the schema's unique
   index.
-- **You can't invite yourself** (`ErrCannotInviteSelf`), and **only an
-  existing member can invite anyone** (`ErrNotGroupMember` if the
-  inviter isn't a member).
+- **You can't invite yourself** (`ErrCannotInviteSelf`), and **only the
+  creator can invite anyone** (`ErrNotGroupCreator` for every other
+  caller). There is no separate multi-admin role.
 - **Only the creator can see or resolve pending join requests**
   (`GetPendingJoinRequests`, `AcceptJoinRequest`, `RejectJoinRequest`
   all check `group.CreatorID != creatorID` -> `ErrNotGroupCreator`).
@@ -142,8 +148,9 @@ param. Registered in `router/router.go`.
 
 | Method | Path                                              | Handler                          | Notes                                    |
 | -------- | --------------------------------------------------- | ----------------------------------- | -------------------------------------------- |
-| GET    | `/api/groups`                                    | `ListGroupsHandler`               | `?limit=&offset=`, newest first          |
-| POST   | `/api/groups`                                    | `CreateGroupHandler`              | body `{title, description}`            |
+| GET    | `/api/groups`                                    | `ListGroupsHandler`               | public discovery/search only          |
+| POST   | `/api/groups`                                    | `CreateGroupHandler`              | multipart `title`, `description`, `privacy` |
+| GET    | `/api/groups/mine`                               | `GetMyGroupsHandler`              | caller's public and private memberships |
 | GET    | `/api/groups/{id}`                               | `GetGroupHandler`                 |                                           |
 | GET    | `/api/groups/{id}/members`                       | `GetGroupMembersHandler`          |                                           |
 | GET    | `/api/groups/{id}/membership`                    | `GetMembershipHandler`            | `{is_member, role}` for the caller     |
@@ -197,7 +204,7 @@ sequenceDiagram
     Note over U: requester gets NO real-time push here - see Section 8
 ```
 
-Group invitations follow the mirror-image flow: an existing **member**
+Group invitations follow the mirror-image flow: the group **creator**
 calls `POST /api/groups/{id}/invitations`, `CreateGroupInvitation` fires
 a `group_invitation` notification to the invited user, and later the
 **invited user** (not the creator) calls accept/decline on
@@ -325,8 +332,8 @@ wsRouter.Register(groups.EventInviteUserSearch, inviteSearchWSHandler.HandleInvi
 wsHandler.SetMessageHandler(wsRouter.Dispatch)
 ```
 
-`SearchInviteCandidates` re-checks membership itself
-(`ErrNotGroupMember` if the caller isn't in the group) - the WebSocket
+`SearchInviteCandidates` re-checks creator ownership itself
+(`ErrNotGroupCreator` for every other caller) - the WebSocket
 layer never assumes the caller is authorized just because they hold an
 open, authenticated connection to *some* group's data.
 

@@ -182,6 +182,7 @@ Table groups {
 
   title varchar [not null]
   description text [not null]
+  privacy varchar [not null, default: 'public', note: 'public = discoverable + approval; private = hidden + invite-only']
 
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
   updated_at datetime [not null, default: `CURRENT_TIMESTAMP`]

@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { useState } from "react";
 import type { Group } from "../types/group";
-import GroupAvatar from "./GroupAvatar";
-import { GroupLoadError, MembershipBadge } from "./GroupPanels";
+import { GroupLoadError } from "./GroupPanels";
+import AppIcon from "@/components/layout/AppIcon";
+import GroupCard from "./GroupCard";
+import styles from "./GroupsDirectory.module.css";
 import GroupPreviewPanel from "./GroupPreviewPanel";
 
 export type GroupQueryState = {
@@ -19,11 +21,13 @@ export default function GroupList({
   search,
   mine,
   onBrowseAll,
+  onClearSearch,
 }: {
   state: GroupQueryState;
   search: string;
   mine: boolean;
   onBrowseAll: () => void;
+  onClearSearch: () => void;
 }) {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const groups = state.data ?? [];
@@ -45,57 +49,45 @@ export default function GroupList({
       }}
     >
       {state.error && <GroupLoadError error={state.error} retry={state.refresh} />}
-      {state.loading && <p role="status">Loading communities…</p>}
+      {state.loading && groups.length === 0 && (
+        <div className={styles.grid} aria-hidden="true">
+          {Array.from({ length: 6 }, (_, index) => (
+            <div className={`${styles.card} ${styles.skeleton}`} key={index}>
+              <span className={styles.skeletonAvatar} />
+              <span /><span /><span /><span />
+            </div>
+          ))}
+        </div>
+      )}
       {!state.loading && !state.error && groups.length === 0 && (
-        <div className="group-panel">
-          <h2>{search ? "No groups found" : "Find your community"}</h2>
+        <div className={styles.empty}>
+          <AppIcon name={search ? "search" : "groups"} width={32} height={32} />
+          <h2>{search ? "No groups found" : "No groups yet"}</h2>
           <p className="group-muted">
             {search
-              ? "No groups match this search. Try another name."
+              ? "Try another name or clear your search."
               : mine
                 ? "You haven’t joined any groups yet. Explore all groups or create one."
                 : "Create a group to start a new community."}
           </p>
-          {!search && (
+          {search ? (
+            <button type="button" className="group-button secondary" onClick={onClearSearch}>Clear search</button>
+          ) : (
             <div className="group-buttons">
               {mine && (
                 <button type="button" className="group-button secondary" onClick={onBrowseAll}>
-                  Explore all groups
+                  Browse Groups
                 </button>
               )}
-              <Link href="/groups/create" className="group-button">Create a group</Link>
+              <Link href="/groups/create" className="group-button">Create Group</Link>
             </div>
           )}
         </div>
       )}
-      <ul className="groups-list" aria-label="Groups">
+      <ul className={styles.grid} aria-label="Groups">
         {groups.map((group) => (
-          <li key={group.id} className="group-card">
-            <div className="group-card-top">
-              <GroupAvatar group={group} size={56} />
-              <MembershipBadge
-                role={group.membershipRole}
-                invited={group.hasPendingInvitation}
-                pending={group.hasPendingJoinRequest}
-              />
-            </div>
-            <h2><Link href={`/groups/${group.id}`}>{group.title}</Link></h2>
-            <p className="group-card-creator">Created by @{group.creatorUsername}</p>
-            <p className="group-card-description">{group.description}</p>
-            <div className="group-card-footer">
-              <span>{group.memberCount} {group.memberCount === 1 ? "member" : "members"}</span>
-              <button
-                id={`group-preview-button-${group.id}`}
-                type="button"
-                className="group-button secondary"
-                aria-label={`Open preview for ${group.title}`}
-                aria-expanded={selected?.id === group.id}
-                aria-controls={selected?.id === group.id ? "group-preview" : undefined}
-                onClick={() => setSelectedId(group.id)}
-              >
-                Preview
-              </button>
-            </div>
+          <li key={group.id}>
+            <GroupCard group={group} expanded={selected?.id === group.id} onPreview={() => setSelectedId(group.id)} />
           </li>
         ))}
       </ul>

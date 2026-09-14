@@ -63,6 +63,103 @@ func TestMigrateUp_IsIdempotent(t *testing.T) {
 	}
 }
 
+func TestGroupPrivacyMigration_BackfillsLegacyGroupsAsPublicAndPreservesMembership(t *testing.T) {
+	db := openMemoryDB(t)
+
+	if err := sqlite.MigrateUp(db); err != nil {
+		t.Fatalf("initial MigrateUp: %v", err)
+	}
+	// Roll back the privacy migration to reproduce a group that existed before
+	// the privacy column was introduced.
+	if err := sqlite.MigrateDown(db); err != nil {
+		t.Fatalf("MigrateDown privacy migration: %v", err)
+	}
+
+	result, err := db.Exec(`
+		INSERT INTO users (uuid, username, age, gender, first_name, last_name, email, password_hash)
+		VALUES ('legacy-user', 'legacyuser', 25, 'male', 'Legacy', 'User', 'legacy@example.com', 'hash')
+	`)
+	if err != nil {
+		t.Fatalf("insert legacy user: %v", err)
+	}
+	creatorID, err := result.LastInsertId()
+	if err != nil {
+		t.Fatalf("legacy user id: %v", err)
+	}
+	groupResult, err := db.Exec(
+		`INSERT INTO groups (creator_id, title, description) VALUES (?, 'Legacy Group', '')`,
+		creatorID,
+	)
+	if err != nil {
+		t.Fatalf("insert group before privacy migration: %v", err)
+	}
+	groupID, err := groupResult.LastInsertId()
+	if err != nil {
+		t.Fatalf("legacy group id: %v", err)
+	}
+	if _, err := db.Exec(
+		`INSERT INTO group_members (group_id, user_id, role) VALUES (?, ?, 'creator')`,
+		groupID,
+		creatorID,
+	); err != nil {
+		t.Fatalf("insert legacy membership: %v", err)
+	}
+
+	if err := sqlite.MigrateUp(db); err != nil {
+		t.Fatalf("re-apply privacy migration: %v", err)
+	}
+	var privacy string
+	if err := db.QueryRow(`SELECT privacy FROM groups WHERE title = 'Legacy Group'`).Scan(&privacy); err != nil {
+		t.Fatalf("read backfilled privacy: %v", err)
+	}
+	if privacy != "public" {
+		t.Fatalf("backfilled legacy privacy = %q, want public", privacy)
+	}
+	var membershipCount int
+	if err := db.QueryRow(
+		`SELECT COUNT(*) FROM group_members WHERE group_id = ? AND user_id = ?`,
+		groupID,
+		creatorID,
+	).Scan(&membershipCount); err != nil {
+		t.Fatalf("read preserved legacy membership: %v", err)
+	}
+	if membershipCount != 1 {
+		t.Fatalf("legacy membership count = %d, want 1", membershipCount)
+	}
+
+	// Direct inserts and legacy clients that omit privacy keep the historical
+	// discoverable + approval-required behavior.
+	if _, err := db.Exec(
+		`INSERT INTO groups (creator_id, title, description) VALUES (?, 'Default Public Group', '')`,
+		creatorID,
+	); err != nil {
+		t.Fatalf("insert group with public default: %v", err)
+	}
+	if err := db.QueryRow(`SELECT privacy FROM groups WHERE title = 'Default Public Group'`).Scan(&privacy); err != nil {
+		t.Fatalf("read public default: %v", err)
+	}
+	if privacy != "public" {
+		t.Fatalf("default privacy = %q, want public", privacy)
+	}
+
+	if _, err := db.Exec(
+		`INSERT INTO groups (creator_id, title, description, privacy) VALUES (?, 'Explicit Private Group', '', 'private')`,
+		creatorID,
+	); err != nil {
+		t.Fatalf("insert explicit private group: %v", err)
+	}
+	if _, err := db.Exec(`UPDATE groups SET privacy = 'hidden' WHERE title = 'Legacy Group'`); err == nil {
+		t.Fatal("expected privacy CHECK constraint to reject hidden")
+	}
+
+	if err := sqlite.MigrateDown(db); err != nil {
+		t.Fatalf("final MigrateDown privacy migration: %v", err)
+	}
+	if err := db.QueryRow(`SELECT privacy FROM groups LIMIT 1`).Scan(&privacy); err == nil {
+		t.Fatal("privacy column still exists after down migration")
+	}
+}
+
 func TestMigrateDownAll_RemovesTables(t *testing.T) {
 	db := openMemoryDB(t)
 

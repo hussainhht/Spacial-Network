@@ -32,7 +32,7 @@ function ProfileAvatar({
   profilePhoto,
   isPrivate,
 }: ProfileAvatarProps) {
-  const [imageError, setImageError] = useState(false);
+  const [failedPhotoUrl, setFailedPhotoUrl] = useState<string | null>(null);
 
   const initials = getInitials(firstName, lastName, username);
 
@@ -42,8 +42,8 @@ function ProfileAvatar({
     return `${getBackendBaseUrl()}${cleanPath}`;
   };
 
-  const hasPhoto = Boolean(profilePhoto) && !imageError;
   const photoUrl = profilePhoto ? getFullPhotoUrl(profilePhoto) : "";
+  const hasPhoto = Boolean(photoUrl) && failedPhotoUrl !== photoUrl;
 
   return (
     <div className={styles.avatarWrapper}>
@@ -55,7 +55,7 @@ function ProfileAvatar({
             width={124}
             height={124}
             className={styles.avatarImage}
-            onError={() => setImageError(true)}
+            onError={() => setFailedPhotoUrl(photoUrl)}
             priority
           />
         ) : (

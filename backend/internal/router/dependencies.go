@@ -96,7 +96,6 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 
 	usersRepo := users.NewRepository(db)
 	usersService := users.NewService(usersRepo, followersService)
-	usersHandler := users.NewHandler(usersService)
 
 	followersHandler := followers.NewHandler(followersService, usersService)
 
@@ -108,6 +107,8 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	usersHandler := users.NewHandler(usersService, avatarStorage)
 
 	groupPhotoStorage, err := upload.NewAvatarStorage(cfg.UploadsDir, upload.GroupPhotoSubdir, cfg.MaxAvatarSize)
 	if err != nil {

@@ -10,11 +10,14 @@ func (r *Repository) RespondToJoinRequest(groupID, requestID, creatorID int, sta
 	defer tx.Rollback()
 
 	// 1. Verify group exists and verify that creatorID is indeed the group creator.
-	var ownerID int
+	var (
+		ownerID int
+		privacy GroupPrivacy
+	)
 	err = tx.QueryRow(
-		`SELECT creator_id FROM groups WHERE id = ?`,
+		`SELECT creator_id, privacy FROM groups WHERE id = ?`,
 		groupID,
-	).Scan(&ownerID)
+	).Scan(&ownerID, &privacy)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return ErrGroupNotFound
@@ -23,6 +26,9 @@ func (r *Repository) RespondToJoinRequest(groupID, requestID, creatorID int, sta
 	}
 	if ownerID != creatorID {
 		return ErrNotGroupCreator
+	}
+	if privacy != GroupPrivacyPublic {
+		return ErrJoinRequestNotAllowed
 	}
 
 	// 2. Fetch the join request and verify it is currently pending.

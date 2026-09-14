@@ -10,11 +10,7 @@ export default function CreateGroupPage() {
         </Link>
 
         <header className="group-create-header">
-          <p className="group-eyebrow">New community</p>
           <h1>Create your group</h1>
-          <p className="group-muted">
-            Bring people together around something you care about.
-          </p>
         </header>
 
         <CreateGroupForm />
