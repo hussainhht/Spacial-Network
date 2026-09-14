@@ -2,9 +2,9 @@
 
 import { Component, Suspense, memo, type ReactNode } from "react";
 import { Canvas } from "@react-three/fiber";
-import PlanetModel from "./PlanetModel";
-import { EARTH_MODEL } from "./modelsRegistry";
+import EarthSystem from "./EarthSystem";
 import { SUN_POSITION } from "./earthMaterials";
+import useReducedMotion from "./useReducedMotion";
 import styles from "./PlanetBackground.module.css";
 
 const CAMERA = {
@@ -37,12 +37,12 @@ class SceneBoundary extends Component<
   }
 }
 
-function EarthScene() {
+function EarthScene({ reducedMotion }: { reducedMotion: boolean }) {
   return (
     <Canvas
       camera={CAMERA}
       dpr={[1, 2]}
-      frameloop="demand"
+      frameloop={reducedMotion ? "demand" : "always"}
       fallback={null}
       gl={{ alpha: true, antialias: true, powerPreference: "high-performance" }}
       shadows={false}
@@ -50,15 +50,15 @@ function EarthScene() {
       <ambientLight intensity={0.12} />
       <directionalLight position={SUN_POSITION} intensity={3} />
       <Suspense fallback={null}>
-        <group scale={2.2}>
-          <PlanetModel modelConfig={EARTH_MODEL} />
-        </group>
+        <EarthSystem reducedMotion={reducedMotion} />
       </Suspense>
     </Canvas>
   );
 }
 
 function PlanetBackground() {
+  const reducedMotion = useReducedMotion();
+
   return (
     <div
       data-earth-background
@@ -67,7 +67,7 @@ function PlanetBackground() {
     >
       <div className={styles.planetFrame}>
         <SceneBoundary>
-          <EarthScene />
+          <EarthScene reducedMotion={reducedMotion} />
         </SceneBoundary>
       </div>
     </div>

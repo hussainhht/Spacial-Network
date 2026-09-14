@@ -18,14 +18,16 @@ export const EARTH_MODEL: SpaceModel = {
   defaultRotation: [0, 0, 0],
 };
 
+export const MOON_MODEL: SpaceModel = {
+  id: "moon",
+  name: "Moon",
+  path: "/models/planets/moon-final.glb",
+  defaultRotation: [0, 0, 0],
+};
+
 export const SPACE_MODELS: SpaceModel[] = [
   EARTH_MODEL,
-  {
-    id: "moon",
-    name: "Moon",
-    path: "/models/planets/moon-final.glb",
-    defaultRotation: [0, 0, 0],
-  },
+  MOON_MODEL,
   {
     id: "mars",
     name: "Mars",
