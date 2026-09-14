@@ -6,7 +6,8 @@ All 3D planet assets and reproducible optimization tooling are maintained in thi
 
 ## Models Overview
 
-- `earth-00.glb`: Untouched original Earth export. Never overwrite or modify this file.
+- `earth.glb`: Untouched original Earth export (Sketchfab). Never overwrite or modify this file.
+- `earth-00.glb`: Previous Earth source, superseded by `earth.glb`. Kept for reference only; no longer used by the pipeline.
 - `earth-final.glb`: Web-optimized Earth model.
 - `24881_Mars_1_6792.glb`: Untouched original Mars source model. Never overwrite or modify this file.
 - `mars-final.glb`: Web-optimized Mars model with embedded WebP textures and MikkTSpace tangents.
@@ -14,7 +15,7 @@ All 3D planet assets and reproducible optimization tooling are maintained in thi
 - `Saturn_1_120536.glb`: Source Saturn asset.
   | Planet / Body | Source File (Untouched Original) | Web Optimized Output (`*-final.glb`) |
   | --- | --- | --- |
-  | **Earth** | `earth-00.glb` | `earth-final.glb` |
+  | **Earth** | `earth.glb` | `earth-final.glb` |
   | **Mars** | `24881_Mars_1_6792.glb` | `mars-final.glb` |
   | **Moon** | `moon_small.glb` | `moon-final.glb` |
   | **Saturn** | `Saturn_1_120536.glb` | `saturn-final.glb` |
@@ -29,11 +30,8 @@ All 3D planet assets and reproducible optimization tooling are maintained in thi
 ## Reusable Tooling
 
 - `optimize-model.sh`: Generalized, reproducible planet optimization pipeline.
-- `verify-model.cjs`: Generalized glTF/GLB validator verifying Khronos glTF compliance, mesh/hierarchy preservation, texture decoding, and Three.js `GLTFLoader` compatibility.
-- `optimize-earth.sh`: Earth-specific pipeline preserving named nodes (`surface`, `cloud`, `atmo`).
 - `verify-model.cjs`: Generalized glTF/GLB validator verifying Khronos compliance, node hierarchy, mesh primitives, material integrity, texture decoding, and Three.js `GLTFLoader` compatibility.
-- `optimize-earth.sh`: Earth-specific pipeline wrapper preserving Earth-specific named nodes (`surface`, `cloud`, `atmo`).
-- `verify-earth.cjs`: Earth-specific validation script.
+- `optimize-earth.sh`: Earth-specific pipeline that strips the source's unused baked Clouds mesh/texture/animation and emissive map (the frontend renders those procedurally), then compresses the remaining `Earth_Earth_0` mesh's texture to WebP. Verified with `verify-model.cjs`.
 - `optimize-black-hole.sh`: Black hole optimization pipeline preserving accretion disk silhouette and converting spec/gloss to metal/rough.
 - `verify-black-hole.cjs`: Black hole validation script verifying triangle targets, WebP textures, and Three.js parsing.
 
@@ -110,8 +108,10 @@ Size reduction: **87.51%**.
 # Verify Saturn:
 node 3d/verify-model.cjs 3d/Saturn_1_120536.glb 3d/saturn-final.glb
 
-# Verify Earth:
-node 3d/verify-model.cjs 3d/earth-00.glb 3d/earth-final.glb
+# Verify Earth (optimize-earth.sh runs this itself against its own staged
+# intermediate, since earth.glb's raw Clouds/emissive data is intentionally
+# dropped rather than preserved 1:1 — see "Earth Pipeline Details" below):
+bash 3d/optimize-earth.sh
 ```
 
 ---
@@ -144,11 +144,19 @@ bash 3d/optimize-earth.sh
 
 ### 2. Moon (`moon-final.glb`)
 
-1. Inspect installed versions/help and check dependencies and source existence.
-2. Run gltfpack with `-si 0.08 -kn -km -kv -noq`. Simplification reduces excessive sphere geometry from 2.16M triangles to 173K triangles. Named nodes and materials remain independent.
-3. Run glTF Transform resize with `--width 4096 --height 2048`.
-4. Convert textures to WebP at quality 90 and effort 90 (`EXT_texture_webp`).
-5. Validate the staged output with `verify-earth.cjs` before publishing `earth-final.glb`.
+The source `earth.glb` (Sketchfab export) ships a baked `Clouds` mesh/texture
+and cloud-rotation animation, plus an `Earth` material emissive (night-lights)
+map. The frontend only reads one mesh by name and drives surface/clouds/
+atmosphere with procedural shaders (`earthMaterials.ts`), so none of that
+baked data is ever rendered.
+
+1. Drop the `Clouds` node/mesh/material/texture and the animation, drop the
+   `Earth` material's emissive texture, mark the closed sphere single-sided,
+   then weld/prune/dedup (`@gltf-transform/core`).
+2. Convert the remaining basecolor texture (already 4,096 × 2,048) to WebP at
+   quality 90 / effort 90 (`EXT_texture_webp`). No resize needed.
+3. Prune + dedup once more, then validate the staged output with
+   `verify-model.cjs` before publishing `earth-final.glb`.
 
 - **Geometry**: 23,232 triangles preserved (essential for accurate spherical crater silhouette).
 - **Textures**: 4,096 × 4,096 PNG diffuse map (12.17 MB) converted to WebP at quality 90 / effort 90 (3.65 MB). 100% texture resolution and crater detail retained.
@@ -165,12 +173,13 @@ bash 3d/optimize-earth.sh
 
 ### 3. Saturn (`saturn-final.glb`)
 
-| Metric       | Source (`earth-00.glb`) | Optimized (`earth-final.glb`) |
-| ------------ | ----------------------: | ----------------------------: |
-| Bytes        |              58,405,888 |                     2,334,480 |
-| MB (decimal) |                58.41 MB |                       2.33 MB |
-| Triangles    |               2,162,688 |                       173,010 |
-| Textures     |  Two 16,200 × 8,100 PNG |        Two 4,096 × 2,048 WebP |
+| Metric       |    Source (`earth.glb`) | Optimized (`earth-final.glb`) |
+| ------------ | -----------------------: | ----------------------------: |
+| Bytes        |               11,395,316 |                      1,361,708 |
+| MB (decimal) |                  11.40 MB |                        1.36 MB |
+| Triangles    |                    15,872 |                        15,872 |
+| Meshes       | 2 (`Earth`, `Clouds`)    |            1 (`Earth_Earth_0`) |
+| Textures     | 3 (basecolor, emissive, clouds) |          1 (basecolor WebP) |
 
 - **Geometry & Rings**:
   - Body (`Saturn.001`): 3,072 triangles.
@@ -196,16 +205,24 @@ Size reduction: **96.00%**. Simplification ratio: **0.08**.
 
 ### 4. Earth (`earth-final.glb`)
 
-Tool references: [gltfpack](https://github.com/zeux/meshoptimizer/blob/master/gltf/README.md) and [glTF Transform CLI](https://gltf-transform.dev/cli).
+Source: `earth.glb`, a Sketchfab export with a separate `Clouds` mesh/texture,
+a cloud-rotation animation, and an `Earth` material with an emissive
+(night-lights) map. The frontend (`PlanetModel.tsx`) reads only the `Earth`
+mesh by name and renders surface/clouds/atmosphere procedurally
+(`earthMaterials.ts`), so the baked clouds data and emissive map are dropped
+entirely rather than shipped unused.
 
-- **Geometry**: Simplified from 2,162,688 to 173,010 triangles via gltfpack `-si 0.08`.
-- **Textures**: Two 16,200 × 8,100 maps resized to 4,096 × 2,048 WebP.
+Tool references: [glTF Transform CLI](https://gltf-transform.dev/cli).
+
+- **Geometry**: 15,872 triangles preserved as-is (already low-poly; no simplification needed).
+- **Cleanup**: Dropped `Clouds` mesh/material/texture, the cloud-rotation animation, and the `Earth` material's emissive texture. Marked the closed sphere single-sided.
+- **Textures**: Basecolor map (4,096 × 2,048 JPEG) converted to WebP at quality 90 / effort 90.
 - **Result**:
-  - Original: **58.41 MB** (58,405,888 bytes)
-  - Final: **2.33 MB** (2,334,480 bytes)
-  - Reduction: **96.00%**
+  - Original: **11.40 MB** (11,395,316 bytes)
+  - Final: **1.36 MB** (1,361,708 bytes)
+  - Reduction: **88.05%**
   - Khronos Validation: **0 errors, 0 warnings**
-  - Preserved Nodes: `surface`, `cloud`, `atmo`
+  - Preserved Node: `Earth_Earth_0`
 
 ### 5. Black Hole (`black-hole-final.glb`)
 

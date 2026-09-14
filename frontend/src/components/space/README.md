@@ -1,27 +1,71 @@
 # Shared space visuals
 
-`SpaceBackground` is mounted once in the root layout, including authentication routes. It uses batched SVG stars from `starData`, CSS gradients, slow drift, and reduced-motion support. It does not create a Canvas or request model assets.
+`SpaceBackground` is mounted once in the root layout. It uses batched SVG
+stars, CSS gradients, slow drift, and reduced-motion support without creating a
+WebGL context.
 
-Authenticated routes add `PlanetBackground` once inside `AppShell`. Because `AppShell` belongs to the shared `(main)` layout, its Canvas and Earth model remain mounted while page content changes between Home, Groups, Messages, Profile, and other main routes.
+Authenticated routes mount `PlanetBackground` once inside `AppShell`. Because
+`AppShell` belongs to the shared `(main)` layout, one Canvas persists while the
+user navigates between application routes.
 
 ```text
 SpaceBackground (root layout)
       ↓
 AppShell
-      ├── PlanetBackground (one persistent Canvas)
-      │     └── EarthSystem
-      │           ├── PlanetModel (Earth)
-      │           └── orbit root → PlanetModel (Moon)
-      ├── navbar and sidebar
-      └── route content
+      └── PlanetPreferenceProvider
+            ├── PlanetBackground
+            │     ├── non-rendering selected-asset cache gate
+            │     └── one persistent Canvas
+            │           └── PlanetSystem (one selected main body)
+            │                 ├── PlanetModel
+            │                 └── Moon orbit (Earth only)
+            ├── navbar and sidebar
+            └── route content / Settings selector
 ```
 
-`PlanetModel` remains the low-level GLB renderer and owns no camera, navigation, animation loop, or application state. `PlanetBackground` owns the shared camera and restrained ambient/directional lighting. `EarthSystem` composes the Earth and Moon under one reveal/idle hierarchy while keeping Earth's axial rotation separate from the Moon's orbit. Both model paths come from `modelsRegistry` and resolve to the preserved optimized public GLBs. `earthMaterials` supplies the existing surface, cloud, and atmosphere materials.
+## Registry and selection
 
-`PlanetMotion` provides reusable entrance, idle, axial-rotation, and companion-orbit transform layers. The cubic ease-out entrance positions the complete planet system beyond the Canvas's right edge in its first rendered frame, then translates it to its unchanged resting position at full scale without overshoot. Earth rotates slowly, while the inclined Moon orbit remains independent. A future planet swap can replay the generic entrance by mounting it with the incoming planet's key; no selection or transition state exists yet.
+`modelsRegistry.ts` is the source of truth for selectable body identifiers,
+labels, exact GLB paths, normalized body scale, position, orientation,
+responsive composition, spin speed, restrained lighting, companion, and accent
+theme. The selectable list contains Earth, Mercury, Venus, Mars, Jupiter,
+Saturn, Uranus, and Sun. The Moon is a separate companion model and can only be
+mounted when the selected registry entry declares `companion: "moon"`.
 
-The scene uses `useGLTF` caching, shares loaded source geometry, caps DPR at 2, and avoids post-processing and shadows. Its continuous frame loop performs only direct ref mutations with no per-frame object allocation. Reduced-motion mode settles all transforms immediately, disables continuous movement, and returns the Canvas to demand rendering. The Moon has its own Suspense/error boundary so its loading or failure does not remove Earth.
+`PlanetPreferenceProvider` owns the active selection. It validates the stored
+`social-network:planet` value against the registry, falls back to Earth, applies
+the registry theme tokens to the application shell, and synchronizes changes
+from another tab. Settings consumes the same context, so there is no competing
+page-local active-planet state.
 
-The Canvas is decorative, pointer-inert, and layered between the star background and application UI. A Suspense boundary keeps loading local to the scene, while the scene error boundary and the Canvas WebGL fallback leave the rest of the application usable if rendering fails.
+## Rendering and motion
 
-See `frontend/MODEL_ASSETS.md` for the preserved model inventory and the source-asset duplicate review.
+`PlanetModel` is the low-level GLB renderer. It clones cached GLTF scenes before
+model-specific changes, preserves authored PBR textures, retains the Earth
+surface/cloud/atmosphere materials, keeps Saturn's ring transparency, and
+restrains the authored emissive strength of Jupiter and Sun.
+
+`PlanetSystem` composes every body through the same transform hierarchy:
+
+```text
+PlanetEntrance (one-time horizontal reveal)
+  └── PlanetIdleMotion (subtle vertical drift)
+        └── configured orientation / responsive scale
+              ├── AxialRotation → selected PlanetModel
+              └── OrbitingCompanion → Moon (Earth only)
+```
+
+Each motion layer owns a separate transform. The `useFrame` loops mutate refs
+directly, allocate no objects per frame, and never update React state. A keyed
+`PlanetSystem` replays the same full-scale cubic entrance for every body. In
+reduced-motion mode all bodies settle immediately, continuous movement stops,
+and the Canvas uses demand rendering.
+
+## Loading and replacement
+
+The selected asset gate calls `useGLTF` without mounting a Three object. The
+current model stays visible while the requested GLB loads into the shared
+cache. Only if that request is still the latest selection does the scene replace
+the current keyed system, so rapid clicks cannot commit a stale body. No hidden
+planet systems render, the Moon has its own Suspense/error boundary, and no
+extra Canvas is created.
