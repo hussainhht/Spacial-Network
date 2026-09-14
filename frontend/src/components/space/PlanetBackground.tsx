@@ -28,7 +28,7 @@ import styles from "./PlanetBackground.module.css";
 // The canvas is larger than the body's visible frame so Earth's Moon and
 // Saturn's rings have transparent room at the edge. Moving the camera back by
 // the same factor preserves the established apparent size.
-const CANVAS_SCALE = 1.6;
+const CANVAS_SCALE = 2.6;
 
 const CAMERA = {
   position: [0, 0, 4 * CANVAS_SCALE] as [number, number, number],
