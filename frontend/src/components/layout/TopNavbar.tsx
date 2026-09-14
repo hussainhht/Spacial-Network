@@ -9,6 +9,7 @@ import { useEffect, useRef, useState } from "react";
 import AppIcon from "./AppIcon";
 import { useNotifications } from "@/features/notifications/context/NotificationProvider";
 import NotificationDropdown from "@/features/notifications/components/NotificationDropdown";
+import { useSearchModal } from "@/features/search/context/SearchContext";
 import { useLogout } from "./useLogout";
 import styles from "./TopNavbar.module.css";
 
@@ -16,15 +17,13 @@ export default function TopNavbar() {
   const pathname = usePathname();
   const context = getNavbarContext(pathname);
   const { search, setSearch } = useGroupsSearch();
+  const { openSearch } = useSearchModal();
   // Real notifications context
   const { unreadCount } = useNotifications();
   const { logout, loggingOut, error: logoutError } = useLogout();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [menuRoute, setMenuRoute] = useState(pathname);
   const bellRef = useRef<HTMLDivElement>(null);
-
-  // Visual-only input state (no API, no filtering, no side-effects)
-  const [searchValue, setSearchValue] = useState("");
 
   // Dropdown mockup state
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -88,24 +87,54 @@ export default function TopNavbar() {
         </div>
       </div>
 
-      {/* 2. Search Bar: Visual placeholder only */}
+      {/* 2. Search Bar: Universal Search Trigger (⌘K) */}
       <div className={styles.searchSection}>
         {context.searchMode === "groups" ? (
           <GroupSearchInput value={search} onChange={setSearch} />
         ) : (
-          <div className={styles.searchBar}>
+          <button
+            type="button"
+            className={styles.searchBar}
+            onClick={openSearch}
+            aria-label="Open universal search (⌘K)"
+            title="Open universal search (⌘K)"
+            style={{
+              cursor: "pointer",
+              textAlign: "left",
+              font: "inherit",
+              width: "100%",
+            }}
+          >
             <span className={styles.searchIcon} aria-hidden="true">
               <AppIcon name="search" />
             </span>
-            <input
-              type="search"
-              className={styles.searchInput}
-              placeholder="Search people, posts, groups..."
-              aria-label="Search people, posts, groups"
-              value={searchValue}
-              onChange={(e) => setSearchValue(e.target.value)}
-            />
-          </div>
+            <span
+              style={{
+                flex: 1,
+                fontSize: "13px",
+                color: "var(--space-text-muted, #94a3b8)",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+            >
+              Search people, posts, groups...
+            </span>
+            <kbd
+              style={{
+                padding: "2px 6px",
+                borderRadius: "5px",
+                background: "rgba(255, 255, 255, 0.08)",
+                border: "1px solid rgba(148, 163, 184, 0.2)",
+                fontSize: "10px",
+                fontWeight: 600,
+                color: "#94a3b8",
+                letterSpacing: "0.5px",
+              }}
+            >
+              ⌘K
+            </kbd>
+          </button>
         )}
       </div>
 

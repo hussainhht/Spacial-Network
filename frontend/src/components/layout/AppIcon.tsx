@@ -21,6 +21,8 @@ const paths = {
   chevronRight: "m9 18 6-6-6-6",
   arrowLeft: "M19 12H5 M12 19l-7-7 7-7",
   arrowRight: "M5 12h14 M12 5l7 7-7 7",
+  posts: "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z M14 2v6h6 M16 13H8 M16 17H8 M10 9H8",
+  orbit: "M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z M3.5 12a8.5 4 0 1 0 17 0 8.5 4 0 1 0 -17 0",
 } satisfies Record<string, string>;
 
 export type AppIconName = keyof typeof paths;

@@ -5,6 +5,7 @@
  * NEXT_PUBLIC_BACKEND_WS_ORIGIN.
  */
 
+export const BACKEND_PORT = 8080;
 const DEFAULT_BACKEND_ORIGIN = "http://localhost:8080";
 
 function cleanOrigin(origin: string): string {
