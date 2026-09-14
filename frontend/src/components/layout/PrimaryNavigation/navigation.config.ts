@@ -10,7 +10,6 @@ export interface NavigationItem {
 
 export const PRIMARY_NAVIGATION: NavigationItem[] = [
   { href: "/", label: "Home", icon: "home" },
-  { href: "/posts", label: "Posts", icon: "posts" },
   { href: "/groups", label: "Groups", icon: "groups" },
   { href: "/posts/new", label: "Create", icon: "plus", emphasis: true },
   { href: "/chat", label: "Messages", icon: "chat" },

@@ -1,4 +1,4 @@
-import DesktopSidebar from "./DesktopSidebar";
+import FloatingOrbitalNav from "./FloatingOrbitalNav";
 import MobileBottomNav from "./MobileBottomNav";
 
 /**
@@ -10,7 +10,7 @@ import MobileBottomNav from "./MobileBottomNav";
 export default function PrimaryNavigation() {
   return (
     <>
-      <DesktopSidebar />
+      <FloatingOrbitalNav />
       <MobileBottomNav />
     </>
   );

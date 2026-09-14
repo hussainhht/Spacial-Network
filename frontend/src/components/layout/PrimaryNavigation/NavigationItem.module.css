@@ -1,0 +1,91 @@
+.link {
+  color: var(--nav-label-muted);
+  text-decoration: none;
+  font: 500 14px/1.4 ui-sans-serif, system-ui, sans-serif;
+  transition: color 180ms ease;
+}
+.node {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: var(--nav-node-size);
+  height: var(--nav-node-size);
+  border-radius: 50%;
+  border: 1px solid var(--nav-node-border);
+  background: var(--nav-node-bg);
+  color: #cfe0ff;
+  box-shadow: 0 0 0 3px rgba(71, 139, 255, 0.06), 0 0 18px rgba(71, 139, 255, 0.12);
+  transition: border-color 200ms ease, box-shadow 200ms ease, color 200ms ease, transform 200ms ease;
+}
+.node svg {
+  width: var(--nav-icon-size);
+  height: var(--nav-icon-size);
+}
+.emphasis .node {
+  width: var(--nav-create-size);
+  height: var(--nav-create-size);
+  border-color: var(--nav-orbit-blue);
+  color: #eaf3ff;
+  background: radial-gradient(circle at 35% 25%, #17385a, var(--nav-node-bg) 75%);
+  box-shadow: 0 0 0 4px rgba(71, 139, 255, 0.08), 0 0 22px var(--nav-node-glow);
+}
+.label {
+  position: relative;
+  transition: transform 180ms ease;
+}
+.link[aria-current="page"] {
+  color: var(--nav-label);
+}
+.link[aria-current="page"] .node {
+  border-color: var(--nav-active-warm);
+  color: var(--nav-active-warm-strong);
+  background: radial-gradient(circle at 35% 25%, #493127, #151522 75%);
+  box-shadow: 0 0 0 4px rgba(255, 154, 95, 0.08), 0 0 24px rgba(255, 154, 95, 0.2);
+}
+.link[aria-current="page"] .node::after {
+  content: "";
+  position: absolute;
+  inset: -7px;
+  border: 1px dashed rgba(255, 171, 115, 0.3);
+  border-radius: 50%;
+  pointer-events: none;
+}
+.link[aria-current="page"] .label::after {
+  content: "";
+  position: absolute;
+  bottom: -5px;
+  left: 0;
+  width: 18px;
+  height: 1px;
+  background: var(--nav-active-warm);
+  pointer-events: none;
+}
+.link:focus-visible {
+  outline: 2px solid var(--nav-orbit-blue);
+  outline-offset: 5px;
+}
+@media (hover: hover) {
+  .link:hover {
+    color: var(--space-text-heading);
+  }
+  .link:hover .node {
+    transform: scale(1.04);
+    border-color: var(--nav-orbit-blue);
+  }
+  .link[aria-current="page"]:hover .node {
+    border-color: var(--nav-active-warm-strong);
+  }
+  .link:hover .label {
+    transform: translateX(2px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .link, .node, .label {
+    transition: none;
+  }
+  .link:hover .node, .link:hover .label {
+    transform: none;
+  }
+}

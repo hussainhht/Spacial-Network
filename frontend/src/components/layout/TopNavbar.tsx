@@ -84,10 +84,10 @@ export default function TopNavbar() {
           type="button"
           onClick={toggleSidebar}
           className={styles.sidebarToggle}
-          aria-label={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
+          aria-label={sidebarOpen ? "Hide navigation" : "Show navigation"}
           aria-expanded={sidebarOpen}
-          aria-controls="app-sidebar"
-          title={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
+          aria-controls="orbital-navigation"
+          title={sidebarOpen ? "Hide navigation" : "Show navigation"}
         >
           <AppIcon name={sidebarOpen ? "panelLeftClose" : "panelLeftOpen"} />
         </button>

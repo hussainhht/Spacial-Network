@@ -596,8 +596,7 @@
     padding-block: 12px;
   }
   .sidebarToggle {
-    /* No sidebar rail at this width (PrimaryNavigation shows the bottom nav
-       instead), so there is nothing left for this button to collapse. */
+    /* The bottom dock remains visible on phones. */
     display: none;
   }
   .searchSection {
@@ -636,5 +635,10 @@
   .sidebarToggle {
     transition: none;
     transform: none;
+  }
+}
+@media (max-height: 430px) {
+  .sidebarToggle {
+    display: none;
   }
 }

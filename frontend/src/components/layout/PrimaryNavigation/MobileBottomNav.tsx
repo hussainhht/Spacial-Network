@@ -16,8 +16,7 @@ export default function MobileBottomNav() {
             key={item.href}
             item={item}
             active={isNavItemActive(pathname, item.href)}
-            className={`${styles.navItem} ${item.emphasis ? styles.navItemEmphasis : ""}`}
-            iconWrapClassName={styles.navIcon}
+            className={styles.navItem}
             labelClassName={styles.navLabel}
           />
         ))}

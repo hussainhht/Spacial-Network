@@ -57,6 +57,17 @@ body {
   --space-radius-sm: 8px;
 
   --nav-bottom-height: 64px;
+
+  /* Primary navigation: cosmic orbit palette (warm active / cool inactive) */
+  --nav-active-warm: #ffab73;
+  --nav-active-warm-strong: #ffd9b0;
+  --nav-active-warm-glow: rgba(255, 154, 95, 0.34);
+  --nav-orbit-blue: #7eb8ff;
+  --nav-node-bg: rgba(8, 17, 34, 0.88);
+  --nav-node-border: rgba(123, 177, 255, 0.55);
+  --nav-node-glow: rgba(71, 139, 255, 0.18);
+  --nav-label: #e9efff;
+  --nav-label-muted: #9aa8c4;
 }
 
 /* ======================= Page shell / background ======================= */

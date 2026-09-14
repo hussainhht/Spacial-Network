@@ -1,24 +1,21 @@
-/* Fixed bottom nav, mobile-only. Sits outside the scrollable route pane so it
-   never introduces a second scrollbar; AppShell.module.css reserves matching
-   space at the bottom of .routeContent so content never renders underneath. */
 .bottomNav {
+  --nav-node-size: 30px;
+  --nav-create-size: 36px;
+  --nav-icon-size: 18px;
   display: none;
   position: fixed;
-  inset: auto 0 0 0;
+  inset: auto max(12px, env(safe-area-inset-right, 0px)) calc(8px + env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px));
   z-index: 3;
-  /* content-box: the safe-area strip ADDS to the tappable row instead of
-     squeezing it on notched devices. */
-  box-sizing: content-box;
   height: var(--nav-bottom-height);
-  padding-bottom: env(safe-area-inset-bottom, 0px);
-  border-top: 1px solid var(--space-border);
-  background: linear-gradient(
-    180deg,
-    rgba(11, 14, 32, 0.94),
-    rgba(6, 8, 20, 0.98)
-  );
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  max-width: 480px;
+  margin-inline: auto;
+  padding-inline: 6px;
+  border: 1px solid var(--space-border);
+  border-radius: 24px;
+  background: rgba(6, 10, 24, 0.94);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
 .navList {
   display: flex;
@@ -26,71 +23,25 @@
   height: 100%;
 }
 .navItem {
-  position: relative;
   flex: 1 1 0;
+  min-width: 44px;
   min-height: 44px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3px;
-  color: var(--space-text-muted);
-  text-decoration: none;
-  transition: color 160ms ease;
-}
-.navItem[aria-current="page"] {
-  color: #ede9fe;
-}
-.navIcon {
-  display: inline-flex;
-  flex-shrink: 0;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  transition:
-    background 160ms ease,
-    box-shadow 160ms ease,
-    color 160ms ease;
-}
-.navIcon svg {
-  width: 20px;
-  height: 20px;
-}
-.navItem[aria-current="page"] .navIcon {
-  background: rgba(139, 92, 246, 0.2);
-  box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.35);
-  color: #ede9fe;
+  gap: 4px;
+  border-radius: 16px;
 }
 .navLabel {
   font-size: 10px;
-  font-weight: 500;
 }
-
-/* Create: filled accent circle, always on — a touch of emphasis, not a FAB. */
-.navItemEmphasis .navIcon {
-  width: 38px;
-  height: 38px;
-  color: #fff;
-  background: linear-gradient(135deg, var(--space-accent-violet), var(--space-accent-indigo));
-  box-shadow: 0 2px 12px rgba(139, 92, 246, 0.45);
+.navItem[aria-current="page"] .navLabel::after {
+  bottom: -3px;
+  left: calc(50% - 9px);
 }
-.navItemEmphasis[aria-current="page"] .navIcon {
-  box-shadow:
-    0 0 0 3px rgba(139, 92, 246, 0.25),
-    0 2px 14px rgba(139, 92, 246, 0.55);
-}
-
-@media (max-width: 760px) {
+@media (max-width: 760px), (max-height: 430px) {
   .bottomNav {
     display: flex;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .navItem,
-  .navIcon {
-    transition: none;
   }
 }

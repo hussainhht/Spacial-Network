@@ -81,23 +81,59 @@ with sync_playwright() as p:
         page.on("request", lambda request: model_requests.append(request.url) if ".glb" in request.url else None)
         page.on("response", lambda response: failed_responses.append(f"{response.status} {response.url}") if response.status >= 400 else None)
         alice_id = api(context.request.get(API + "/login"))["user_id"]
-        for label, route in [("Posts", "/posts"), ("Groups", "/groups"), ("Profile", "/profile"), ("Messages", "/chat"), ("Home", "/")]:
-            page.get_by_role("navigation", name="Main navigation", exact=True).get_by_role("link", name=label, exact=True).click()
+        for label, route in [("Create", "/posts/new"), ("Groups", "/groups"), ("Profile", "/profile"), ("Messages", "/chat"), ("Home", "/")]:
+            page.get_by_role("navigation", name="Primary navigation", exact=True).get_by_role("link", name=label, exact=True).click()
             page.wait_for_url(BASE + route)
             settle(page)
-            expect(page.locator("#app-page-title")).to_have_text("Home" if route == "/" else label)
+            expect(page.locator("#app-page-title")).to_have_text("New Post" if label == "Create" else label)
             sky(page)
             expect(page.locator("#page-content[inert]")).to_have_count(0)
             expect(page.locator("#page-content")).to_contain_text(re.compile(r"\S"))
-        passed("Main navigation, Home, Posts, Groups, Profile, and Messages")
+        passed("Five primary destinations: Home, Groups, Create, Messages, Profile")
         page.go_back(); page.wait_for_url(BASE + "/chat"); settle(page)
         page.go_forward(); page.wait_for_url(BASE + "/"); settle(page)
         passed("Browser back and forward")
-        page.get_by_role("button", name="Hide sidebar", exact=True).click()
+        page.get_by_role("button", name="Hide navigation", exact=True).click()
         page.reload(); settle(page)
-        expect(page.get_by_role("button", name="Show sidebar", exact=True)).to_be_visible()
-        page.get_by_role("button", name="Show sidebar", exact=True).click()
-        passed("Sidebar collapse preference survives reload")
+        expect(page.get_by_role("button", name="Show navigation", exact=True)).to_be_visible()
+        page.get_by_role("button", name="Show navigation", exact=True).click()
+        passed("Navigation visibility preference survives reload")
+
+        # Exercise the presentation at full desktop, tablet, and phone sizes.
+        destinations = [("Home", "/"), ("Groups", "/groups"), ("Create", "/posts/new"), ("Messages", "/chat"), ("Profile", "/profile")]
+        for width, height in [(1440, 1000), (1024, 768), (768, 1024), (390, 844), (320, 568), (844, 390)]:
+            page.set_viewport_size({"width": width, "height": height})
+            for label, route in destinations:
+                nav = page.get_by_role("navigation", name="Primary navigation", exact=True)
+                expect(nav).to_be_visible()
+                expect(nav.get_by_role("link")).to_have_count(5)
+                nav.get_by_role("link", name=label, exact=True).click()
+                page.wait_for_url(BASE + route); settle(page)
+                expect(nav.locator('[aria-current="page"]')).to_have_count(1)
+                expect(nav.locator('[aria-current="page"]')).to_have_attribute("aria-label", label)
+                assert page.evaluate("document.documentElement.scrollWidth <= innerWidth"), (width, route)
+                assert page.evaluate("document.documentElement.scrollHeight <= innerHeight"), (width, route)
+                assert nav.locator("a").evaluate_all("els => els.every(el => { const r = el.getBoundingClientRect(); return r.width >= 44 && r.height >= 44 && r.left >= 0 && r.right <= innerWidth && r.top >= 0 && r.bottom <= innerHeight; })"), (width, route)
+                expect(nav.get_by_text("Logout", exact=True)).to_have_count(0)
+                if width > 760 and height > 430:
+                    assert nav.bounding_box()["x"] + nav.bounding_box()["width"] <= page.locator("#page-content").bounding_box()["x"]
+                    assert nav.evaluate("el => el.scrollHeight <= el.clientHeight")
+                else:
+                    reserved = page.locator("#page-content").evaluate("el => parseFloat(getComputedStyle(el).paddingBottom)")
+                    assert reserved >= height - nav.bounding_box()["y"]
+            page.screenshot(path=str(ARTIFACTS / f"orbital-{width}x{height}.png"), full_page=True)
+            # Tab order follows the five visible destinations on both layouts.
+            nav.get_by_role("link", name="Home", exact=True).focus()
+            for label, _ in destinations[1:]:
+                page.keyboard.press("Tab")
+                expect(nav.get_by_role("link", name=label, exact=True)).to_be_focused()
+                assert nav.get_by_role("link", name=label, exact=True).evaluate("el => getComputedStyle(el).outlineStyle !== 'none'")
+        passed("Orbital/dock links, active states, touch targets, keyboard focus, content clearance and overflow at six viewport sizes")
+        page.emulate_media(reduced_motion="reduce")
+        assert nav.locator("a, a span").evaluate_all("els => els.every(el => getComputedStyle(el).transitionDuration === '0s')")
+        page.emulate_media(reduced_motion="no-preference")
+        page.set_viewport_size({"width": 1440, "height": 1000})
+        visit(page, "/")
 
         # Post creation, upload, comments, and editing use the real UI.
         page.get_by_role("link", name="Create new post", exact=True).click()
@@ -130,6 +166,7 @@ with sync_playwright() as p:
         api(bob.request.post(API + "/login", data={"username": BOB, "password": PASSWORD}))
         bob_id = api(bob.request.get(API + "/login"))["user_id"]
         visit(page, f"/profile/{BOB}")
+        expect(page.locator("#orbital-navigation [aria-current=page]")).to_have_attribute("aria-label", "Profile")
         page.get_by_role("button", name="Follow", exact=True).click()
         expect(page.get_by_role("button", name="Unfollow", exact=True)).to_be_visible()
         visit(page, "/profile")
@@ -137,6 +174,7 @@ with sync_playwright() as p:
         passed("Profile and follow action")
 
         visit(page, "/groups/create")
+        expect(page.locator("#orbital-navigation [aria-current=page]")).to_have_attribute("aria-label", "Groups")
         page.get_by_label("Group name", exact=True).fill("Cleanup smoke group")
         page.get_by_label("Description", exact=True).fill("A community for isolated frontend validation.")
         with page.expect_response(lambda response: response.url == API + "/groups" and response.request.method == "POST") as response:
@@ -239,13 +277,8 @@ with sync_playwright() as p:
             visit(page, route)
             sky(page)
             assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth"), route
-            # Phase 01 navigation shell: mobile now gets the fixed bottom nav
-            # instead of the desktop sidebar rail (previously shrunk to an
-            # icon-only column here, but still the "Main navigation" landmark
-            # itself). The sidebar stays mounted (unconditional render, CSS
-            # decides visibility) but must be hidden at this width.
             expect(page.get_by_role("navigation", name="Primary navigation", exact=True)).to_be_visible()
-            expect(page.get_by_role("navigation", name="Main navigation", exact=True)).to_be_hidden()
+            expect(page.locator("#orbital-navigation")).to_be_hidden()
         page.screenshot(path=str(ARTIFACTS / "mobile.png"), full_page=True)
         page.emulate_media(reduced_motion="reduce")
         assert page.locator("[data-space-background] *").evaluate_all("els => els.every(el => getComputedStyle(el).animationName === 'none')")
@@ -265,9 +298,10 @@ with sync_playwright() as p:
         passed("Post deletion updates the normal feed")
         assert not failed_responses, failed_responses
         assert not model_requests, model_requests
-        page.get_by_role("button", name="Logout", exact=True).click()
+        page.get_by_role("button", name="User account options", exact=True).click()
+        page.get_by_role("menuitem", name="Logout", exact=True).click()
         page.wait_for_url(BASE + "/login")
-        passed("Sidebar logout")
+        passed("Top-navbar account menu logout")
         assert not errors, errors
         # Logout can race in-flight notification requests; anything else must succeed.
         assert not [failure for failure in failed_responses if not failure.startswith("401 ")], failed_responses

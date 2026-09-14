@@ -16,7 +16,7 @@ export function getBackendHost(): string {
  * Returns the backend HTTP base URL ("http://localhost:8080").
  */
 export function getBackendBaseUrl(): string {
-  return `http://localhost:${BACKEND_PORT}`;
+  return `http://${getBackendHost()}:${BACKEND_PORT}`;
 }
 
 /**
@@ -48,7 +48,7 @@ export function getUploadsBaseUrl(): string {
  */
 export function getWebSocketUrl(path: string = "/api/ws"): string {
   const cleanPath = path.startsWith("/") ? path : `/${path}`;
-  return `ws://localhost:${BACKEND_PORT}${cleanPath}`;
+  return `ws://${getBackendHost()}:${BACKEND_PORT}${cleanPath}`;
 }
 
 /**
