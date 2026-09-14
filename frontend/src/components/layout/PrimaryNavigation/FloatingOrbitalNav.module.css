@@ -4,19 +4,13 @@
   --nav-node-size: 48px;
   --nav-create-size: 56px;
   --nav-icon-size: 21px;
-  position: fixed;
-  z-index: 3;
-  top: calc(50dvh + 32px);
-  left: calc((var(--orbital-nav-space) - 190px) / 2);
-  width: 190px;
-  height: min(460px, calc(100dvh - 100px));
+  position: relative;
+  top: 50%;
+  width: min(190px, 100%);
+  height: min(460px, calc(100% - 32px));
+  margin-inline: auto;
   transform: translateY(-50%);
   pointer-events: none;
-  transition: opacity 200ms ease, visibility 200ms ease;
-}
-.orbitalNav[data-open="false"] {
-  opacity: 0;
-  visibility: hidden;
 }
 .orbit {
   position: absolute;
@@ -64,19 +58,8 @@
 .destination:nth-child(3) {
   margin-left: 40px;
 }
-.orbitalNav[data-open="false"] .destination {
-  pointer-events: none;
-}
-[data-ready="false"] .orbitalNav {
-  transition: none;
-}
 @media (max-width: 760px), (max-height: 430px) {
   .orbitalNav {
     display: none;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .orbitalNav {
-    transition: none;
   }
 }

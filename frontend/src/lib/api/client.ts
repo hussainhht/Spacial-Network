@@ -32,6 +32,7 @@ export async function apiRequest<T>(path: string, init?: RequestInit): Promise<T
       const data = await response.json();
       if (data?.error) message = data.error;
     } catch {
+      console.warn("Failed to parse error response as JSON:", await response.text());
       // response had no JSON body
     }
     throw new ApiError(message, response.status);

@@ -5,13 +5,11 @@
     -apple-system,
     sans-serif;
   color-scheme: dark;
-  position: sticky;
-  top: 0;
-  z-index: 3;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 20px;
+  width: 100%;
   height: var(--app-navbar-height, 64px);
   flex-shrink: 0;
   box-sizing: border-box;
@@ -27,53 +25,13 @@
     background 0.2s ease;
 }
 
-/* ================= Left Section (Page Context & Sidebar Toggle) ================= */
+/* ================= Left Section (Page Context) ================= */
 .contextSection {
   display: flex;
   align-items: center;
   gap: 12px;
   flex-shrink: 0;
   min-width: 0;
-}
-
-.sidebarToggle {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  padding: 0;
-  border: 1px solid rgba(148, 163, 184, 0.16);
-  border-radius: 9px;
-  background: rgba(13, 18, 42, 0.55);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  color: var(--space-text-muted, #94a3b8);
-  cursor: pointer;
-  flex-shrink: 0;
-  transition:
-    border-color 0.2s ease,
-    background 0.2s ease,
-    color 0.2s ease,
-    box-shadow 0.2s ease,
-    transform 0.15s ease;
-}
-
-.sidebarToggle:hover {
-  border-color: rgba(167, 139, 250, 0.35);
-  background: rgba(17, 23, 52, 0.75);
-  color: var(--space-text-heading, #f8fafc);
-  box-shadow: 0 0 16px rgba(139, 92, 246, 0.15);
-}
-
-.sidebarToggle:active {
-  transform: scale(0.96);
-}
-
-.sidebarToggle:focus-visible {
-  outline: 2px solid var(--space-accent-violet, #8b5cf6);
-  outline-offset: 2px;
 }
 
 .contextText {
@@ -595,10 +553,6 @@
     gap: 8px 10px;
     padding-block: 12px;
   }
-  .sidebarToggle {
-    /* The bottom dock remains visible on phones. */
-    display: none;
-  }
   .searchSection {
     display: flex;
     grid-column: 1 / -1;
@@ -631,14 +585,5 @@
   .bellWrapper :global(.notification-dropdown),
   .contextText {
     animation: none;
-  }
-  .sidebarToggle {
-    transition: none;
-    transform: none;
-  }
-}
-@media (max-height: 430px) {
-  .sidebarToggle {
-    display: none;
   }
 }

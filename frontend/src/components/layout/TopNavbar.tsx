@@ -9,12 +9,10 @@ import { useEffect, useRef, useState } from "react";
 import AppIcon from "./AppIcon";
 import { useNotifications } from "@/features/notifications/context/NotificationProvider";
 import NotificationDropdown from "@/features/notifications/components/NotificationDropdown";
-import { useSidebar } from "./sidebarContext";
 import { useLogout } from "./useLogout";
 import styles from "./TopNavbar.module.css";
 
 export default function TopNavbar() {
-  const { isOpen: sidebarOpen, toggle: toggleSidebar } = useSidebar();
   const pathname = usePathname();
   const context = getNavbarContext(pathname);
   const { search, setSearch } = useGroupsSearch();
@@ -78,19 +76,8 @@ export default function TopNavbar() {
 
   return (
     <nav className={styles.navbar} aria-label="Top navigation">
-      {/* 1. Left Section: Sidebar toggle & page context */}
+      {/* 1. Left Section: Page context */}
       <div className={styles.contextSection}>
-        <button
-          type="button"
-          onClick={toggleSidebar}
-          className={styles.sidebarToggle}
-          aria-label={sidebarOpen ? "Hide navigation" : "Show navigation"}
-          aria-expanded={sidebarOpen}
-          aria-controls="orbital-navigation"
-          title={sidebarOpen ? "Hide navigation" : "Show navigation"}
-        >
-          <AppIcon name={sidebarOpen ? "panelLeftClose" : "panelLeftOpen"} />
-        </button>
         {/* Remounted per context so the section name crossfades with the route
             rather than swapping under the reader's eye. */}
         <div key={context.title} className={styles.contextText}>

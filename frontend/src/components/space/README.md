@@ -21,7 +21,7 @@ PlanetModel
 ```
 
 - **`features/planet-preference/storage/planetPreferenceStorage.ts`** — framework-free functions (`readPlanetPreference`, `writePlanetPreference`, `isValidPlanetId`, `subscribeToPlanetPreference`). Persists to `localStorage`; falls back to `DEFAULT_MODEL_ID` ("earth") if storage is unavailable or holds an id that isn't in `SPACE_MODELS`. Covered by `tests/planetPreference.test.mjs`.
-- **`features/planet-preference/context/PlanetPreferenceProvider.tsx`** — the same `useSyncExternalStore` + storage-event pattern as `components/layout/sidebarContext.tsx`, exposing `{ activePlanet, isReady, setActivePlanet }` via `usePlanetPreference()`. Mounted once in the root layout, so the preference is available anywhere without being route-specific.
+- **`features/planet-preference/context/PlanetPreferenceProvider.tsx`** — exposes `{ activePlanet, isReady, setActivePlanet }` via `usePlanetPreference()` and synchronizes the preference with browser storage. Mounted once in the root layout, so the preference is available anywhere without being route-specific.
 - **`components/space/PlanetController.tsx`** — the one reusable controller. `<PlanetController />` or `<PlanetController className={...} autoRotate />`. Reads the active id from `usePlanetPreference()`, resolves it through `modelsRegistry`, and renders exactly that one model — nothing is preloaded. It has no route awareness and no camera-travel/transition state.
 - **`app/(main)/settings/page.tsx`** → **`features/settings/components/SettingsPage.tsx`** — the Appearance section where a user picks a planet from `SPACE_MODELS`. Selecting an option persists immediately and updates any mounted `PlanetController` without a page reload.
 

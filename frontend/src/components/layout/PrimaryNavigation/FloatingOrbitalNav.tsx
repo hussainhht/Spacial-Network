@@ -1,13 +1,11 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useSidebar } from "../sidebarContext";
 import NavigationItem from "./NavigationItem";
 import { PRIMARY_NAVIGATION, isNavItemActive } from "./navigation.config";
 import styles from "./FloatingOrbitalNav.module.css";
 
 export default function FloatingOrbitalNav() {
-  const { isOpen } = useSidebar();
   const pathname = usePathname();
 
   return (
@@ -15,8 +13,6 @@ export default function FloatingOrbitalNav() {
       id="orbital-navigation"
       aria-label="Primary navigation"
       className={styles.orbitalNav}
-      data-open={isOpen}
-      inert={!isOpen ? true : undefined}
     >
       <svg
         className={styles.orbit}
