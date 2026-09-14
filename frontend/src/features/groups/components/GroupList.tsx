@@ -1,13 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
 import type { Group } from "../types/group";
 import { GroupLoadError } from "./GroupPanels";
 import AppIcon from "@/components/layout/AppIcon";
 import GroupCard from "./GroupCard";
 import styles from "./GroupsDirectory.module.css";
-import GroupPreviewPanel from "./GroupPreviewPanel";
 
 export type GroupQueryState = {
   data: Group[] | undefined;
@@ -29,32 +27,17 @@ export default function GroupList({
   onBrowseAll: () => void;
   onClearSearch: () => void;
 }) {
-  const [selectedId, setSelectedId] = useState<number | null>(null);
   const groups = state.data ?? [];
-  const selected = groups.find((group) => group.id === selectedId);
-
-  function closePreview() {
-    document.getElementById(`group-preview-button-${selectedId}`)?.focus();
-    setSelectedId(null);
-  }
 
   return (
-    <div
-      aria-busy={state.loading}
-      onKeyDown={(event) => {
-        if (event.key === "Escape" && selected) {
-          event.preventDefault();
-          closePreview();
-        }
-      }}
-    >
+    <div aria-busy={state.loading}>
       {state.error && <GroupLoadError error={state.error} retry={state.refresh} />}
       {state.loading && groups.length === 0 && (
         <div className={styles.grid} aria-hidden="true">
           {Array.from({ length: 6 }, (_, index) => (
             <div className={`${styles.card} ${styles.skeleton}`} key={index}>
-              <span className={styles.skeletonAvatar} />
-              <span /><span /><span /><span />
+              <span className={styles.skeletonCover} />
+              <span /><span /><span />
             </div>
           ))}
         </div>
@@ -87,11 +70,10 @@ export default function GroupList({
       <ul className={styles.grid} aria-label="Groups">
         {groups.map((group) => (
           <li key={group.id}>
-            <GroupCard group={group} expanded={selected?.id === group.id} onPreview={() => setSelectedId(group.id)} />
+            <GroupCard group={group} />
           </li>
         ))}
       </ul>
-      {selected && <GroupPreviewPanel group={selected} onClose={closePreview} />}
     </div>
   );
 }
