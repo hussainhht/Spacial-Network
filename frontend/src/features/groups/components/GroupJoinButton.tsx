@@ -1,21 +1,39 @@
 "use client";
 import { useGroupJoinRequest } from "../hooks/useGroupJoinRequest";
-export default function GroupJoinButton({ groupId }: { groupId: number }) {
-  const { pending, busy, error, disabled, handleRequestToJoin } =
-    useGroupJoinRequest(groupId);
+import type { GroupPrivacy } from "../types/group";
+
+export default function GroupJoinButton({
+  groupId,
+  privacy,
+  isMember = false,
+  pending = false,
+  invited = false,
+}: {
+  groupId: number;
+  privacy: GroupPrivacy;
+  isMember?: boolean;
+  pending?: boolean;
+  invited?: boolean;
+}) {
+  const action = useGroupJoinRequest(groupId, privacy, {
+    isMember,
+    pending,
+    invited,
+  });
+
   return (
     <div className="group-join" aria-live="polite">
       <button
         type="button"
         className="group-button"
-        onClick={handleRequestToJoin}
-        disabled={disabled}
+        onClick={action.handleJoin}
+        disabled={action.disabled}
       >
-        {busy ?? (pending ? "Request Pending" : "Request to Join")}
+        {action.busy ?? (pending ? "Request Pending" : "Request to Join")}
       </button>
-      {error && (
+      {action.error && (
         <p className="form-error" role="alert">
-          {error}
+          {action.error}
         </p>
       )}
     </div>

@@ -1,0 +1,657 @@
+.card {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--planet-border);
+  border-radius: 24px;
+  background:
+    linear-gradient(145deg, var(--planet-surface-tint), transparent 52%),
+    rgba(8, 12, 29, 0.9);
+  box-shadow:
+    0 28px 70px -32px rgba(0, 0, 0, 0.88),
+    inset 0 1px 0 rgba(255, 255, 255, 0.035);
+  backdrop-filter: blur(24px) saturate(145%);
+  -webkit-backdrop-filter: blur(24px) saturate(145%);
+}
+
+.steps {
+  display: grid;
+  grid-template-columns: auto minmax(48px, 1fr) auto;
+  align-items: center;
+  gap: 18px;
+  min-height: 78px;
+  padding: 20px clamp(24px, 4vw, 44px);
+  border-bottom: 1px solid var(--space-border);
+  background: rgba(3, 7, 18, 0.3);
+}
+
+.step {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--space-text-muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.stepMarker {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--space-border-strong);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.025);
+  color: var(--space-text-muted);
+  font-size: 0.72rem;
+}
+
+.stepActive {
+  color: var(--space-text-heading);
+}
+
+.stepActive .stepMarker {
+  border-color: var(--planet-border-strong);
+  background: var(--planet-accent-soft);
+  color: var(--planet-accent-hover);
+  box-shadow: 0 0 18px var(--planet-glow);
+}
+
+.stepDone {
+  color: var(--space-text-label);
+}
+
+.stepDone .stepMarker {
+  border-color: var(--planet-border-strong);
+  background: var(--planet-accent-active);
+  color: #fff;
+}
+
+.stepRail {
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, var(--planet-border-strong), var(--space-border));
+}
+
+.form {
+  margin: 0;
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(300px, 0.82fr);
+  gap: clamp(32px, 5vw, 64px);
+  padding: clamp(28px, 4vw, 48px);
+}
+
+.fields {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.field,
+.privacyFieldset {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.privacyFieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.label,
+.privacyFieldset > legend {
+  padding: 0;
+  color: var(--space-text-label);
+  font-size: 0.8rem;
+  font-weight: 650;
+  letter-spacing: 0.025em;
+}
+
+.labelRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.labelRow > span {
+  color: var(--space-text-muted);
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.textInput,
+.textarea {
+  width: 100%;
+  border: 1px solid var(--space-border);
+  border-radius: 12px;
+  background: rgba(5, 10, 28, 0.72);
+  color: var(--space-text-heading);
+  font: inherit;
+  font-size: 0.92rem;
+  outline: none;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.textInput {
+  min-height: 48px;
+  padding: 0 14px;
+}
+
+.textarea {
+  min-height: 126px;
+  padding: 13px 14px;
+  line-height: 1.55;
+  resize: vertical;
+}
+
+.textInput::placeholder,
+.textarea::placeholder {
+  color: var(--space-text-placeholder);
+}
+
+.textInput:hover,
+.textarea:hover {
+  border-color: var(--space-border-strong);
+}
+
+.textInput:focus-visible,
+.textarea:focus-visible {
+  border-color: var(--planet-accent);
+  background: var(--space-input-bg-focus);
+  box-shadow: 0 0 0 3px var(--planet-accent-soft);
+}
+
+.hint,
+.fieldError {
+  margin: 0;
+  color: var(--space-text-muted);
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+.fieldError {
+  color: var(--space-error-text);
+}
+
+.photoRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.photoPicker {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  gap: 13px;
+  min-width: 0;
+  min-height: 76px;
+  padding: 13px 15px;
+  border: 1px dashed var(--space-border-strong);
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.018);
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease;
+}
+
+.photoPicker:hover {
+  border-color: var(--planet-border-strong);
+  background: var(--planet-accent-soft);
+}
+
+.photoPicker strong,
+.photoPicker small {
+  display: block;
+}
+
+.photoPicker strong {
+  color: var(--space-text-heading);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.photoPicker small {
+  margin-top: 3px;
+  color: var(--space-text-muted);
+  font-size: 0.7rem;
+}
+
+.photoIcon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--planet-border);
+  border-radius: 11px;
+  background: var(--planet-accent-soft);
+  color: var(--planet-accent-hover);
+}
+
+.fileInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+.fileInput:focus-visible + * {
+  outline: none;
+}
+
+.photoRow:has(.fileInput:focus-visible) .photoPicker {
+  border-color: var(--planet-accent);
+  box-shadow: 0 0 0 3px var(--planet-accent-soft);
+}
+
+.removePhoto {
+  flex: 0 0 auto;
+  padding: 8px 4px;
+  border: 0;
+  background: transparent;
+  color: var(--space-text-muted);
+  font: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.removePhoto:hover {
+  color: var(--space-text-heading);
+}
+
+.removePhoto:focus-visible {
+  border-radius: 6px;
+  outline: 2px solid var(--planet-focus-ring);
+  outline-offset: 3px;
+}
+
+.privacyOptions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.privacyOption {
+  min-width: 0;
+  cursor: pointer;
+}
+
+.privacyOption > input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+.privacyOptionContent {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 88px;
+  padding: 13px;
+  border: 1px solid var(--space-border);
+  border-radius: 13px;
+  background: rgba(5, 10, 28, 0.58);
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.privacyOptionContent strong,
+.privacyOptionContent small {
+  display: block;
+}
+
+.privacyOptionContent strong {
+  color: var(--space-text-heading);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.privacyOptionContent small {
+  margin-top: 3px;
+  color: var(--space-text-muted);
+  font-size: 0.68rem;
+  line-height: 1.35;
+}
+
+.privacyOptionIcon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.035);
+  color: var(--space-text-muted);
+}
+
+.radioIndicator {
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--space-border-strong);
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 3px rgba(5, 10, 28, 0.9);
+}
+
+.privacyOption:hover .privacyOptionContent {
+  border-color: var(--space-border-strong);
+}
+
+.privacyOption > input:checked + .privacyOptionContent {
+  border-color: var(--planet-border-strong);
+  background: var(--planet-accent-soft);
+  box-shadow: 0 10px 30px -24px var(--planet-glow);
+}
+
+.privacyOption > input:checked + .privacyOptionContent .privacyOptionIcon {
+  background: var(--planet-accent-soft);
+  color: var(--planet-accent-hover);
+}
+
+.privacyOption > input:checked + .privacyOptionContent .radioIndicator {
+  border-color: var(--planet-accent);
+  background: var(--planet-accent);
+}
+
+.privacyOption > input:focus-visible + .privacyOptionContent {
+  outline: 2px solid var(--planet-focus-ring);
+  outline-offset: 3px;
+}
+
+.preview {
+  align-self: start;
+  min-width: 0;
+  padding-left: clamp(24px, 3vw, 40px);
+  border-left: 1px solid var(--space-border);
+}
+
+.previewHeading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 13px;
+}
+
+.previewHeading h2 {
+  margin: 0;
+  color: var(--space-text-muted);
+  font-size: 0.68rem;
+  font-weight: 650;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.liveDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--planet-accent-hover);
+  box-shadow: 0 0 10px var(--planet-glow);
+}
+
+.previewCard {
+  overflow: hidden;
+  border: 1px solid var(--space-border);
+  border-radius: 17px;
+  background: rgba(5, 9, 24, 0.82);
+  box-shadow: 0 18px 48px -34px rgba(0, 0, 0, 0.95);
+}
+
+.previewCover {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-bottom: 1px solid var(--space-border);
+  background:
+    radial-gradient(circle at 76% 20%, var(--planet-border-strong), transparent 35%),
+    linear-gradient(145deg, var(--planet-surface-tint), rgba(3, 7, 18, 0.95));
+}
+
+.previewCover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.previewPlaceholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--planet-accent-hover);
+}
+
+.previewPlaceholder > span {
+  font-size: 2.7rem;
+  font-weight: 650;
+  line-height: 1;
+  opacity: 0.82;
+}
+
+.previewPlaceholder svg {
+  color: var(--space-text-muted);
+  opacity: 0.55;
+}
+
+.previewBody {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 11px;
+  min-height: 220px;
+  padding: 20px;
+}
+
+.previewEyebrow {
+  margin: 0;
+  color: var(--planet-accent);
+  font-size: 0.62rem;
+  font-weight: 650;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.previewBody h3 {
+  max-width: 100%;
+  margin: 0;
+  color: var(--space-text-heading);
+  font-size: clamp(1.05rem, 2vw, 1.28rem);
+  line-height: 1.28;
+  overflow-wrap: anywhere;
+}
+
+.previewPrivacyDetail {
+  margin: -4px 0 0;
+  color: var(--space-text-muted);
+  font-size: 0.7rem;
+  line-height: 1.45;
+}
+
+.previewDescription {
+  width: 100%;
+  min-height: 3.2em;
+  margin: 4px 0 0;
+  color: var(--space-text-label);
+  font-size: 0.79rem;
+  line-height: 1.62;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.previewMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: auto;
+  color: var(--space-text-muted);
+  font-size: 0.68rem;
+}
+
+.previewAvatars {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--planet-border);
+  border-radius: 50%;
+  background: var(--planet-accent-soft);
+  color: var(--planet-accent-hover);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px clamp(24px, 4vw, 44px);
+  border-top: 1px solid var(--space-border);
+  background: rgba(3, 7, 18, 0.28);
+}
+
+.actions :global(.group-button) {
+  gap: 8px;
+  min-width: 124px;
+}
+
+.card > :global(.group-create-ready),
+.card > :global(.group-create-invite-step) {
+  padding: clamp(28px, 4vw, 44px);
+}
+
+@media (max-width: 900px) {
+  .workspace {
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 0.72fr);
+    gap: 30px;
+  }
+
+  .preview {
+    padding-left: 28px;
+  }
+
+  .privacyOptions {
+    grid-template-columns: 1fr;
+  }
+
+  .privacyOptionContent {
+    min-height: 76px;
+  }
+}
+
+@media (max-width: 700px) {
+  .steps {
+    gap: 11px;
+    padding: 17px 20px;
+  }
+
+  .step {
+    gap: 7px;
+    font-size: 0.74rem;
+  }
+
+  .stepMarker {
+    width: 25px;
+    height: 25px;
+  }
+
+  .workspace {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 30px;
+    padding: 26px 20px;
+  }
+
+  .privacyOptions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .preview {
+    padding: 25px 0 0;
+    border-top: 1px solid var(--space-border);
+    border-left: 0;
+  }
+
+  .previewCard {
+    width: min(100%, 420px);
+    margin-inline: auto;
+  }
+
+  .actions {
+    padding: 17px 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .card {
+    border-radius: 18px;
+  }
+
+  .steps {
+    grid-template-columns: auto minmax(20px, 1fr) auto;
+  }
+
+  .step span:last-child {
+    max-width: 72px;
+    white-space: normal;
+    line-height: 1.25;
+  }
+
+  .privacyOptions {
+    grid-template-columns: 1fr;
+  }
+
+  .photoRow {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .photoPicker {
+    width: 100%;
+  }
+
+  .removePhoto {
+    min-height: 40px;
+    padding: 6px;
+  }
+
+  .actions {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+
+  .actions :global(.group-button) {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card *,
+  .card *::before,
+  .card *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}

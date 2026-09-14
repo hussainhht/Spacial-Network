@@ -17,7 +17,7 @@ func NewRepository(db *sql.DB) *Repository {
 	}
 }
 
-func (r *Repository) InsertGroup(creatorID int, title, description, photoPath string) (int64, error) {
+func (r *Repository) InsertGroup(creatorID int, title, description, photoPath string, privacy GroupPrivacy) (int64, error) {
 	tx, err := r.db.Begin()
 	if err != nil {
 		return 0, err
@@ -25,11 +25,12 @@ func (r *Repository) InsertGroup(creatorID int, title, description, photoPath st
 	defer tx.Rollback()
 
 	result, err := tx.Exec(
-		`INSERT INTO groups (creator_id, title, description, group_photo) VALUES (?, ?, ?, NULLIF(?, ''))`,
+		`INSERT INTO groups (creator_id, title, description, group_photo, privacy) VALUES (?, ?, ?, NULLIF(?, ''), ?)`,
 		creatorID,
 		title,
 		description,
 		photoPath,
+		privacy,
 	)
 	if err != nil {
 		return 0, err
@@ -58,13 +59,14 @@ func (r *Repository) InsertGroup(creatorID int, title, description, photoPath st
 func (r *Repository) GetAllGroups(limit, offset, userID int, search string) ([]Group, error) {
 	like := "%" + escapeLikePattern(search) + "%"
 	rows, err := r.db.Query(
-		`SELECT g.id, g.creator_id, g.title, g.description, COALESCE(g.group_photo, ''), g.created_at, g.updated_at,
+		`SELECT g.id, g.creator_id, g.title, g.description, g.privacy, COALESCE(g.group_photo, ''), g.created_at, g.updated_at,
          u.username, (SELECT COUNT(*) FROM group_members WHERE group_id = g.id),
          COALESCE((SELECT role FROM group_members WHERE group_id = g.id AND user_id = ?), ''),
          EXISTS(SELECT 1 FROM group_join_requests WHERE group_id = g.id AND user_id = ? AND status = 'pending'),
          EXISTS(SELECT 1 FROM group_invitations WHERE group_id = g.id AND invited_user_id = ? AND status = 'pending')
          FROM groups g JOIN users u ON u.id = g.creator_id
-         WHERE (? = '' OR LOWER(g.title) LIKE LOWER(?) ESCAPE '\' OR LOWER(g.description) LIKE LOWER(?) ESCAPE '\')
+         WHERE g.privacy = 'public'
+           AND (? = '' OR LOWER(g.title) LIKE LOWER(?) ESCAPE '\' OR LOWER(g.description) LIKE LOWER(?) ESCAPE '\')
          ORDER BY g.created_at DESC, g.id DESC
 		 LIMIT ? OFFSET ?`,
 		userID, userID, userID,
@@ -80,7 +82,7 @@ func (r *Repository) GetAllGroups(limit, offset, userID int, search string) ([]G
 	result := make([]Group, 0)
 	for rows.Next() {
 		var g Group
-		if err := rows.Scan(&g.ID, &g.CreatorID, &g.Title, &g.Description, &g.GroupPhoto, &g.CreatedAt, &g.UpdatedAt, &g.CreatorUsername, &g.MemberCount, &g.MembershipRole, &g.HasPendingJoinRequest, &g.HasPendingInvitation); err != nil {
+		if err := rows.Scan(&g.ID, &g.CreatorID, &g.Title, &g.Description, &g.Privacy, &g.GroupPhoto, &g.CreatedAt, &g.UpdatedAt, &g.CreatorUsername, &g.MemberCount, &g.MembershipRole, &g.HasPendingJoinRequest, &g.HasPendingInvitation); err != nil {
 			return nil, err
 		}
 		result = append(result, g)
@@ -96,7 +98,7 @@ func (r *Repository) GetAllGroups(limit, offset, userID int, search string) ([]G
 func (r *Repository) GetGroupsForUser(userID, limit, offset int, search string) ([]Group, error) {
 	like := "%" + escapeLikePattern(search) + "%"
 	rows, err := r.db.Query(
-		`SELECT g.id, g.creator_id, g.title, g.description, COALESCE(g.group_photo, ''), g.created_at, g.updated_at,
+		`SELECT g.id, g.creator_id, g.title, g.description, g.privacy, COALESCE(g.group_photo, ''), g.created_at, g.updated_at,
          u.username, (SELECT COUNT(*) FROM group_members WHERE group_id = g.id), gm.role
          FROM groups g
          JOIN users u ON u.id = g.creator_id
@@ -117,7 +119,7 @@ func (r *Repository) GetGroupsForUser(userID, limit, offset int, search string) 
 	result := make([]Group, 0)
 	for rows.Next() {
 		var g Group
-		if err := rows.Scan(&g.ID, &g.CreatorID, &g.Title, &g.Description, &g.GroupPhoto, &g.CreatedAt, &g.UpdatedAt, &g.CreatorUsername, &g.MemberCount, &g.MembershipRole); err != nil {
+		if err := rows.Scan(&g.ID, &g.CreatorID, &g.Title, &g.Description, &g.Privacy, &g.GroupPhoto, &g.CreatedAt, &g.UpdatedAt, &g.CreatorUsername, &g.MemberCount, &g.MembershipRole); err != nil {
 			return nil, err
 		}
 		result = append(result, g)
@@ -193,11 +195,11 @@ func (r *Repository) GetGroupByID(id int) (*Group, error) {
 	var g Group
 
 	err := r.db.QueryRow(
-		`SELECT g.id, g.creator_id, g.title, g.description, COALESCE(g.group_photo, ''), g.created_at, g.updated_at,
+		`SELECT g.id, g.creator_id, g.title, g.description, g.privacy, COALESCE(g.group_photo, ''), g.created_at, g.updated_at,
          u.username, (SELECT COUNT(*) FROM group_members WHERE group_id = g.id)
          FROM groups g JOIN users u ON u.id = g.creator_id WHERE g.id = ?`,
 		id,
-	).Scan(&g.ID, &g.CreatorID, &g.Title, &g.Description, &g.GroupPhoto, &g.CreatedAt, &g.UpdatedAt, &g.CreatorUsername, &g.MemberCount)
+	).Scan(&g.ID, &g.CreatorID, &g.Title, &g.Description, &g.Privacy, &g.GroupPhoto, &g.CreatedAt, &g.UpdatedAt, &g.CreatorUsername, &g.MemberCount)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, ErrGroupNotFound
@@ -318,7 +320,7 @@ func (r *Repository) GetGroupInvitationByID(invitationID int) (*GroupInvitation,
 
 func (r *Repository) GetPendingInvitationsByUser(userID int) ([]GroupInvitation, error) {
 	rows, err := r.db.Query(
-		`SELECT i.id, i.group_id, i.invited_by, i.invited_user_id, i.status, i.created_at, i.updated_at, g.title, u.username
+		`SELECT i.id, i.group_id, i.invited_by, i.invited_user_id, i.status, i.created_at, i.updated_at, g.title, g.privacy, u.username
          FROM group_invitations i JOIN groups g ON g.id = i.group_id JOIN users u ON u.id = i.invited_by
          WHERE i.invited_user_id = ? AND i.status = 'pending'
          ORDER BY i.created_at DESC, i.id DESC`,
@@ -332,7 +334,7 @@ func (r *Repository) GetPendingInvitationsByUser(userID int) ([]GroupInvitation,
 	result := make([]GroupInvitation, 0)
 	for rows.Next() {
 		var inv GroupInvitation
-		if err := rows.Scan(&inv.ID, &inv.GroupID, &inv.InvitedBy, &inv.InvitedUserID, &inv.Status, &inv.CreatedAt, &inv.UpdatedAt, &inv.GroupTitle, &inv.InviterUsername); err != nil {
+		if err := rows.Scan(&inv.ID, &inv.GroupID, &inv.InvitedBy, &inv.InvitedUserID, &inv.Status, &inv.CreatedAt, &inv.UpdatedAt, &inv.GroupTitle, &inv.GroupPrivacy, &inv.InviterUsername); err != nil {
 			return nil, err
 		}
 		result = append(result, inv)

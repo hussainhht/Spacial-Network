@@ -14,7 +14,7 @@ import (
 func TestCreateEvent_RequiresTitleDescriptionAndTime(t *testing.T) {
 	f := setup(t)
 	creator := f.newUser(t, "evcreator")
-	groupID, err := f.groupsSvc.CreateGroup(creator, "Event Group", "", "")
+	groupID, err := f.groupsSvc.CreateGroup(creator, "Event Group", "", "", groups.GroupPrivacyPrivate)
 	if err != nil {
 		t.Fatalf("CreateGroup: %v", err)
 	}
@@ -58,7 +58,7 @@ func TestCreateEvent_RequiresTitleDescriptionAndTime(t *testing.T) {
 func TestCreateEvent_TimeMustBeInFuture(t *testing.T) {
 	f := setup(t)
 	creator := f.newUser(t, "evpastcreator")
-	groupID, err := f.groupsSvc.CreateGroup(creator, "Past Event Group", "", "")
+	groupID, err := f.groupsSvc.CreateGroup(creator, "Past Event Group", "", "", groups.GroupPrivacyPrivate)
 	if err != nil {
 		t.Fatalf("CreateGroup: %v", err)
 	}
@@ -71,18 +71,22 @@ func TestCreateEvent_TimeMustBeInFuture(t *testing.T) {
 }
 
 func TestCreateEvent_NonMemberCannotCreate(t *testing.T) {
-	f := setup(t)
-	creator := f.newUser(t, "evnmcreator")
-	nonMember := f.newUser(t, "evnmoutsider")
-	groupID, err := f.groupsSvc.CreateGroup(creator, "NM Event Group", "", "")
-	if err != nil {
-		t.Fatalf("CreateGroup: %v", err)
-	}
+	for _, privacy := range []groups.GroupPrivacy{groups.GroupPrivacyPublic, groups.GroupPrivacyPrivate} {
+		t.Run(string(privacy), func(t *testing.T) {
+			f := setup(t)
+			creator := f.newUser(t, "evnmcreator"+string(privacy))
+			nonMember := f.newUser(t, "evnmoutsider"+string(privacy))
+			groupID, err := f.groupsSvc.CreateGroup(creator, "NM Event Group", "", "", privacy)
+			if err != nil {
+				t.Fatalf("CreateGroup: %v", err)
+			}
 
-	future := time.Now().Add(24 * time.Hour)
-	_, err = f.groupsSvc.CreateEvent(int(groupID), nonMember, "Sneaky Meetup", "Shh", future)
-	if err != groups.ErrNotGroupMember {
-		t.Fatalf("expected ErrNotGroupMember for a non-member creating an event, got %v", err)
+			future := time.Now().Add(24 * time.Hour)
+			_, err = f.groupsSvc.CreateEvent(int(groupID), nonMember, "Sneaky Meetup", "Shh", future)
+			if err != groups.ErrNotGroupMember {
+				t.Fatalf("expected ErrNotGroupMember for a non-member creating an event, got %v", err)
+			}
+		})
 	}
 }
 
@@ -102,7 +106,7 @@ func TestRespondToEvent_MemberResponseRecordedAndUpdatable(t *testing.T) {
 	f := setup(t)
 	creator := f.newUser(t, "evrespcreator")
 	member := f.newUser(t, "evrespmember")
-	groupID, err := f.groupsSvc.CreateGroup(creator, "Response Group", "", "")
+	groupID, err := f.groupsSvc.CreateGroup(creator, "Response Group", "", "", groups.GroupPrivacyPrivate)
 	if err != nil {
 		t.Fatalf("CreateGroup: %v", err)
 	}
@@ -152,7 +156,7 @@ func TestRespondToEvent_NonMemberCannotRespond(t *testing.T) {
 	f := setup(t)
 	creator := f.newUser(t, "evnrcreator")
 	nonMember := f.newUser(t, "evnroutsider")
-	groupID, err := f.groupsSvc.CreateGroup(creator, "NR Event Group", "", "")
+	groupID, err := f.groupsSvc.CreateGroup(creator, "NR Event Group", "", "", groups.GroupPrivacyPrivate)
 	if err != nil {
 		t.Fatalf("CreateGroup: %v", err)
 	}

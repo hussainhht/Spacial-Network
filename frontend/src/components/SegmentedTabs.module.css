@@ -1,0 +1,119 @@
+.root {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  max-width: 100%;
+  gap: 2px;
+  margin-block-end: 1.25rem;
+  padding: 4px;
+  overflow: hidden;
+  border: 1px solid var(--space-border);
+  border-radius: 999px;
+  background:
+    linear-gradient(var(--planet-surface-tint), var(--planet-surface-tint)),
+    var(--space-card-bg);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+}
+
+.indicator {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 0;
+  z-index: 0;
+  border-radius: 999px;
+  background: var(--planet-accent-soft);
+  box-shadow:
+    inset 0 0 0 1px var(--planet-border-strong),
+    0 0 14px var(--planet-glow);
+  pointer-events: none;
+  will-change: transform, width;
+  transition:
+    transform 260ms cubic-bezier(0.22, 1, 0.36, 1),
+    width 260ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 200ms ease;
+}
+
+.tab {
+  position: relative;
+  z-index: 1;
+  flex: 0 1 auto;
+  min-width: 0;
+  min-height: 40px;
+  padding: 0.5rem 1.1rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--space-text-muted);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 150ms ease;
+}
+
+.tab:hover:not(:disabled):not([aria-selected="true"]) {
+  background: var(--planet-surface-tint);
+  color: var(--space-text-heading);
+}
+
+.tab[aria-selected="true"] {
+  color: var(--space-text-heading);
+}
+
+.root .tab:focus-visible {
+  outline: 2px solid var(--planet-focus-ring);
+  outline-offset: 2px;
+}
+
+.tab:disabled {
+  color: var(--space-text-placeholder);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+@media (max-width: 760px) {
+  .root {
+    width: 100%;
+  }
+
+  .tab {
+    flex: 1 1 0;
+    min-height: 44px;
+    padding: 0.6rem clamp(0.5rem, 3vw, 1rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tab {
+    transition: none;
+  }
+
+  .indicator {
+    transition:
+      box-shadow 120ms ease,
+      opacity 120ms ease;
+  }
+}
+
+@media (forced-colors: active) {
+  .indicator {
+    forced-color-adjust: none;
+    background: Highlight;
+    box-shadow: none;
+  }
+
+  .tab[aria-selected="true"] {
+    outline: 1px solid ButtonText;
+    outline-offset: -3px;
+  }
+
+  .root .tab:focus-visible {
+    outline-color: Highlight;
+  }
+}

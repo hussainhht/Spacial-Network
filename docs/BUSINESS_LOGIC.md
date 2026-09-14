@@ -128,18 +128,19 @@ Below is the complete catalog of all business rules implemented (or required) ac
 ### 3.4. Groups & Communities (`internal/groups`)
 
 - **Group Creation:**
-  - Any registered user can create a group by providing a non-empty Title and Description.
+  - Any registered user can create a public or private group by providing a non-empty Title and Description.
   - The creator automatically becomes the first **Member** and the **Owner/Admin** of the group.
 - **Membership & Joining:**
-  - **Join Request Flow:**
-    - A non-member can send a request to join a group.
+  - **Public groups** are discoverable and searchable. A non-member can send a join request, but cannot join instantly.
+  - **Private groups** are hidden from discovery and are invite-only; their join-request endpoint is forbidden.
+  - **Public Join Request Flow:**
     - Only the group creator/admin can view pending join requests and **Accept** or **Reject** them.
     - Duplicate pending requests are blocked.
   - **Invitation Flow:**
-    - Group members can invite external users to join the group.
+    - Only the group creator/admin can invite external users to join the group.
     - The invited user receives an invitation and can **Accept** or **Decline**.
 - **Group Access Control:**
-  - Non-members can only see group metadata (Title, Description, Member Count).
+  - Public group metadata is visible to authenticated users. Private group details and member lists are hidden from unrelated users.
   - **Group Posts & Comments:** Only accepted group members can view posts, create posts, or comment inside a group.
 - **Group Events:**
   - Any group member can create an event with: Title, Description, and Event Date/Time (must be in the future).

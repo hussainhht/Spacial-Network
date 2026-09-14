@@ -18,6 +18,23 @@ export default function GroupEvents({
   isMember,
   members,
 }: GroupEventsProps) {
+  if (!isMember) {
+    return (
+      <section className="group-panel group-member-only" aria-labelledby="events-heading">
+        <span className="group-member-only-icon" aria-hidden="true">🔒</span>
+        <h2 id="events-heading">Group events are member-only</h2>
+        <p className="group-muted">Join this group to see upcoming events and activities.</p>
+      </section>
+    );
+  }
+
+  return <MemberGroupEvents groupId={groupId} members={members} />;
+}
+
+function MemberGroupEvents({
+  groupId,
+  members,
+}: Omit<GroupEventsProps, "isMember">) {
   const events = useGroupEvents(groupId);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const usernameById = useMemo(() => {
@@ -33,15 +50,13 @@ export default function GroupEvents({
     >
       <div className="group-section-heading">
         <h2 id="events-heading">Events</h2>
-        {isMember && (
-          <button
-            type="button"
-            className="group-button secondary"
-            onClick={() => setIsCreateOpen(true)}
-          >
-            + Create Event
-          </button>
-        )}
+        <button
+          type="button"
+          className="group-button secondary"
+          onClick={() => setIsCreateOpen(true)}
+        >
+          + Create Event
+        </button>
       </div>
       <p className="group-muted">Upcoming events and group activities.</p>
 
@@ -69,7 +84,7 @@ export default function GroupEvents({
               <EventCard
                 event={event}
                 groupId={groupId}
-                isMember={isMember}
+                isMember
                 creatorUsername={usernameById.get(event.createdBy)}
               />
             </li>
@@ -77,7 +92,7 @@ export default function GroupEvents({
         </ul>
       )}
 
-      {isMember && isCreateOpen && (
+      {isCreateOpen && (
         <CreateEventModal
           groupId={groupId}
           onClose={() => setIsCreateOpen(false)}

@@ -425,9 +425,9 @@ func (h *Handler) ListPostsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // ListGroupPostsHandler returns up to 50 posts belonging to the group
-// identified by the {id} path segment, newest first. Viewing a group's
-// posts never requires membership. The optional "limit" query parameter
-// requests fewer posts (capped at 50).
+// identified by the {id} path segment, newest first. Group posts remain
+// member-only regardless of whether joining the group is public or private.
+// The optional "limit" query parameter requests fewer posts (capped at 50).
 func (h *Handler) ListGroupPostsHandler(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requestctx.UserID(r.Context())
 	if !ok {
@@ -454,7 +454,7 @@ func (h *Handler) ListGroupPostsHandler(w http.ResponseWriter, r *http.Request) 
 		limit = parsed
 	}
 
-	posts, err := h.service.ListGroupPosts(groupID, limit)
+	posts, err := h.service.ListGroupPosts(groupID, userID, limit)
 	if err != nil {
 		writePostError(w, err)
 		return

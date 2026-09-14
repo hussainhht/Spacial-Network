@@ -2,28 +2,23 @@
 
 import { createJoinRequest } from "../api/groups";
 import { useGroupAction } from "./useGroupAction";
-import { useMembership, usePendingInvitations } from "./useGroupData";
+import type { GroupPrivacy } from "../types/group";
 
-export function useGroupJoinRequest(groupId: number) {
-  const membership = useMembership(groupId);
-  const invitations = usePendingInvitations();
+export function useGroupJoinRequest(
+  groupId: number,
+  privacy: GroupPrivacy,
+  state: { isMember: boolean; pending: boolean; invited: boolean },
+) {
   const action = useGroupAction(`join:${groupId}`, groupId);
-  const pending = membership.data?.hasPendingJoinRequest ?? false;
   const canRequest =
-    !membership.loading &&
-    !invitations.loading &&
-    !membership.error &&
-    !invitations.error &&
-    membership.data &&
-    !membership.data.isMember &&
-    !pending &&
-    !invitations.data?.some((i) => i.groupId === groupId);
+    privacy === "public" && !state.isMember && !state.pending && !state.invited;
+
   return {
-    pending,
+    pending: state.pending,
     busy: action.busy,
     error: action.error,
     disabled: !canRequest || Boolean(action.busy),
-    handleRequestToJoin: () => {
+    handleJoin: () => {
       if (canRequest)
         void action.run("Sending…", () => createJoinRequest(groupId));
     },

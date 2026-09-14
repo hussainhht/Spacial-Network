@@ -13,7 +13,7 @@ SpaceBackground (root layout)
       ↓
 AppShell
       └── PlanetPreferenceProvider
-            ├── PlanetBackground
+            ├── PlanetBackground (unmounted when the 3D checkbox is off)
             │     ├── non-rendering selected-asset cache gate
             │     └── one persistent Canvas
             │           └── PlanetSystem (one selected main body)
@@ -32,11 +32,13 @@ theme. The selectable list contains Earth, Mercury, Venus, Mars, Jupiter,
 Saturn, Uranus, and Sun. The Moon is a separate companion model and can only be
 mounted when the selected registry entry declares `companion: "moon"`.
 
-`PlanetPreferenceProvider` owns the active selection. It validates the stored
-`social-network:planet` value against the registry, falls back to Earth, applies
-the registry theme tokens to the application shell, and synchronizes changes
-from another tab. Settings consumes the same context, so there is no competing
-page-local active-planet state.
+`PlanetPreferenceProvider` owns both the active theme/model selection and the
+independent 3D visibility checkbox. It stores them under `social-network:planet`
+and `social-network:planet-model-enabled`, applies the selected planet's theme
+tokens even while its model is hidden, and synchronizes changes from another
+tab. The app waits for both stored preferences before mounting the planet
+layer, so a disabled model never creates a Canvas or starts a GLB request.
+Settings consumes the same context, so there is no competing page-local state.
 
 ## Rendering and motion
 

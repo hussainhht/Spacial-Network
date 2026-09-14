@@ -55,7 +55,11 @@ export default function GroupsPageContent() {
             <AppIcon name="plus" /> Create Group
           </Link>
         </div>
-        <GroupsFilterTabs activeTab={activeTab} onTabChange={changeTab} />
+        <GroupsFilterTabs
+          activeTab={activeTab}
+          onTabChange={changeTab}
+          className={styles.filters}
+        />
         <InvitationsPanel />
         <section
           id={`groups-tabpanel-${activeTab}`}

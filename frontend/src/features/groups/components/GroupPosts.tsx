@@ -12,6 +12,20 @@ interface GroupPostsProps {
 }
 
 export default function GroupPosts({ groupId, isMember }: GroupPostsProps) {
+  if (!isMember) {
+    return (
+      <section className="group-panel group-member-only" aria-labelledby="posts-heading">
+        <span className="group-member-only-icon" aria-hidden="true">🔒</span>
+        <h2 id="posts-heading">Group posts are member-only</h2>
+        <p className="group-muted">Join this group to read and take part in its conversations.</p>
+      </section>
+    );
+  }
+
+  return <MemberGroupPosts groupId={groupId} />;
+}
+
+function MemberGroupPosts({ groupId }: { groupId: number }) {
   const posts = useGroupPosts(groupId);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
@@ -23,15 +37,13 @@ export default function GroupPosts({ groupId, isMember }: GroupPostsProps) {
     <section className="group-panel group-posts" aria-labelledby="posts-heading">
       <div className="group-section-heading">
         <h2 id="posts-heading">Posts</h2>
-        {isMember && (
-          <button
-            type="button"
-            className="group-button secondary"
-            onClick={() => setIsCreateOpen(true)}
-          >
-            + New Post
-          </button>
-        )}
+        <button
+          type="button"
+          className="group-button secondary"
+          onClick={() => setIsCreateOpen(true)}
+        >
+          + New Post
+        </button>
       </div>
       <p className="group-muted">Posts shared with this group.</p>
 
@@ -49,9 +61,7 @@ export default function GroupPosts({ groupId, isMember }: GroupPostsProps) {
         <div className="group-empty">
           <h3>No posts yet</h3>
           <p>
-            {isMember
-              ? "Be the first to share something with this group."
-              : "Nothing has been posted here yet."}
+            Be the first to share something with this group.
           </p>
         </div>
       )}
@@ -64,7 +74,7 @@ export default function GroupPosts({ groupId, isMember }: GroupPostsProps) {
         </div>
       )}
 
-      {isMember && isCreateOpen && (
+      {isCreateOpen && (
         <CreateGroupPostModal
           groupId={groupId}
           onClose={() => setIsCreateOpen(false)}

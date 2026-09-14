@@ -1,10 +1,11 @@
-import type { EventResponseStatus } from "./group";
+import type { EventResponseStatus, GroupPrivacy } from "./group";
 
 export interface ApiGroup {
   id: number;
   creator_id: number;
   title: string;
   description: string;
+  privacy: GroupPrivacy;
   group_photo?: string;
   created_at: string;
   updated_at: string;
@@ -40,6 +41,7 @@ export interface ApiGroupInvitation {
   created_at: string;
   updated_at: string;
   group_title: string;
+  group_privacy: GroupPrivacy;
   inviter_username: string;
 }
 

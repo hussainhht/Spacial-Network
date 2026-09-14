@@ -69,14 +69,22 @@ func (s *Service) CreateGroupPost(post *post, groupID int) error {
 }
 
 // ListGroupPosts returns up to limit posts belonging to groupID, newest
-// first. Viewing a group's posts never requires membership.
-func (s *Service) ListGroupPosts(groupID, limit int) ([]*post, error) {
+// first. Group privacy controls how membership is obtained, never whether
+// non-members may read member content.
+func (s *Service) ListGroupPosts(groupID, userID, limit int) ([]*post, error) {
 	if limit <= 0 || limit > MaxListPosts {
 		limit = MaxListPosts
 	}
 
 	if _, err := s.groups.GetGroupByID(groupID); err != nil {
 		return nil, err
+	}
+	isMember, err := s.groups.IsGroupMember(groupID, userID)
+	if err != nil {
+		return nil, err
+	}
+	if !isMember {
+		return nil, groups.ErrNotGroupMember
 	}
 
 	return s.repo.ListPostsByGroup(groupID, limit)
@@ -151,13 +159,14 @@ func (s *Service) CanAccess(viewerID, postID int) (bool, error) {
 }
 
 func (s *Service) canAccessPost(viewerID int, p *post) (bool, error) {
-	if p.User_ID == viewerID {
-		return true, nil
+	// Group posts and their comments remain member-only in both public and
+	// private groups. Public groups expose metadata and allow join requests;
+	// membership still requires creator approval.
+	if p.GroupID.Valid {
+		return s.groups.IsGroupMember(int(p.GroupID.Int64), viewerID)
 	}
 
-	// A group post is visible to anyone who can view the group - viewing
-	// never requires membership, only creating a post/comment does.
-	if p.GroupID.Valid {
+	if p.User_ID == viewerID {
 		return true, nil
 	}
 
@@ -187,6 +196,15 @@ func (s *Service) CanCreateComment(userID, postID int) error {
 	if err != nil {
 		return err
 	}
+	if p.GroupID.Valid {
+		isMember, err := s.groups.IsGroupMember(int(p.GroupID.Int64), userID)
+		if err != nil {
+			return err
+		}
+		if !isMember {
+			return groups.ErrNotGroupMember
+		}
+	}
 
 	canAccess, err := s.canAccessPost(userID, p)
 	if err != nil {
@@ -194,18 +212,6 @@ func (s *Service) CanCreateComment(userID, postID int) error {
 	}
 	if !canAccess {
 		return ErrPostNotFound
-	}
-
-	if !p.GroupID.Valid {
-		return nil
-	}
-
-	isMember, err := s.groups.IsGroupMember(int(p.GroupID.Int64), userID)
-	if err != nil {
-		return err
-	}
-	if !isMember {
-		return groups.ErrNotGroupMember
 	}
 
 	return nil

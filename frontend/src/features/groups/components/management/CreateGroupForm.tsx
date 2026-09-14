@@ -1,18 +1,27 @@
 "use client";
 
-import { type SubmitEvent, useEffect, useMemo, useState } from "react";
+import { type SubmitEvent, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import AppIcon from "@/components/layout/AppIcon";
 
 import { createGroup, createGroupInvitation } from "../../api/groups";
+import GroupPrivacyBadge from "../GroupPrivacyBadge";
 import InviteUserSearch from "./InviteUserSearch";
 import SelectedInviteList from "./SelectedInviteList";
-import type { Group, InviteCandidate } from "../../types/group";
+import type {
+  Group,
+  GroupPrivacy,
+  InviteCandidate,
+} from "../../types/group";
+import styles from "./CreateGroupForm.module.css";
 
 const TITLE_MIN_LENGTH = 3;
 const TITLE_MAX_LENGTH = 100;
 const DESCRIPTION_MAX_LENGTH = 500;
 const REDIRECT_DELAY_MS = 1200;
+const MAX_GROUP_PHOTO_SIZE = 5 * 1024 * 1024;
+const GROUP_PHOTO_TYPES = new Set(["image/jpeg", "image/png", "image/gif"]);
 
 type Step = "details" | "ready" | "invite";
 
@@ -41,6 +50,9 @@ export default function CreateGroupForm() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [photo, setPhoto] = useState<File | null>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  const [photoError, setPhotoError] = useState<string | null>(null);
+  const [privacy, setPrivacy] = useState<GroupPrivacy>("private");
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
 
@@ -84,6 +96,7 @@ export default function CreateGroupForm() {
       const group = await createGroup({
         title: trimmedTitle,
         description: description.trim(),
+        privacy,
         photo,
       });
       setCreatedGroup(group);
@@ -95,6 +108,31 @@ export default function CreateGroupForm() {
     } finally {
       setCreating(false);
     }
+  }
+
+  function handlePhotoSelection(file: File | null): boolean {
+    setPhotoError(null);
+    if (!file) {
+      setPhoto(null);
+      return true;
+    }
+    if (!GROUP_PHOTO_TYPES.has(file.type)) {
+      setPhoto(null);
+      setPhotoError("Choose a JPEG, PNG, or GIF image.");
+      return false;
+    }
+    if (file.size > MAX_GROUP_PHOTO_SIZE) {
+      setPhoto(null);
+      setPhotoError("Group photo must be 5 MB or smaller.");
+      return false;
+    }
+    setPhoto(file);
+    return true;
+  }
+
+  function clearPhoto() {
+    handlePhotoSelection(null);
+    if (photoInputRef.current) photoInputRef.current.value = "";
   }
 
   function selectInvite(user: InviteCandidate) {
@@ -132,87 +170,204 @@ export default function CreateGroupForm() {
   }
 
   return (
-    <div className="group-create-card">
-      <div className="group-create-steps" aria-hidden="true">
+    <div className={styles.card}>
+      <div className={styles.steps} aria-label="Group creation progress">
         <span
-          className={`group-create-step${step !== "details" ? " is-done" : " is-active"}`}
+          className={`${styles.step} ${
+            step !== "details" ? styles.stepDone : styles.stepActive
+          }`}
+          aria-current={step === "details" ? "step" : undefined}
         >
-          <span className="group-create-step-marker">
+          <span className={styles.stepMarker} aria-hidden="true">
             {step !== "details" ? "✓" : "1"}
           </span>
-          Group Details
+          <span>Group Details</span>
         </span>
-        <span className="group-create-step-arrow">→</span>
+        <span className={styles.stepRail} aria-hidden="true" />
         <span
-          className={`group-create-step${step !== "details" ? " is-active" : ""}`}
+          className={`${styles.step} ${
+            step !== "details" ? styles.stepActive : ""
+          }`}
+          aria-current={step !== "details" ? "step" : undefined}
         >
-          <span className="group-create-step-marker">2</span>
-          Invite People
+          <span className={styles.stepMarker} aria-hidden="true">2</span>
+          <span>Invite People</span>
         </span>
       </div>
 
       {step === "details" && (
-        <form onSubmit={handleCreateGroup} className="group-form">
-          <div className="form-field">
-            <label htmlFor="title">Group name</label>
-            <input
-              id="title"
-              type="text"
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
-              placeholder="e.g. Photography Club"
-              minLength={TITLE_MIN_LENGTH}
-              maxLength={TITLE_MAX_LENGTH}
-              required
-            />
-            <p className="group-field-hint">
-              Choose a name people will recognize.
-            </p>
-          </div>
-
-          <div className="form-field">
-            <label htmlFor="groupPhoto">Group photo (optional)</label>
-            <div className="group-photo-picker">
-              {photoPreview ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={photoPreview}
-                  alt=""
-                  className="group-photo-preview"
+        <form onSubmit={handleCreateGroup} className={styles.form}>
+          <div className={styles.workspace}>
+            <div className={styles.fields}>
+              <div className={styles.field}>
+                <label htmlFor="title" className={styles.label}>
+                  Group name
+                </label>
+                <input
+                  id="title"
+                  className={styles.textInput}
+                  type="text"
+                  value={title}
+                  onChange={(event) => setTitle(event.target.value)}
+                  placeholder="Give your community a name"
+                  minLength={TITLE_MIN_LENGTH}
+                  maxLength={TITLE_MAX_LENGTH}
+                  autoComplete="off"
+                  required
                 />
-              ) : (
-                <span className="group-photo-preview-empty" aria-hidden="true">
-                  {trimmedTitle.charAt(0).toUpperCase() || "?"}
-                </span>
-              )}
-              <input
-                id="groupPhoto"
-                type="file"
-                accept="image/jpeg,image/png,image/gif"
-                onChange={(event) => {
-                  setPhoto(event.target.files?.[0] ?? null);
-                }}
-              />
-            </div>
-            <p className="group-field-hint">
-              JPEG, PNG, or GIF. Fully optional.
-            </p>
-          </div>
+                <p className={styles.hint} id="title-hint">
+                  Choose something clear and easy to recognize.
+                </p>
+              </div>
 
-          <div className="form-field">
-            <label htmlFor="description">Description</label>
-            <textarea
-              id="description"
-              value={description}
-              onChange={(event) => setDescription(event.target.value)}
-              placeholder="What is your group about?"
-              maxLength={DESCRIPTION_MAX_LENGTH}
-              rows={5}
-            />
-            <p className="group-field-hint">
-              Tell people what this group is about. {remainingDescriptionChars}{" "}
-              characters left.
-            </p>
+              <div className={styles.field}>
+                <span className={styles.label}>Group photo</span>
+                <div className={styles.photoRow}>
+                  <label htmlFor="groupPhoto" className={styles.photoPicker}>
+                    <span className={styles.photoIcon} aria-hidden="true">
+                      <AppIcon name="image" width={22} height={22} />
+                    </span>
+                    <span>
+                      <strong>{photo ? "Choose a different image" : "Upload an image"}</strong>
+                      <small>JPEG, PNG or GIF · up to 5 MB</small>
+                    </span>
+                  </label>
+                  {photo && (
+                    <button
+                      type="button"
+                      className={styles.removePhoto}
+                      onClick={clearPhoto}
+                    >
+                      Remove
+                    </button>
+                  )}
+                  <input
+                    id="groupPhoto"
+                    ref={photoInputRef}
+                    className={styles.fileInput}
+                    type="file"
+                    accept="image/jpeg,image/png,image/gif"
+                    aria-describedby={photoError ? "group-photo-error" : undefined}
+                    onChange={(event) => {
+                      if (!handlePhotoSelection(event.target.files?.[0] ?? null)) {
+                        event.target.value = "";
+                      }
+                    }}
+                  />
+                </div>
+                {photoError && (
+                  <p id="group-photo-error" className={styles.fieldError} role="alert">
+                    {photoError}
+                  </p>
+                )}
+              </div>
+
+              <div className={styles.field}>
+                <div className={styles.labelRow}>
+                  <label htmlFor="description" className={styles.label}>
+                    Description
+                  </label>
+                  <span>{remainingDescriptionChars}</span>
+                </div>
+                <textarea
+                  id="description"
+                  className={styles.textarea}
+                  value={description}
+                  onChange={(event) => setDescription(event.target.value)}
+                  placeholder="What will bring this group together?"
+                  maxLength={DESCRIPTION_MAX_LENGTH}
+                  rows={5}
+                />
+                <p className={styles.hint}>
+                  Help people understand what they’ll find here.
+                </p>
+              </div>
+
+              <fieldset className={styles.privacyFieldset}>
+                <legend className={styles.label}>Privacy</legend>
+                <div className={styles.privacyOptions}>
+                  {(
+                    [
+                      {
+                        value: "public",
+                        title: "Public",
+                        detail:
+                          "Discoverable. Anyone can request to join; membership requires approval.",
+                        icon: "globe",
+                      },
+                      {
+                        value: "private",
+                        title: "Private",
+                        detail:
+                          "Hidden from discovery. People join only by invitation from the creator.",
+                        icon: "lock",
+                      },
+                    ] as const
+                  ).map((option) => (
+                    <label key={option.value} className={styles.privacyOption}>
+                      <input
+                        type="radio"
+                        name="privacy"
+                        value={option.value}
+                        checked={privacy === option.value}
+                        onChange={() => setPrivacy(option.value)}
+                      />
+                      <span className={styles.privacyOptionContent}>
+                        <span className={styles.privacyOptionIcon} aria-hidden="true">
+                          <AppIcon name={option.icon} width={20} height={20} />
+                        </span>
+                        <span>
+                          <strong>{option.title}</strong>
+                          <small>{option.detail}</small>
+                        </span>
+                        <span className={styles.radioIndicator} aria-hidden="true" />
+                      </span>
+                    </label>
+                  ))}
+                </div>
+                <p className={styles.hint}>
+                  Posts, events, and chat stay visible to members only.
+                </p>
+              </fieldset>
+            </div>
+
+            <aside className={styles.preview} aria-labelledby="live-preview-title">
+              <div className={styles.previewHeading}>
+                <span className={styles.liveDot} aria-hidden="true" />
+                <h2 id="live-preview-title">Live preview</h2>
+              </div>
+              <div className={styles.previewCard}>
+                <div className={styles.previewCover}>
+                  {photoPreview ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={photoPreview} alt="" />
+                  ) : (
+                    <div className={styles.previewPlaceholder} aria-hidden="true">
+                      <span>{trimmedTitle.charAt(0).toUpperCase() || "✦"}</span>
+                      <AppIcon name="image" width={24} height={24} />
+                    </div>
+                  )}
+                </div>
+                <div className={styles.previewBody}>
+                  <p className={styles.previewEyebrow}>New community</p>
+                  <h3>{trimmedTitle || "Your Group Name"}</h3>
+                  <GroupPrivacyBadge privacy={privacy} detailed />
+                  <p className={styles.previewPrivacyDetail}>
+                    {privacy === "public"
+                      ? "Discoverable · Join requests require approval"
+                      : "Invite only · Hidden from discovery"}
+                  </p>
+                  <p className={styles.previewDescription}>
+                    {description.trim() ||
+                      "Your group description will appear here as you type."}
+                  </p>
+                  <div className={styles.previewMeta} aria-hidden="true">
+                    <span className={styles.previewAvatars}>✦</span>
+                    <span>You’ll be the first member</span>
+                  </div>
+                </div>
+              </div>
+            </aside>
           </div>
 
           {createError && (
@@ -221,12 +376,13 @@ export default function CreateGroupForm() {
             </p>
           )}
 
-          <div className="group-create-actions-bar">
+          <div className={styles.actions}>
             <Link href="/groups" className="group-button secondary">
               Cancel
             </Link>
-            <button type="submit" disabled={creating}>
-              {creating ? "Creating your group..." : "Create Group →"}
+            <button type="submit" className="group-button" disabled={creating}>
+              {creating ? "Creating your group…" : "Create Group"}
+              {!creating && <AppIcon name="arrow" width={17} height={17} />}
             </button>
           </div>
         </form>

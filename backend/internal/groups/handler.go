@@ -17,6 +17,7 @@ func toGroupResponse(g *Group) GroupResponse {
 		CreatorID:   g.CreatorID,
 		Title:       g.Title,
 		Description: g.Description,
+		Privacy:     g.Privacy,
 		GroupPhoto:  g.GroupPhoto,
 		CreatedAt:   g.CreatedAt.Format(time.RFC3339),
 		UpdatedAt:   g.UpdatedAt.Format(time.RFC3339),
@@ -45,7 +46,7 @@ func toGroupJoinRequestResponse(jr GroupJoinRequest) GroupJoinRequestResponse {
 
 func toGroupInvitationResponse(inv GroupInvitation) GroupInvitationResponse {
 	return GroupInvitationResponse{
-		ID: inv.ID, GroupTitle: inv.GroupTitle, InviterUsername: inv.InviterUsername,
+		ID: inv.ID, GroupTitle: inv.GroupTitle, GroupPrivacy: inv.GroupPrivacy, InviterUsername: inv.InviterUsername,
 		GroupID:       inv.GroupID,
 		InvitedBy:     inv.InvitedBy,
 		InvitedUserID: inv.InvitedUserID,
@@ -120,6 +121,16 @@ func (h *Handler) CreateGroupHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	privacy, err := ValidatePrivacy(r.FormValue("privacy"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(CreateGroupResponse{
+			Success: false,
+			Message: err.Error(),
+		})
+		return
+	}
+
 	// Handle the optional group photo upload.
 	var photoPath string
 	file, header, err := r.FormFile("groupPhoto")
@@ -148,7 +159,7 @@ func (h *Handler) CreateGroupHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	groupID, err := h.service.CreateGroup(userID, title, description, photoPath)
+	groupID, err := h.service.CreateGroup(userID, title, description, photoPath, privacy)
 	if err != nil {
 		h.photoStorage.Remove(photoPath)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -340,7 +351,8 @@ func (h *Handler) DeleteGroupHandler(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) ListGroupsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	if _, ok := requestctx.UserID(r.Context()); !ok {
+	userID, ok := requestctx.UserID(r.Context())
+	if !ok {
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode(ListGroupsResponse{
 			Success: false,
@@ -369,7 +381,6 @@ func (h *Handler) ListGroupsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID, _ := requestctx.UserID(r.Context())
 	groupsList, err := h.service.GetAllGroups(limit, offset, userID, search)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -461,7 +472,8 @@ func (h *Handler) GetGroupHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, ok := requestctx.UserID(r.Context()); !ok {
+	userID, ok := requestctx.UserID(r.Context())
+	if !ok {
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode(GetGroupResponse{
 			Success: false,
@@ -480,7 +492,7 @@ func (h *Handler) GetGroupHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	group, err := h.service.GetGroupByID(groupID)
+	group, err := h.service.GetGroupForUser(groupID, userID)
 	if err != nil {
 		if errors.Is(err, ErrGroupNotFound) {
 			w.WriteHeader(http.StatusNotFound)
@@ -518,7 +530,8 @@ func (h *Handler) GetGroupMembersHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if _, ok := requestctx.UserID(r.Context()); !ok {
+	userID, ok := requestctx.UserID(r.Context())
+	if !ok {
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode(GetGroupMembersResponse{
 			Success: false,
@@ -537,7 +550,7 @@ func (h *Handler) GetGroupMembersHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	members, err := h.service.GetGroupMembers(groupID)
+	members, err := h.service.GetVisibleGroupMembers(groupID, userID)
 	if err != nil {
 		if errors.Is(err, ErrGroupNotFound) {
 			w.WriteHeader(http.StatusNotFound)
@@ -655,7 +668,8 @@ func (h *Handler) CreateJoinRequestHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	if err := h.service.RequestToJoin(groupID, userID); err != nil {
+	err = h.service.RequestToJoin(groupID, userID)
+	if err != nil {
 		status, message := joinRequestErrorResponse(err)
 		w.WriteHeader(status)
 		json.NewEncoder(w).Encode(CreateJoinRequestResponse{
