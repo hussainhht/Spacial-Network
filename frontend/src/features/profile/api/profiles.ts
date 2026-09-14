@@ -4,8 +4,7 @@ import type {
   Profile,
   ProfileUserSummary,
 } from "../types/profile";
-
-const API_BASE_URL = "http://localhost:8080/api";
+import { getApiUrl } from "@/lib/api";
 
 interface ApiProfile {
   id: number;
@@ -129,7 +128,7 @@ function toFollowRequest(request: ApiFollowRequest): FollowRequest {
 }
 
 export async function getProfileByUsername(username: string): Promise<Profile> {
-  const response = await fetch(`${API_BASE_URL}/profiles/${username}`, {
+  const response = await fetch(getApiUrl(`/profiles/${username}`), {
     method: "GET",
     credentials: "include",
   });
@@ -144,7 +143,7 @@ export async function getProfileByUsername(username: string): Promise<Profile> {
 }
 
 export async function followUser(username: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/profiles/${username}/follow`, {
+  const response = await fetch(getApiUrl(`/profiles/${username}/follow`), {
     method: "POST",
     credentials: "include",
   });
@@ -157,7 +156,7 @@ export async function followUser(username: string): Promise<void> {
 }
 
 export async function unfollowUser(username: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/profiles/${username}/follow`, {
+  const response = await fetch(getApiUrl(`/profiles/${username}/follow`), {
     method: "DELETE",
     credentials: "include",
   });
@@ -171,7 +170,7 @@ export async function unfollowUser(username: string): Promise<void> {
 
 export async function getFollowStatus(username: string): Promise<FollowStatus> {
   const response = await fetch(
-    `${API_BASE_URL}/profiles/${username}/follow-status`,
+    getApiUrl(`/profiles/${username}/follow-status`),
     {
       method: "GET",
       credentials: "include",
@@ -194,7 +193,7 @@ export async function getFollowers(
   username: string,
 ): Promise<ProfileUserSummary[]> {
   const response = await fetch(
-    `${API_BASE_URL}/profiles/${username}/followers`,
+    getApiUrl(`/profiles/${username}/followers`),
     {
       method: "GET",
       credentials: "include",
@@ -214,7 +213,7 @@ export async function getFollowing(
   username: string,
 ): Promise<ProfileUserSummary[]> {
   const response = await fetch(
-    `${API_BASE_URL}/profiles/${username}/following`,
+    getApiUrl(`/profiles/${username}/following`),
     {
       method: "GET",
       credentials: "include",
@@ -233,7 +232,7 @@ export async function getFollowing(
 export async function updateMyProfilePrivacy(
   isPrivate: boolean,
 ): Promise<boolean> {
-  const response = await fetch(`${API_BASE_URL}/users/me/privacy`, {
+  const response = await fetch(getApiUrl("/users/me/privacy"), {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
@@ -261,7 +260,7 @@ export async function updateMyProfileDetails(
     return trimmed === "" ? null : trimmed;
   };
 
-  const response = await fetch(`${API_BASE_URL}/users/me/profile`, {
+  const response = await fetch(getApiUrl("/users/me/profile"), {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
@@ -286,7 +285,7 @@ export async function updateMyProfileDetails(
 }
 
 export async function getMyProfile(): Promise<Profile> {
-  const response = await fetch(`${API_BASE_URL}/users/me`, {
+  const response = await fetch(getApiUrl("/users/me"), {
     method: "GET",
     credentials: "include",
   });
@@ -301,7 +300,7 @@ export async function getMyProfile(): Promise<Profile> {
 }
 
 export async function getPendingFollowRequests(): Promise<FollowRequest[]> {
-  const response = await fetch(`${API_BASE_URL}/follow-requests`, {
+  const response = await fetch(getApiUrl("/follow-requests"), {
     method: "GET",
     credentials: "include",
   });
@@ -317,7 +316,7 @@ export async function getPendingFollowRequests(): Promise<FollowRequest[]> {
 
 export async function acceptFollowRequest(requestID: number): Promise<void> {
   const response = await fetch(
-    `${API_BASE_URL}/follow-requests/${requestID}/accept`,
+    getApiUrl(`/follow-requests/${requestID}/accept`),
     {
       method: "POST",
       credentials: "include",
@@ -333,7 +332,7 @@ export async function acceptFollowRequest(requestID: number): Promise<void> {
 
 export async function declineFollowRequest(requestID: number): Promise<void> {
   const response = await fetch(
-    `${API_BASE_URL}/follow-requests/${requestID}/decline`,
+    getApiUrl(`/follow-requests/${requestID}/decline`),
     {
       method: "POST",
       credentials: "include",
