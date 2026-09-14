@@ -33,4 +33,14 @@ type post struct {
 	GroupID    sql.NullInt64  `db:"group_id"`
 	Created_At time.Time      `db:"created_at"`
 	Updated_At time.Time      `db:"updated_at"`
+	Media      []postMedia
+}
+
+type postMedia struct {
+	ID        int
+	PostID    int
+	FilePath  string
+	MediaType string
+	SortOrder int
+	CreatedAt time.Time
 }

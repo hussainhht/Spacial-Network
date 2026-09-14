@@ -99,6 +99,41 @@ func newPostRequest(t *testing.T, userID int, title, content, visibility string,
 	return req
 }
 
+type mediaFixture struct {
+	name string
+	data []byte
+}
+
+func newMultiMediaPostRequest(t *testing.T, userID int, attachments []mediaFixture) *http.Request {
+	t.Helper()
+	var buf bytes.Buffer
+	w := multipart.NewWriter(&buf)
+	if err := w.WriteField("title", "Media post"); err != nil {
+		t.Fatal(err)
+	}
+	if err := w.WriteField("content", "Ordered attachments"); err != nil {
+		t.Fatal(err)
+	}
+	if err := w.WriteField("visibility", posts.VisibilityPublic); err != nil {
+		t.Fatal(err)
+	}
+	for _, attachment := range attachments {
+		part, err := w.CreateFormFile("media", attachment.name)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := part.Write(attachment.data); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := w.Close(); err != nil {
+		t.Fatal(err)
+	}
+	req := httptest.NewRequest(http.MethodPost, "/api/posts", &buf)
+	req.Header.Set("Content-Type", w.FormDataContentType())
+	return req.WithContext(requestctx.WithUserID(req.Context(), userID))
+}
+
 func createPost(t *testing.T, f fixture, userID int, title, content, visibility string, viewerIDs []int) posts.PostResponse {
 	t.Helper()
 	req := newPostRequest(t, userID, title, content, visibility, viewerIDs, "", nil)
@@ -133,6 +168,88 @@ func TestCreatePost_FollowersVisibility_StoresCorrectPrivacy(t *testing.T) {
 	resp := createPost(t, f, author, "Hello", "Followers only", posts.VisibilityFollowers, nil)
 	if resp.Visibility != posts.VisibilityFollowers {
 		t.Errorf("visibility = %q, want %q", resp.Visibility, posts.VisibilityFollowers)
+	}
+}
+
+func TestCreatePost_MultipleMediaPersistsAndReturnsInOrder(t *testing.T) {
+	f := setup(t)
+	author := f.newUser(t, "mediaauthor")
+	jpeg := []byte{0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 'J', 'F', 'I', 'F', 0x00, 0x01}
+	png := []byte{0x89, 'P', 'N', 'G', 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00}
+	gif := []byte("GIF89a\x00\x00\x00\x00\x00\x00")
+
+	req := newMultiMediaPostRequest(t, author, []mediaFixture{
+		{name: "first.jpg", data: jpeg},
+		{name: "second.gif", data: gif},
+		{name: "third.png", data: png},
+	})
+	rr := httptest.NewRecorder()
+	f.postsHandler.NewPostHandler(rr, req)
+	if rr.Code != http.StatusCreated {
+		t.Fatalf("status = %d; body=%s", rr.Code, rr.Body.String())
+	}
+
+	var created posts.PostResponse
+	if err := json.Unmarshal(rr.Body.Bytes(), &created); err != nil {
+		t.Fatal(err)
+	}
+	if len(created.Media) != 3 {
+		t.Fatalf("created media count = %d, want 3", len(created.Media))
+	}
+	for i, item := range created.Media {
+		if item.Order != i {
+			t.Errorf("media[%d].order = %d", i, item.Order)
+		}
+	}
+	if created.Media[1].Type != "gif" {
+		t.Errorf("second media type = %q, want gif", created.Media[1].Type)
+	}
+	if created.ImageURL != created.Media[0].URL {
+		t.Errorf("legacy image_url must mirror first media item")
+	}
+
+	var count int
+	if err := f.db.QueryRow(`SELECT COUNT(*) FROM post_media WHERE post_id = ?`, created.ID).Scan(&count); err != nil {
+		t.Fatal(err)
+	}
+	if count != 3 {
+		t.Errorf("persisted media count = %d, want 3", count)
+	}
+
+	getReq := httptest.NewRequest(http.MethodGet, "/api/posts/1", nil)
+	getReq.SetPathValue("id", strconv.Itoa(created.ID))
+	getReq = getReq.WithContext(requestctx.WithUserID(getReq.Context(), author))
+	getRR := httptest.NewRecorder()
+	f.postsHandler.GetPostByIDHandler(getRR, getReq)
+	var fetched posts.PostResponse
+	if err := json.Unmarshal(getRR.Body.Bytes(), &fetched); err != nil {
+		t.Fatal(err)
+	}
+	if len(fetched.Media) != 3 || fetched.Media[1].Type != "gif" {
+		t.Errorf("GET media = %#v", fetched.Media)
+	}
+
+	_, feed := listFeed(t, f, author, "")
+	if len(feed) != 1 || len(feed[0].Media) != 3 {
+		t.Errorf("feed did not return all media: %#v", feed)
+	}
+}
+
+func TestCreatePost_InvalidMediaRejectsWholePost(t *testing.T) {
+	f := setup(t)
+	author := f.newUser(t, "invalidmedia")
+	req := newMultiMediaPostRequest(t, author, []mediaFixture{{name: "fake.png", data: []byte("not an image")}})
+	rr := httptest.NewRecorder()
+	f.postsHandler.NewPostHandler(rr, req)
+	if rr.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want 400; body=%s", rr.Code, rr.Body.String())
+	}
+	var count int
+	if err := f.db.QueryRow(`SELECT COUNT(*) FROM posts WHERE user_id = ?`, author).Scan(&count); err != nil {
+		t.Fatal(err)
+	}
+	if count != 0 {
+		t.Errorf("invalid upload created %d posts", count)
 	}
 }
 

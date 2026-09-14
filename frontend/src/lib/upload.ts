@@ -6,6 +6,7 @@
 // feedback before a request is ever sent.
 
 export const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
+export const MAX_POST_MEDIA = 4;
 export const ACCEPTED_IMAGE_TYPES = "image/jpeg,image/png,image/gif,image/webp";
 
 function bytesToHex(bytes: Uint8Array): string {

@@ -25,20 +25,15 @@ func NewService(repo *Repository, followersService *followers.Service, groupsSer
 // allowed-viewer list to whichever of viewerIDs are actually followers of
 // the post's owner.
 func (s *Service) CreatePost(post *post, viewerIDs []int) error {
-	if err := s.repo.CreatePost(post); err != nil {
-		return err
+	var allowed []int
+	if post.visibility == VisibilityCustom {
+		var err error
+		allowed, err = s.followers.FilterFollowerIDs(post.User_ID, viewerIDs)
+		if err != nil {
+			return err
+		}
 	}
-
-	if post.visibility != VisibilityCustom {
-		return nil
-	}
-
-	allowed, err := s.followers.FilterFollowerIDs(post.User_ID, viewerIDs)
-	if err != nil {
-		return err
-	}
-
-	return s.repo.SetAllowedViewerIDs(post.ID, allowed)
+	return s.repo.CreatePost(post, allowed)
 }
 
 func (s *Service) GetPostByID(id int) (*post, error) {
@@ -65,7 +60,7 @@ func (s *Service) CreateGroupPost(post *post, groupID int) error {
 	post.GroupID = sql.NullInt64{Int64: int64(groupID), Valid: true}
 	post.visibility = VisibilityPublic
 
-	return s.repo.CreatePost(post)
+	return s.repo.CreatePost(post, nil)
 }
 
 // ListGroupPosts returns up to limit posts belonging to groupID, newest

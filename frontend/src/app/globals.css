@@ -803,6 +803,8 @@ main:not(.chat-main):has(> form) form > p {
 }
 
 .post-visibility-picker {
+	min-width: 0;
+	margin: 0;
   padding: 0.9rem 1rem;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--space-border);

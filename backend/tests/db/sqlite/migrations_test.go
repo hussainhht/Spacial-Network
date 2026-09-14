@@ -42,6 +42,7 @@ func TestMigrateUp_AppliesAllMigrations(t *testing.T) {
 		"posts", "notifications", "group_invitations", "group_join_requests",
 		"comments", "followers", "events", "event_responses", "follow_requests",
 		"post_allowed_viewers",
+		"post_media",
 	}
 	for _, table := range wantTables {
 		var name string
@@ -63,14 +64,56 @@ func TestMigrateUp_IsIdempotent(t *testing.T) {
 	}
 }
 
+func TestPostMediaMigration_BackfillsLegacyImagePath(t *testing.T) {
+	db := openMemoryDB(t)
+	if err := sqlite.MigrateUp(db); err != nil {
+		t.Fatalf("MigrateUp: %v", err)
+	}
+	if err := sqlite.MigrateDown(db); err != nil {
+		t.Fatalf("remove post-media migration: %v", err)
+	}
+
+	userResult, err := db.Exec(`
+		INSERT INTO users (uuid, username, age, gender, first_name, last_name, email, password_hash)
+		VALUES ('media-user', 'mediauser', 25, 'male', 'Media', 'User', 'media@example.com', 'hash')
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	userID, _ := userResult.LastInsertId()
+	postResult, err := db.Exec(`
+		INSERT INTO posts (user_id, visibility, title, content, image_path)
+		VALUES (?, 'public', 'Legacy', 'Has an image', 'posts/legacy.gif')
+	`, userID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	postID, _ := postResult.LastInsertId()
+
+	if err := sqlite.MigrateUp(db); err != nil {
+		t.Fatalf("reapply post-media migration: %v", err)
+	}
+	var path, mediaType string
+	var order int
+	if err := db.QueryRow(`SELECT file_path, media_type, sort_order FROM post_media WHERE post_id = ?`, postID).Scan(&path, &mediaType, &order); err != nil {
+		t.Fatal(err)
+	}
+	if path != "posts/legacy.gif" || mediaType != "gif" || order != 0 {
+		t.Fatalf("backfill = (%q, %q, %d)", path, mediaType, order)
+	}
+}
+
 func TestGroupPrivacyMigration_BackfillsLegacyGroupsAsPublicAndPreservesMembership(t *testing.T) {
 	db := openMemoryDB(t)
 
 	if err := sqlite.MigrateUp(db); err != nil {
 		t.Fatalf("initial MigrateUp: %v", err)
 	}
-	// Roll back the privacy migration to reproduce a group that existed before
-	// the privacy column was introduced.
+	// Roll back the newer post-media migration, then the privacy migration, to
+	// reproduce a group that existed before the privacy column was introduced.
+	if err := sqlite.MigrateDown(db); err != nil {
+		t.Fatalf("MigrateDown post-media migration: %v", err)
+	}
 	if err := sqlite.MigrateDown(db); err != nil {
 		t.Fatalf("MigrateDown privacy migration: %v", err)
 	}
@@ -152,6 +195,9 @@ func TestGroupPrivacyMigration_BackfillsLegacyGroupsAsPublicAndPreservesMembersh
 		t.Fatal("expected privacy CHECK constraint to reject hidden")
 	}
 
+	if err := sqlite.MigrateDown(db); err != nil {
+		t.Fatalf("final MigrateDown post-media migration: %v", err)
+	}
 	if err := sqlite.MigrateDown(db); err != nil {
 		t.Fatalf("final MigrateDown privacy migration: %v", err)
 	}
