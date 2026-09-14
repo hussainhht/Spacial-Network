@@ -8,11 +8,13 @@ import (
 	"time"
 
 	"social/internal/requestctx"
+	"social/internal/upload"
 )
 
-func NewHandler(service *Service) *Handler {
+func NewHandler(service *Service, avatarStorage AvatarStorage) *Handler {
 	return &Handler{
-		service: service,
+		service:       service,
+		avatarStorage: avatarStorage,
 	}
 }
 
@@ -245,6 +247,126 @@ func (h *Handler) UpdateProfileDetailsHandler(w http.ResponseWriter, r *http.Req
 	json.NewEncoder(w).Encode(UpdateProfileDetailsResponse{
 		Success: true,
 		Message: "Profile details updated",
+		Profile: &profileResponse,
+	})
+}
+
+const maxUpdateAvatarRequestSize = 6 << 20 // 6 MiB, including multipart overhead
+
+// UpdateProfileAvatarHandler replaces or removes the current user's avatar.
+func (h *Handler) UpdateProfileAvatarHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	if r.Method != http.MethodPatch {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		json.NewEncoder(w).Encode(UpdateProfileAvatarResponse{
+			Success: false,
+			Message: "Method not allowed",
+		})
+		return
+	}
+
+	userID, ok := requestctx.UserID(r.Context())
+	if !ok {
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(UpdateProfileAvatarResponse{
+			Success: false,
+			Message: "Not logged in",
+		})
+		return
+	}
+
+	if h.avatarStorage == nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(UpdateProfileAvatarResponse{
+			Success: false,
+			Message: "Avatar storage is not configured",
+		})
+		return
+	}
+
+	r.Body = http.MaxBytesReader(w, r.Body, maxUpdateAvatarRequestSize)
+	if err := r.ParseMultipartForm(maxUpdateAvatarRequestSize); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(UpdateProfileAvatarResponse{
+			Success: false,
+			Message: "Invalid request payload or body",
+		})
+		return
+	}
+
+	var nextPhotoPath string
+	var newSavedPath string
+
+	file, header, fileErr := r.FormFile("profilePhoto")
+	if fileErr != nil && !errors.Is(fileErr, http.ErrMissingFile) {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(UpdateProfileAvatarResponse{
+			Success: false,
+			Message: "Invalid profile photo upload",
+		})
+		return
+	}
+
+	if fileErr == nil {
+		saved, err := h.avatarStorage.Save(file, header)
+		file.Close()
+		if err != nil {
+			status := http.StatusBadRequest
+			if !errors.Is(err, upload.ErrInvalidFileType) && !errors.Is(err, upload.ErrFileTooLarge) {
+				status = http.StatusInternalServerError
+			}
+			w.WriteHeader(status)
+			json.NewEncoder(w).Encode(UpdateProfileAvatarResponse{
+				Success: false,
+				Message: err.Error(),
+			})
+			return
+		}
+		newSavedPath = saved
+		nextPhotoPath = saved
+	} else if r.FormValue("remove_photo") != "true" {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(UpdateProfileAvatarResponse{
+			Success: false,
+			Message: "profilePhoto or remove_photo is required",
+		})
+		return
+	}
+
+	profile, oldPhoto, err := h.service.UpdateProfilePhoto(userID, nextPhotoPath)
+	if err != nil {
+		if newSavedPath != "" {
+			h.avatarStorage.Remove(newSavedPath)
+		}
+
+		if errors.Is(err, sql.ErrNoRows) {
+			w.WriteHeader(http.StatusNotFound)
+			json.NewEncoder(w).Encode(UpdateProfileAvatarResponse{
+				Success: false,
+				Message: "User not found",
+			})
+			return
+		}
+
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(UpdateProfileAvatarResponse{
+			Success: false,
+			Message: "Failed to update profile photo",
+		})
+		return
+	}
+
+	if oldPhoto != "" && oldPhoto != nextPhotoPath {
+		h.avatarStorage.Remove(oldPhoto)
+	}
+
+	profileResponse := toProfileResponse(profile, true, true)
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(UpdateProfileAvatarResponse{
+		Success: true,
+		Message: "Profile photo updated",
 		Profile: &profileResponse,
 	})
 }

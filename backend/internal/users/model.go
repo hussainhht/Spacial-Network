@@ -86,6 +86,12 @@ type UpdateProfileDetailsResponse struct {
 	Profile *ProfileResponse `json:"profile,omitempty"`
 }
 
+type UpdateProfileAvatarResponse struct {
+	Success bool             `json:"success"`
+	Message string           `json:"message,omitempty"`
+	Profile *ProfileResponse `json:"profile,omitempty"`
+}
+
 type UpdateProfilePrivacyResponse struct {
 	Success   bool   `json:"success"`
 	Message   string `json:"message,omitempty"`
@@ -93,7 +99,8 @@ type UpdateProfilePrivacyResponse struct {
 }
 
 type Handler struct {
-	service *Service
+	service       *Service
+	avatarStorage AvatarStorage
 }
 
 // Summary is a lightweight, publicly-safe view of a user for embedding in

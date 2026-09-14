@@ -71,6 +71,11 @@ export interface UpdateProfileDetailsInput {
   dateOfBirth: string;
 }
 
+export interface UpdateProfileAvatarInput {
+  profilePhoto?: File | null;
+  removePhoto?: boolean;
+}
+
 interface ApiFollowRequest {
   id: number;
   requester: ApiUserSummary;
@@ -279,6 +284,34 @@ export async function updateMyProfileDetails(
 
   if (!response.ok || !data.success || !data.profile) {
     throw new Error(data.message ?? "Failed to update profile details");
+  }
+
+  return toProfile(data.profile);
+}
+
+export async function updateMyProfileAvatar(
+  input: UpdateProfileAvatarInput,
+): Promise<Profile> {
+  const formData = new FormData();
+
+  if (input.profilePhoto) {
+    formData.append("profilePhoto", input.profilePhoto);
+  } else if (input.removePhoto) {
+    formData.append("remove_photo", "true");
+  } else {
+    throw new Error("Choose a profile photo or remove the current one");
+  }
+
+  const response = await fetch(`${API_BASE_URL}/users/me/avatar`, {
+    method: "PATCH",
+    credentials: "include",
+    body: formData,
+  });
+
+  const data: ProfileResponse = await response.json();
+
+  if (!response.ok || !data.success || !data.profile) {
+    throw new Error(data.message ?? "Failed to update profile photo");
   }
 
   return toProfile(data.profile);
