@@ -1,20 +1,25 @@
 /* Shared application chrome and scrollable page content. */
 .shell {
-  --sidebar-width: 244px;
+  --app-navbar-height: 64px;
+  --orbital-nav-space: clamp(212px, 20vw, 300px);
   position: relative;
   height: 100dvh;
+  min-height: 100svh;
+  display: grid;
+  grid-template-columns: var(--orbital-nav-space) minmax(0, 1fr);
+  grid-template-rows: var(--app-navbar-height) minmax(0, 1fr);
   overflow: hidden;
 }
 .shell a:focus-visible,
 .shell button:focus-visible {
-  outline: 2px solid var(--space-accent-violet);
+  outline: 2px solid var(--nav-orbit-blue);
   outline-offset: 4px;
 }
 .skipLink {
   position: fixed;
   top: 12px;
   left: 12px;
-  z-index: 10;
+  z-index: 60;
   transform: translateY(-160%);
   padding: 12px;
   background: var(--space-bg-soft);
@@ -23,213 +28,29 @@
 .skipLink:focus {
   transform: none;
 }
-.sidebar {
-  position: fixed;
-  inset: 0 auto 0 0;
-  z-index: 3;
-  display: flex;
-  flex-direction: column;
-  width: var(--sidebar-width);
-  padding: 24px 16px 16px;
-  overflow-y: auto;
-  border-right: 1px solid var(--space-border);
-  background: linear-gradient(
-    165deg,
-    rgba(17, 20, 45, 0.96),
-    rgba(6, 9, 24, 0.98)
-  );
-  backdrop-filter: blur(24px);
-  color: var(--space-text-body);
-  font:
-    14px/1.5 ui-sans-serif,
-    system-ui,
-    sans-serif;
-  transform: translateX(0);
-  transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
-  will-change: transform;
-}
-.sidebarCollapsed {
-  transform: translateX(-100%);
-  pointer-events: none;
-}
-.shell:not([data-ready="true"]) .sidebar {
-  transition: none !important;
-}
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: var(--space-text-heading);
-  text-decoration: none;
-  font-weight: 650;
-  letter-spacing: -0.3px;
-}
-.brandIcon,
-.avatar {
-  display: inline-flex;
-  flex-shrink: 0;
-  align-items: center;
-  justify-content: center;
-}
-.brandIcon {
-  width: 40px;
-  height: 40px;
-  border: 1px solid rgba(139, 92, 246, 0.4);
-  border-radius: 13px;
-  color: #ddd6fe;
-  background: linear-gradient(
-    140deg,
-    rgba(139, 92, 246, 0.4),
-    rgba(99, 102, 241, 0.08)
-  );
-}
-.brandIcon svg {
-  width: 26px;
-  height: 26px;
-}
-.brandCaption {
-  display: block;
-  margin-top: 2px;
-  color: var(--space-text-muted);
-  font-size: 10px;
-  font-weight: 400;
-  letter-spacing: 0.2px;
-}
-.navSection {
-  margin-top: 24px;
-}
-.navSection > p,
-.eyebrow {
-  color: var(--space-text-muted);
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 1.8px;
-}
-.navSection > p {
-  margin: 0 14px 15px;
-}
-.navSection nav {
-  display: grid;
-  gap: 8px;
-}
-.navLink,
-.logout {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  min-height: 48px;
-  padding: 12px 14px;
-  border: 1px solid transparent;
-  border-radius: 10px;
-  color: var(--space-text-muted);
-  text-decoration: none;
-  transition:
-    background 0.15s,
-    color 0.15s;
-}
-.navLink:hover,
-.logout:hover:not(:disabled) {
-  background: rgba(148, 163, 184, 0.08);
-  color: var(--space-text-heading);
-}
-.navLink[aria-current="page"] {
-  border-color: rgba(139, 92, 246, 0.28);
-  background: linear-gradient(
-    100deg,
-    rgba(139, 92, 246, 0.23),
-    rgba(99, 102, 241, 0.08)
-  );
-  color: #e5deff;
-  box-shadow: 0 3px 18px rgba(99, 102, 241, 0.06);
-}
-.navLink[aria-current="page"]::after {
-  content: "";
-  width: 5px;
-  height: 5px;
-  margin-left: auto;
-  border-radius: 50%;
-  background: #b7a1ff;
-}
-.developmentNote {
-  margin-top: auto;
-  padding: 16px 12px 14px;
-  color: var(--space-text-muted);
-  font-size: 12px;
-  line-height: 1.8;
-}
-.developmentNote .eyebrow {
-  color: #b3a5da;
-  font-size: 9px;
-}
-.developmentNote p {
-  color: var(--space-text-label);
-  margin: 8px 0;
-  font-size: 13px;
-}
-.account {
-  padding-top: 20px;
-  border-top: 1px solid var(--space-border);
-}
-.accountInfo {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 0 8px 12px;
-}
-.avatar {
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  border: 1px solid rgba(167, 139, 250, 0.3);
-  background: linear-gradient(130deg, #30284e, #172442);
-  color: #cfc5ed;
-}
-.accountInfo strong {
-  display: block;
-  font-size: 13px;
-  font-weight: 500;
-}
-.accountInfo small {
-  display: block;
-  color: var(--space-text-muted);
-  font-size: 11px;
-}
-.logout {
-  width: 100%;
-  font: inherit;
-  background: transparent;
-  cursor: pointer;
-}
-.logout:disabled {
-  cursor: wait;
-  opacity: 0.6;
-}
-.logoutError {
-  font-size: 12px;
-  color: var(--space-error-text);
-}
-.mainArea {
-  --app-navbar-height: 64px;
-  position: relative;
-  margin-left: var(--sidebar-width);
-  height: 100%;
+.topbar {
+  grid-column: 1 / -1;
+  grid-row: 1;
+  position: sticky;
+  top: 0;
+  z-index: 50;
   min-width: 0;
-  display: flex;
-  flex-direction: column;
-  transition: margin-left 300ms cubic-bezier(0.4, 0, 0.2, 1);
-  will-change: margin-left;
+  height: var(--app-navbar-height);
 }
-/* Collapsing the existing sidebar gives the content its column back. */
-.mainAreaFull {
-  margin-left: 0;
-  --sidebar-width: 0px;
-}
-.shell:not([data-ready="true"]) .mainArea {
-  transition: none !important;
+.sidebar {
+  grid-column: 1;
+  grid-row: 2;
+  position: sticky;
+  top: var(--app-navbar-height);
+  align-self: start;
+  min-width: 0;
+  height: calc(100svh - var(--app-navbar-height));
+  overflow: hidden;
 }
 .routeContent {
+  grid-column: 2;
+  grid-row: 2;
   position: relative;
-  flex: 1;
   min-height: 0;
   min-width: 0;
   overflow-y: auto;
@@ -243,52 +64,31 @@
   min-height: 100%;
 }
 @media (max-width: 760px) {
-  .mainArea {
-    --app-navbar-height: 104px;
-  }
-}
-@media (max-width: 760px) {
   .shell {
-    --sidebar-width: 72px;
+    --app-navbar-height: 104px;
+    grid-template-columns: minmax(0, 1fr);
   }
   .sidebar {
-    padding: 24px 10px 14px;
+    display: contents;
   }
-  .sidebarLabel,
-  .developmentNote {
-    display: none;
-  }
-  .brand {
-    justify-content: center;
-  }
-  .navSection {
-    margin-top: 36px;
-  }
-  .navLink,
-  .logout {
-    justify-content: center;
-    padding: 12px;
-  }
-  .navLink[aria-current="page"]::after {
-    display: none;
-  }
-  .account {
-    margin-top: auto;
-  }
-  .accountInfo {
-    justify-content: center;
-    padding-inline: 0;
-  }
-  .logoutError {
-    overflow-wrap: anywhere;
-    font-size: 10px;
+  .routeContent {
+    grid-column: 1;
+    /* Reserve space for the fixed bottom nav inside the one scroll pane the
+       shell has, so nothing renders underneath it and no second scrollbar
+       is introduced. */
+    padding-bottom: calc(var(--nav-bottom-height) + 24px + env(safe-area-inset-bottom, 0px));
   }
 }
-@media (prefers-reduced-motion: reduce) {
-  .navLink,
-  .logout,
-  .sidebar,
-  .mainArea {
-    transition: none;
+/* Short landscape screens use the dock too, keeping all links reachable. */
+@media (max-height: 430px) {
+  .shell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .sidebar {
+    display: contents;
+  }
+  .routeContent {
+    grid-column: 1;
+    padding-bottom: calc(var(--nav-bottom-height) + 24px + env(safe-area-inset-bottom, 0px));
   }
 }

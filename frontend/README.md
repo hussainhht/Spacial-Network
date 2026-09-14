@@ -20,7 +20,7 @@ The Go backend serves the existing API and WebSocket endpoints on `localhost:808
 - `src/providers`: the shared WebSocket connection.
 - `public/models/planets`: preserved optimized GLB assets.
 
-The root layout mounts SpaceBackground and WebSocketProvider. The main layout adds NotificationProvider, GroupStateSync and AppShell. AppShell retains GroupsSearchProvider and SidebarProvider. Models are not loaded by the running application.
+The root layout mounts SpaceBackground and WebSocketProvider. The main layout adds NotificationProvider, GroupStateSync and AppShell. AppShell retains GroupsSearchProvider and composes the full-width navbar, permanent desktop orbital navigation, responsive mobile dock, and route content. Models are not loaded by the running application.
 
 ## Validation
 
