@@ -1,12 +1,13 @@
 "use client";
 
+import SegmentedTabs from "@/components/SegmentedTabs";
 import type { FeedScope } from "@/features/posts/types/post";
 
-const FEEDS: { value: FeedScope; label: string }[] = [
+const FEEDS = [
   { value: "all", label: "All" },
   { value: "following", label: "Following" },
   { value: "friends", label: "Friends" },
-];
+] satisfies ReadonlyArray<{ value: FeedScope; label: string }>;
 
 interface FeedFilterProps {
   active: FeedScope;
@@ -15,22 +16,13 @@ interface FeedFilterProps {
 
 export default function FeedFilter({ active, onChange }: FeedFilterProps) {
   return (
-    <div className="feed-filter" role="tablist" aria-label="Feed filter">
-      {FEEDS.map((feed) => (
-        <button
-          key={feed.value}
-          type="button"
-          role="tab"
-          id={`feed-tab-${feed.value}`}
-          aria-selected={active === feed.value}
-          aria-controls="feed-tabpanel"
-          data-active={active === feed.value}
-          className="feed-filter-tab"
-          onClick={() => onChange(feed.value)}
-        >
-          {feed.label}
-        </button>
-      ))}
-    </div>
+    <SegmentedTabs
+      value={active}
+      options={FEEDS}
+      onChange={onChange}
+      ariaLabel="Feed filter"
+      idPrefix="feed"
+      panelId="feed-tabpanel"
+    />
   );
 }

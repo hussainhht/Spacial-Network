@@ -58,9 +58,7 @@
 }
 .page .create { gap: 8px; padding-inline: 24px; flex-shrink: 0; border-radius: 12px; }
 .page :global(.group-button) { min-height: 44px; font-family: inherit; font-size: 0.875rem; font-weight: 600; line-height: 1.4; transition: background-color 180ms, border-color 180ms; }
-.page :global(.group-tabs) { gap: 24px; margin: 24px 0; overflow: visible; }
-.page :global(.group-tab) { min-height: 48px; padding: 12px 4px; font-family: inherit; font-size: 0.9375rem; }
-.page :global(.group-tab)[data-active="true"] { color: var(--planet-accent-hover); }
+.filters { margin: 24px 0; }
 .page :focus-visible { outline: 2px solid var(--planet-focus-ring); outline-offset: 4px; }
 .container > :global(.group-panel) { margin-bottom: 24px; }
 
