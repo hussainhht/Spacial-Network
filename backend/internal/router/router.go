@@ -178,6 +178,10 @@ func NewRouter(db *sql.DB, cfg config.Config) (http.Handler, error) {
 		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Groups.CreateGroupHandler))),
 	)
 	apiMux.Handle(
+		"GET /groups/recommendations",
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Groups.GetRecommendationsHandler))),
+	)
+	apiMux.Handle(
 		"GET /groups/mine",
 		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Groups.GetMyGroupsHandler))),
 	)

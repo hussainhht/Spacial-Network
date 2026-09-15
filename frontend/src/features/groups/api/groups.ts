@@ -29,6 +29,17 @@ interface Envelope {
   message?: string;
 }
 
+export interface GroupRecommendation {
+  id: number;
+  name: string;
+  slug: string;
+  avatarUrl: string;
+  memberCount: number;
+  mutualMemberCount: number;
+  mutualMemberPreview: string[];
+  requiresApproval: boolean;
+}
+
 // Groups uses {success,message}, unlike the shared client's {error} envelope.
 // Keep status and the server's domain message, including conflicts and authorization.
 async function groupRequest<T extends Envelope>(
@@ -120,6 +131,24 @@ export async function getGroups(
     `/groups?${groupsQuery(limit, offset, search)}`,
   );
   return (data.groups ?? []).map(toGroup);
+}
+
+export async function getGroupRecommendations(
+  limit = 3,
+): Promise<GroupRecommendation[]> {
+  const safeLimit = Math.min(3, Math.max(1, Math.trunc(limit)));
+  const response = await fetch(
+    `${getApiBaseUrl()}/groups/recommendations?limit=${safeLimit}`,
+    { credentials: "include", cache: "no-store" },
+  );
+  const data = (await response.json()) as GroupRecommendation[] | { error?: string };
+  if (!response.ok || !Array.isArray(data)) {
+    throw new ApiError(
+      Array.isArray(data) ? "Unable to load group suggestions" : data.error ?? "Unable to load group suggestions",
+      response.status,
+    );
+  }
+  return data;
 }
 
 // Groups the current session's user actually belongs to (creator or

@@ -37,6 +37,17 @@ type GroupMember struct {
 	JoinedAt time.Time `db:"joined_at"`
 }
 
+type GroupRecommendation struct {
+	ID                  int      `json:"id"`
+	Name                string   `json:"name"`
+	Slug                string   `json:"slug"`
+	AvatarURL           string   `json:"avatarUrl"`
+	MemberCount         int      `json:"memberCount"`
+	MutualMemberCount   int      `json:"mutualMemberCount"`
+	MutualMemberPreview []string `json:"mutualMemberPreview"`
+	RequiresApproval    bool     `json:"requiresApproval"`
+}
+
 // Status values shared by group_invitations and group_join_requests.
 const (
 	StatusPending  = "pending"

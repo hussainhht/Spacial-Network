@@ -56,28 +56,27 @@ func (s *Service) CreateGroup(creatorID int, title, description, photoPath strin
 	return s.repo.InsertGroup(creatorID, title, description, photoPath, privacy)
 }
 
-// GetAllGroups returns a page of groups, most recently created first.
-// search, when non-empty, filters to groups whose title or description
-// contains it (case-insensitive).
 func (s *Service) GetAllGroups(limit, offset, userID int, search string) ([]Group, error) {
 	return s.repo.GetAllGroups(limit, offset, userID, search)
 }
 
-// GetUserGroups returns a page of groups the given user actually belongs to
-// (creator or member), most recently created first. search, when non-empty,
-// filters to groups whose title or description contains it
-// (case-insensitive).
+func (s *Service) GetRecommendations(userID, limit int) ([]GroupRecommendation, error) {
+	if limit < 1 {
+		limit = 3
+	} else if limit > 3 {
+		limit = 3
+	}
+	return s.repo.GetRecommendations(userID, limit)
+}
+
 func (s *Service) GetUserGroups(userID, limit, offset int, search string) ([]Group, error) {
 	return s.repo.GetGroupsForUser(userID, limit, offset, search)
 }
 
-// GetGroupByID returns the group with the given ID.
 func (s *Service) GetGroupByID(id int) (*Group, error) {
 	return s.repo.GetGroupByID(id)
 }
 
-// GetGroupForUser returns public group metadata to any authenticated user,
-// while hiding private groups from everyone except their creator or members.
 func (s *Service) GetGroupForUser(groupID, userID int) (*Group, error) {
 	group, err := s.repo.GetGroupByID(groupID)
 	if err != nil {
@@ -106,8 +105,6 @@ func (s *Service) ensureCanViewGroup(group *Group, userID int) error {
 		}
 	}
 
-	// Use the existing hidden-resource convention so private group existence is
-	// not disclosed to unrelated users.
 	return ErrGroupNotFound
 }
 

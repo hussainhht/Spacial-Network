@@ -239,6 +239,72 @@ func TestGroupDiscovery_ReturnsOnlyPublicGroups(t *testing.T) {
 	}
 }
 
+func TestGroupRecommendations_FilterAndRankEligiblePublicGroups(t *testing.T) {
+	f := setup(t)
+	viewer := f.newUser(t, "recommendviewer")
+	friend := f.newUser(t, "orbitfriend")
+	creator := f.newUser(t, "recommendcreator")
+
+	mutualID, err := f.groupsSvc.CreateGroup(creator, "Orbital Dynamics", "", "groups/orbit.png", groups.GroupPrivacyPublic)
+	if err != nil {
+		t.Fatalf("create mutual group: %v", err)
+	}
+	if err := f.groupsSvc.AddMember(int(mutualID), friend); err != nil {
+		t.Fatalf("add mutual member: %v", err)
+	}
+	if _, err := followers.NewRepository(f.db).FollowUser(viewer, friend); err != nil {
+		t.Fatalf("follow friend: %v", err)
+	}
+
+	activeID, err := f.groupsSvc.CreateGroup(creator, "Active Explorers", "", "", groups.GroupPrivacyPublic)
+	if err != nil {
+		t.Fatalf("create active group: %v", err)
+	}
+	if _, err := f.db.Exec(`INSERT INTO posts (user_id, title, content, group_id) VALUES (?, 'Recent', 'Activity', ?)`, creator, activeID); err != nil {
+		t.Fatalf("create recent group post: %v", err)
+	}
+	inactiveID, err := f.groupsSvc.CreateGroup(creator, "Quiet Explorers", "", "", groups.GroupPrivacyPublic)
+	if err != nil {
+		t.Fatalf("create inactive group: %v", err)
+	}
+
+	joinedID, _ := f.groupsSvc.CreateGroup(creator, "Already Joined", "", "", groups.GroupPrivacyPublic)
+	if err := f.groupsSvc.AddMember(int(joinedID), viewer); err != nil {
+		t.Fatalf("join excluded group: %v", err)
+	}
+	pendingID, _ := f.groupsSvc.CreateGroup(creator, "Already Requested", "", "", groups.GroupPrivacyPublic)
+	if err := f.groupsSvc.RequestToJoin(int(pendingID), viewer); err != nil {
+		t.Fatalf("request excluded group: %v", err)
+	}
+	privateID, _ := f.groupsSvc.CreateGroup(creator, "Secret Orbit", "", "", groups.GroupPrivacyPrivate)
+
+	recommendations, err := f.groupsSvc.GetRecommendations(viewer, 99)
+	if err != nil {
+		t.Fatalf("GetRecommendations: %v", err)
+	}
+	if len(recommendations) != 3 {
+		t.Fatalf("recommendation count = %d, want 3", len(recommendations))
+	}
+	if recommendations[0].ID != int(mutualID) {
+		t.Fatalf("first recommendation = %d, want mutual group %d", recommendations[0].ID, mutualID)
+	}
+	if recommendations[1].ID != int(activeID) || recommendations[2].ID != int(inactiveID) {
+		t.Fatalf("fallback order = [%d, %d], want active then inactive [%d, %d]", recommendations[1].ID, recommendations[2].ID, activeID, inactiveID)
+	}
+	first := recommendations[0]
+	if first.MutualMemberCount != 1 || len(first.MutualMemberPreview) != 1 || first.MutualMemberPreview[0] != "orbitfriend" {
+		t.Fatalf("mutual context = count %d preview %#v", first.MutualMemberCount, first.MutualMemberPreview)
+	}
+	if first.Slug != "orbital-dynamics" || first.AvatarURL != "/uploads/groups/orbit.png" || !first.RequiresApproval {
+		t.Fatalf("recommendation contract = %#v", first)
+	}
+	for _, recommendation := range recommendations {
+		if recommendation.ID == int(joinedID) || recommendation.ID == int(pendingID) || recommendation.ID == int(privateID) {
+			t.Fatalf("ineligible group %d appeared in recommendations", recommendation.ID)
+		}
+	}
+}
+
 func TestPrivateGroup_IsHiddenAndRejectsJoinRequests(t *testing.T) {
 	f := setup(t)
 	creator := f.newUser(t, "privatecreator")
