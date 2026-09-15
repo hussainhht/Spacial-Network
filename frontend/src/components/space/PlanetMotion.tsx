@@ -21,6 +21,7 @@ interface PlanetEntranceProps {
   duration?: number;
   offscreenRadius?: number;
   edgePadding?: number;
+  enabled?: boolean;
 }
 
 /**
@@ -33,6 +34,7 @@ export function PlanetEntrance({
   duration = 2.1,
   offscreenRadius = 1,
   edgePadding = 0.16,
+  enabled = true,
 }: PlanetEntranceProps) {
   const root = useRef<Group>(null);
   const elapsed = useRef(0);
@@ -43,7 +45,7 @@ export function PlanetEntrance({
 
   useFrame((_, delta) => {
     const group = root.current;
-    if (!group || reducedMotion || elapsed.current >= duration) return;
+    if (!group || !enabled || reducedMotion || elapsed.current >= duration) return;
 
     elapsed.current = Math.min(elapsed.current + boundedDelta(delta), duration);
     const progress = elapsed.current / duration;
@@ -59,7 +61,7 @@ export function PlanetEntrance({
   return (
     <group
       ref={root}
-      position={reducedMotion ? [0, 0, 0] : [startX, 0, 0]}
+      position={!enabled || reducedMotion ? [0, 0, 0] : [startX, 0, 0]}
     >
       {children}
     </group>

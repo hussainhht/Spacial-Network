@@ -6,7 +6,6 @@ import { avatarUrl, updateGroup } from "../../api/groups";
 import { useGroupAction } from "../../hooks/useGroupAction";
 import type { Group } from "../../types/group";
 import GroupCard from "../GroupCard";
-import { JoinRequestsPanel, MembersPanel } from "../GroupPanels";
 import GroupDangerZone from "./GroupDangerZone";
 import styles from "./GroupSettings.module.css";
 
@@ -14,7 +13,7 @@ const TITLE_MIN_LENGTH = 3;
 const TITLE_MAX_LENGTH = 100;
 const DESCRIPTION_MAX_LENGTH = 500;
 
-type SettingsSection = "general" | "members" | "danger";
+type SettingsSection = "general" | "danger";
 
 export default function EditGroupForm({ group }: { group: Group }) {
   const { busy, error, run } = useGroupAction(`edit-group:${group.id}`, group.id);
@@ -72,13 +71,11 @@ export default function EditGroupForm({ group }: { group: Group }) {
     <div className={styles.workspace}>
       <nav className={styles.nav} aria-label="Group settings sections">
         <button type="button" onClick={() => setSection("general")} aria-current={section === "general" ? "page" : undefined}><AppIcon name="settings" width={17} height={17} /> General</button>
-        <button type="button" onClick={() => setSection("members")} aria-current={section === "members" ? "page" : undefined}><AppIcon name="groups" width={17} height={17} /> Members</button>
         <button type="button" onClick={() => setSection("danger")} aria-current={section === "danger" ? "page" : undefined}><AppIcon name="warning" width={17} height={17} /> Danger Zone</button>
       </nav>
 
       <div className={styles.content}>
         {section === "general" && <>
-          {group.privacy === "public" && <JoinRequestsPanel groupId={group.id} compact />}
           <form onSubmit={handleSubmit} className={styles.form}>
       <div className={styles.grid}>
         <section id="group-settings-general" className={`group-panel ${styles.information}`} aria-labelledby="edit-group-heading">
@@ -136,7 +133,6 @@ export default function EditGroupForm({ group }: { group: Group }) {
       </footer>
           </form>
         </>}
-        {section === "members" && <MembersPanel groupId={group.id} creatorId={group.creatorId} />}
         {section === "danger" && <GroupDangerZone group={group} />}
       </div>
     </div>

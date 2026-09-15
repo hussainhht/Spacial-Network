@@ -16,6 +16,7 @@ import GroupHeaderCard from "./GroupHeaderCard";
 import GroupPosts from "./GroupPosts";
 import {
   GroupLoadError,
+  JoinRequestsPanel,
   MembersPanel,
   MembershipBadge,
   NonMemberActions,
@@ -195,10 +196,15 @@ function GroupDetails({ groupId }: { groupId: number }) {
               id="group-tabpanel-members"
               role="tabpanel"
               aria-labelledby="group-tab-members"
+              className="group-members-tab-content"
             >
+              {isCreator && group.data.privacy === "public" && (
+                <JoinRequestsPanel groupId={groupId} compact />
+              )}
               <MembersPanel
                 groupId={groupId}
                 creatorId={group.data.creatorId}
+                heading={isCreator ? "Current Members" : "Members"}
               />
             </div>
           )}

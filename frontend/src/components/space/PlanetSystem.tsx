@@ -54,10 +54,12 @@ export default function PlanetSystem({
   config,
   viewport,
   reducedMotion,
+  isInitialEntrance = false,
 }: {
   config: PlanetConfig;
   viewport: PlanetViewport;
   reducedMotion: boolean;
+  isInitialEntrance?: boolean;
 }) {
   const composition = useMemo(() => {
     const responsive = config.scene.responsive[viewport];
@@ -80,6 +82,7 @@ export default function PlanetSystem({
     <PlanetEntrance
       reducedMotion={reducedMotion}
       offscreenRadius={composition.offscreenRadius}
+      enabled={isInitialEntrance}
     >
       <PlanetIdleMotion
         reducedMotion={reducedMotion}

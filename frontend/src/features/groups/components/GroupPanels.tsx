@@ -74,9 +74,11 @@ export function MembershipBadge({
 export function MembersPanel({
   groupId,
   creatorId,
+  heading = "Members",
 }: {
   groupId: number;
   creatorId: number;
+  heading?: string;
 }) {
   const state = useGroupMembers(groupId);
   // Shares the same cached useMembership resource as other panels on this
@@ -98,7 +100,7 @@ export function MembersPanel({
     >
       <div className="group-section-heading">
         <h2 id="members-heading">
-          Members{state.data && ` · ${state.data.length}`}
+          {heading}{state.data && ` · ${state.data.length}`}
         </h2>
         <div className="group-members-header-actions">
           {state.loading && <span className="group-muted">Loading…</span>}
@@ -316,6 +318,11 @@ export function JoinRequestsPanel({
           </li>
         ))}
       </ul>
+      {!state.loading && !state.error && state.data?.length === 0 && (
+        <p className="group-join-requests-empty">
+          No pending join requests.
+        </p>
+      )}
     </section>
   );
 }
