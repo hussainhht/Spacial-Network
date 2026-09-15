@@ -265,7 +265,8 @@ main:not(.chat-main):has(> form) input[type="file"]::file-selector-button {
     border-color 0.2s ease;
 }
 
-main:not(.chat-main):has(> form) input[type="file"]::file-selector-button:hover {
+main:not(.chat-main):has(> form)
+  input[type="file"]::file-selector-button:hover {
   background: var(--planet-border);
   border-color: var(--planet-border-strong);
 }
@@ -810,8 +811,8 @@ main:not(.chat-main):has(> form) form > p {
 }
 
 .post-visibility-picker {
-	min-width: 0;
-	margin: 0;
+  min-width: 0;
+  margin: 0;
   padding: 0.9rem 1rem;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--space-border);
@@ -1421,37 +1422,28 @@ main:not(.chat-main):has(> form) form > p {
   background: var(--planet-accent-soft);
   font-size: 1.15rem;
 }
-/* Overview: About/Members | Composer+Feed | Events/Activity */
-.group-overview-grid {
+/* Overview: 3-column layout (About/Members | Feed | Events/Activity) */
+.group-overview-grid,
+.overviewGrid {
   display: grid;
   align-items: start;
-  gap: 1.5rem;
+  gap: 20px;
   grid-template-columns:
     minmax(220px, 0.8fr)
     minmax(0, 1.6fr)
     minmax(240px, 0.9fr);
-  grid-template-areas:
-    "about main events"
-    "members main activity";
 }
-.group-overview-about {
-  grid-area: about;
-}
-.group-overview-members {
-  grid-area: members;
-}
+
+.group-overview-column,
+.leftColumn,
+.centerColumn,
+.rightColumn,
 .group-overview-main {
-  grid-area: main;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
-  min-width: 0;
-}
-.group-overview-events {
-  grid-area: events;
-}
-.group-overview-activity {
-  grid-area: activity;
+  gap: 18px;
+  align-self: start;
 }
 .group-panel {
   padding: 1.4rem;
@@ -1655,24 +1647,47 @@ main:not(.chat-main):has(> form) form > p {
   outline-offset: 4px;
 }
 @media (max-width: 1100px) {
-  .group-overview-grid {
+  .group-overview-grid,
+  .overviewGrid {
     grid-template-columns: 1fr 1fr;
-    grid-template-areas:
-      "main main"
-      "about events"
-      "members activity";
+    gap: 18px;
+  }
+  .group-overview-center,
+  .centerColumn {
+    grid-column: 1 / -1;
+    order: 1;
+  }
+  .group-overview-left,
+  .leftColumn {
+    grid-column: 1;
+    order: 2;
+  }
+  .group-overview-right,
+  .rightColumn {
+    grid-column: 2;
+    order: 3;
   }
 }
 @media (max-width: 700px) {
-  .group-overview-grid {
+  .group-overview-grid,
+  .overviewGrid {
     grid-template-columns: 1fr;
-    grid-template-areas:
-      "main"
-      "about"
-      "members"
-      "events"
-      "activity";
-    gap: 1.25rem;
+    gap: 16px;
+  }
+  .group-overview-center,
+  .centerColumn {
+    grid-column: auto;
+    order: 1;
+  }
+  .group-overview-left,
+  .leftColumn {
+    grid-column: auto;
+    order: 2;
+  }
+  .group-overview-right,
+  .rightColumn {
+    grid-column: auto;
+    order: 3;
   }
   .group-header-card {
     flex-wrap: wrap;
@@ -2166,7 +2181,6 @@ main:not(.chat-main):has(> form) form > p {
   word-break: break-word;
   white-space: pre-wrap;
 }
-
 
 /* ================================================================== */
 /*  Create Group — single unified card                                */
