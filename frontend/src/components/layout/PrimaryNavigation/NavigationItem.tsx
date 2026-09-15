@@ -22,7 +22,6 @@ export default function NavigationItem({
       className={`${styles.link} ${item.emphasis ? styles.emphasis : ""} ${className ?? ""}`}
       aria-current={active ? "page" : undefined}
       aria-label={item.label}
-      title={item.label}
     >
       <span className={styles.node} aria-hidden="true">
         <AppIcon name={item.icon} />
