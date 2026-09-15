@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useGroupChat } from "../hooks/useGroupChat";
+import PostSharePreview from "@/features/interactions/components/PostSharePreview";
+import { parseSharedPost } from "@/features/interactions/utils/sharedPost";
 import { formatMessageDateTime, getDisplayName, getInitials } from "@/lib/utils";
 import { getBackendBaseUrl } from "@/lib/api";
 
@@ -184,9 +186,26 @@ export default function GroupChatPanel({ groupId, isMember }: GroupChatPanelProp
                         : "rounded-bl-xs bg-slate-800/90 text-slate-100 border border-slate-700/50"
                     }`}
                   >
-                    <div className="whitespace-pre-wrap break-words [overflow-wrap:anywhere] leading-relaxed text-[13.5px]">
-                      {msg.content}
-                    </div>
+                    {(() => {
+                      const shared = parseSharedPost(msg.content);
+                      if (!shared) {
+                        return (
+                          <div className="whitespace-pre-wrap break-words [overflow-wrap:anywhere] leading-relaxed text-[13.5px]">
+                            {msg.content}
+                          </div>
+                        );
+                      }
+                      return (
+                        <>
+                          {shared.note && (
+                            <div className="whitespace-pre-wrap break-words [overflow-wrap:anywhere] leading-relaxed text-[13.5px] mb-1.5">
+                              {shared.note}
+                            </div>
+                          )}
+                          <PostSharePreview postId={shared.postId} />
+                        </>
+                      );
+                    })()}
                     <div
                       className={`text-[10px] mt-1 text-right shrink-0 ${
                         isMine ? "text-slate-200" : "text-slate-400"
