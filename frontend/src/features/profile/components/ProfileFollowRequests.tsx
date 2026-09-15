@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getBackendBaseUrl } from "@/lib/api";
+import { useWebSocket } from "@/providers/WebSocketProvider";
 import { getDisplayName, getInitials } from "@/lib/utils";
 import {
   acceptFollowRequest,
@@ -28,6 +29,7 @@ function getFullPhotoUrl(path: string) {
 export default function ProfileFollowRequests({
   onChanged,
 }: ProfileFollowRequestsProps) {
+  const { subscribeNotifications } = useWebSocket();
   const [requests, setRequests] = useState<FollowRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -67,6 +69,30 @@ export default function ProfileFollowRequests({
       isMounted = false;
     };
   }, []);
+
+  // The backend pushes a "follow_request" notification over the existing
+  // WebSocket connection as soon as someone requests to follow this user,
+  // so pick that up here instead of waiting for a page refresh.
+  useEffect(() => {
+    return subscribeNotifications((notification) => {
+      if (notification.type !== "follow_request") {
+        return;
+      }
+
+      getPendingFollowRequests()
+        .then((pendingRequests) => {
+          setRequests(pendingRequests);
+          setError(null);
+        })
+        .catch((err) => {
+          setError(
+            err instanceof Error
+              ? err.message
+              : "Failed to load follow requests",
+          );
+        });
+    });
+  }, [subscribeNotifications]);
 
   async function handleRequestAction(
     requestID: number,

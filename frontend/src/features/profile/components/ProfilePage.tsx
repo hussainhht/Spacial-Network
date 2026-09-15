@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useWebSocket } from "@/providers/WebSocketProvider";
 import {
   followUser,
   getFollowers,
@@ -46,6 +47,7 @@ const emptyFollowStatus: FollowStatus = {
 };
 
 export default function ProfilePage({ username }: ProfilePageProps) {
+  const { subscribeNotifications } = useWebSocket();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isOwnProfile, setIsOwnProfile] = useState(!username);
   const [privacyOverride, setPrivacyOverride] = useState<boolean | null>(null);
@@ -273,6 +275,24 @@ export default function ProfilePage({ username }: ProfilePageProps) {
       isMounted = false;
     };
   }, [profile, isLocked, isOwnProfile]);
+
+  // The backend pushes a "new_follower" notification over the existing
+  // WebSocket connection to whoever just gained a follower. Reusing it here
+  // keeps this profile's follower list live instead of only refreshing on
+  // the next page load. (Unfollows and accepted/declined follow requests
+  // don't emit any event server-side, so those still require a refresh.)
+  useEffect(() => {
+    if (!isOwnProfile || !profile) {
+      return;
+    }
+
+    return subscribeNotifications((notification) => {
+      if (notification.type === "new_follower") {
+        refreshFollowLists();
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOwnProfile, profile, subscribeNotifications]);
 
   async function handleToggleFollow() {
     if (
