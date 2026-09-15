@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { type SubmitEvent, useEffect, useMemo, useState } from "react";
 import AppIcon from "@/components/layout/AppIcon";
 import { avatarUrl, updateGroup } from "../../api/groups";
@@ -70,17 +69,6 @@ export default function EditGroupForm({ group }: { group: Group }) {
   }
 
   return <div className={styles.settings}>
-    <header className={styles.header}>
-      <div>
-        <Link href={`/groups/${group.id}`} className={styles.back}>
-          <AppIcon name="arrowLeft" width={15} height={15} /> Back to Group
-        </Link>
-        <h1>Group Settings</h1>
-        <p>Manage your group details, members and settings.</p>
-      </div>
-      <Link href={`/groups/${group.id}`} className="group-button secondary">View Group</Link>
-    </header>
-
     <div className={styles.workspace}>
       <nav className={styles.nav} aria-label="Group settings sections">
         <button type="button" onClick={() => setSection("general")} aria-current={section === "general" ? "page" : undefined}><AppIcon name="settings" width={17} height={17} /> General</button>

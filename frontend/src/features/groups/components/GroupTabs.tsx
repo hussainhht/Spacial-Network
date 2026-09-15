@@ -8,7 +8,7 @@ export type ActiveGroupTab =
   | "events"
   | "members"
   | "chat"
-  | "edit";
+  | "settings";
 
 interface GroupTabsProps {
   activeTab: ActiveGroupTab;
@@ -30,7 +30,7 @@ export default function GroupTabs({
   canEdit,
 }: GroupTabsProps) {
   const tabs = canEdit
-    ? [...GROUP_TABS, { value: "edit" as const, label: "Settings" }]
+    ? [...GROUP_TABS, { value: "settings" as const, label: "Settings" }]
     : GROUP_TABS;
 
   return (
