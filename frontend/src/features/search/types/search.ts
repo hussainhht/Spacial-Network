@@ -36,6 +36,7 @@ export interface EventResult {
   title: string;
   description: string;
   event_time: string;
+  image_path?: string;
 }
 
 export interface SearchResults {

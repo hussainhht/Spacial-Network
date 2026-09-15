@@ -70,6 +70,9 @@ func TestPostMediaMigration_BackfillsLegacyImagePath(t *testing.T) {
 		t.Fatalf("MigrateUp: %v", err)
 	}
 	if err := sqlite.MigrateDown(db); err != nil {
+		t.Fatalf("remove event-image migration: %v", err)
+	}
+	if err := sqlite.MigrateDown(db); err != nil {
 		t.Fatalf("remove post-media migration: %v", err)
 	}
 
@@ -111,6 +114,9 @@ func TestGroupPrivacyMigration_BackfillsLegacyGroupsAsPublicAndPreservesMembersh
 	}
 	// Roll back the newer post-media migration, then the privacy migration, to
 	// reproduce a group that existed before the privacy column was introduced.
+	if err := sqlite.MigrateDown(db); err != nil {
+		t.Fatalf("MigrateDown event-image migration: %v", err)
+	}
 	if err := sqlite.MigrateDown(db); err != nil {
 		t.Fatalf("MigrateDown post-media migration: %v", err)
 	}
@@ -196,6 +202,9 @@ func TestGroupPrivacyMigration_BackfillsLegacyGroupsAsPublicAndPreservesMembersh
 	}
 
 	if err := sqlite.MigrateDown(db); err != nil {
+		t.Fatalf("final MigrateDown event-image migration: %v", err)
+	}
+	if err := sqlite.MigrateDown(db); err != nil {
 		t.Fatalf("final MigrateDown post-media migration: %v", err)
 	}
 	if err := sqlite.MigrateDown(db); err != nil {
@@ -203,6 +212,48 @@ func TestGroupPrivacyMigration_BackfillsLegacyGroupsAsPublicAndPreservesMembersh
 	}
 	if err := db.QueryRow(`SELECT privacy FROM groups LIMIT 1`).Scan(&privacy); err == nil {
 		t.Fatal("privacy column still exists after down migration")
+	}
+}
+
+func TestEventImageMigration_UpDownUpPreservesLegacyEvents(t *testing.T) {
+	db := openMemoryDB(t)
+	if err := sqlite.MigrateUp(db); err != nil {
+		t.Fatalf("MigrateUp: %v", err)
+	}
+
+	userResult, err := db.Exec(`INSERT INTO users (uuid, username, age, gender, first_name, last_name, email, password_hash) VALUES ('event-image-user', 'eventimage', 25, 'male', 'Event', 'Image', 'eventimage@example.com', 'hash')`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	userID, _ := userResult.LastInsertId()
+	groupResult, err := db.Exec(`INSERT INTO groups (creator_id, title, description) VALUES (?, 'Image Events', '')`, userID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	groupID, _ := groupResult.LastInsertId()
+	if _, err := db.Exec(`INSERT INTO events (group_id, created_by, title, description, event_time) VALUES (?, ?, 'Legacy event', '', datetime('now', '+1 day'))`, groupID, userID); err != nil {
+		t.Fatal(err)
+	}
+
+	var imagePath sql.NullString
+	if err := db.QueryRow(`SELECT image_path FROM events WHERE title = 'Legacy event'`).Scan(&imagePath); err != nil {
+		t.Fatal(err)
+	}
+	if imagePath.Valid {
+		t.Fatalf("legacy event image_path = %q, want NULL", imagePath.String)
+	}
+
+	if err := sqlite.MigrateDown(db); err != nil {
+		t.Fatalf("MigrateDown: %v", err)
+	}
+	if _, err := db.Exec(`SELECT image_path FROM events LIMIT 1`); err == nil {
+		t.Fatal("image_path still exists after down migration")
+	}
+	if err := sqlite.MigrateUp(db); err != nil {
+		t.Fatalf("second MigrateUp: %v", err)
+	}
+	if err := db.QueryRow(`SELECT image_path FROM events WHERE title = 'Legacy event'`).Scan(&imagePath); err != nil {
+		t.Fatal(err)
 	}
 }
 

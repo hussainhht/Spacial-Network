@@ -90,12 +90,14 @@ export interface GroupEvent {
   currentUserResponse: EventResponseStatus | null;
   goingCount: number;
   notGoingCount: number;
+  imageUrl: string | null;
 }
 
 export interface CreateEventInput {
   title: string;
   description: string;
   eventTime: string;
+  image?: File | null;
 }
 
 export interface EventResponseUser {

@@ -1,4 +1,4 @@
-import { getApiBaseUrl, getUploadsBaseUrl } from "@/lib/api";
+import { getApiBaseUrl, getBackendBaseUrl, getUploadsBaseUrl } from "@/lib/api";
 import { ApiError } from "@/lib/api/errors";
 import type {
   Group,
@@ -249,6 +249,11 @@ function toGroupEvent(e: ApiEvent): GroupEvent {
     currentUserResponse: e.current_user_response ?? null,
     goingCount: e.going_count,
     notGoingCount: e.not_going_count,
+    imageUrl: e.image_path
+      ? (/^https?:\/\//.test(e.image_path)
+          ? e.image_path
+          : `${getBackendBaseUrl()}${e.image_path.startsWith("/") ? "" : "/"}${e.image_path}`)
+      : null,
   };
 }
 
@@ -263,13 +268,14 @@ export async function createGroupEvent(
   groupId: number,
   input: CreateEventInput,
 ): Promise<void> {
+	const form = new FormData();
+	form.set("title", input.title);
+	form.set("description", input.description);
+	form.set("event_time", input.eventTime);
+	if (input.image) form.set("image", input.image);
   await groupRequest<Envelope & { event_id?: number }>(
     `/groups/${groupId}/events`,
-    {
-      title: input.title,
-      description: input.description,
-      event_time: input.eventTime,
-    },
+	form,
     "POST",
   );
 }

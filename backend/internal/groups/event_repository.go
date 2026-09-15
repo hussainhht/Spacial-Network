@@ -6,13 +6,18 @@ import (
 )
 
 func (r *Repository) InsertEvent(groupID, createdBy int, title, description string, eventTime time.Time) (int64, error) {
+	return r.InsertEventWithImage(groupID, createdBy, title, description, eventTime, sql.NullString{})
+}
+
+func (r *Repository) InsertEventWithImage(groupID, createdBy int, title, description string, eventTime time.Time, imagePath sql.NullString) (int64, error) {
 	result, err := r.db.Exec(
-		`INSERT INTO events (group_id, created_by, title, description, event_time) VALUES (?, ?, ?, ?, ?)`,
+		`INSERT INTO events (group_id, created_by, title, description, event_time, image_path) VALUES (?, ?, ?, ?, ?, ?)`,
 		groupID,
 		createdBy,
 		title,
 		description,
 		eventTime,
+		imagePath,
 	)
 	if err != nil {
 		return 0, err
@@ -23,7 +28,7 @@ func (r *Repository) InsertEvent(groupID, createdBy int, title, description stri
 // The existing unique (event_id, user_id) index supports both the current
 // user's lookup and counts. All event summaries are read in one SQL query.
 const eventSummarySelect = `SELECT e.id, e.group_id, e.created_by, e.title, e.description,
- e.event_time, e.created_at, e.updated_at, mine.response,
+ e.event_time, e.image_path, e.created_at, e.updated_at, mine.response,
  (SELECT COUNT(*) FROM event_responses er WHERE er.event_id = e.id AND er.response = 'going'),
  (SELECT COUNT(*) FROM event_responses er WHERE er.event_id = e.id AND er.response = 'not_going')
  FROM events e
@@ -42,7 +47,7 @@ func (r *Repository) GetEventsByGroup(groupID, userID int) ([]Event, error) {
 	result := make([]Event, 0)
 	for rows.Next() {
 		var e Event
-		if err := rows.Scan(&e.ID, &e.GroupID, &e.CreatedBy, &e.Title, &e.Description, &e.EventTime, &e.CreatedAt, &e.UpdatedAt, &e.CurrentUserResponse, &e.GoingCount, &e.NotGoingCount); err != nil {
+		if err := rows.Scan(&e.ID, &e.GroupID, &e.CreatedBy, &e.Title, &e.Description, &e.EventTime, &e.ImagePath, &e.CreatedAt, &e.UpdatedAt, &e.CurrentUserResponse, &e.GoingCount, &e.NotGoingCount); err != nil {
 			return nil, err
 		}
 		result = append(result, e)
@@ -57,7 +62,7 @@ func (r *Repository) GetEventByID(eventID, userID int) (*Event, error) {
 	err := r.db.QueryRow(
 		eventSummarySelect+`WHERE e.id = ?`,
 		userID, eventID,
-	).Scan(&e.ID, &e.GroupID, &e.CreatedBy, &e.Title, &e.Description, &e.EventTime, &e.CreatedAt, &e.UpdatedAt, &e.CurrentUserResponse, &e.GoingCount, &e.NotGoingCount)
+	).Scan(&e.ID, &e.GroupID, &e.CreatedBy, &e.Title, &e.Description, &e.EventTime, &e.ImagePath, &e.CreatedAt, &e.UpdatedAt, &e.CurrentUserResponse, &e.GoingCount, &e.NotGoingCount)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, ErrEventNotFound

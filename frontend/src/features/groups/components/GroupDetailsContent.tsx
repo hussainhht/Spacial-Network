@@ -114,19 +114,7 @@ function GroupDetails({ groupId }: { groupId: number }) {
               aria-labelledby="group-tab-overview"
               className="group-overview-grid overviewGrid"
             >
-              <aside
-                className="group-overview-column group-overview-left leftColumn"
-                aria-label="Group details"
-              >
-                <GroupAboutCard group={group.data} />
-                <GroupMembersPreview
-                  groupId={groupId}
-                  creatorId={group.data.creatorId}
-                  onSeeAll={() => setActiveTab("members")}
-                />
-              </aside>
-
-              <main className="group-overview-column group-overview-center group-overview-main centerColumn">
+              <main className="group-overview-column group-overview-main mainColumn">
                 {membership.loading && (
                   <div className="group-panel group-loading" role="status">
                     Checking membership…
@@ -161,9 +149,15 @@ function GroupDetails({ groupId }: { groupId: number }) {
               </main>
 
               <aside
-                className="group-overview-column group-overview-right rightColumn"
-                aria-label="Group events and activity"
+                className="group-overview-column group-overview-sidebar sideColumn"
+                aria-label="Group information"
               >
+                <GroupAboutCard group={group.data} />
+                <GroupMembersPreview
+                  groupId={groupId}
+                  creatorId={group.data.creatorId}
+                  onSeeAll={() => setActiveTab("members")}
+                />
                 <GroupEventsPreview
                   groupId={groupId}
                   isMember={isMember}
