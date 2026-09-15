@@ -1,6 +1,7 @@
 "use client";
 
 import AppIcon, { type AppIconName } from "@/components/layout/AppIcon";
+import { parseSharedPost } from "@/features/interactions/utils/sharedPost";
 import { useNotifications } from "../context/NotificationProvider";
 import { useNotificationNavigate } from "../hooks/useNotificationNavigate";
 import {
@@ -45,11 +46,19 @@ export default function NotificationToast({
   const groupData = getGroupNotificationData(notification);
   const followData = getFollowNotificationData(notification);
   const actorUsername = groupData?.actor_username ?? followData?.actor_username;
-  // Keep the DM's content out of a transient, glanceable popup - just who sent it.
+  // Keep the DM's content out of a transient, glanceable popup - just who sent
+  // it. A shared post's raw /posts/<id> link never leaks; it's always "sent a
+  // post", matching ChatSidebar's convention for shared posts elsewhere.
+  const isPrivateMessage = notification.type === "private_message";
+  const sharedPost = isPrivateMessage
+    ? parseSharedPost(notification.message)
+    : null;
   const messageText =
-    notification.type === "private_message" && actorUsername
-      ? "sent a message"
-      : notification.message;
+    sharedPost
+      ? "sent a post"
+      : isPrivateMessage && actorUsername
+        ? "sent a message"
+        : notification.message;
 
   function handleClick() {
     if (!notification.isRead) void markAsRead(notification.id).catch(() => {});
