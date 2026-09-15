@@ -1,6 +1,12 @@
 "use client";
 
-import { Component, Suspense, useMemo, type ReactNode } from "react";
+import {
+  Component,
+  Suspense,
+  useMemo,
+  type ReactNode,
+  type RefObject,
+} from "react";
 import PlanetModel from "./PlanetModel";
 import {
   AxialRotation,
@@ -54,10 +60,12 @@ export default function PlanetSystem({
   config,
   viewport,
   reducedMotion,
+  scrollRotation,
 }: {
   config: PlanetConfig;
   viewport: PlanetViewport;
   reducedMotion: boolean;
+  scrollRotation: RefObject<number>;
 }) {
   const composition = useMemo(() => {
     const responsive = config.scene.responsive[viewport];
@@ -93,6 +101,7 @@ export default function PlanetSystem({
           <AxialRotation
             reducedMotion={reducedMotion}
             radiansPerSecond={config.scene.spinRadiansPerSecond}
+            scrollRotation={scrollRotation}
           >
             <group scale={config.scene.bodyScale}>
               <PlanetModel modelConfig={config} />

@@ -5,11 +5,12 @@ import styles from "./HomePage.module.css";
 
 export default function Page() {
   return (
-    <main className="posts-page home-feed-page" aria-labelledby="app-page-title">
+    <main className={`posts-page home-feed-page ${styles.page}`} aria-labelledby="app-page-title">
       <div className={styles.layout}>
         <div className={styles.feed}>
           <Suspense fallback={null}>
             <PostFeed
+              stickyFilters
               inlineDiscovery={
                 <div className={styles.inlineDiscovery}>
                   <HomeDiscovery placement="inline" />

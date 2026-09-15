@@ -1,7 +1,7 @@
 "use client";
 
 import { useFrame, useThree } from "@react-three/fiber";
-import { useRef, useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode, type RefObject } from "react";
 import { Group, MathUtils } from "three";
 
 const MAX_FRAME_DELTA = 0.1;
@@ -100,6 +100,7 @@ interface AxialRotationProps {
   reducedMotion: boolean;
   radiansPerSecond: number;
   initialRotation?: number;
+  scrollRotation?: RefObject<number>;
 }
 
 /** Owns a body's intrinsic Y-axis rotation without touching system transforms. */
@@ -108,16 +109,20 @@ export function AxialRotation({
   reducedMotion,
   radiansPerSecond,
   initialRotation = 0,
+  scrollRotation,
 }: AxialRotationProps) {
   const root = useRef<Group>(null);
+  const intrinsicRotation = useRef(initialRotation);
 
   useFrame((_, delta) => {
     const group = root.current;
     if (!group || reducedMotion) return;
 
-    group.rotation.y =
-      (group.rotation.y + boundedDelta(delta) * radiansPerSecond) %
+    intrinsicRotation.current =
+      (intrinsicRotation.current + boundedDelta(delta) * radiansPerSecond) %
       FULL_ROTATION;
+    group.rotation.y =
+      intrinsicRotation.current + (scrollRotation?.current ?? 0);
   });
 
   return (

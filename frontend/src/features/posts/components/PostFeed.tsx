@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, type ReactNode, useEffect, useRef } from "react";
+import { Fragment, type ReactNode, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useFeed } from "@/features/posts/hooks/useFeed";
 import type { FeedScope } from "@/features/posts/types/post";
@@ -32,8 +32,10 @@ const EMPTY_COPY: Record<FeedScope, { title: string; body: string }> = {
 
 export default function PostFeed({
   inlineDiscovery,
+  stickyFilters = false,
 }: {
   inlineDiscovery?: ReactNode;
+  stickyFilters?: boolean;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -53,10 +55,25 @@ export default function PostFeed({
     removePost,
   } = useFeed(feed);
   const loadMoreRef = useRef<HTMLDivElement>(null);
+  const filterAnchorRef = useRef<HTMLSpanElement>(null);
+  const [filtersElevated, setFiltersElevated] = useState(false);
 
   useEffect(() => {
     if (unauthorized) router.push("/login");
   }, [unauthorized, router]);
+
+  useEffect(() => {
+    if (!stickyFilters) return;
+    const anchor = filterAnchorRef.current;
+    if (!anchor) return;
+    const scrollPane = anchor.closest("#page-content");
+    const observer = new IntersectionObserver(
+      ([entry]) => setFiltersElevated(!entry.isIntersecting),
+      { root: scrollPane },
+    );
+    observer.observe(anchor);
+    return () => observer.disconnect();
+  }, [stickyFilters]);
 
   useEffect(() => {
     const target = loadMoreRef.current;
@@ -93,7 +110,13 @@ export default function PostFeed({
 
   return (
     <div>
-      <FeedFilter active={feed} onChange={handleFeedChange} />
+      {stickyFilters ? <span ref={filterAnchorRef} className="home-feed-filter-anchor" aria-hidden="true" /> : null}
+      <div
+        className={stickyFilters ? "home-feed-filter-sticky" : undefined}
+        data-elevated={stickyFilters ? filtersElevated : undefined}
+      >
+        <FeedFilter active={feed} onChange={handleFeedChange} />
+      </div>
 
       <div
         id="feed-tabpanel"

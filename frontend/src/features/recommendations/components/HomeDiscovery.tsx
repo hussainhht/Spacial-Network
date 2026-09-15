@@ -35,12 +35,11 @@ export default function HomeDiscovery({
   if ((placement === "desktop") !== isDesktop) return null;
 
   return (
-    <div
-      className={`${styles.stack} ${placement === "inline" ? styles.inline : ""}`}
-      aria-label="Discover people and groups"
-    >
-      <WhoToFollow limit={3} />
-      <SuggestedGroups limit={2} />
+    <div className={styles.stack} aria-label="Discover people and groups">
+      <div className={`${styles.cards} ${placement === "inline" ? styles.inline : ""}`}>
+        <WhoToFollow limit={3} />
+        <SuggestedGroups limit={2} />
+      </div>
     </div>
   );
 }

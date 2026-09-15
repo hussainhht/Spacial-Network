@@ -206,7 +206,6 @@ export default function WhoToFollow({ limit = 3 }: { limit?: 3 | 4 }) {
       <section className={styles.card} aria-labelledby="who-to-follow-title">
         <header className={styles.header}>
           <div>
-            <p className={styles.eyebrow}>Discover your orbit</p>
             <h2 id="who-to-follow-title" className={styles.title}>
               Who to Follow
             </h2>
