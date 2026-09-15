@@ -45,6 +45,11 @@ export default function NotificationToast({
   const groupData = getGroupNotificationData(notification);
   const followData = getFollowNotificationData(notification);
   const actorUsername = groupData?.actor_username ?? followData?.actor_username;
+  // Keep the DM's content out of a transient, glanceable popup - just who sent it.
+  const messageText =
+    notification.type === "private_message" && actorUsername
+      ? "sent a message"
+      : notification.message;
 
   function handleClick() {
     if (!notification.isRead) void markAsRead(notification.id).catch(() => {});
@@ -68,7 +73,7 @@ export default function NotificationToast({
           </span>
           <span className="notification-toast-message">
             {actorUsername && `@${actorUsername} `}
-            {notification.message}
+            {messageText}
           </span>
           {groupData?.group_title && (
             <span className="notification-toast-meta">
