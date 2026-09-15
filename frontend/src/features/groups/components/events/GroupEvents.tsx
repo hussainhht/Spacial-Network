@@ -154,7 +154,7 @@ function MemberGroupEvents({
       )}
 
       {filteredEvents.length > 0 && (
-        <ul className="group-events-list">
+        <ul className="group-events-list" data-motion-list>
           {filteredEvents.map((event: GroupEvent) => (
             <li key={event.id}>
               <EventCard

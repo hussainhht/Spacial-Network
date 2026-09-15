@@ -295,6 +295,10 @@ export async function respondToGroupEvent(
 
 export const createJoinRequest = (id: number) =>
   post(`/groups/${id}/join-requests`);
+export const cancelJoinRequest = (id: number) =>
+  groupRequest<Envelope>(`/groups/${id}/join-requests`, undefined, "DELETE").then(
+    () => undefined,
+  );
 export const createGroupInvitation = (groupId: number, userId: number) =>
   post(`/groups/${groupId}/invitations`, { invited_user_id: userId });
 export const acceptJoinRequest = (groupId: number, id: number) =>

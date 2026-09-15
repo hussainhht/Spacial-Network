@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { getEligibleContacts } from "../api/chat";
 import type { EligibleContact } from "../types/chat";
 import { getDisplayName, getInitials } from "@/lib/utils";
@@ -15,7 +16,7 @@ interface NewChatModalProps {
 }
 
 export default function NewChatModal(props: NewChatModalProps) {
-  return props.isOpen ? <NewChatDialog {...props} /> : null;
+  return props.isOpen ? createPortal(<NewChatDialog {...props} />, document.body) : null;
 }
 
 function NewChatDialog({

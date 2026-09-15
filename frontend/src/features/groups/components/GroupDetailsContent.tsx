@@ -112,6 +112,7 @@ function GroupDetails({ groupId }: { groupId: number }) {
               role="tabpanel"
               aria-labelledby="group-tab-overview"
               className="group-overview-grid overviewGrid"
+              data-motion-panel
             >
               <main className="group-overview-column group-overview-main mainColumn">
                 {membership.loading && (
@@ -174,6 +175,7 @@ function GroupDetails({ groupId }: { groupId: number }) {
               id="group-tabpanel-posts"
               role="tabpanel"
               aria-labelledby="group-tab-posts"
+              data-motion-panel
             >
               <GroupPosts groupId={groupId} isMember={isMember} />
             </div>
@@ -183,6 +185,7 @@ function GroupDetails({ groupId }: { groupId: number }) {
               id="group-tabpanel-events"
               role="tabpanel"
               aria-labelledby="group-tab-events"
+              data-motion-panel
             >
               <GroupEvents
                 groupId={groupId}
@@ -197,6 +200,7 @@ function GroupDetails({ groupId }: { groupId: number }) {
               role="tabpanel"
               aria-labelledby="group-tab-members"
               className="group-members-tab-content"
+              data-motion-panel
             >
               {isCreator && group.data.privacy === "public" && (
                 <JoinRequestsPanel groupId={groupId} compact />
@@ -213,6 +217,7 @@ function GroupDetails({ groupId }: { groupId: number }) {
               id="group-tabpanel-chat"
               role="tabpanel"
               aria-labelledby="group-tab-chat"
+              data-motion-panel
             >
               <GroupChatPanel
                 group={group.data}
@@ -228,6 +233,7 @@ function GroupDetails({ groupId }: { groupId: number }) {
               id="group-tabpanel-settings"
               role="tabpanel"
               aria-labelledby="group-tab-settings"
+              data-motion-panel
             >
               <EditGroupForm group={group.data} />
             </div>

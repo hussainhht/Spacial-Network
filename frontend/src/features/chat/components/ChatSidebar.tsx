@@ -81,6 +81,7 @@ export default function ChatSidebar({
           </span>
           <input
             type="text"
+            aria-label="Search conversations"
             placeholder="Search conversations..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -106,6 +107,7 @@ export default function ChatSidebar({
               <button
                 key={tab}
                 type="button"
+                aria-pressed={isActive}
                 onClick={() => setActiveTab(tab)}
                 className={`${styles.filterChip} ${isActive ? styles.filterChipActive : ""}`}
               >
@@ -161,7 +163,8 @@ export default function ChatSidebar({
                 onClick={() => onSelectConversation(c.partner_id, c.partner_username, c.partner_avatar)}
                 className={`${styles.conversationItem} ${
                   isActive ? styles.conversationItemActive : ""
-                }`}
+                } ${c.unread_count > 0 ? styles.conversationItemUnread : ""}`}
+                aria-pressed={isActive}
                 role="button"
                 tabIndex={0}
                 onKeyDown={(e) => {

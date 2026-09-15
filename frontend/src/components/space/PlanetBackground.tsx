@@ -115,7 +115,7 @@ function PlanetAssetGate({
 
 /**
  * FrameGovernor
- * 
+ *
  * Regulates the WebGL render loop:
  * 1. Caps frame rate at ~50 FPS (saves 58% GPU cycles over 120Hz ProMotion displays).
  * 2. Pauses rendering completely (0 FPS) when tab is hidden or minimized.
@@ -171,18 +171,12 @@ function FrameGovernor({
   return null;
 }
 
-import PlanetTransition from "./PlanetTransition";
-
 function PlanetScene({
   config,
-  targetConfig,
-  isTargetReady,
   viewport,
   reducedMotion,
 }: {
   config: PlanetConfig;
-  targetConfig: PlanetConfig;
-  isTargetReady: boolean;
   viewport: PlanetViewport;
   reducedMotion: boolean;
 }) {
@@ -201,12 +195,6 @@ function PlanetScene({
         <directionalLight
           position={SUN_POSITION}
           intensity={config.lighting.directionalIntensity}
-      <SceneBoundary label="Planet Scene">
-        <PlanetTransition
-          targetConfig={targetConfig}
-          isTargetReady={isTargetReady}
-          viewport={viewport}
-          reducedMotion={reducedMotion}
         />
         <Suspense fallback={null}>
           <PlanetSystem
@@ -233,24 +221,20 @@ function PlanetBackground() {
   const [displayedPlanetId, setDisplayedPlanetId] =
     useState<PlanetId>(selectedPlanetId);
 
-  // Track the latest asset that has confirmed ready in cache
-  const [readyPlanetId, setReadyPlanetId] = useState<PlanetId>(selectedPlanetId);
-
-  const handleAssetReady = useCallback((planetId: PlanetId) => {
-    if (selectedPlanetId === planetId) {
-      setDisplayedPlanetId(planetId);
-    }
-  }, [selectedPlanetId]);
-    setReadyPlanetId(planetId);
-  }, []);
+  const handleAssetReady = useCallback(
+    (planetId: PlanetId) => {
+      if (selectedPlanetId === planetId) {
+        setDisplayedPlanetId(planetId);
+      }
+    },
+    [selectedPlanetId],
+  );
 
   const displayedPlanet = PLANET_REGISTRY[displayedPlanetId];
-  const isTargetReady = readyPlanetId === selectedPlanetId;
 
   return (
     <div
       data-planet-background={displayedPlanetId}
-      data-planet-background={selectedPlanetId}
       className={styles.planetLayer}
       aria-hidden="true"
     >
@@ -268,8 +252,6 @@ function PlanetBackground() {
         <div className={styles.planetCanvasWrapper}>
           <PlanetScene
             config={displayedPlanet}
-            targetConfig={selectedPlanet}
-            isTargetReady={isTargetReady}
             viewport={viewport}
             reducedMotion={reducedMotion}
           />

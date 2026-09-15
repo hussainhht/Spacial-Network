@@ -55,7 +55,9 @@ export default function PostFeed() {
 
   return (
     <div>
-      <FeedFilter active={feed} onChange={handleFeedChange} />
+      <div data-motion-section>
+        <FeedFilter active={feed} onChange={handleFeedChange} />
+      </div>
 
       <div
         id="feed-tabpanel"
@@ -93,7 +95,7 @@ export default function PostFeed() {
         )}
 
         {!loading && !error && posts.length > 0 && (
-          <div className="posts-list">
+          <div className="posts-list" data-motion-list>
             {posts.map((post) => (
               <PostCard key={post.id} post={post} onDeleted={removePost} />
             ))}

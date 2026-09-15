@@ -1309,8 +1309,8 @@ main:not(.chat-main):has(> form) form > p {
 
 @media (min-width: 701px) {
   .group-details-page:has(#group-tabpanel-chat) {
-    height: 100%;
-    min-height: 100%;
+    height: calc(100dvh - var(--app-navbar-height));
+    min-height: 0;
     overflow: hidden;
   }
 
@@ -1321,8 +1321,11 @@ main:not(.chat-main):has(> form) form > p {
   }
 
   #group-tabpanel-chat {
+    display: flex;
+    flex-direction: column;
     flex: 1;
     min-height: 0;
+    overflow: hidden;
   }
 }
 .group-panel {

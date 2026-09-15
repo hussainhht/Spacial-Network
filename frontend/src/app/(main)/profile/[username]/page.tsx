@@ -1,3 +1,4 @@
+import PageTransition from "@/components/transitions/PageTransition";
 import ProfilePage from "@/features/profile/components/ProfilePage";
 
 interface ProfilePageProps {
@@ -9,5 +10,9 @@ interface ProfilePageProps {
 export default async function Page({ params }: ProfilePageProps) {
   const { username } = await params;
 
-  return <ProfilePage username={username} />;
+  return (
+    <PageTransition>
+      <ProfilePage username={username} />
+    </PageTransition>
+  );
 }
