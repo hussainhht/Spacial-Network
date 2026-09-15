@@ -6,16 +6,34 @@ export type SupportedNotificationType =
   | "new_follower"
   | "follow_accepted"
   | "group_invitation"
+  | "group_invitation_accepted"
+  | "group_invitation_declined"
   | "group_join_request"
-  | "private_message";
+  | "group_join_accepted"
+  | "group_join_rejected"
+  | "group_event"
+  | "event_rsvp"
+  | "group_message"
+  | "private_message"
+  | "post_like"
+  | "post_comment";
 
 const SUPPORTED_NOTIFICATION_TYPES: readonly string[] = [
   "follow_request",
   "new_follower",
   "follow_accepted",
   "group_invitation",
+  "group_invitation_accepted",
+  "group_invitation_declined",
   "group_join_request",
+  "group_join_accepted",
+  "group_join_rejected",
+  "group_event",
+  "event_rsvp",
+  "group_message",
   "private_message",
+  "post_like",
+  "post_comment",
 ];
 
 export function isSupportedNotificationType(
@@ -117,13 +135,16 @@ export function isFollowNotification(notification: Notification): boolean {
 // for a notification type this UI doesn't render.
 export function toNotification(raw: RawNotification): Notification | null {
   if (!isSupportedNotificationType(raw.type)) return null;
-  // private_message notifications carry the same { actor_username } shape as
-  // follow notifications (see backend PrivateMessageNotificationData).
+  // private_message, post_like, and post_comment notifications carry the same
+  // { actor_username } shape as follow notifications (see backend
+  // PrivateMessageNotificationData / FollowNotificationData reuse).
   const usesActorUsernameData =
     raw.type === "follow_request" ||
     raw.type === "new_follower" ||
     raw.type === "follow_accepted" ||
-    raw.type === "private_message";
+    raw.type === "private_message" ||
+    raw.type === "post_like" ||
+    raw.type === "post_comment";
   const data = usesActorUsernameData
     ? getFollowNotificationData(raw)
     : getGroupNotificationData(raw);
