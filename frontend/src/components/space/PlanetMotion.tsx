@@ -45,6 +45,7 @@ export function PlanetEntrance({
 
   useFrame((_, delta) => {
     const group = root.current;
+    if (!group || reducedMotion || elapsed.current >= duration) return;
     if (!group || !enabled || reducedMotion || elapsed.current >= duration) return;
 
     elapsed.current = Math.min(elapsed.current + boundedDelta(delta), duration);
@@ -61,6 +62,7 @@ export function PlanetEntrance({
   return (
     <group
       ref={root}
+      position={reducedMotion ? [0, 0, 0] : [startX, 0, 0]}
       position={!enabled || reducedMotion ? [0, 0, 0] : [startX, 0, 0]}
     >
       {children}
