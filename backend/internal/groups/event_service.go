@@ -1,6 +1,7 @@
 package groups
 
 import (
+	"database/sql"
 	"log"
 	"time"
 
@@ -13,6 +14,10 @@ import (
 // authoritative check, independent of whatever validation already ran in the
 // handler, since the service is what actually owns the business rule.
 func (s *Service) CreateEvent(groupID, userID int, title, description string, eventTime time.Time) (int64, error) {
+	return s.CreateEventWithImage(groupID, userID, title, description, eventTime, "")
+}
+
+func (s *Service) CreateEventWithImage(groupID, userID int, title, description string, eventTime time.Time, imagePath string) (int64, error) {
 	if !eventTime.After(time.Now()) {
 		return 0, ErrEventTimeInPast
 	}
@@ -29,7 +34,7 @@ func (s *Service) CreateEvent(groupID, userID int, title, description string, ev
 		return 0, ErrNotGroupMember
 	}
 
-	eventID, err := s.repo.InsertEvent(groupID, userID, title, description, eventTime)
+	eventID, err := s.repo.InsertEventWithImage(groupID, userID, title, description, eventTime, sql.NullString{String: imagePath, Valid: imagePath != ""})
 	if err != nil {
 		return 0, err
 	}

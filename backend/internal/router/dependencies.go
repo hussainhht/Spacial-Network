@@ -128,6 +128,11 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 		return nil, err
 	}
 
+	eventMediaStorage, err := upload.NewMediaStorage(cfg.UploadsDir, upload.EventsSubdir, cfg.MaxMediaSize)
+	if err != nil {
+		return nil, err
+	}
+
 	// =========================
 	// Authentication
 	// =========================
@@ -151,7 +156,7 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 
 	groupsRepo := groups.NewRepository(db)
 	groupsService := groups.NewService(groupsRepo, notificationsService, hub)
-	groupsHandler := groups.NewHandler(groupsService, groupPhotoStorage)
+	groupsHandler := groups.NewHandler(groupsService, groupPhotoStorage, eventMediaStorage)
 	inviteSearchWSHandler := groups.NewInviteSearchWSHandler(groupsService, hub)
 
 	// =========================

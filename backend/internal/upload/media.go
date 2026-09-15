@@ -10,6 +10,7 @@ import (
 const (
 	PostsSubdir    = "posts"
 	CommentsSubdir = "comments"
+	EventsSubdir   = "events"
 )
 
 // allowedMediaTypes covers the still/animated image formats accepted for

@@ -18,6 +18,7 @@ export default function GroupInviteSearch({ groupId }: GroupInviteSearchProps) {
   return (
     <InviteUserSearch
       groupId={groupId}
+      autoFocus
       renderAction={(user) => {
         const invited = invitedIds.includes(user.id);
         const rowError = rowErrors[user.id];

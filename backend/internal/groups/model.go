@@ -202,4 +202,5 @@ type InviteCandidateResponse struct {
 type Handler struct {
 	service      *Service
 	photoStorage *upload.AvatarStorage
+	eventStorage *upload.MediaStorage
 }

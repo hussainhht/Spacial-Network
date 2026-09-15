@@ -1,6 +1,9 @@
 package groups
 
-import "time"
+import (
+	"database/sql"
+	"time"
+)
 
 const (
 	EventResponseGoing    = "going"
@@ -8,14 +11,15 @@ const (
 )
 
 type Event struct {
-	ID          int       `db:"id"`
-	GroupID     int       `db:"group_id"`
-	CreatedBy   int       `db:"created_by"`
-	Title       string    `db:"title"`
-	Description string    `db:"description"`
-	EventTime   time.Time `db:"event_time"`
-	CreatedAt   time.Time `db:"created_at"`
-	UpdatedAt   time.Time `db:"updated_at"`
+	ID          int            `db:"id"`
+	GroupID     int            `db:"group_id"`
+	CreatedBy   int            `db:"created_by"`
+	Title       string         `db:"title"`
+	Description string         `db:"description"`
+	EventTime   time.Time      `db:"event_time"`
+	ImagePath   sql.NullString `db:"image_path"`
+	CreatedAt   time.Time      `db:"created_at"`
+	UpdatedAt   time.Time      `db:"updated_at"`
 
 	// Response summary is read from event_responses, not stored on events.
 	CurrentUserResponse *string
@@ -30,9 +34,10 @@ type CreateEventRequest struct {
 }
 
 type CreateEventResponse struct {
-	Success bool   `json:"success"`
-	Message string `json:"message"`
-	EventID int64  `json:"event_id,omitempty"`
+	Success   bool    `json:"success"`
+	Message   string  `json:"message"`
+	EventID   int64   `json:"event_id,omitempty"`
+	ImagePath *string `json:"image_path,omitempty"`
 }
 
 type EventResponse struct {
@@ -47,6 +52,7 @@ type EventResponse struct {
 	ID                  int     `json:"id"`
 	GroupID             int     `json:"group_id"`
 	CreatedBy           int     `json:"created_by"`
+	ImagePath           *string `json:"image_path"`
 }
 
 type ListEventsResponse struct {
