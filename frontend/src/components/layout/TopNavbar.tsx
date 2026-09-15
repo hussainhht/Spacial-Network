@@ -3,8 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { getNavbarContext } from "./navbarContext";
-import { useGroupsSearch } from "@/features/groups/context/GroupsSearchProvider";
-import GroupSearchInput from "@/features/groups/components/GroupSearchInput";
 import { useEffect, useRef, useState } from "react";
 import AppIcon from "./AppIcon";
 import { useNotifications } from "@/features/notifications/context/NotificationProvider";
@@ -17,7 +15,6 @@ import styles from "./TopNavbar.module.css";
 export default function TopNavbar() {
   const pathname = usePathname();
   const context = getNavbarContext(pathname);
-  const { search, setSearch } = useGroupsSearch();
   const { isOpen, closeSearch } = useSearchModal();
   // Real notifications context
   const { unreadCount } = useNotifications();
@@ -102,31 +99,13 @@ export default function TopNavbar() {
           isOpen ? styles.searchSectionOpen : ""
         }`}
       >
-        {context.searchMode === "groups" && !isOpen ? (
-          <GroupSearchInput value={search} onChange={setSearch} />
-        ) : (
-          <UniversalNavbarSearch />
-        )}
+        <UniversalNavbarSearch />
       </div>
 
-      {/* 3, 4, 5. Right Section: New Post, Notifications & User Area */}
+      {/* Right Section: Notifications & User Area */}
       <div className={styles.actionsSection}>
-        {/* 3. New Post Button */}
-        {context.action && (
-          <Link
-            href={context.action.href}
-            className={styles.newPostButton}
-            aria-label={context.action.ariaLabel}
-            onClick={() => closeSearch()}
-          >
-            <span className={styles.newPostIcon} aria-hidden="true">
-              <AppIcon name="plus" />
-            </span>
-            <span className={styles.newPostText}>{context.action.label}</span>
-          </Link>
-        )}
 
-        {/* 4. Notifications */}
+        {/* Notifications */}
         <div className={styles.bellWrapper} ref={bellRef}>
           <button
             type="button"

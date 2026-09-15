@@ -1,18 +1,6 @@
 type NavbarContext = {
   title: string;
   eyebrow: string;
-  searchMode: "global" | "groups";
-  action?: { href: string; label: string; ariaLabel: string };
-};
-const newPost = {
-  href: "/posts/new",
-  label: "New Post",
-  ariaLabel: "Create new post",
-};
-const createGroup = {
-  href: "/groups/create",
-  label: "Create Group",
-  ariaLabel: "Create Group",
 };
 
 const sections: Record<string, string> = {
@@ -29,17 +17,13 @@ export function getNavbarContext(pathname: string): NavbarContext {
     return {
       title: "Home",
       eyebrow: "Your community",
-      searchMode: "global",
-      action: newPost,
     };
   if (pathname === "/groups")
     return {
       title: "Groups",
       eyebrow: "Your communities",
-      searchMode: "groups",
-      action: createGroup,
     };
-  const [, section, detail] = pathname.split("/");
+  const [, section] = pathname.split("/");
   const title =
     pathname === "/groups/create"
       ? "Create Group"
@@ -49,7 +33,5 @@ export function getNavbarContext(pathname: string): NavbarContext {
   return {
     title,
     eyebrow: "Your community",
-    searchMode: "global",
-    action: section === "posts" && !detail ? newPost : undefined,
   };
 }
