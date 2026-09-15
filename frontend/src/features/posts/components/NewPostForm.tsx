@@ -107,7 +107,7 @@ export default function NewPostForm() {
     setLoading(true);
     try {
       await createPost({ title, content, visibility, viewerIds, media: media.map((item) => item.file) });
-      router.push("/posts");
+      router.push("/");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create post");
       setLoading(false);
@@ -140,8 +140,8 @@ export default function NewPostForm() {
 
   return (
     <div className={styles.pageContent}>
-      <Link href="/posts" className={styles.backLink}>
-        <AppIcon name="arrowLeft" width={17} height={17} /> Back to posts
+      <Link href="/" className={styles.backLink}>
+        <AppIcon name="arrowLeft" width={17} height={17} /> Back to home
       </Link>
 
       <div className={styles.layout}>
@@ -215,7 +215,7 @@ export default function NewPostForm() {
           {error && <p className={styles.error} role="alert" aria-live="assertive">{error}</p>}
 
           <div className={styles.actions}>
-            <Link href="/posts">Cancel</Link>
+            <Link href="/">Cancel</Link>
             <button type="submit" disabled={loading}>{loading ? "Creating…" : <><AppIcon name="send" width={17} height={17} /> Create post</>}</button>
           </div>
         </form>

@@ -69,9 +69,7 @@ function GroupDetails({ groupId }: { groupId: number }) {
         (membership.data.isMember ||
           (!invitations.loading && !invitations.error)) && (
           <MembershipBadge
-            role={
-              membership.data.isMember ? membership.data.role : undefined
-            }
+            role={membership.data.isMember ? membership.data.role : undefined}
             pending={membership.data.hasPendingJoinRequest}
             invited={invitations.data?.some((i) => i.groupId === groupId)}
           />
@@ -114,24 +112,23 @@ function GroupDetails({ groupId }: { groupId: number }) {
               id="group-tabpanel-overview"
               role="tabpanel"
               aria-labelledby="group-tab-overview"
-              className="group-overview-grid"
+              className="group-overview-grid overviewGrid"
             >
-              <div className="group-overview-about">
+              <aside
+                className="group-overview-column group-overview-left leftColumn"
+                aria-label="Group details"
+              >
                 <GroupAboutCard group={group.data} />
-              </div>
-              <div className="group-overview-members">
                 <GroupMembersPreview
                   groupId={groupId}
                   creatorId={group.data.creatorId}
                   onSeeAll={() => setActiveTab("members")}
                 />
-              </div>
-              <div className="group-overview-main">
+              </aside>
+
+              <main className="group-overview-column group-overview-center group-overview-main centerColumn">
                 {membership.loading && (
-                  <div
-                    className="group-panel group-loading"
-                    role="status"
-                  >
+                  <div className="group-panel group-loading" role="status">
                     Checking membership…
                   </div>
                 )}
@@ -161,20 +158,22 @@ function GroupDetails({ groupId }: { groupId: number }) {
                       />
                     </section>
                   ))}
-              </div>
-              <div className="group-overview-events">
+              </main>
+
+              <aside
+                className="group-overview-column group-overview-right rightColumn"
+                aria-label="Group events and activity"
+              >
                 <GroupEventsPreview
                   groupId={groupId}
                   isMember={isMember}
                   onSeeAll={() => setActiveTab("events")}
                 />
-              </div>
-              <div className="group-overview-activity">
                 <GroupActivityPreview
                   group={group.data}
                   members={members.data}
                 />
-              </div>
+              </aside>
             </div>
           )}
           {activeTab === "posts" && (

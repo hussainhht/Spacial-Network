@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useMemo, useState } from "react";
+import { parseDate } from "@/lib/utils";
 import type { UpdateProfileDetailsInput } from "../api/profiles";
 import type { Profile } from "../types/profile";
 import styles from "./Profile.module.css";
@@ -12,13 +13,29 @@ interface ProfileDetailsFormProps {
   onSave: (input: UpdateProfileDetailsInput) => Promise<void>;
 }
 
+// <input type="date"> only accepts an exact "YYYY-MM-DD" value - anything
+// else (e.g. a date with a time component from older data) is silently
+// rendered as empty. That blank field would then get resubmitted as-is,
+// which the backend rejects as an invalid format, blocking the whole save
+// even though the profile already has a birth date. Reformatting through
+// parseDate (UTC, so the calendar day never shifts) keeps the field
+// pre-filled and normalizes it back to a format the backend accepts.
+function toDateInputValue(value: string): string {
+  const date = parseDate(value);
+  if (!date) return "";
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 function getFormState(profile: Profile): UpdateProfileDetailsInput {
   return {
     firstName: profile.firstName,
     lastName: profile.lastName,
     nickname: profile.nickname,
     aboutMe: profile.aboutMe,
-    dateOfBirth: profile.dateOfBirth,
+    dateOfBirth: toDateInputValue(profile.dateOfBirth),
   };
 }
 

@@ -48,7 +48,7 @@ func setup(t *testing.T) fixture {
 	groupsSvc := groups.NewService(groupsRepo, notifSvc, websocket.NewHub())
 
 	followersRepo := followers.NewRepository(db)
-	followersSvc := followers.NewService(followersRepo, nil)
+	followersSvc := followers.NewService(followersRepo, nil, nil)
 
 	usersRepo := users.NewRepository(db)
 	usersSvc := users.NewService(usersRepo, followersSvc)

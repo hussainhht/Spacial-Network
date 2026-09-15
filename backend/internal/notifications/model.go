@@ -10,6 +10,7 @@ type NotificationType string
 const (
 	NotificationFollowRequest    NotificationType = "follow_request"
 	NotificationNewFollower      NotificationType = "new_follower"
+	NotificationFollowAccepted   NotificationType = "follow_accepted"
 	NotificationGroupInvitation  NotificationType = "group_invitation"
 	NotificationGroupJoinRequest NotificationType = "group_join_request"
 	NotificationGroupEvent       NotificationType = "group_event"
@@ -23,6 +24,7 @@ const (
 var validNotificationTypes = map[NotificationType]bool{
 	NotificationFollowRequest:    true,
 	NotificationNewFollower:      true,
+	NotificationFollowAccepted:   true,
 	NotificationGroupInvitation:  true,
 	NotificationGroupJoinRequest: true,
 	NotificationGroupEvent:       true,

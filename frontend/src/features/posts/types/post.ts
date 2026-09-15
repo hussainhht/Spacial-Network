@@ -37,6 +37,9 @@ export interface Post {
   can_delete: boolean;
   // group_id is set when this post was created within a group.
   group_id?: number;
+  // group_title accompanies group_id so post context can link to the group
+  // without an additional client request.
+  group_title?: string;
   // author_left_group is only set on a group post whose author is no
   // longer a member of that group.
   author_left_group?: boolean;

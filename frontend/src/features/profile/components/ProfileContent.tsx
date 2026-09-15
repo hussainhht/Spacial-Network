@@ -1,5 +1,6 @@
 "use client";
 
+import AppIcon, { type AppIconName } from "@/components/layout/AppIcon";
 import PostCard from "@/features/posts/components/PostCard";
 import type { Post } from "@/features/posts/types/post";
 import { parseDate } from "@/lib/utils";
@@ -15,46 +16,38 @@ import ProfilePrivacy from "./ProfilePrivacy";
 import ProfileUserList from "./ProfileUserList";
 import styles from "./Profile.module.css";
 
-interface TabsProps {
-  activeTab: ProfileTab;
+interface BackToPostsProps {
   onTabChange: (tab: ProfileTab) => void;
-  postsCount?: number;
 }
 
-function ProfileTabs({ activeTab, onTabChange, postsCount }: TabsProps) {
-  const tabs: { id: ProfileTab; label: string; count?: number }[] = [
-    { id: "posts", label: "Posts", count: postsCount },
-    { id: "about", label: "About" },
-  ];
-
+function BackToPosts({ onTabChange }: BackToPostsProps) {
   return (
-    <nav
-      className={styles.tabsContainer}
-      role="tablist"
-      aria-label="Profile navigation tabs"
+    <button
+      type="button"
+      className={styles.backButton}
+      onClick={() => onTabChange("posts")}
     >
-      {tabs.map((tab) => {
-        const isSelected = activeTab === tab.id;
-        return (
-          <button
-            key={tab.id}
-            id={`tab-${tab.id}`}
-            type="button"
-            role="tab"
-            aria-selected={isSelected}
-            aria-controls={`panel-${tab.id}`}
-            tabIndex={isSelected ? 0 : -1}
-            className={styles.tabButton}
-            onClick={() => onTabChange(tab.id)}
-          >
-            <span>{tab.label}</span>
-            {tab.count !== undefined && (
-              <span className={styles.tabBadge}>{tab.count}</span>
-            )}
-          </button>
-        );
-      })}
-    </nav>
+      <AppIcon name="arrowLeft" width={16} height={16} />
+      Back to profile
+    </button>
+  );
+}
+
+interface EmptyStateProps {
+  icon: AppIconName;
+  title: string;
+  description: string;
+}
+
+function EmptyState({ icon, title, description }: EmptyStateProps) {
+  return (
+    <div className={styles.emptyCard}>
+      <span className={styles.emptyIconCircle} aria-hidden="true">
+        <AppIcon name={icon} />
+      </span>
+      <h3 className={styles.emptyTitle}>{title}</h3>
+      <p className={styles.emptyDescription}>{description}</p>
+    </div>
   );
 }
 
@@ -66,28 +59,19 @@ interface PostsTabProps {
 
 function PostsTab({ posts, loading, onPostDeleted }: PostsTabProps) {
   return (
-    <div
-      id="panel-posts"
-      role="tabpanel"
-      aria-labelledby="tab-posts"
-      className={styles.tabContent}
-    >
+    <div className={styles.tabPanel}>
       {loading && (
-        <div className={styles.emptyCard} role="status">
+        <div role="status" aria-label="Loading posts">
           <div className={`${styles.skeleton} ${styles.skeletonCard}`} />
         </div>
       )}
 
       {!loading && posts.length === 0 && (
-        <div className={styles.emptyCard}>
-          <div className={styles.emptyIconCircle} aria-hidden="true">
-            📝
-          </div>
-          <h3 className={styles.emptyTitle}>No posts yet</h3>
-          <p className={styles.emptyDescription}>
-            Posts created by this user will appear here.
-          </p>
-        </div>
+        <EmptyState
+          icon="posts"
+          title="No posts yet"
+          description="Posts shared by this user will appear here."
+        />
       )}
 
       {!loading && posts.length > 0 && (
@@ -101,9 +85,66 @@ function PostsTab({ posts, loading, onPostDeleted }: PostsTabProps) {
   );
 }
 
-interface AboutTabProps {
-  profile: Profile;
+interface ConnectionsTabProps {
   isOwnProfile: boolean;
+  followers: ProfileUserSummary[];
+  following: ProfileUserSummary[];
+  loading: boolean;
+  onFollowRequestsChanged?: () => void | Promise<void>;
+  onTabChange: (tab: ProfileTab) => void;
+}
+
+function ConnectionsTab({
+  isOwnProfile,
+  followers,
+  following,
+  loading,
+  onFollowRequestsChanged,
+  onTabChange,
+}: ConnectionsTabProps) {
+  return (
+    <div className={styles.tabPanel}>
+      <BackToPosts onTabChange={onTabChange} />
+
+      {isOwnProfile && (
+        <div className={styles.card}>
+          <ProfileFollowRequests onChanged={onFollowRequestsChanged} />
+        </div>
+      )}
+
+      {loading ? (
+        <div
+          className={styles.connectionsGrid}
+          role="status"
+          aria-label="Loading connections"
+        >
+          <div className={`${styles.skeleton} ${styles.skeletonCard}`} />
+          <div className={`${styles.skeleton} ${styles.skeletonCard}`} />
+        </div>
+      ) : (
+        <div className={styles.connectionsGrid}>
+          <div className={styles.card}>
+            <ProfileUserList
+              title="Followers"
+              users={followers}
+              emptyMessage="No followers yet."
+            />
+          </div>
+          <div className={styles.card}>
+            <ProfileUserList
+              title="Following"
+              users={following}
+              emptyMessage="Not following anyone yet."
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+interface SettingsTabProps {
+  profile: Profile;
   onTogglePrivacy?: () => Promise<void>;
   privacyUpdating?: boolean;
   privacyError?: string | null;
@@ -113,16 +154,11 @@ interface AboutTabProps {
   onUpdateProfileDetails?: (input: UpdateProfileDetailsInput) => Promise<void>;
   detailsUpdating?: boolean;
   detailsError?: string | null;
-  followers: ProfileUserSummary[];
-  following: ProfileUserSummary[];
-  followDataLoading?: boolean;
-  followError?: string | null;
-  onFollowRequestsChanged?: () => void | Promise<void>;
+  onTabChange: (tab: ProfileTab) => void;
 }
 
-function AboutTab({
+function SettingsTab({
   profile,
-  isOwnProfile,
   onTogglePrivacy,
   privacyUpdating = false,
   privacyError = null,
@@ -132,12 +168,8 @@ function AboutTab({
   onUpdateProfileDetails,
   detailsUpdating = false,
   detailsError = null,
-  followers,
-  following,
-  followDataLoading = false,
-  followError = null,
-  onFollowRequestsChanged,
-}: AboutTabProps) {
+  onTabChange,
+}: SettingsTabProps) {
   const createdDate = parseDate(profile.createdAt);
   const memberSince = createdDate
     ? createdDate.toLocaleDateString(undefined, {
@@ -145,145 +177,83 @@ function AboutTab({
         month: "long",
         day: "numeric",
       })
-    : null;
-  const birthDate = parseDate(profile.dateOfBirth);
-  const formattedDateOfBirth = birthDate
-    ? birthDate.toLocaleDateString(undefined, {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      })
-    : null;
+    : "";
+  const accountDetails = [
+    { label: "Email", value: profile.email },
+    { label: "Age", value: profile.age > 0 ? String(profile.age) : "" },
+    {
+      label: "Gender",
+      value: profile.gender
+        ? profile.gender.charAt(0).toUpperCase() + profile.gender.slice(1)
+        : "",
+    },
+    { label: "Joined", value: memberSince },
+  ].filter((detail) => detail.value);
 
   return (
-    <div
-      id="panel-about"
-      role="tabpanel"
-      aria-labelledby="tab-about"
-      className={styles.tabContent}
-    >
-      <div className={styles.aboutGrid}>
-        {isOwnProfile && onUpdateProfileAvatar && (
-          <ProfileAvatarForm
-            key={`${profile.id}:${profile.profilePhoto ?? ""}`}
-            profile={profile}
-            onSave={onUpdateProfileAvatar}
-            saving={avatarUpdating}
-            error={avatarError}
-          />
-        )}
+    <div className={styles.tabPanel}>
+      <BackToPosts onTabChange={onTabChange} />
 
-        {isOwnProfile && onUpdateProfileDetails && (
-          <ProfileDetailsForm
-            key={[
-              profile.id,
-              profile.firstName,
-              profile.lastName,
-              profile.nickname,
-              profile.aboutMe,
-              profile.dateOfBirth,
-            ].join(":")}
-            profile={profile}
-            onSave={onUpdateProfileDetails}
-            saving={detailsUpdating}
-            error={detailsError}
-          />
-        )}
-
-        <section
-          className={styles.card}
-          aria-labelledby="personal-info-heading"
-        >
-          <h3 id="personal-info-heading" className={styles.cardTitle}>
-            <span>Personal Information</span>
-          </h3>
-
-          <div className={styles.infoList}>
-            {profile.email && (
-              <div className={styles.infoRow}>
-                <span className={styles.infoLabel}>Email</span>
-                <span className={styles.infoValue}>{profile.email}</span>
-              </div>
-            )}
-
-            {profile.age !== undefined && profile.age > 0 && (
-              <div className={styles.infoRow}>
-                <span className={styles.infoLabel}>Age</span>
-                <span className={styles.infoValue}>{profile.age}</span>
-              </div>
-            )}
-
-            {profile.gender && (
-              <div className={styles.infoRow}>
-                <span className={styles.infoLabel}>Gender</span>
-                <span className={styles.infoValue}>
-                  {profile.gender.charAt(0).toUpperCase() +
-                    profile.gender.slice(1)}
-                </span>
-              </div>
-            )}
-
-            {formattedDateOfBirth && (
-              <div className={styles.infoRow}>
-                <span className={styles.infoLabel}>Date of Birth</span>
-                <span className={styles.infoValue}>
-                  {formattedDateOfBirth}
-                </span>
-              </div>
-            )}
-
-            {memberSince && (
-              <div className={styles.infoRow}>
-                <span className={styles.infoLabel}>Joined</span>
-                <span className={styles.infoValue}>{memberSince}</span>
-              </div>
-            )}
-
-            <div className={styles.infoRow}>
-              <span className={styles.infoLabel}>Visibility</span>
-              <span className={styles.infoValue}>
-                {profile.isPrivate ? "Private" : "Public"}
-              </span>
-            </div>
-          </div>
-        </section>
-
-        {isOwnProfile && onTogglePrivacy && (
-          <ProfilePrivacy
-            isPrivate={profile.isPrivate}
-            onTogglePrivacy={onTogglePrivacy}
-            updating={privacyUpdating}
-            error={privacyError}
-          />
-        )}
-
-        {isOwnProfile && (
-          <div className={styles.card}>
-            <ProfileFollowRequests onChanged={onFollowRequestsChanged} />
-          </div>
-        )}
-
-        {!followDataLoading && (
-          <div className={styles.card}>
-            <ProfileUserList
-              title="Followers"
-              users={followers}
-              emptyMessage="No followers yet."
+      <div className={styles.settingsGrid}>
+        <div className={styles.settingsColumn}>
+          {onUpdateProfileDetails && (
+            <ProfileDetailsForm
+              key={[
+                profile.id,
+                profile.firstName,
+                profile.lastName,
+                profile.nickname,
+                profile.aboutMe,
+                profile.dateOfBirth,
+              ].join(":")}
+              profile={profile}
+              onSave={onUpdateProfileDetails}
+              saving={detailsUpdating}
+              error={detailsError}
             />
-          </div>
-        )}
+          )}
+        </div>
 
-        {!followDataLoading && (
-          <div className={styles.card}>
-            <ProfileUserList
-              title="Following"
-              users={following}
-              emptyMessage="Not following anyone yet."
+        <div className={styles.settingsColumn}>
+          {onUpdateProfileAvatar && (
+            <ProfileAvatarForm
+              key={`${profile.id}:${profile.profilePhoto ?? ""}`}
+              profile={profile}
+              onSave={onUpdateProfileAvatar}
+              saving={avatarUpdating}
+              error={avatarError}
             />
-          </div>
-        )}
+          )}
 
-        {followError && <p className={styles.emptyDescription}>{followError}</p>}
+          {onTogglePrivacy && (
+            <ProfilePrivacy
+              isPrivate={profile.isPrivate}
+              onTogglePrivacy={onTogglePrivacy}
+              updating={privacyUpdating}
+              error={privacyError}
+            />
+          )}
+
+          {accountDetails.length > 0 && (
+            <section
+              className={styles.card}
+              aria-labelledby="account-details-heading"
+            >
+              <h3 id="account-details-heading" className={styles.cardTitle}>
+                <span>Account</span>
+              </h3>
+
+              <dl className={styles.infoList}>
+                {accountDetails.map((detail) => (
+                  <div key={detail.label} className={styles.infoRow}>
+                    <dt className={styles.infoLabel}>{detail.label}</dt>
+                    <dd className={styles.infoValue}>{detail.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </section>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -309,7 +279,6 @@ interface ProfileContentProps {
   followers: ProfileUserSummary[];
   following: ProfileUserSummary[];
   followDataLoading?: boolean;
-  followError?: string | null;
   onFollowRequestsChanged?: () => void | Promise<void>;
 }
 
@@ -332,19 +301,15 @@ export default function ProfileContent({
   detailsError,
   followers,
   following,
-  followDataLoading,
-  followError,
+  followDataLoading = false,
   onFollowRequestsChanged,
 }: ProfileContentProps) {
-  return (
-    <>
-      <ProfileTabs
-        activeTab={activeTab}
-        onTabChange={onTabChange}
-        postsCount={posts.length}
-      />
+  const visibleTab =
+    !isOwnProfile && activeTab === "settings" ? "posts" : activeTab;
 
-      {activeTab === "posts" && (
+  return (
+    <div id="profile-sections" className={styles.sections}>
+      {visibleTab === "posts" && (
         <PostsTab
           posts={posts}
           loading={postsLoading}
@@ -352,10 +317,20 @@ export default function ProfileContent({
         />
       )}
 
-      {activeTab === "about" && (
-        <AboutTab
-          profile={profile}
+      {visibleTab === "connections" && (
+        <ConnectionsTab
           isOwnProfile={isOwnProfile}
+          followers={followers}
+          following={following}
+          loading={followDataLoading}
+          onFollowRequestsChanged={onFollowRequestsChanged}
+          onTabChange={onTabChange}
+        />
+      )}
+
+      {visibleTab === "settings" && (
+        <SettingsTab
+          profile={profile}
           onTogglePrivacy={onTogglePrivacy}
           privacyUpdating={privacyUpdating}
           privacyError={privacyError}
@@ -365,13 +340,9 @@ export default function ProfileContent({
           onUpdateProfileDetails={onUpdateProfileDetails}
           detailsUpdating={detailsUpdating}
           detailsError={detailsError}
-          followers={followers}
-          following={following}
-          followDataLoading={followDataLoading}
-          followError={followError}
-          onFollowRequestsChanged={onFollowRequestsChanged}
+          onTabChange={onTabChange}
         />
       )}
-    </>
+    </div>
   );
 }

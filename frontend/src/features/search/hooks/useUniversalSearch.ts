@@ -25,13 +25,6 @@ export const DEFAULT_SHORTCUTS: NavigationShortcut[] = [
     icon: "orbit",
   },
   {
-    id: "nav-posts",
-    title: "Posts Stream",
-    description: "Browse the latest public and community posts",
-    href: "/posts",
-    icon: "posts",
-  },
-  {
     id: "nav-new-post",
     title: "Create New Post",
     description: "Publish a cosmic thought, update, or photo",
@@ -240,7 +233,7 @@ export function useUniversalSearch(onClose?: () => void) {
           type: "post",
           title: p.title || p.content_snippet,
           subtitle: `by @${p.author_username}${p.group_title ? ` in ${p.group_title}` : ""}`,
-          href: `/posts#post-${p.id}`,
+          href: `/#post-${p.id}`,
           badge: p.group_title ? p.group_title : "Post",
           data: p,
         });
@@ -316,4 +309,3 @@ export function useUniversalSearch(onClose?: () => void) {
     handleKeyDown,
   };
 }
-
