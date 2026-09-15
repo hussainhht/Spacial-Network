@@ -126,7 +126,7 @@ export default function ChatWindow({
   const initials = getInitials("", "", partnerUsername);
 
   return (
-    <section className={styles.floatingCard}>
+    <section className={`${styles.floatingCard} ${styles.chatWindowCard}`}>
       {/* Transmission Header */}
       <header className={styles.windowHeader}>
         <div className={styles.headerLeft}>
@@ -140,46 +140,47 @@ export default function ChatWindow({
             ←
           </button>
 
-          <div className={styles.avatarWrapper}>
-            {partnerAvatar ? (
-              <img
-                src={partnerAvatar}
-                alt={partnerUsername}
-                className={styles.avatarImg}
-              />
-            ) : (
-              <div className={styles.avatarFallback}>{initials}</div>
-            )}
-            <span
-              className={isPartnerOnline ? styles.onlineRing : styles.offlineDot}
-              title={isPartnerOnline ? "Online" : "Offline"}
-            />
-          </div>
-
-          <div className={styles.headerProfile}>
-            <h3 className={styles.partnerName}>{partnerUsername}</h3>
-            <div className={styles.partnerStatus}>
-              {isPartnerTyping ? (
-                <span className={styles.typingIndicatorText}>
-                  typing
-                  <span className={styles.typingDotsInline}>
-                    <span className={styles.typingDot} />
-                    <span className={styles.typingDot} />
-                    <span className={styles.typingDot} />
-                  </span>
-                </span>
-              ) : isPartnerOnline ? (
-                <span className={styles.statusOnline}>Online now</span>
+          <Link
+            href={`/profile/${partnerUsername}`}
+            className={styles.profileHeaderLink}
+            title={`View ${partnerUsername}'s profile`}
+            aria-label={`View ${partnerUsername}'s profile`}
+          >
+            <div className={styles.avatarWrapper}>
+              {partnerAvatar ? (
+                <img
+                  src={partnerAvatar}
+                  alt={partnerUsername}
+                  className={styles.avatarImg}
+                />
               ) : (
-                <span>Offline</span>
+                <div className={styles.avatarFallback}>{initials}</div>
               )}
+              <span
+                className={isPartnerOnline ? styles.onlineRing : styles.offlineDot}
+                title={isPartnerOnline ? "Online" : "Offline"}
+              />
             </div>
-          </div>
-        </div>
 
-        <div className={styles.headerRight}>
-          <Link href={`/profile/${partnerUsername}`} className={styles.profileLinkBtn}>
-            View Profile
+            <div className={styles.headerProfile}>
+              <h3 className={styles.partnerName}>{partnerUsername}</h3>
+              <div className={styles.partnerStatus}>
+                {isPartnerTyping ? (
+                  <span className={styles.typingIndicatorText}>
+                    typing
+                    <span className={styles.typingDotsInline}>
+                      <span className={styles.typingDot} />
+                      <span className={styles.typingDot} />
+                      <span className={styles.typingDot} />
+                    </span>
+                  </span>
+                ) : isPartnerOnline ? (
+                  <span className={styles.statusOnline}>Online now</span>
+                ) : (
+                  <span>Offline</span>
+                )}
+              </div>
+            </div>
           </Link>
         </div>
       </header>

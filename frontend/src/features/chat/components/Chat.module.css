@@ -88,6 +88,7 @@
   display: flex;
   flex-direction: column;
   height: 100%;
+  animation: sidebarCardEnter 0.42s cubic-bezier(0.16, 1, 0.3, 1) 0.06s both;
 }
 
 /* Chat Transmission Window Card */
@@ -97,6 +98,46 @@
   display: flex;
   flex-direction: column;
   height: 100%;
+  animation: chatCardEnter 0.42s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Desktop Entrance Keyframes */
+@keyframes chatCardEnter {
+  0% {
+    opacity: 0;
+    transform: translateY(12px) translateX(-6px) scale(0.988);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) translateX(0) scale(1);
+  }
+}
+
+@keyframes sidebarCardEnter {
+  0% {
+    opacity: 0;
+    transform: translateY(12px) translateX(6px) scale(0.988);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) translateX(0) scale(1);
+  }
+}
+
+/* Interior Conversation Switch Transition */
+.chatWindowCard {
+  animation: conversationCardEnter 0.32s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes conversationCardEnter {
+  0% {
+    opacity: 0;
+    transform: scale(0.992) translateY(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
 /* --------------------------------------------------------------------------
@@ -303,18 +344,6 @@
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
 }
 
-.conversationItemActive::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 8px;
-  bottom: 8px;
-  width: 3px;
-  border-radius: 0 4px 4px 0;
-  background: var(--planet-accent, #69aef0);
-  box-shadow: 0 0 10px var(--planet-glow, rgba(66, 145, 218, 0.5));
-}
-
 .avatarWrapper {
   position: relative;
   width: 44px;
@@ -328,6 +357,7 @@
   border-radius: 50%;
   object-fit: cover;
   border: 1px solid rgba(148, 163, 184, 0.2);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
 }
 
 .avatarFallback {
@@ -342,6 +372,7 @@
   font-weight: 700;
   font-size: 14px;
   border: 1px solid rgba(148, 163, 184, 0.2);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
 }
 
 .onlineRing {
@@ -473,6 +504,39 @@
   background: rgba(255, 255, 255, 0.1);
 }
 
+.profileHeaderLink {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  border-radius: 12px;
+  padding: 4px 8px;
+  margin: -4px -8px;
+  min-width: 0;
+  transition: background 0.15s ease;
+  cursor: pointer;
+}
+
+.profileHeaderLink:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.profileHeaderLink:hover .partnerName {
+  color: var(--planet-accent-hover, #86c3f7);
+}
+
+.profileHeaderLink:hover .avatarImg,
+.profileHeaderLink:hover .avatarFallback {
+  border-color: var(--planet-accent, #69aef0);
+  box-shadow: 0 0 10px var(--planet-glow, rgba(66, 145, 218, 0.4));
+  transform: scale(1.04);
+}
+
+.profileHeaderLink:focus-visible {
+  outline: 2px solid var(--planet-focus-ring, #78b6ef);
+  outline-offset: 2px;
+}
+
 .headerProfile {
   display: flex;
   flex-direction: column;
@@ -488,6 +552,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  transition: color 0.15s ease;
 }
 
 .partnerStatus {
@@ -651,8 +716,10 @@
 }
 
 .bubbleMine {
-  max-width: clamp(260px, 70%, 540px);
-  padding: 9px 13px;
+  width: fit-content;
+  max-width: min(65%, 420px);
+  min-width: 0;
+  padding: 8px 12px;
   border-radius: 16px 16px 3px 16px;
   background: linear-gradient(135deg, rgba(82, 157, 224, 0.92) 0%, rgba(40, 95, 150, 0.96) 100%);
   border: 1px solid rgba(134, 195, 247, 0.3);
@@ -663,8 +730,10 @@
 }
 
 .bubblePartner {
-  max-width: clamp(260px, 70%, 540px);
-  padding: 9px 13px;
+  width: fit-content;
+  max-width: min(65%, 420px);
+  min-width: 0;
+  padding: 8px 12px;
   border-radius: 16px 16px 16px 3px;
   background: linear-gradient(135deg, rgba(18, 24, 52, 0.88) 0%, rgba(13, 17, 38, 0.94) 100%);
   border: 1px solid rgba(148, 163, 184, 0.18);
@@ -881,6 +950,18 @@
   justify-content: center;
   padding: 32px;
   text-align: center;
+  animation: emptyChatEnter 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes emptyChatEnter {
+  0% {
+    opacity: 0;
+    transform: scale(0.99) translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
 .emptyIconWrapper {
@@ -1074,11 +1155,13 @@
   .sidebarCard {
     width: 100%;
     flex: 1;
+    animation: mobileSidebarCardIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   .chatCard {
     width: 100%;
     flex: 1;
+    animation: mobileChatCardIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   .hideOnMobile {
@@ -1096,5 +1179,37 @@
   .bubbleMine,
   .bubblePartner {
     max-width: 82%;
+  }
+}
+
+@keyframes mobileChatCardIn {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes mobileSidebarCardIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chatCard,
+  .sidebarCard,
+  .chatWindowCard,
+  .emptyChat {
+    animation: none !important;
+    transform: none !important;
   }
 }
