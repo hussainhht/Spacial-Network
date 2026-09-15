@@ -10,6 +10,8 @@ import { useGroupChat } from "../hooks/useGroupChat";
 import type { Group, GroupMember } from "../types/group";
 import GroupAvatar from "./GroupAvatar";
 import styles from "./GroupChatPanel.module.css";
+import PostSharePreview from "@/features/interactions/components/PostSharePreview";
+import { parseSharedPost } from "@/features/interactions/utils/sharedPost";
 
 const MAX_MESSAGE_LENGTH = 2000;
 const NEAR_LIMIT_THRESHOLD = 1800;
@@ -110,7 +112,14 @@ export default function GroupChatPanel({ group, members, membersLoading, isMembe
               <div className={styles.messageStack}>
                 <div className={`${styles.senderName} ${isMine ? styles.senderNameMine : ""}`}>{isMine ? name : <Link href={`/profile/${message.username}`}>{name}</Link>}</div>
                 <div className={isMine ? chatStyles.bubbleMine : chatStyles.bubblePartner}>
-                  <div className={chatStyles.messageContent}>{message.content}</div>
+                  {(() => {
+                    const shared = parseSharedPost(message.content);
+                    if (!shared) return <div className={chatStyles.messageContent}>{message.content}</div>;
+                    return <>
+                      {shared.note && <div className={chatStyles.messageContent}>{shared.note}</div>}
+                      <PostSharePreview postId={shared.postId} />
+                    </>;
+                  })()}
                   <div className={`${chatStyles.bubbleMeta} ${isMine ? chatStyles.bubbleMetaMine : chatStyles.bubbleMetaPartner}`}><time className={chatStyles.bubbleTime}>{formatMessageTime(message.created_at)}</time></div>
                 </div>
               </div>

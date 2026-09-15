@@ -1,9 +1,15 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
-import { useState } from "react";
+import { cloneElement, isValidElement, useEffect, useState } from "react";
 import AppIcon from "@/components/layout/AppIcon";
+import { getCommentCount } from "@/features/comments/api/comments";
+import { getLikeStatus, likePost, unlikePost } from "@/features/interactions/api/likes";
+import InteractionsBar from "@/features/interactions/components/InteractionsBar";
+import ShareModal from "@/features/interactions/components/ShareModal";
+import type { LikeStatus } from "@/features/interactions/types/interactions";
 import { deletePost } from "@/features/posts/api/posts";
 import type { Post, PostVisibility } from "@/features/posts/types/post";
 import { formatDateTime, timeAgo } from "@/lib/utils";
@@ -35,11 +41,54 @@ function postMedia(post: Post) {
 }
 
 export default function PostCard({ post, onDeleted, preview = false, detail = false, children }: PostCardProps) {
+  const router = useRouter();
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
+  const [likeStatus, setLikeStatus] = useState<LikeStatus | null>(null);
+  const [commentCount, setCommentCount] = useState<number | undefined>(undefined);
+  const [sharing, setSharing] = useState(false);
   const postHref = `/posts/${post.id}`;
   const titleId = preview ? undefined : `post-title-${post.id}`;
   const visibility = visibilityPresentation[post.visibility];
+
+  useEffect(() => {
+    if (preview) return;
+    let isMounted = true;
+    getLikeStatus(post.id)
+      .then((status) => {
+        if (isMounted) setLikeStatus(status);
+      })
+      .catch(() => {
+        // Like state is a non-critical enhancement; leave the bar at its
+        // zero-state defaults if the fetch fails.
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, [post.id, preview]);
+
+  useEffect(() => {
+    if (preview) return;
+    let isMounted = true;
+    getCommentCount(post.id)
+      .then((data) => {
+        if (isMounted) setCommentCount(data.count);
+      })
+      .catch(() => {
+        // Comment count is a non-critical enhancement; leave the bar
+        // without a number if the fetch fails.
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, [post.id, preview]);
+
+  // When CommentsSection is rendered as children (the post detail page),
+  // it tracks the live comment list - inject a callback so adding or
+  // deleting a comment there keeps this count in sync without a refetch.
+  const childrenWithCommentSync = isValidElement(children)
+    ? cloneElement(children, { onCountChange: setCommentCount } as object)
+    : children;
 
   async function handleDelete() {
     if (!window.confirm("Delete this post? This cannot be undone.")) return;
@@ -136,21 +185,24 @@ export default function PostCard({ post, onDeleted, preview = false, detail = fa
       <PostMediaGrid media={postMedia(post)} preview={!detail} />
 
       <footer className={styles.footer}>
-        {preview ? (
-          <span className={styles.comments} aria-disabled="true">
-            <AppIcon name="chat" width={17} height={17} /> Comments
-          </span>
-        ) : (
-          <Link className={styles.comments} href={detail ? "#comments" : `${postHref}#comments`}>
-            <AppIcon name="chat" width={17} height={17} />
-            <span>Comments</span>
-            {!detail && <AppIcon name="arrow" width={14} height={14} />}
-          </Link>
-        )}
+        <InteractionsBar
+          key={likeStatus ? "loaded" : "loading"}
+          postId={post.id}
+          commentCount={commentCount}
+          likeCount={likeStatus?.count}
+          liked={likeStatus?.liked}
+          onLike={async (next) => {
+            await (next ? likePost(post.id) : unlikePost(post.id));
+          }}
+          onComment={() => router.push(detail ? "#comments" : `${postHref}#comments`)}
+          onShare={preview ? undefined : () => setSharing(true)}
+          preview={preview}
+        />
       </footer>
 
       {error && <p className={styles.error} role="alert" aria-live="assertive">{error}</p>}
-      {children}
+      {sharing && <ShareModal postId={post.id} onClose={() => setSharing(false)} />}
+      {childrenWithCommentSync}
     </article>
   );
 }
