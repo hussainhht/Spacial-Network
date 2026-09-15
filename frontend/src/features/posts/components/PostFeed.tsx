@@ -114,6 +114,7 @@ export default function PostFeed({
       <div
         className={stickyFilters ? "home-feed-filter-sticky" : undefined}
         data-elevated={stickyFilters ? filtersElevated : undefined}
+        data-motion-section
       >
         <FeedFilter active={feed} onChange={handleFeedChange} />
       </div>
@@ -154,7 +155,7 @@ export default function PostFeed({
         )}
 
         {!loading && !error && posts.length > 0 && (
-          <div className="posts-list">
+          <div className="posts-list" data-motion-list>
             {posts.map((post, index) => (
               <Fragment key={post.id}>
                 <PostCard post={post} onDeleted={removePost} />

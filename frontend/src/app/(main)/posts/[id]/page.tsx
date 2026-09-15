@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import PageTransition from "@/components/transitions/PageTransition";
 import { getPost } from "@/features/posts/api/posts";
 import { ApiError } from "@/lib/api/errors";
 import type { Post } from "@/features/posts/types/post";
@@ -51,22 +52,24 @@ export default function PostDetailPage() {
   }, [postId, validId, router]);
 
   return (
-    <main className="posts-page">
-      <div className="posts-container">
-        <Link href="/" className="back-link">
-          &larr; Back to home
-        </Link>
+    <PageTransition>
+      <main className="posts-page">
+        <div className="posts-container" data-motion-section>
+          <Link href="/" className="back-link">
+            &larr; Back to home
+          </Link>
 
-        {!validId && <p className="form-error">Invalid post id</p>}
-        {loading && <p>Loading post...</p>}
-        {error && <p className="form-error">{error}</p>}
+          {!validId && <p className="form-error">Invalid post id</p>}
+          {loading && <p>Loading post...</p>}
+          {error && <p className="form-error">{error}</p>}
 
-        {post && (
-          <PostCard post={post} detail onDeleted={() => router.push("/")}>
-            <CommentsSection postId={post.id} />
-          </PostCard>
-        )}
-      </div>
-    </main>
+          {post && (
+            <PostCard post={post} detail onDeleted={() => router.push("/")}>
+              <CommentsSection postId={post.id} />
+            </PostCard>
+          )}
+        </div>
+      </main>
+    </PageTransition>
   );
 }

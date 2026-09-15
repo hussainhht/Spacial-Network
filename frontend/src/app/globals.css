@@ -1073,9 +1073,11 @@ main:not(.chat-main):has(> form) form > p {
 }
 
 /* Community directory and details share the existing space theme. */
-.groups-container,
-.group-details-container {
+.groups-container {
   width: min(100%, 1120px);
+}
+.group-details-container {
+  width: min(100%, 1200px);
 }
 .group-create-container {
   width: min(100%, 1120px);
@@ -1234,7 +1236,7 @@ main:not(.chat-main):has(> form) form > p {
   display: flex;
   align-items: flex-start;
   gap: 1.25rem;
-  padding: 1.25rem 1.5rem;
+  padding: clamp(1.5rem, 2.5vw, 2rem);
 }
 .group-header-avatar {
   width: clamp(80px, 11vw, 150px) !important;
@@ -1372,71 +1374,72 @@ main:not(.chat-main):has(> form) form > p {
   align-self: start;
 }
 
-/* The app shell already bounds its route pane beneath the navbar. On wider
-   screens, let the dynamic header and tabs take their natural height, then
-   give the remaining space to two independent Overview scroll panes. */
+/* Keep the route pane as the page's primary scroll surface. The feed and
+   information rail only become independent scroll areas when their content
+   exceeds a comfortable portion of the viewport. */
 @media (min-width: 901px) {
-  .group-details-page:has(#group-tabpanel-overview) {
-    height: 100%;
-    min-height: 100%;
-    overflow: hidden;
-  }
-
-  .group-details-page:has(#group-tabpanel-overview)
-    > .group-details-container {
-    height: 100%;
-    min-height: 0;
-    overflow: hidden;
-  }
-
-  #group-tabpanel-overview {
-    flex: 1;
-    min-height: 0;
-    overflow: hidden;
-    align-items: stretch;
-  }
-
-  #group-tabpanel-overview .group-overview-column {
-    min-height: 0;
-    align-self: stretch;
-  }
-
-  #group-tabpanel-overview .group-overview-main {
-    overflow: hidden;
-  }
-
-  #group-tabpanel-overview .group-overview-main > .group-posts,
-  #group-tabpanel-overview .group-overview-sidebar {
-    min-height: 0;
+  #group-tabpanel-overview .group-overview-main > .group-posts {
+    max-height: min(76dvh, calc(100dvh - var(--app-navbar-height) - 3rem));
     overflow-x: hidden;
     overflow-y: auto;
     overscroll-behavior-y: contain;
-    scrollbar-gutter: stable;
     scrollbar-width: thin;
     scrollbar-color: var(--planet-border) transparent;
   }
 
-  #group-tabpanel-overview .group-overview-main > .group-posts {
-    flex: 1;
+  #group-tabpanel-overview .group-overview-sidebar {
+    position: sticky;
+    top: 1.5rem;
+    max-height: calc(100dvh - var(--app-navbar-height) - 3rem);
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    scrollbar-width: thin;
+    scrollbar-color: var(--planet-border) transparent;
   }
 }
 
 @media (min-width: 701px) {
   .group-details-page:has(#group-tabpanel-chat) {
-    height: 100%;
-    min-height: 100%;
-    overflow: hidden;
+    /* Let only the chat panel break out of the 1200px details column.
+       Container units measure the available shell content, not the viewport. */
+    container-type: inline-size;
+    min-height: calc(100dvh - var(--app-navbar-height));
   }
 
   .group-details-page:has(#group-tabpanel-chat) > .group-details-container {
-    height: 100%;
-    min-height: 0;
-    overflow: hidden;
+    /* Content-sized rows preserve the actual back link, hero and tab dimensions.
+       The chat gets the remaining height, with room to scroll the page on
+       shorter screens instead of shrinking or clipping its controls. */
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: max-content max-content max-content minmax(32rem, 1fr);
+    height: calc(100dvh - var(--app-navbar-height) - 2 * clamp(1.5rem, 5vw, 3rem));
   }
 
   #group-tabpanel-chat {
-    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-self: center;
+    width: min(100cqw, 1500px);
+    min-width: 0;
     min-height: 0;
+  }
+
+  /* Size the existing Chat + Info layout at its boundary only. */
+  #group-tabpanel-chat > div {
+    flex: 1;
+    height: auto;
+    grid-template-columns: minmax(0, 1fr) 300px;
+    gap: 20px;
+    overflow: visible;
+  }
+}
+
+@media (min-width: 701px) and (max-width: 900px) {
+  #group-tabpanel-chat > div {
+    grid-template-columns: minmax(0, 1fr) 270px;
+    gap: 12px;
   }
 }
 .group-panel {
@@ -1481,6 +1484,75 @@ main:not(.chat-main):has(> form) form > p {
   display: flex;
   flex-direction: column;
   gap: 0.7rem;
+}
+
+.group-members-tab-content {
+  display: grid;
+  gap: 1rem;
+}
+
+.group-join-requests-compact {
+  padding: 14px 16px;
+}
+.group-join-requests-summary {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+}
+.group-join-requests-icon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--planet-border);
+  border-radius: 11px;
+  background: var(--planet-accent-soft);
+  font-size: 0.95rem;
+}
+.group-join-requests-copy h2,
+.group-join-requests-copy p {
+  margin: 0;
+}
+.group-join-requests-copy h2 {
+  color: var(--space-text-heading);
+  font-size: 0.9rem;
+}
+.group-join-requests-copy p {
+  margin-top: 2px;
+  color: var(--space-text-muted);
+  font-size: 0.76rem;
+}
+.group-join-requests-count {
+  padding: 5px 9px;
+  border: 1px solid var(--space-border);
+  border-radius: 999px;
+  color: var(--planet-accent-hover);
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.group-join-requests-compact .group-attempt-list:not(:empty),
+.group-join-requests-compact .group-verification-error {
+  margin-top: 12px;
+}
+.group-join-requests-empty {
+  margin: 10px 0 0 50px;
+  color: var(--space-text-muted);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+@media (max-width: 520px) {
+  .group-join-requests-summary {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .group-join-requests-count {
+    grid-column: 2;
+    justify-self: start;
+  }
+  .group-join-requests-empty {
+    margin-left: 50px;
+  }
 }
 .group-members-list {
   max-height: 420px;
@@ -2262,6 +2334,10 @@ main:not(.chat-main):has(> form) form > p {
   border-color: var(--planet-border-strong);
   background: var(--space-input-bg-focus);
 }
+.group-composer-trigger:focus-visible {
+  outline: 2px solid var(--planet-focus-ring);
+  outline-offset: 3px;
+}
 .group-composer-avatar {
   flex-shrink: 0;
   display: grid;
@@ -2296,6 +2372,83 @@ main:not(.chat-main):has(> form) form > p {
 }
 .group-composer-action:hover {
   background: var(--planet-accent-soft);
+}
+
+.group-inline-composer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  animation: group-composer-expand 0.2s ease-out;
+}
+.group-inline-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.group-inline-field label,
+.group-inline-composer > .form-field > label {
+  color: var(--space-text-label);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+.group-inline-field input,
+.group-inline-field textarea,
+.group-inline-composer > .form-field > input[type="file"] {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--space-border);
+  border-radius: 11px;
+  background: var(--space-input-bg);
+  color: var(--space-text-heading);
+  font: inherit;
+  font-size: 0.88rem;
+}
+.group-inline-field input { min-height: 42px; padding: 0.65rem 0.8rem; }
+.group-inline-field textarea { min-height: 104px; padding: 0.7rem 0.8rem; line-height: 1.55; resize: vertical; }
+.group-inline-field input:focus,
+.group-inline-field textarea:focus,
+.group-inline-composer > .form-field > input[type="file"]:focus-visible {
+  outline: none;
+  border-color: var(--planet-border-strong);
+  box-shadow: 0 0 0 2px var(--planet-accent-soft);
+}
+.group-inline-composer > .form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+.group-inline-composer > .form-field > input[type="file"] {
+  padding: 0.55rem;
+  color: var(--space-text-muted);
+}
+.group-inline-composer .image-attachment-preview {
+  overflow: hidden;
+  border: 1px solid var(--space-border);
+  border-radius: 12px;
+  background: rgba(3, 7, 18, 0.35);
+}
+.group-inline-composer .image-attachment-preview img {
+  display: block;
+  width: 100%;
+  max-height: 260px;
+  object-fit: cover;
+}
+.group-inline-composer .image-attachment-preview button,
+.group-composer-collapse {
+  border: 0;
+  background: transparent;
+  color: var(--space-text-muted);
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.group-inline-composer .image-attachment-preview button { margin: 0.5rem; }
+.group-inline-composer .image-attachment-preview button:hover,
+.group-composer-collapse:hover { color: var(--space-text-heading); }
+.group-composer-collapse:disabled { opacity: 0.5; cursor: not-allowed; }
+@keyframes group-composer-expand {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .group-posts-empty {
@@ -2639,6 +2792,13 @@ main:not(.chat-main):has(> form) form > p {
 }
 
 @media (max-width: 600px) {
+  .group-inline-composer .group-composer-actions {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+  .group-inline-composer .group-composer-actions .group-button {
+    width: 100%;
+  }
   .group-create-actions-bar {
     flex-direction: column;
     align-items: stretch;
@@ -2653,57 +2813,20 @@ main:not(.chat-main):has(> form) form > p {
 /*  Group tabs & Events                                                */
 /* ================================================================== */
 
-.group-tabs {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  margin: 1.5rem 0 1.25rem;
-  border-bottom: 1px solid var(--space-border);
+.group-tabs[data-segmented-tabs] {
+  width: fit-content;
+  max-width: 100%;
+  margin: 1rem 0 1.25rem;
   overflow-x: auto;
-  scrollbar-width: thin;
+  scrollbar-width: none;
 }
 
-.group-tab {
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.75rem 1rem;
-  border: none;
-  border-bottom: 2px solid transparent;
-  background: none;
-  color: var(--space-text-muted);
-  font: 600 0.9rem inherit;
-  cursor: pointer;
-  transition:
-    color 0.15s ease,
-    border-color 0.15s ease;
+.group-tabs[data-segmented-tabs]::-webkit-scrollbar {
+  display: none;
 }
 
-.group-tab:hover:not(:disabled) {
-  color: var(--space-text-heading);
-}
-
-.group-tab[data-active="true"] {
-  color: var(--space-text-heading);
-  border-bottom-color: var(--planet-accent);
-}
-
-.group-tab:disabled {
-  color: var(--space-text-placeholder);
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.group-tab-lock {
-  font-size: 0.8em;
-}
-
-@media (max-width: 600px) {
-  .group-tab {
-    padding: 0.65rem 0.75rem;
-    font-size: 0.85rem;
-  }
+.group-tabs[data-segmented-tabs] > button {
+  flex: 0 0 auto;
 }
 
 .group-search {
@@ -2913,12 +3036,10 @@ main:not(.chat-main):has(> form) form > p {
 .group-event-create-button { min-height: 38px; padding: .5rem .85rem; display: inline-flex; align-items: center; gap: .35rem; border: 1px solid rgba(215,201,158,.28); border-radius: 11px; background: rgba(185,163,104,.1); color: #eee5ca; font: 600 .82rem inherit; cursor: pointer; }
 .group-event-create-button:hover { background: rgba(185,163,104,.17); border-color: rgba(215,201,158,.45); }
 .group-events-toolbar { margin-top: 1rem; min-height: 50px; padding: .4rem; display: flex; align-items: center; gap: .65rem; border: 1px solid rgba(255,255,255,.08); border-radius: 14px; background: rgba(3,7,18,.5); backdrop-filter: blur(12px); }
-.group-events-toolbar button, .group-events-scope span { min-height: 34px; padding: .4rem .7rem; border: 0; border-radius: 9px; background: transparent; color: var(--space-text-muted); font: 500 .76rem inherit; white-space: nowrap; }
+.group-events-toolbar button { min-height: 34px; padding: .4rem .7rem; border: 0; border-radius: 9px; background: transparent; color: var(--space-text-muted); font: 500 .76rem inherit; white-space: nowrap; }
 .group-events-toolbar button { cursor: pointer; }
 .group-events-toolbar button[aria-pressed="true"] { background: rgba(255,255,255,.075); color: var(--space-text-heading); box-shadow: inset 0 0 0 1px rgba(255,255,255,.06); }
-.group-events-scope, .group-events-period { display: flex; align-items: center; gap: .15rem; }
-.group-events-scope span { display: inline-flex; align-items: center; opacity: .55; }
-.group-events-period { padding-left: .65rem; border-left: 1px solid rgba(255,255,255,.08); }
+.group-events-period { display: flex; align-items: center; gap: .15rem; }
 .group-events-search { margin-left: auto; width: min(230px, 35%); min-height: 34px; padding: 0 .65rem; display: flex; align-items: center; gap: .45rem; border: 1px solid rgba(255,255,255,.09); border-radius: 9px; color: var(--space-text-muted); background: rgba(0,0,0,.15); }
 .group-events-search input { width: 100%; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--space-text-heading); font: .78rem inherit; }
 .group-events-search:focus-within { border-color: rgba(215,201,158,.38); box-shadow: 0 0 0 3px rgba(185,163,104,.08); }
@@ -2939,7 +3060,7 @@ main:not(.chat-main):has(> form) form > p {
 	.group-event-details { padding: .15rem .15rem .35rem; }
 	.group-event-rsvp { grid-column: auto; }
 	.group-events-toolbar { overflow: hidden; }
-	.group-events-scope, .group-events-period { overflow-x: auto; max-width: 100%; }
+	.group-events-period { overflow-x: auto; max-width: 100%; }
 }
 
 .group-response-btn:disabled {

@@ -10,9 +10,7 @@ import {
   useMembership,
   usePendingInvitations,
 } from "../hooks/useGroupData";
-import EditGroupForm from "./management/EditGroupForm";
 import GroupChatPanel from "./GroupChatPanel";
-import GroupDangerZone from "./management/GroupDangerZone";
 import GroupEvents from "./events/GroupEvents";
 import GroupHeaderCard from "./GroupHeaderCard";
 import GroupPosts from "./GroupPosts";
@@ -28,6 +26,7 @@ import GroupAboutCard from "./overview/GroupAboutCard";
 import GroupActivityPreview from "./overview/GroupActivityPreview";
 import GroupEventsPreview from "./overview/GroupEventsPreview";
 import GroupMembersPreview from "./overview/GroupMembersPreview";
+import EditGroupForm from "./management/EditGroupForm";
 
 export default function GroupDetailsContent() {
   const { groupId } = useParams<{ groupId: string }>();
@@ -99,8 +98,8 @@ function GroupDetails({ groupId }: { groupId: number }) {
             group={group.data}
             memberCount={memberCount}
             isCreator={isCreator}
-            onEditClick={() => setActiveTab("edit")}
             membershipStatus={membershipStatus}
+            onEdit={() => setActiveTab("settings")}
           />
           <GroupTabs
             activeTab={activeTab}
@@ -113,6 +112,7 @@ function GroupDetails({ groupId }: { groupId: number }) {
               role="tabpanel"
               aria-labelledby="group-tab-overview"
               className="group-overview-grid overviewGrid"
+              data-motion-panel
             >
               <main className="group-overview-column group-overview-main mainColumn">
                 {membership.loading && (
@@ -175,6 +175,7 @@ function GroupDetails({ groupId }: { groupId: number }) {
               id="group-tabpanel-posts"
               role="tabpanel"
               aria-labelledby="group-tab-posts"
+              data-motion-panel
             >
               <GroupPosts groupId={groupId} isMember={isMember} />
             </div>
@@ -184,6 +185,7 @@ function GroupDetails({ groupId }: { groupId: number }) {
               id="group-tabpanel-events"
               role="tabpanel"
               aria-labelledby="group-tab-events"
+              data-motion-panel
             >
               <GroupEvents
                 groupId={groupId}
@@ -197,10 +199,16 @@ function GroupDetails({ groupId }: { groupId: number }) {
               id="group-tabpanel-members"
               role="tabpanel"
               aria-labelledby="group-tab-members"
+              className="group-members-tab-content"
+              data-motion-panel
             >
+              {isCreator && group.data.privacy === "public" && (
+                <JoinRequestsPanel groupId={groupId} compact />
+              )}
               <MembersPanel
                 groupId={groupId}
                 creatorId={group.data.creatorId}
+                heading={isCreator ? "Current Members" : "Members"}
               />
             </div>
           )}
@@ -209,6 +217,7 @@ function GroupDetails({ groupId }: { groupId: number }) {
               id="group-tabpanel-chat"
               role="tabpanel"
               aria-labelledby="group-tab-chat"
+              data-motion-panel
             >
               <GroupChatPanel
                 group={group.data}
@@ -219,17 +228,14 @@ function GroupDetails({ groupId }: { groupId: number }) {
               />
             </div>
           )}
-          {activeTab === "edit" && isCreator && (
+          {activeTab === "settings" && isCreator && (
             <div
-              id="group-tabpanel-edit"
+              id="group-tabpanel-settings"
               role="tabpanel"
-              aria-labelledby="group-tab-edit"
+              aria-labelledby="group-tab-settings"
+              data-motion-panel
             >
-              {group.data.privacy === "public" && (
-                <JoinRequestsPanel groupId={groupId} />
-              )}
               <EditGroupForm group={group.data} />
-              <GroupDangerZone group={group.data} />
             </div>
           )}
         </>

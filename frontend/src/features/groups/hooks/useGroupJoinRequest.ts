@@ -1,6 +1,6 @@
 "use client";
 
-import { createJoinRequest } from "../api/groups";
+import { cancelJoinRequest, createJoinRequest } from "../api/groups";
 import { useGroupAction } from "./useGroupAction";
 import type { GroupPrivacy } from "../types/group";
 
@@ -17,10 +17,13 @@ export function useGroupJoinRequest(
     pending: state.pending,
     busy: action.busy,
     error: action.error,
-    disabled: !canRequest || Boolean(action.busy),
+    disabled: (!canRequest && !state.pending) || Boolean(action.busy),
     handleJoin: () => {
-      if (canRequest)
+      if (state.pending) {
+        void action.run("Cancelling…", () => cancelJoinRequest(groupId));
+      } else if (canRequest) {
         void action.run("Sending…", () => createJoinRequest(groupId));
+      }
     },
   };
 }

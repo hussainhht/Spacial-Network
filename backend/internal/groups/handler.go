@@ -721,6 +721,34 @@ func (h *Handler) CreateJoinRequestHandler(w http.ResponseWriter, r *http.Reques
 	})
 }
 
+func (h *Handler) CancelJoinRequestHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	userID, ok := requestctx.UserID(r.Context())
+	if !ok {
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(ActionResponse{Success: false, Message: "Not logged in"})
+		return
+	}
+
+	groupID, err := ValidateGroupID(r.PathValue("id"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(ActionResponse{Success: false, Message: err.Error()})
+		return
+	}
+
+	if err := h.service.CancelJoinRequest(groupID, userID); err != nil {
+		status, message := joinRequestErrorResponse(err)
+		w.WriteHeader(status)
+		json.NewEncoder(w).Encode(ActionResponse{Success: false, Message: message})
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(ActionResponse{Success: true, Message: "Join request cancelled"})
+}
+
 func (h *Handler) GetPendingJoinRequestsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 

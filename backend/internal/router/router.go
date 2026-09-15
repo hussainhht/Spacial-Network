@@ -244,6 +244,10 @@ func NewRouter(db *sql.DB, cfg config.Config) (http.Handler, error) {
 		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Groups.CreateJoinRequestHandler))),
 	)
 	apiMux.Handle(
+		"DELETE /groups/{id}/join-requests",
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Groups.CancelJoinRequestHandler))),
+	)
+	apiMux.Handle(
 		"GET /groups/{id}/join-requests",
 		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Groups.GetPendingJoinRequestsHandler))),
 	)

@@ -6,15 +6,21 @@
 /* --------------------------------------------------------------------------
    Layout & Container Architecture
    -------------------------------------------------------------------------- */
+.chatRoute {
+  /* Carry the shell's definite available height through the route wrapper.
+     The shell already reserves the navbar and mobile navigation dock. */
+  height: 100%;
+}
+
 .chatContainer {
   display: flex;
   flex-direction: column;
   height: 100%;
   width: 100%;
   min-width: 0;
-  overflow: hidden;
+  min-height: 0;
   background: transparent; /* Lets 3D planet background show through */
-  padding: clamp(10px, 1.6vw, 24px);
+  padding: 20px clamp(24px, 2vw, 32px);
   box-sizing: border-box;
 }
 
@@ -50,13 +56,10 @@
 
 .cardsWrapper {
   display: flex;
-  gap: clamp(12px, 1.5vw, 20px);
+  gap: 24px;
   flex: 1;
   min-height: 0;
   width: 100%;
-  max-width: 1440px;
-  margin: 0 auto;
-  overflow: hidden;
 }
 
 /* --------------------------------------------------------------------------
@@ -66,14 +69,14 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
+  min-height: 0;
   height: 100%;
-  overflow: hidden;
   border: 1px solid var(--planet-border, rgba(103, 178, 239, 0.18));
   border-top-color: var(--planet-border-strong, rgba(103, 178, 239, 0.34));
-  border-radius: calc(var(--space-radius-lg, 20px) + 2px);
+  border-radius: var(--space-radius-lg, 20px);
   background:
     radial-gradient(ellipse at top left, var(--planet-surface-tint, rgba(50, 114, 178, 0.045)), transparent 65%),
-    rgba(10, 15, 32, 0.82);
+    color-mix(in srgb, var(--space-bg-soft) 88%, transparent);
   box-shadow:
     0 14px 34px rgba(0, 0, 0, 0.28),
     inset 0 1px 0 rgba(226, 232, 255, 0.04);
@@ -83,7 +86,8 @@
 
 /* Sidebar Console Card */
 .sidebarCard {
-  width: clamp(310px, 28vw, 380px);
+  width: clamp(360px, 27vw, 420px);
+  min-height: 0;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
@@ -94,6 +98,7 @@
 /* Chat Transmission Window Card */
 .chatCard {
   flex: 1;
+  min-height: 0;
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -144,11 +149,11 @@
    Conversation Sidebar Components
    -------------------------------------------------------------------------- */
 .sidebarHeader {
-  padding: 16px 18px 12px;
+  padding: 22px 20px 18px;
   border-bottom: 1px solid rgba(148, 163, 184, 0.1);
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 18px;
   flex-shrink: 0;
 }
 
@@ -156,6 +161,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
 }
 
 .sidebarTitleGroup {
@@ -166,7 +172,7 @@
 
 .sidebarTitle {
   margin: 0;
-  font-size: 18px;
+  font-size: 22px;
   font-weight: 700;
   letter-spacing: -0.3px;
   color: var(--space-text-heading, #f8fafc);
@@ -185,6 +191,8 @@
 }
 
 .newChatBtn {
+  min-height: 36px;
+  white-space: nowrap;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -228,6 +236,7 @@
 }
 
 .searchInput {
+  min-height: 42px;
   width: 100%;
   padding: 8px 30px 8px 32px;
   border-radius: 10px;
@@ -274,12 +283,13 @@
 }
 
 .filterChip {
-  padding: 3px 10px;
+  min-height: 32px;
+  padding: 5px 14px;
   border-radius: 999px;
   border: 1px solid rgba(148, 163, 184, 0.15);
   background: rgba(255, 255, 255, 0.03);
   color: var(--space-text-muted, #94a3b8);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.15s ease;
@@ -301,9 +311,13 @@
 /* Conversation List Scroll Area */
 .conversationsList {
   flex: 1;
+  min-height: 0;
+  overscroll-behavior-y: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--space-border-strong) transparent;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 6px;
+  padding: 10px;
   display: flex;
   flex-direction: column;
   gap: 3px;
@@ -318,12 +332,14 @@
 }
 
 .conversationItem {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 12px;
+  padding: 14px 12px;
   border-radius: 12px;
   border: 1px solid transparent;
+  border-bottom-color: var(--planet-surface-tint);
   background: transparent;
   cursor: pointer;
   transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
@@ -342,6 +358,16 @@
   background: linear-gradient(90deg, var(--planet-accent-soft, rgba(82, 157, 224, 0.15)), rgba(255, 255, 255, 0.02));
   border-color: var(--planet-border, rgba(103, 178, 239, 0.3));
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.conversationItemUnread .itemName {
+  color: var(--planet-accent-hover);
+  font-weight: 700;
+}
+
+.conversationItem:focus-visible {
+  outline: 2px solid var(--planet-focus-ring);
+  outline-offset: -2px;
 }
 
 .avatarWrapper {
@@ -472,7 +498,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 18px;
+  padding: 20px 24px;
+  border-radius: var(--space-radius-lg) var(--space-radius-lg) 0 0;
   border-bottom: 1px solid rgba(148, 163, 184, 0.1);
   background: rgba(13, 18, 42, 0.4);
   flex-shrink: 0;
@@ -640,12 +667,20 @@
 /* Message Stream Container */
 .messagesContainer {
   flex: 1;
+  min-height: 0;
+  overscroll-behavior-y: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--space-border-strong) transparent;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 16px 20px;
+  padding: 24px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
+}
+
+.messagesContainer > * {
+  flex-shrink: 0;
 }
 
 .loadMoreBtn {
@@ -845,6 +880,8 @@
 
 /* Follow-restricted Ineligible Banner */
 .ineligibleBanner {
+  flex-wrap: wrap;
+  overflow-wrap: anywhere;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -884,7 +921,8 @@
   display: flex;
   align-items: flex-end;
   gap: 10px;
-  padding: 12px 18px;
+  padding: 18px 24px;
+  border-radius: 0 0 var(--space-radius-lg) var(--space-radius-lg);
   border-top: 1px solid rgba(148, 163, 184, 0.1);
   background: rgba(13, 18, 42, 0.5);
   flex-shrink: 0;
@@ -998,31 +1036,33 @@
 }
 
 .emptyIconWrapper {
-  width: 72px;
-  height: 72px;
+  width: 96px;
+  height: 96px;
+  flex-shrink: 0;
   border-radius: 50%;
   background: radial-gradient(circle, var(--planet-accent-soft, rgba(82, 157, 224, 0.25)) 0%, transparent 70%);
   border: 1px solid var(--planet-border, rgba(103, 178, 239, 0.25));
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 16px;
+  margin-bottom: 24px;
   color: var(--planet-accent, #69aef0);
   box-shadow: 0 0 24px var(--planet-glow, rgba(66, 145, 218, 0.2));
 }
 
 .emptyTitle {
   margin: 0 0 8px;
-  font-size: 19px;
+  font-size: clamp(22px, 2vw, 30px);
+  letter-spacing: -0.6px;
   font-weight: 700;
   color: var(--space-text-heading, #f8fafc);
 }
 
 .emptyDesc {
-  max-width: 340px;
-  margin: 0 0 20px;
-  font-size: 13px;
-  line-height: 1.55;
+  max-width: 38ch;
+  margin: 4px 0 0;
+  font-size: 15px;
+  line-height: 1.7;
   color: var(--space-text-muted, #94a3b8);
 }
 
@@ -1176,9 +1216,15 @@
 /* --------------------------------------------------------------------------
    Mobile & Responsive Adjustments
    -------------------------------------------------------------------------- */
-@media (max-width: 768px) {
+@media (max-width: 1200px) {
+  .chatContainer { padding: 16px; }
+  .cardsWrapper { gap: 16px; }
+  .sidebarCard { width: 300px; }
+}
+
+@media (max-width: 960px) {
   .chatContainer {
-    padding: 6px;
+    padding: 12px;
   }
 
   .cardsWrapper {
@@ -1208,6 +1254,15 @@
   .composer {
     padding: 10px 12px;
   }
+
+  .composerTextarea,
+  .searchInput {
+    font-size: 16px;
+  }
+
+  .windowHeader { padding: 14px 16px; }
+  .messagesContainer { padding: 16px; }
+  .backButton { width: 40px; height: 40px; }
 
   .bubbleMine,
   .bubblePartner {
@@ -1241,7 +1296,9 @@
   .chatCard,
   .sidebarCard,
   .chatWindowCard,
-  .emptyChat {
+  .emptyChat,
+  .typingDot,
+  .waveDot {
     animation: none !important;
     transform: none !important;
   }

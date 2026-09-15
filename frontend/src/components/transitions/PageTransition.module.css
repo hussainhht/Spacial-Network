@@ -1,0 +1,105 @@
+:global(:root) {
+  --motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-exit-duration: 220ms;
+  --motion-enter-duration: 340ms;
+  --motion-section-duration: 280ms;
+  --motion-stagger-step: 30ms;
+}
+
+.page {
+  width: 100%;
+  min-height: 100%;
+}
+
+/* React assigns these classes to the old/new route snapshots. */
+:global(::view-transition-old(.route-page-exit)) {
+  transform-origin: 50% 20%;
+  animation: var(--motion-exit-duration) var(--motion-ease) both route-page-out;
+}
+
+:global(::view-transition-new(.route-page-enter)) {
+  transform-origin: 50% 20%;
+  animation: var(--motion-enter-duration) var(--motion-ease) both route-page-in;
+}
+
+/* The browser overlay must never swallow rapid follow-up navigation. */
+:global(::view-transition) {
+  pointer-events: none;
+}
+
+.page :global([data-motion-section]) {
+  animation: var(--motion-section-duration) var(--motion-ease) both motion-section-in;
+  animation-delay: calc(var(--motion-order, 0) * 40ms);
+}
+
+.page :global([data-motion-list] > *) {
+  animation: 270ms var(--motion-ease) both motion-card-in;
+}
+
+.page :global([data-motion-panel]) {
+  animation: 220ms var(--motion-ease) both motion-panel-in;
+}
+
+.page :global([data-motion-list] > :nth-child(2)) { animation-delay: calc(var(--motion-stagger-step) * 1); }
+.page :global([data-motion-list] > :nth-child(3)) { animation-delay: calc(var(--motion-stagger-step) * 2); }
+.page :global([data-motion-list] > :nth-child(4)) { animation-delay: calc(var(--motion-stagger-step) * 3); }
+.page :global([data-motion-list] > :nth-child(5)) { animation-delay: calc(var(--motion-stagger-step) * 4); }
+.page :global([data-motion-list] > :nth-child(n + 6)) { animation-delay: calc(var(--motion-stagger-step) * 5); }
+
+@keyframes route-page-out {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to { opacity: 0; transform: translateY(-8px) scale(0.995); }
+}
+
+@keyframes route-page-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.995); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes motion-section-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes motion-card-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes motion-panel-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 760px) {
+  :global(:root) {
+    --motion-exit-duration: 180ms;
+    --motion-enter-duration: 280ms;
+    --motion-section-duration: 240ms;
+  }
+
+  @keyframes route-page-out {
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: 0; transform: translateY(-4px); }
+  }
+
+  @keyframes route-page-in {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :global(::view-transition-old(*)),
+  :global(::view-transition-new(*)),
+  :global(::view-transition-group(*)) {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+  }
+
+  .page :global([data-motion-section]),
+  .page :global([data-motion-list] > *),
+  .page :global([data-motion-panel]) {
+    animation: none;
+  }
+}

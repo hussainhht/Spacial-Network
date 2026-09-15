@@ -7,8 +7,8 @@ export default function EmptyChat() {
     <div className={`${styles.floatingCard} ${styles.emptyChat}`}>
       <div className={styles.emptyIconWrapper}>
         <svg
-          width="36"
-          height="36"
+          width="44"
+          height="44"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
@@ -28,7 +28,7 @@ export default function EmptyChat() {
       </div>
       <h2 className={styles.emptyTitle}>Orbital Transmission Relay</h2>
       <p className={styles.emptyDesc}>
-        Select a conversation from the frequency list or initiate a new transmission to begin messaging in real time.
+        Select a conversation or choose New Chat to start a transmission. Your next connection is just a message away.
       </p>
     </div>
   );

@@ -118,7 +118,7 @@ function PlanetAssetGate({
 
 /**
  * FrameGovernor
- * 
+ *
  * Regulates the WebGL render loop:
  * 1. Caps frame rate at ~50 FPS (saves 58% GPU cycles over 120Hz ProMotion displays).
  * 2. Pauses rendering completely (0 FPS) when tab is hidden or minimized.
@@ -246,11 +246,14 @@ function PlanetBackground() {
     return () => scrollPane.removeEventListener("scroll", handleScroll);
   }, [reducedMotion]);
 
-  const handleAssetReady = useCallback((planetId: PlanetId) => {
-    if (selectedPlanetId === planetId) {
-      setDisplayedPlanetId(planetId);
-    }
-  }, [selectedPlanetId]);
+  const handleAssetReady = useCallback(
+    (planetId: PlanetId) => {
+      if (selectedPlanetId === planetId) {
+        setDisplayedPlanetId(planetId);
+      }
+    },
+    [selectedPlanetId],
+  );
 
   const displayedPlanet = PLANET_REGISTRY[displayedPlanetId];
 

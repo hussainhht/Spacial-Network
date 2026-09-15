@@ -67,7 +67,7 @@ export default function GroupList({
           )}
         </div>
       )}
-      <ul className={styles.grid} aria-label="Groups">
+      <ul className={styles.grid} aria-label="Groups" data-motion-list>
         {groups.map((group) => (
           <li key={group.id}>
             <GroupCard group={group} />

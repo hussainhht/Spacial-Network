@@ -538,6 +538,17 @@ func (r *Repository) HasPendingJoinRequest(groupID, userID int) (bool, error) {
 	return true, nil
 }
 
+func (r *Repository) CancelPendingJoinRequest(groupID, userID int) error {
+	result, err := r.db.Exec(
+		`UPDATE group_join_requests
+		 SET status = 'declined', updated_at = CURRENT_TIMESTAMP
+		 WHERE group_id = ? AND user_id = ? AND status = 'pending'`,
+		groupID,
+		userID,
+	)
+	return transitionResult(result, err, ErrJoinRequestNotPending)
+}
+
 func (r *Repository) SearchInviteCandidates(groupID, currentUserID int, query string, limit int) ([]InviteCandidate, error) {
 	like := "%" + escapeLikePattern(query) + "%"
 

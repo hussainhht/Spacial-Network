@@ -67,8 +67,17 @@ function EarthPlanetModel() {
     }
 
     // Match the previous visible diameter (1221.13) inside its export bounds (1938.60).
-    const diameter = new Box3().setFromObject(model, true).getSize(new Vector3());
-    return { model, center, scale: (2 * 1221.1297423308124 / 1938.6019216974796) / Math.max(diameter.x, diameter.y, diameter.z) };
+    const diameter = new Box3()
+      .setFromObject(model, true)
+      .getSize(new Vector3());
+    return {
+      model,
+      center,
+      scale:
+        (2 * 1221.1297423308124) /
+        1938.6019216974796 /
+        Math.max(diameter.x, diameter.y, diameter.z),
+    };
   }, [scene]);
 
   useLayoutEffect(() => {
@@ -129,23 +138,6 @@ function GenericPlanetModel({ modelConfig }: { modelConfig: SpaceModel }) {
   const { model, center, scale } = useMemo(() => {
     // Clone scene to avoid mutating GLTF loader cache
     const model = scene.clone(true);
-    if (modelConfig.id === "saturn") {
-      // Undo the export's baked ring tilt before applying the model's configured tilt.
-      model.updateMatrixWorld(true);
-      const ring = model.getObjectByName("ring_rings_0");
-      if (!(ring instanceof Mesh)) throw new Error("Saturn ring mesh is missing.");
-      const correction = ring.getWorldQuaternion(new Quaternion()).invert();
-      correction.premultiply(new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), Math.PI / 2));
-      model.quaternion.premultiply(correction);
-      const body = model.getObjectByName("saturn_Planet_0");
-      if (!(body instanceof Mesh)) throw new Error("Saturn body mesh is missing.");
-      model.updateMatrixWorld(true);
-      const ringSize = new Box3().setFromObject(ring, true).getSize(new Vector3());
-      const bodySize = new Box3().setFromObject(body, true).getSize(new Vector3());
-      // Retain the old body's diameter relative to the full ring span.
-      body.scale.multiplyScalar((1000 / 2330.9010009765625) *
-        Math.max(ringSize.x, ringSize.y, ringSize.z) / Math.max(bodySize.x, bodySize.y, bodySize.z));
-    }
 
     const bounds = new Box3().setFromObject(model);
     const center = bounds.getCenter(new Vector3());
@@ -213,8 +205,14 @@ function GenericPlanetModel({ modelConfig }: { modelConfig: SpaceModel }) {
   );
 }
 
-export default function PlanetModel({ modelConfig }: { modelConfig: SpaceModel }) {
-  return modelConfig.id === "earth"
-    ? <EarthPlanetModel />
-    : <GenericPlanetModel modelConfig={modelConfig} />;
+export default function PlanetModel({
+  modelConfig,
+}: {
+  modelConfig: SpaceModel;
+}) {
+  return modelConfig.id === "earth" ? (
+    <EarthPlanetModel />
+  ) : (
+    <GenericPlanetModel modelConfig={modelConfig} />
+  );
 }

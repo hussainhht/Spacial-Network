@@ -57,10 +57,7 @@ export function PlanetEntrance({
   });
 
   return (
-    <group
-      ref={root}
-      position={reducedMotion ? [0, 0, 0] : [startX, 0, 0]}
-    >
+    <group ref={root} position={reducedMotion ? [0, 0, 0] : [startX, 0, 0]}>
       {children}
     </group>
   );

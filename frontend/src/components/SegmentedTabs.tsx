@@ -53,7 +53,8 @@ export default function SegmentedTabs<Value extends string>({
       const listRect = list.getBoundingClientRect();
       const tabRect = activeTab.getBoundingClientRect();
       setIndicator({
-        left: tabRect.left - listRect.left - list.clientLeft,
+        left:
+          tabRect.left - listRect.left - list.clientLeft + list.scrollLeft,
         width: tabRect.width,
       });
     };
@@ -68,7 +69,12 @@ export default function SegmentedTabs<Value extends string>({
       if (tab) resizeObserver.observe(tab);
     });
 
-    return () => resizeObserver.disconnect();
+    list.addEventListener("scroll", updateIndicator, { passive: true });
+
+    return () => {
+      resizeObserver.disconnect();
+      list.removeEventListener("scroll", updateIndicator);
+    };
   }, [selectedIndex, options]);
 
   function handleKeyDown(

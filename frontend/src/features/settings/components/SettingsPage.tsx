@@ -34,7 +34,7 @@ export default function SettingsPage() {
   return (
     <main className="settings-page space-shell" aria-labelledby="app-page-title">
       <div className={styles.container}>
-        <section className={styles.section} aria-labelledby="planet-heading">
+        <section className={styles.section} aria-labelledby="planet-heading" data-motion-section>
           <div className={styles.sectionHeader}>
             <div>
               <h2 id="planet-heading" className={styles.sectionTitle}>

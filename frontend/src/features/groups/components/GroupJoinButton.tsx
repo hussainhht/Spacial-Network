@@ -25,11 +25,12 @@ export default function GroupJoinButton({
     <div className="group-join" aria-live="polite">
       <button
         type="button"
-        className="group-button"
+        className={`group-button${pending ? " secondary" : ""}`}
         onClick={action.handleJoin}
         disabled={action.disabled}
+        aria-label={pending ? "Cancel pending join request" : undefined}
       >
-        {action.busy ?? (pending ? "Request Pending" : "Request to Join")}
+        {action.busy ?? (pending ? "Cancel request" : "Request to Join")}
       </button>
       {action.error && (
         <p className="form-error" role="alert">

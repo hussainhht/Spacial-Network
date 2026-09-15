@@ -20,7 +20,7 @@ export default function NotificationInbox() {
 
   return (
     <div className="notifications-container">
-      <header className="notifications-page-header">
+      <header className="notifications-page-header" data-motion-section>
         {unreadCount > 0 && (
           <button type="button" className="notification-mark-all" disabled={marking} onClick={() => void markAll()}>
             {marking ? "Marking…" : "Mark all as read"}
@@ -28,7 +28,7 @@ export default function NotificationInbox() {
         )}
       </header>
 
-      <div className="notifications-tabs" role="tablist">
+      <div className="notifications-tabs" role="tablist" data-motion-section>
         <button
           type="button"
           role="tab"
@@ -58,7 +58,7 @@ export default function NotificationInbox() {
         </p>
       )}
       {items.length > 0 && (
-        <ul className="notification-list notification-list-page">
+        <ul key={filter} className="notification-list notification-list-page" data-motion-list>
           {items.map((notification) => (
             <NotificationItem key={notification.id} notification={notification} />
           ))}

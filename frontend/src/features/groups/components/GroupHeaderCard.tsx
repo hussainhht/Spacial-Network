@@ -11,16 +11,16 @@ interface GroupHeaderCardProps {
   group: Group;
   memberCount: number;
   isCreator: boolean;
-  onEditClick: () => void;
   membershipStatus: ReactNode;
+  onEdit?: () => void;
 }
 
 export default function GroupHeaderCard({
   group,
   memberCount,
   isCreator,
-  onEditClick,
   membershipStatus,
+  onEdit,
 }: GroupHeaderCardProps) {
   return (
     <header className="group-header-card">
@@ -31,8 +31,8 @@ export default function GroupHeaderCard({
           {isCreator && (
             <button
               type="button"
+              onClick={onEdit}
               className="group-button secondary group-header-edit"
-              onClick={onEditClick}
             >
               Edit Group
             </button>

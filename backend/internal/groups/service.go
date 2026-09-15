@@ -305,6 +305,18 @@ func (s *Service) HasPendingJoinRequest(groupID, userID int) (bool, error) {
 	return s.repo.HasPendingJoinRequest(groupID, userID)
 }
 
+// CancelJoinRequest lets the requesting user withdraw their own pending request.
+func (s *Service) CancelJoinRequest(groupID, userID int) error {
+	group, err := s.repo.GetGroupByID(groupID)
+	if err != nil {
+		return err
+	}
+	if group.Privacy != GroupPrivacyPublic {
+		return ErrJoinRequestNotAllowed
+	}
+	return s.repo.CancelPendingJoinRequest(groupID, userID)
+}
+
 func (s *Service) CreateGroupInvitation(groupID, inviterID, invitedUserID int) error {
 	group, err := s.repo.GetGroupByID(groupID)
 	if err != nil {

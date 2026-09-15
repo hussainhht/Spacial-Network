@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import AppIcon from "@/components/layout/AppIcon";
 import { getInitials } from "@/lib/utils";
 import { createPortal } from "react-dom";
 import { avatarUrl, removeMember } from "../api/groups";
@@ -73,9 +74,11 @@ export function MembershipBadge({
 export function MembersPanel({
   groupId,
   creatorId,
+  heading = "Members",
 }: {
   groupId: number;
   creatorId: number;
+  heading?: string;
 }) {
   const state = useGroupMembers(groupId);
   // Shares the same cached useMembership resource as other panels on this
@@ -97,7 +100,7 @@ export function MembersPanel({
     >
       <div className="group-section-heading">
         <h2 id="members-heading">
-          Members{state.data && ` · ${state.data.length}`}
+          {heading}{state.data && ` · ${state.data.length}`}
         </h2>
         <div className="group-members-header-actions">
           {state.loading && <span className="group-muted">Loading…</span>}
@@ -272,30 +275,35 @@ function RemoveMemberDialog({
   );
 }
 
-export function JoinRequestsPanel({ groupId }: { groupId: number }) {
+export function JoinRequestsPanel({
+  groupId,
+  compact = false,
+}: {
+  groupId: number;
+  compact?: boolean;
+}) {
   const state = usePendingJoinRequests(groupId);
+  const count = state.data?.length ?? 0;
   return (
     <section
       id="join-requests"
-      className="group-panel"
+      className={`group-panel${compact ? " group-join-requests-compact" : ""}`}
       aria-labelledby="requests-heading"
     >
-      <div className="group-section-heading">
-        <h2 id="requests-heading">
-          Join Requests{state.data && ` · ${state.data.length}`}
-        </h2>
-        {state.loading && <span className="group-muted">Loading…</span>}
+      <div className="group-join-requests-summary">
+        <span className="group-join-requests-icon" aria-hidden="true">
+          <AppIcon name="groups" width={19} height={19} />
+        </span>
+        <div className="group-join-requests-copy">
+          <h2 id="requests-heading">Join Requests</h2>
+          <p>Review people who want to join your community.</p>
+        </div>
+        <div className="group-join-requests-count">
+          {state.loading ? "Loading…" : `${count} pending`}
+        </div>
       </div>
-      <p className="group-muted">
-        Review people who would like to join your community.
-      </p>
       {state.error && (
         <GroupLoadError error={state.error} retry={state.refresh} />
-      )}
-      {!state.loading && !state.error && state.data?.length === 0 && (
-        <p className="group-empty">
-          You’re all caught up. New requests will appear here.
-        </p>
       )}
       <ul className="group-attempt-list">
         {state.data?.map((request) => (
@@ -310,6 +318,11 @@ export function JoinRequestsPanel({ groupId }: { groupId: number }) {
           </li>
         ))}
       </ul>
+      {!state.loading && !state.error && state.data?.length === 0 && (
+        <p className="group-join-requests-empty">
+          No pending join requests.
+        </p>
+      )}
     </section>
   );
 }

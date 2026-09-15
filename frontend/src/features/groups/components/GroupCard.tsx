@@ -8,8 +8,20 @@ import GroupJoinButton from "./GroupJoinButton";
 import GroupPrivacyBadge from "./GroupPrivacyBadge";
 import styles from "./GroupsDirectory.module.css";
 
-export default function GroupCard({ group }: { group: Group }) {
-  const photo = avatarUrl(group.groupPhoto);
+interface GroupCardProps {
+  group: Group;
+  interactive?: boolean;
+  photoUrlOverride?: string | null;
+}
+
+export default function GroupCard({
+  group,
+  interactive = true,
+  photoUrlOverride,
+}: GroupCardProps) {
+  const photo = photoUrlOverride === undefined
+    ? avatarUrl(group.groupPhoto)
+    : photoUrlOverride ?? undefined;
 
   return (
     <article className={styles.card}>
@@ -34,9 +46,13 @@ export default function GroupCard({ group }: { group: Group }) {
       </div>
       <div className={styles.body}>
         <h2 className={styles.title}>
-          <Link href={`/groups/${group.id}`} className={styles.titleLink}>
-            {group.title}
-          </Link>
+          {interactive ? (
+            <Link href={`/groups/${group.id}`} className={styles.titleLink}>
+              {group.title}
+            </Link>
+          ) : (
+            <span className={styles.titleLink}>{group.title}</span>
+          )}
         </h2>
         <p className={styles.cardDescription}>{group.description || "No description yet."}</p>
         <div className={styles.cardFooter}>
@@ -45,7 +61,19 @@ export default function GroupCard({ group }: { group: Group }) {
             {group.memberCount} {group.memberCount === 1 ? "member" : "members"}
           </span>
           <div className={styles.cardActions}>
-            {group.membershipRole === "creator" ? (
+            {!interactive ? (
+              group.membershipRole === "creator" ? (
+                <span className="group-button" aria-hidden="true">Manage</span>
+              ) : group.membershipRole ? (
+                <MembershipBadge role={group.membershipRole} />
+              ) : group.hasPendingInvitation ? (
+                <MembershipBadge invited />
+              ) : group.privacy === "public" ? (
+                <span className="group-button" aria-hidden="true">
+                  {group.hasPendingJoinRequest ? "Request Pending" : "Request to Join"}
+                </span>
+              ) : null
+            ) : group.membershipRole === "creator" ? (
               <Link href={`/groups/${group.id}`} className="group-button">
                 Manage
               </Link>
@@ -63,12 +91,14 @@ export default function GroupCard({ group }: { group: Group }) {
           </div>
         </div>
       </div>
-      <Link
-        href={`/groups/${group.id}`}
-        className={styles.cardStretch}
-        aria-hidden="true"
-        tabIndex={-1}
-      />
+      {interactive && (
+        <Link
+          href={`/groups/${group.id}`}
+          className={styles.cardStretch}
+          aria-hidden="true"
+          tabIndex={-1}
+        />
+      )}
     </article>
   );
 }
