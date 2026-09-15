@@ -53,4 +53,5 @@ export interface ChatWindowProps {
   onLoadMore: () => void;
   onSendMessage: (content: string) => void;
   onTyping: (isTyping: boolean) => void;
+  onBack?: () => void;
 }

@@ -11,7 +11,7 @@ import {
   type ReactNode,
 } from "react";
 import { useGLTF } from "@react-three/drei";
-import { Canvas } from "@react-three/fiber";
+import { Canvas, useThree } from "@react-three/fiber";
 import PlanetSystem from "./PlanetSystem";
 import { SUN_POSITION } from "./earthMaterials";
 import {
@@ -28,7 +28,7 @@ import styles from "./PlanetBackground.module.css";
 // The canvas is larger than the body's visible frame so Earth's Moon and
 // Saturn's rings have transparent room at the edge. Moving the camera back by
 // the same factor preserves the established apparent size.
-const CANVAS_SCALE = 1.6;
+const CANVAS_SCALE = 2.6;
 
 const CAMERA = {
   position: [0, 0, 4 * CANVAS_SCALE] as [number, number, number],
@@ -113,6 +113,64 @@ function PlanetAssetGate({
   return null;
 }
 
+/**
+ * FrameGovernor
+ * 
+ * Regulates the WebGL render loop:
+ * 1. Caps frame rate at ~50 FPS (saves 58% GPU cycles over 120Hz ProMotion displays).
+ * 2. Pauses rendering completely (0 FPS) when tab is hidden or minimized.
+ * 3. Renders only a single frame when reducedMotion is enabled.
+ */
+function FrameGovernor({
+  fps = 50,
+  reducedMotion,
+}: {
+  fps?: number;
+  reducedMotion: boolean;
+}) {
+  const invalidate = useThree((state) => state.invalidate);
+
+  useEffect(() => {
+    if (reducedMotion) {
+      invalidate();
+      return;
+    }
+
+    let animId: number;
+    let lastTime = 0;
+    const interval = 1000 / fps;
+
+    function tick(now: number) {
+      animId = requestAnimationFrame(tick);
+      if (typeof document !== "undefined" && document.hidden) return;
+
+      const elapsed = now - lastTime;
+      if (elapsed >= interval) {
+        lastTime = now - (elapsed % interval);
+        invalidate();
+      }
+    }
+
+    animId = requestAnimationFrame(tick);
+
+    function handleVisibilityChange() {
+      if (!document.hidden) {
+        lastTime = performance.now();
+        invalidate();
+      }
+    }
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      cancelAnimationFrame(animId);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [fps, invalidate, reducedMotion]);
+
+  return null;
+}
+
 function PlanetScene({
   config,
   viewport,
@@ -125,12 +183,13 @@ function PlanetScene({
   return (
     <Canvas
       camera={CAMERA}
-      dpr={[1, 2]}
-      frameloop={reducedMotion ? "demand" : "always"}
+      dpr={[1, 1.25]}
+      frameloop="demand"
       fallback={null}
-      gl={{ alpha: true, antialias: true, powerPreference: "high-performance" }}
+      gl={{ alpha: true, antialias: true, powerPreference: "default" }}
       shadows={false}
     >
+      <FrameGovernor fps={50} reducedMotion={reducedMotion} />
       <SceneBoundary key={config.id} label={config.label}>
         <ambientLight intensity={config.lighting.ambientIntensity} />
         <directionalLight

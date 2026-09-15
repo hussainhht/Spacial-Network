@@ -302,7 +302,7 @@ export async function updateMyProfileAvatar(
     throw new Error("Choose a profile photo or remove the current one");
   }
 
-  const response = await fetch(`${API_BASE_URL}/users/me/avatar`, {
+  const response = await fetch(getApiUrl("/users/me/avatar"), {
     method: "PATCH",
     credentials: "include",
     body: formData,

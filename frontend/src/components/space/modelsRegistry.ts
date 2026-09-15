@@ -82,7 +82,7 @@ export const PLANET_REGISTRY: Record<PlanetId, PlanetConfig> = {
       bodyScale: 2.2,
       position: [0, 0, 0],
       rotation: [0, 0, 0],
-      offscreenRadius: 1.68,
+      offscreenRadius: 3.2,
       spinRadiansPerSecond: 0.018,
       idleAmplitude: 0.012,
       responsive: {
@@ -334,8 +334,8 @@ export const MOON_MODEL: SpaceModel = {
 
 export const MOON_COMPANION = {
   model: MOON_MODEL,
-  orbitRadius: 1.5,
-  orbitRadiansPerSecond: 0.055,
+  orbitRadius: 2.75,
+  orbitRadiansPerSecond: 0.042,
   scale: 0.18,
   initialPhase: -2.85,
   inclination: 0.3,

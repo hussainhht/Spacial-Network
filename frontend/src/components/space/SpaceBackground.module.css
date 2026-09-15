@@ -5,6 +5,8 @@
   pointer-events: none;
   overflow: hidden;
   z-index: 0;
+  contain: strict;
+  transform: translateZ(0);
   background:
     radial-gradient(ellipse at 78% 18%, #0c1628 0%, transparent 52%),
     radial-gradient(ellipse at 18% 82%, #0b1020 0%, transparent 55%),
@@ -23,7 +25,6 @@
     radial-gradient(ellipse 24% 12% at 17% 70%, #65748f1c, transparent 72%),
     radial-gradient(ellipse 35% 23% at 84% 22%, #384a7629, transparent 76%),
     radial-gradient(ellipse 24% 20% at 25% 61%, #62507616, transparent 74%);
-  animation: hazeDrift 110s ease-in-out infinite alternate;
 }
 
 /* Dark pockets interrupt the luminous band instead of producing a smooth stripe. */
@@ -40,12 +41,11 @@
 .layerDistant, .layerMedium, .layerBright { position: absolute; inset: -12px; }
 .layerDistant { opacity: 0.88; }
 .layerMedium { opacity: 0.8; }
-.layerBright { opacity: 0.85; animation: foregroundDrift 120s ease-in-out infinite alternate; }
+.layerBright { opacity: 0.85; }
 
-/* Animate a small minority of points; the bulk of the sky stays still.
-   Fill opacity modulates each path without overriding its base brightness. */
-.twinkleA { animation: twinkleA 19s ease-in-out infinite alternate; }
-.twinkleB { animation: twinkleB 31s ease-in-out -11s infinite alternate; }
+/* Keep stars static to prevent continuous SVG re-tessellation and GPU helper thrashing */
+.twinkleA { opacity: 0.85; }
+.twinkleB { opacity: 0.8; }
 
 .vignetteOverlay {
   position: absolute;

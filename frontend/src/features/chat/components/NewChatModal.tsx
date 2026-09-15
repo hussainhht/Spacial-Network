@@ -5,6 +5,7 @@ import { getEligibleContacts } from "../api/chat";
 import type { EligibleContact } from "../types/chat";
 import { getDisplayName, getInitials } from "@/lib/utils";
 import { getBackendBaseUrl } from "@/lib/api";
+import styles from "./Chat.module.css";
 
 interface NewChatModalProps {
   isOpen: boolean;
@@ -80,28 +81,25 @@ function NewChatDialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs transition-opacity animate-in fade-in duration-150"
+      className={styles.modalBackdrop}
       onClick={onClose}
       aria-modal="true"
       role="dialog"
       aria-labelledby="new-chat-title"
     >
       <div
-        className="w-full max-w-md bg-[#0b1026] border border-[var(--planet-border)] rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh]"
+        className={styles.modalCard}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-700/40 bg-[#0f1533]">
-          <div className="flex items-center gap-2">
-            <span className="text-lg">💬</span>
-            <h2 id="new-chat-title" className="m-0 text-base font-bold text-slate-100">
-              New Message
-            </h2>
-          </div>
+        <div className={styles.modalHeader}>
+          <h2 id="new-chat-title" className={styles.modalTitle}>
+            New Transmission
+          </h2>
           <button
             type="button"
             onClick={onClose}
-            className="w-7 h-7 flex items-center justify-center rounded-full text-slate-400 hover:text-slate-100 hover:bg-slate-700/50 transition-colors text-lg leading-none cursor-pointer"
+            className={styles.modalCloseBtn}
             aria-label="Close modal"
           >
             &times;
@@ -109,45 +107,40 @@ function NewChatDialog({
         </div>
 
         {/* Search */}
-        <div className="p-3.5 border-b border-slate-700/30 bg-[#0b1026]">
-          <div className="relative flex items-center">
+        <div className={styles.modalSearchWrapper}>
+          <div className={styles.searchWrapper}>
+            <span className={styles.searchIcon}>🔍</span>
             <input
               type="text"
               autoFocus
               placeholder="Search people you follow or followers..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-3 pr-10 py-2 rounded-lg border border-slate-700/60 bg-[#10152f]/80 text-slate-100 placeholder-slate-400 text-sm focus:outline-none focus:border-[var(--planet-accent)] focus:ring-2 focus:ring-[var(--planet-border)] transition-colors"
+              className={styles.searchInput}
             />
-            <div className="absolute right-2.5 flex items-center gap-1.5">
-              {loading && (
-                <div className="w-3.5 h-3.5 border-2 border-[var(--planet-accent)] border-t-transparent rounded-full animate-spin" />
-              )}
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => setSearchQuery("")}
-                  className="text-slate-400 hover:text-slate-200 text-base cursor-pointer leading-none"
-                  aria-label="Clear search"
-                >
-                  &times;
-                </button>
-              )}
-            </div>
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className={styles.searchClearBtn}
+                aria-label="Clear search"
+              >
+                &times;
+              </button>
+            )}
           </div>
         </div>
 
         {/* Contacts List */}
-        <div className="flex-1 overflow-y-auto divide-y divide-slate-800/40 p-1">
+        <div className={styles.modalContactList}>
           {loading && contacts.length === 0 && (
-            <div className="py-12 text-center text-slate-400 text-sm">
-              <div className="inline-block w-5 h-5 border-2 border-[var(--planet-accent)] border-t-transparent rounded-full animate-spin mb-2" />
-              <p>{searchQuery.trim() ? "Searching contacts..." : "Finding eligible contacts..."}</p>
+            <div className={styles.loadingNotice}>
+              {searchQuery.trim() ? "Searching contacts..." : "Finding eligible contacts..."}
             </div>
           )}
 
           {error && !loading && (
-            <div className="py-8 px-4 text-center text-red-400 text-sm">
+            <div className={styles.emptyNotice} style={{ color: "var(--space-error-text, #fca5a5)" }}>
               <p>{error}</p>
               <button
                 type="button"
@@ -159,7 +152,15 @@ function NewChatDialog({
                     .catch((e) => setError(e instanceof Error ? e.message : "Failed to load contacts"))
                     .finally(() => setLoading(false));
                 }}
-                className="mt-2 text-xs text-[var(--planet-accent)] hover:underline cursor-pointer"
+                style={{
+                  marginTop: "8px",
+                  fontSize: "12px",
+                  color: "var(--planet-accent, #69aef0)",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  textDecoration: "underline",
+                }}
               >
                 Try again
               </button>
@@ -167,20 +168,22 @@ function NewChatDialog({
           )}
 
           {!loading && !error && contacts.length === 0 && (
-            <div className="py-10 px-6 text-center text-slate-400">
+            <div className={styles.emptyNotice}>
               {searchQuery.trim() ? (
                 <>
-                  <div className="text-3xl mb-2">🔍</div>
-                  <h3 className="text-sm font-semibold text-slate-200 m-0">No contacts found</h3>
-                  <p className="text-xs text-slate-400 mt-1 mb-0 leading-relaxed">
+                  <p style={{ margin: 0, fontWeight: 600, color: "var(--space-text-heading, #f8fafc)" }}>
+                    No contacts found
+                  </p>
+                  <p style={{ margin: "4px 0 0", fontSize: "12px" }}>
                     No contacts matching &ldquo;{searchQuery.trim()}&rdquo;
                   </p>
                 </>
               ) : (
                 <>
-                  <div className="text-3xl mb-2">👥</div>
-                  <h3 className="text-sm font-semibold text-slate-200 m-0">No eligible contacts</h3>
-                  <p className="text-xs text-slate-400 mt-1 mb-0 leading-relaxed">
+                  <p style={{ margin: 0, fontWeight: 600, color: "var(--space-text-heading, #f8fafc)" }}>
+                    No eligible contacts
+                  </p>
+                  <p style={{ margin: "4px 0 0", fontSize: "12px", lineHeight: 1.5 }}>
                     You can only message users you follow or who follow you. Follow people to chat with them!
                   </p>
                 </>
@@ -207,49 +210,46 @@ function NewChatDialog({
                 : "";
 
               return (
-                <div
+                <button
                   key={contact.id}
+                  type="button"
                   onClick={() => {
                     onSelectContact(contact);
                     onClose();
                   }}
-                  className="flex items-center px-4 py-3 gap-3 cursor-pointer rounded-xl hover:bg-slate-800/50 transition-colors group"
+                  className={styles.modalContactItem}
                 >
-                  <div className="relative shrink-0 w-10 h-10">
+                  <div className={styles.avatarWrapper}>
                     {avatarUrl ? (
                       <img
                         src={avatarUrl}
                         alt={displayName}
-                        className="w-10 h-10 rounded-full object-cover"
+                        className={styles.avatarImg}
                       />
                     ) : (
-                      <div className="w-10 h-10 rounded-full bg-[var(--planet-accent-active)] text-white flex items-center justify-center font-semibold text-xs">
+                      <div className={styles.avatarFallback}>
                         {initials}
                       </div>
                     )}
                     <span
-                      className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full ring-2 ring-[#0b1026] ${
-                        isOnline ? "bg-emerald-500" : "bg-slate-400"
-                      }`}
+                      className={isOnline ? styles.onlineRing : styles.offlineDot}
                       title={isOnline ? "Online" : "Offline"}
                     />
                   </div>
 
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-baseline justify-between gap-1">
-                      <span className="font-medium text-sm text-slate-100 group-hover:text-[var(--planet-accent-hover)] transition-colors truncate">
-                        {displayName}
-                      </span>
-                    </div>
-                    <span className="text-xs text-slate-400 truncate block">
+                  <div className={styles.modalContactInfo}>
+                    <span className={styles.modalContactName}>
+                      {displayName}
+                    </span>
+                    <span className={styles.modalContactUsername}>
                       @{contact.username}
                     </span>
                   </div>
 
-                  <span className="text-xs font-medium text-[var(--planet-accent)] opacity-0 group-hover:opacity-100 transition-opacity shrink-0 px-2 py-1 rounded-md bg-[var(--planet-accent-soft)]">
-                    Chat &rarr;
+                  <span className={styles.mutualBadge}>
+                    Mutual
                   </span>
-                </div>
+                </button>
               );
             })}
         </div>

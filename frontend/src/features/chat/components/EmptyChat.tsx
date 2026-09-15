@@ -1,16 +1,34 @@
 "use client";
 
+import styles from "./Chat.module.css";
+
 export default function EmptyChat() {
   return (
-    <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-[#080b1a]/95 text-slate-400 min-w-0">
-      <div className="w-18 h-18 rounded-full bg-[var(--planet-accent-soft)] flex items-center justify-center text-3xl mb-4">
-        💬
+    <div className={`${styles.floatingCard} ${styles.emptyChat}`}>
+      <div className={styles.emptyIconWrapper}>
+        <svg
+          width="36"
+          height="36"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.75"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          {/* Satellite and orbital transmission waves */}
+          <path d="M13 7 9 3 5 7l4 4" />
+          <path d="m17 11 4 4-4 4-4-4" />
+          <path d="m8 12 4 4 6-6-4-4Z" />
+          <path d="m16 8 3-3" />
+          <path d="M9 21a6 6 0 0 0-6-6" />
+          <path d="M14 21a11 11 0 0 0-11-11" />
+        </svg>
       </div>
-      <h2 className="m-0 mb-2 text-slate-100 text-xl font-semibold">
-        Your Messages
-      </h2>
-      <p className="max-w-[340px] m-0 text-sm leading-relaxed text-slate-500">
-        Select a conversation from the sidebar to view chat history and start messaging in real time.
+      <h2 className={styles.emptyTitle}>Orbital Transmission Relay</h2>
+      <p className={styles.emptyDesc}>
+        Select a conversation from the frequency list or initiate a new transmission to begin messaging in real time.
       </p>
     </div>
   );

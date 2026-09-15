@@ -37,6 +37,7 @@ export default function FloatingOrbitalNav() {
             item={item}
             active={isNavItemActive(pathname, item.href)}
             className={styles.destination}
+            labelClassName={styles.orbitalLabel}
           />
         ))}
       </div>

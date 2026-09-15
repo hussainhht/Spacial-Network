@@ -11,6 +11,7 @@ import (
 	"social/internal/groups"
 	"social/internal/notifications"
 	"social/internal/posts"
+	"social/internal/search"
 	"social/internal/ratelimit"
 	"social/internal/upload"
 	"social/internal/users"
@@ -27,6 +28,7 @@ type Handlers struct {
 	Users         *users.Handler
 	Comments      *comments.Handler
 	Followers     *followers.Handler
+	Search        *search.Handler
 
 	// TODO: Add Chat handler when the chat feature is implemented.
 	// Chat *chat.Handler
@@ -194,6 +196,14 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 	wsRouter.Register(groups.EventInviteUserSearch, inviteSearchWSHandler.HandleInviteUserSearch)
 	wsHandler.SetMessageHandler(wsRouter.Dispatch)
 
+	// =========================
+	// Search
+	// =========================
+
+	searchRepo := search.NewRepository(db)
+	searchService := search.NewService(searchRepo)
+	searchHandler := search.NewHandler(searchService)
+
 	return &Dependencies{
 		Handlers: Handlers{
 			Auth:          authHandler,
@@ -205,6 +215,7 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 			Users:         usersHandler,
 			Comments:      commentsHandler,
 			Followers:     followersHandler,
+			Search:        searchHandler,
 		},
 		AuthService:          authService,
 		GroupsService:        groupsService,
