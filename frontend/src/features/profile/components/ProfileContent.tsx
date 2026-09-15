@@ -1,9 +1,6 @@
 "use client";
 
 import AppIcon, { type AppIconName } from "@/components/layout/AppIcon";
-import SegmentedTabs, {
-  type SegmentedTabOption,
-} from "@/components/SegmentedTabs";
 import PostCard from "@/features/posts/components/PostCard";
 import type { Post } from "@/features/posts/types/post";
 import { parseDate } from "@/lib/utils";
@@ -19,25 +16,21 @@ import ProfilePrivacy from "./ProfilePrivacy";
 import ProfileUserList from "./ProfileUserList";
 import styles from "./Profile.module.css";
 
-const TAB_ID_PREFIX = "profile";
-
-// Kept at module scope so SegmentedTabs receives stable option references.
-const publicTabs: readonly SegmentedTabOption<ProfileTab>[] = [
-  { value: "posts", label: "Posts" },
-  { value: "connections", label: "Connections" },
-];
-
-const ownerTabs: readonly SegmentedTabOption<ProfileTab>[] = [
-  ...publicTabs,
-  { value: "settings", label: "Edit profile" },
-];
-
-function getPanelId(tab: ProfileTab) {
-  return `${TAB_ID_PREFIX}-panel-${tab}`;
+interface BackToPostsProps {
+  onTabChange: (tab: ProfileTab) => void;
 }
 
-function getTabId(tab: ProfileTab) {
-  return `${TAB_ID_PREFIX}-tab-${tab}`;
+function BackToPosts({ onTabChange }: BackToPostsProps) {
+  return (
+    <button
+      type="button"
+      className={styles.backButton}
+      onClick={() => onTabChange("posts")}
+    >
+      <AppIcon name="arrowLeft" width={16} height={16} />
+      Back to profile
+    </button>
+  );
 }
 
 interface EmptyStateProps {
@@ -66,12 +59,7 @@ interface PostsTabProps {
 
 function PostsTab({ posts, loading, onPostDeleted }: PostsTabProps) {
   return (
-    <div
-      id={getPanelId("posts")}
-      role="tabpanel"
-      aria-labelledby={getTabId("posts")}
-      className={styles.tabPanel}
-    >
+    <div className={styles.tabPanel}>
       {loading && (
         <div role="status" aria-label="Loading posts">
           <div className={`${styles.skeleton} ${styles.skeletonCard}`} />
@@ -103,6 +91,7 @@ interface ConnectionsTabProps {
   following: ProfileUserSummary[];
   loading: boolean;
   onFollowRequestsChanged?: () => void | Promise<void>;
+  onTabChange: (tab: ProfileTab) => void;
 }
 
 function ConnectionsTab({
@@ -111,14 +100,12 @@ function ConnectionsTab({
   following,
   loading,
   onFollowRequestsChanged,
+  onTabChange,
 }: ConnectionsTabProps) {
   return (
-    <div
-      id={getPanelId("connections")}
-      role="tabpanel"
-      aria-labelledby={getTabId("connections")}
-      className={styles.tabPanel}
-    >
+    <div className={styles.tabPanel}>
+      <BackToPosts onTabChange={onTabChange} />
+
       {isOwnProfile && (
         <div className={styles.card}>
           <ProfileFollowRequests onChanged={onFollowRequestsChanged} />
@@ -167,6 +154,7 @@ interface SettingsTabProps {
   onUpdateProfileDetails?: (input: UpdateProfileDetailsInput) => Promise<void>;
   detailsUpdating?: boolean;
   detailsError?: string | null;
+  onTabChange: (tab: ProfileTab) => void;
 }
 
 function SettingsTab({
@@ -180,6 +168,7 @@ function SettingsTab({
   onUpdateProfileDetails,
   detailsUpdating = false,
   detailsError = null,
+  onTabChange,
 }: SettingsTabProps) {
   const createdDate = parseDate(profile.createdAt);
   const memberSince = createdDate
@@ -202,12 +191,9 @@ function SettingsTab({
   ].filter((detail) => detail.value);
 
   return (
-    <div
-      id={getPanelId("settings")}
-      role="tabpanel"
-      aria-labelledby={getTabId("settings")}
-      className={styles.tabPanel}
-    >
+    <div className={styles.tabPanel}>
+      <BackToPosts onTabChange={onTabChange} />
+
       <div className={styles.settingsGrid}>
         <div className={styles.settingsColumn}>
           {onUpdateProfileDetails && (
@@ -318,23 +304,11 @@ export default function ProfileContent({
   followDataLoading = false,
   onFollowRequestsChanged,
 }: ProfileContentProps) {
-  const tabs = isOwnProfile ? ownerTabs : publicTabs;
-  const visibleTab = tabs.some((tab) => tab.value === activeTab)
-    ? activeTab
-    : "posts";
+  const visibleTab =
+    !isOwnProfile && activeTab === "settings" ? "posts" : activeTab;
 
   return (
     <div id="profile-sections" className={styles.sections}>
-      <SegmentedTabs
-        value={visibleTab}
-        options={tabs}
-        onChange={onTabChange}
-        ariaLabel="Profile sections"
-        idPrefix={TAB_ID_PREFIX}
-        panelId={getPanelId}
-        className={styles.tabs}
-      />
-
       {visibleTab === "posts" && (
         <PostsTab
           posts={posts}
@@ -350,6 +324,7 @@ export default function ProfileContent({
           following={following}
           loading={followDataLoading}
           onFollowRequestsChanged={onFollowRequestsChanged}
+          onTabChange={onTabChange}
         />
       )}
 
@@ -365,6 +340,7 @@ export default function ProfileContent({
           onUpdateProfileDetails={onUpdateProfileDetails}
           detailsUpdating={detailsUpdating}
           detailsError={detailsError}
+          onTabChange={onTabChange}
         />
       )}
     </div>

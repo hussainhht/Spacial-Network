@@ -77,8 +77,13 @@ interface ProfileHeaderProps {
   canMessage?: boolean;
   followLoading: boolean;
   followError?: string | null;
+  showStats?: boolean;
+  postsCount: number;
+  followersCount: number;
+  followingCount: number;
   onEditProfile: () => void;
   onToggleFollow: () => void;
+  onViewConnections: () => void;
 }
 
 export default function ProfileHeader({
@@ -89,8 +94,13 @@ export default function ProfileHeader({
   canMessage = false,
   followLoading,
   followError = null,
+  showStats = true,
+  postsCount,
+  followersCount,
+  followingCount,
   onEditProfile,
   onToggleFollow,
+  onViewConnections,
 }: ProfileHeaderProps) {
   const displayName = getDisplayName(
     profile.firstName,
@@ -148,6 +158,31 @@ export default function ProfileHeader({
             {profile.isPrivate ? "Private profile" : "Public profile"}
           </span>
         </p>
+
+        {showStats && (
+          <div className={styles.statsRow}>
+            <div className={styles.statItem}>
+              <span className={styles.statValue}>{postsCount}</span>
+              <span className={styles.statLabel}>Posts</span>
+            </div>
+            <button
+              type="button"
+              className={`${styles.statItem} ${styles.statItemLink}`}
+              onClick={onViewConnections}
+            >
+              <span className={styles.statValue}>{followingCount}</span>
+              <span className={styles.statLabel}>Following</span>
+            </button>
+            <button
+              type="button"
+              className={`${styles.statItem} ${styles.statItemLink}`}
+              onClick={onViewConnections}
+            >
+              <span className={styles.statValue}>{followersCount}</span>
+              <span className={styles.statLabel}>Followers</span>
+            </button>
+          </div>
+        )}
 
         <div className={styles.actionsRow}>
           {isOwnProfile ? (
