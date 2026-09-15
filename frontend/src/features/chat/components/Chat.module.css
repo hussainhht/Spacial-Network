@@ -718,7 +718,7 @@
 .bubbleMine {
   width: fit-content;
   max-width: min(65%, 420px);
-  min-width: 0;
+  min-width: 56px;
   padding: 8px 12px;
   border-radius: 16px 16px 3px 16px;
   background: linear-gradient(135deg, rgba(82, 157, 224, 0.92) 0%, rgba(40, 95, 150, 0.96) 100%);
@@ -732,7 +732,7 @@
 .bubblePartner {
   width: fit-content;
   max-width: min(65%, 420px);
-  min-width: 0;
+  min-width: 56px;
   padding: 8px 12px;
   border-radius: 16px 16px 16px 3px;
   background: linear-gradient(135deg, rgba(18, 24, 52, 0.88) 0%, rgba(13, 17, 38, 0.94) 100%);
@@ -767,6 +767,8 @@
 .bubbleTime {
   font-size: 10px;
   opacity: 0.75;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .readReceipt {
