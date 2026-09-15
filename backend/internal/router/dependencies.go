@@ -12,10 +12,12 @@ import (
 	"social/internal/config"
 	"social/internal/followers"
 	"social/internal/groups"
+	"social/internal/likes"
 	"social/internal/notifications"
 	"social/internal/posts"
 	"social/internal/ratelimit"
 	"social/internal/search"
+	"social/internal/share"
 	"social/internal/upload"
 	"social/internal/users"
 	"social/internal/websocket"
@@ -32,6 +34,8 @@ type Handlers struct {
 	Comments      *comments.Handler
 	Followers     *followers.Handler
 	Search        *search.Handler
+	Likes         *likes.Handler
+	Share         *share.Handler
 
 	// TODO: Add Chat handler when the chat feature is implemented.
 	// Chat *chat.Handler
@@ -187,6 +191,23 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 	commentsHandler := comments.NewHandler(commentsService, commentMediaStorage)
 
 	// =========================
+	// Likes
+	// =========================
+
+	likesRepo := likes.NewRepository(db)
+	likesService := likes.NewService(likesRepo, postsService)
+	likesHandler := likes.NewHandler(likesService)
+
+	// =========================
+	// Share
+	// =========================
+	// Shares are delivered as chat messages, so this depends on chatService
+	// through share's own narrow MessageSender interface.
+
+	shareService := share.NewService(chatService, postsService)
+	shareHandler := share.NewHandler(shareService)
+
+	// =========================
 	// WebSocket message routing
 	// =========================
 	// Both Chat and Groups handle inbound client messages; Router dispatches
@@ -235,6 +256,8 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 			Comments:      commentsHandler,
 			Followers:     followersHandler,
 			Search:        searchHandler,
+			Likes:         likesHandler,
+			Share:         shareHandler,
 		},
 		AuthService:          authService,
 		GroupsService:        groupsService,
