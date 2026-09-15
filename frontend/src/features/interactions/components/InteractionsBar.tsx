@@ -9,9 +9,14 @@ interface InteractionsBarProps {
   postId: number;
   /** Number of comments on the post, when the caller already knows it. */
   commentCount?: number;
-  /** The post's like count as last read from the server. */
+  /**
+   * The post's like count as last read from the server. Read once, as the
+   * bar's initial state - if the caller loads this asynchronously after
+   * mount, give the bar a `key` that changes once the real value arrives
+   * so it remounts with it, rather than passing an updated prop in place.
+   */
   likeCount?: number;
-  /** Whether the viewer has already liked the post. */
+  /** Whether the viewer has already liked the post. See likeCount. */
   liked?: boolean;
   /**
    * Called when the viewer toggles the like, with the state they are
