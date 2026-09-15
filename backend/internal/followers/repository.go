@@ -54,15 +54,6 @@ func (r *Repository) GetRecommendations(viewerID, limit int) ([]Recommendation, 
 					SELECT 1 FROM followers existing_follow
 					WHERE existing_follow.follower_id = ? AND existing_follow.followed_id = c.id
 				)
-				AND NOT EXISTS (
-					SELECT 1 FROM user_blocks block
-					WHERE (block.blocker_id = ? AND block.blocked_id = c.id)
-					   OR (block.blocker_id = c.id AND block.blocked_id = ?)
-				)
-				AND NOT EXISTS (
-					SELECT 1 FROM user_mutes mute
-					WHERE mute.muter_id = ? AND mute.muted_id = c.id
-				)
 			GROUP BY c.id, c.username, c.first_name, c.last_name, c.profile_photo
 		),
 		fallback_candidates AS (
@@ -88,15 +79,6 @@ func (r *Repository) GetRecommendations(viewerID, limit int) ([]Recommendation, 
 					WHERE existing_follow.follower_id = ? AND existing_follow.followed_id = u.id
 				)
 				AND NOT EXISTS (
-					SELECT 1 FROM user_blocks block
-					WHERE (block.blocker_id = ? AND block.blocked_id = u.id)
-					   OR (block.blocker_id = u.id AND block.blocked_id = ?)
-				)
-				AND NOT EXISTS (
-					SELECT 1 FROM user_mutes mute
-					WHERE mute.muter_id = ? AND mute.muted_id = u.id
-				)
-				AND NOT EXISTS (
 					SELECT 1 FROM mutual_candidates mutual
 					WHERE mutual.id = u.id
 				)
@@ -112,8 +94,8 @@ func (r *Repository) GetRecommendations(viewerID, limit int) ([]Recommendation, 
 		ORDER BY source_rank ASC, mutual_count DESC, activity_count DESC, username ASC
 		LIMIT ?
 	`,
-		viewerID, viewerID, viewerID, viewerID, viewerID, viewerID,
-		viewerID, viewerID, viewerID, viewerID, viewerID,
+		viewerID, viewerID, viewerID,
+		viewerID, viewerID,
 		limit,
 	)
 	if err != nil {

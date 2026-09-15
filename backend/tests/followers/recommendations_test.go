@@ -18,8 +18,6 @@ func TestRecommendations_PrioritizesMutualsAndFiltersIneligibleAccounts(t *testi
 	mutualCandidate := f.newUser(t, "mutualtarget", false)
 	privateCandidate := f.newUser(t, "privatecandidate", true)
 	alreadyFollowing := f.newUser(t, "alreadyfollowing", false)
-	blockedCandidate := f.newUser(t, "blockedcandidate", false)
-	mutedCandidate := f.newUser(t, "mutedcandidate", false)
 	mostActive := f.newUser(t, "mostactive", false)
 	lessActive := f.newUser(t, "lessactive", false)
 	newestFallback := f.newUser(t, "newestfallback", false)
@@ -34,25 +32,8 @@ func TestRecommendations_PrioritizesMutualsAndFiltersIneligibleAccounts(t *testi
 			t.Fatalf("mutual %d follows candidate: %v", mutualID, err)
 		}
 	}
-	for _, targetID := range []int{privateCandidate, blockedCandidate, mutedCandidate} {
-		if err := f.svc.FollowUser(mutualOne, targetID); err != nil {
-			t.Fatalf("mutual user follows %d: %v", targetID, err)
-		}
-	}
-
-	if _, err := f.db.Exec(
-		"INSERT INTO user_blocks (blocker_id, blocked_id) VALUES (?, ?)",
-		current,
-		blockedCandidate,
-	); err != nil {
-		t.Fatalf("block recommendation candidate: %v", err)
-	}
-	if _, err := f.db.Exec(
-		"INSERT INTO user_mutes (muter_id, muted_id) VALUES (?, ?)",
-		current,
-		mutedCandidate,
-	); err != nil {
-		t.Fatalf("mute recommendation candidate: %v", err)
+	if err := f.svc.FollowUser(mutualOne, privateCandidate); err != nil {
+		t.Fatalf("mutual user follows private candidate: %v", err)
 	}
 
 	createPublicPosts(t, f, mostActive, 3)
@@ -95,8 +76,6 @@ func TestRecommendations_PrioritizesMutualsAndFiltersIneligibleAccounts(t *testi
 		current,
 		alreadyFollowing,
 		privateCandidate,
-		blockedCandidate,
-		mutedCandidate,
 	} {
 		for _, recommendation := range recommendations {
 			if recommendation.ID == excludedID {
