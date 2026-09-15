@@ -350,8 +350,44 @@ func (s *Service) HandleGroupMessage(senderID int64, rawPayload json.RawMessage)
 			memberIDs[i] = int64(m.UserID)
 		}
 		s.hub.SendToUsers(memberIDs, outEvent)
+
+		s.notifyGroupMembers(members, senderID, req.GroupID, content)
 	} else if s.hub != nil {
 		s.hub.SendToUser(senderID, outEvent)
+	}
+}
+
+// notifyGroupMembers persists a group_message notification for every member
+// besides the sender. Best-effort: a notification failure never affects
+// delivery of the message itself, which has already been broadcast.
+func (s *Service) notifyGroupMembers(members []groups.GroupMember, senderID int64, groupID int64, content string) {
+	if s.notifier == nil {
+		return
+	}
+
+	preview := content
+	if utf8.RuneCountInString(preview) > 60 {
+		runes := []rune(preview)
+		preview = string(runes[:60]) + "..."
+	}
+
+	actorID := int(senderID)
+	entityType := notifications.EntityGroup
+	entityID := int(groupID)
+	for _, m := range members {
+		if int64(m.UserID) == senderID {
+			continue
+		}
+		if err := s.notifier.Notify(notifications.CreateNotificationRequest{
+			ReceiverID: m.UserID,
+			ActorID:    &actorID,
+			Type:       notifications.NotificationGroupMessage,
+			EntityType: &entityType,
+			EntityID:   &entityID,
+			Message:    preview,
+		}); err != nil {
+			log.Printf("chat: group_message notification for user %d failed: %v", m.UserID, err)
+		}
 	}
 }
 

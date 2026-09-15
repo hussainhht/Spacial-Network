@@ -192,7 +192,7 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 	// =========================
 
 	commentsRepo := comments.NewRepository(db)
-	commentsService := comments.NewService(commentsRepo, postsService)
+	commentsService := comments.NewService(commentsRepo, postsService, notificationsService)
 	commentsHandler := comments.NewHandler(commentsService, commentMediaStorage)
 
 	// =========================
@@ -200,7 +200,7 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 	// =========================
 
 	likesRepo := likes.NewRepository(db)
-	likesService := likes.NewService(likesRepo, postsService)
+	likesService := likes.NewService(likesRepo, postsService, notificationsService)
 	likesHandler := likes.NewHandler(likesService)
 
 	// =========================

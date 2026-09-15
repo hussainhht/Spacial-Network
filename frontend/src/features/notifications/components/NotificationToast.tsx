@@ -16,8 +16,17 @@ const TYPE_LABELS: Record<SupportedNotificationType, string> = {
   new_follower: "New follower",
   follow_accepted: "Follow accepted",
   group_invitation: "Group invitation",
+  group_invitation_accepted: "Invitation accepted",
+  group_invitation_declined: "Invitation declined",
   group_join_request: "Join request",
+  group_join_accepted: "Join request accepted",
+  group_join_rejected: "Join request declined",
+  group_event: "Group event",
+  event_rsvp: "Event response",
+  group_message: "Group message",
   private_message: "Direct message",
+  post_like: "Post like",
+  post_comment: "New comment",
 };
 
 const TYPE_ICONS: Record<SupportedNotificationType, AppIconName> = {
@@ -25,8 +34,17 @@ const TYPE_ICONS: Record<SupportedNotificationType, AppIconName> = {
   new_follower: "user",
   follow_accepted: "user",
   group_invitation: "groups",
+  group_invitation_accepted: "groups",
+  group_invitation_declined: "groups",
   group_join_request: "groups",
+  group_join_accepted: "groups",
+  group_join_rejected: "groups",
+  group_event: "calendar",
+  event_rsvp: "calendar",
+  group_message: "chat",
   private_message: "chat",
+  post_like: "heart",
+  post_comment: "posts",
 };
 
 interface NotificationToastProps {
@@ -46,17 +64,20 @@ export default function NotificationToast({
   const groupData = getGroupNotificationData(notification);
   const followData = getFollowNotificationData(notification);
   const actorUsername = groupData?.actor_username ?? followData?.actor_username;
-  // Keep the DM's content out of a transient, glanceable popup - just who sent
-  // it. A shared post's raw /posts/<id> link never leaks; it's always "sent a
-  // post", matching ChatSidebar's convention for shared posts elsewhere.
-  const isPrivateMessage = notification.type === "private_message";
-  const sharedPost = isPrivateMessage
+  // Keep the DM/group message's content out of a transient, glanceable popup
+  // - just who sent it. A shared post's raw /posts/<id> link never leaks;
+  // it's always "sent a post", matching ChatSidebar's convention for shared
+  // posts elsewhere.
+  const isChatMessage =
+    notification.type === "private_message" ||
+    notification.type === "group_message";
+  const sharedPost = isChatMessage
     ? parseSharedPost(notification.message)
     : null;
   const messageText =
     sharedPost
       ? "sent a post"
-      : isPrivateMessage && actorUsername
+      : isChatMessage && actorUsername
         ? "sent a message"
         : notification.message;
 
