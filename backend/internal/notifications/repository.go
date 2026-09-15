@@ -165,7 +165,7 @@ func buildNotificationData(notificationType NotificationType, groupID *int, grou
 	switch notificationType {
 	case NotificationGroupInvitation, NotificationGroupJoinRequest:
 		return buildGroupData(groupID, groupTitle, actorUsername)
-	case NotificationFollowRequest, NotificationNewFollower:
+	case NotificationFollowRequest, NotificationNewFollower, NotificationFollowAccepted:
 		return buildFollowData(actorUsername)
 	default:
 		return nil
