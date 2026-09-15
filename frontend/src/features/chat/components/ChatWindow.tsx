@@ -6,6 +6,7 @@ import type { ChatWindowProps } from "../types/chat";
 import PostSharePreview from "@/features/interactions/components/PostSharePreview";
 import { parseSharedPost } from "@/features/interactions/utils/sharedPost";
 import { formatMessageTime, parseDate, getInitials } from "@/lib/utils";
+import { getChatAvatarUrl } from "../utils/avatar";
 import styles from "./Chat.module.css";
 
 const MAX_MESSAGE_LENGTH = 2000;
@@ -126,6 +127,7 @@ export default function ChatWindow({
   }
 
   const initials = getInitials("", "", partnerUsername);
+  const partnerAvatarUrl = getChatAvatarUrl(partnerAvatar);
 
   return (
     <section className={`${styles.floatingCard} ${styles.chatWindowCard}`}>
@@ -149,9 +151,9 @@ export default function ChatWindow({
             aria-label={`View ${partnerUsername}'s profile`}
           >
             <div className={styles.avatarWrapper}>
-              {partnerAvatar ? (
+              {partnerAvatarUrl ? (
                 <img
-                  src={partnerAvatar}
+                  src={partnerAvatarUrl}
                   alt={partnerUsername}
                   className={styles.avatarImg}
                 />
@@ -212,8 +214,20 @@ export default function ChatWindow({
         {messages.map((msg, index) => {
           const isMine = myUserId !== null && msg.sender_id === myUserId;
           const isRead = Boolean(msg.read_at);
+          const senderAvatarUrl = getChatAvatarUrl(msg.sender_avatar);
+          const senderInitials = getInitials(
+            msg.sender_first_name || "",
+            msg.sender_last_name || "",
+            msg.sender_username || (isMine ? "You" : partnerUsername)
+          );
+          const previousMessage = messages[index - 1];
           const showDateDivider =
-            index === 0 || isDifferentDay(messages[index - 1]?.created_at, msg.created_at);
+            index === 0 || isDifferentDay(previousMessage?.created_at, msg.created_at);
+          const showPartnerAvatar =
+            !isMine &&
+            (index === 0 ||
+              previousMessage?.sender_id !== msg.sender_id ||
+              isDifferentDay(previousMessage?.created_at, msg.created_at));
 
           return (
             <Fragment key={msg.id || index}>
@@ -226,6 +240,15 @@ export default function ChatWindow({
               )}
 
               <div className={isMine ? styles.messageRowMine : styles.messageRowPartner}>
+                {!isMine && (
+                  <div className={showPartnerAvatar ? styles.messageAvatar : styles.messageAvatarSpacer}>
+                    {showPartnerAvatar && (senderAvatarUrl ? (
+                      <img src={senderAvatarUrl} alt="" className={styles.messageAvatarImage} />
+                    ) : (
+                      <span>{senderInitials}</span>
+                    ))}
+                  </div>
+                )}
                 <div className={isMine ? styles.bubbleMine : styles.bubblePartner}>
                   {(() => {
                     const shared = parseSharedPost(msg.content);

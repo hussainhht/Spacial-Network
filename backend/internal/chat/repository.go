@@ -34,6 +34,20 @@ func (r *Repository) SavePrivateMessage(senderID, recipientID int64, content str
 		return nil, fmt.Errorf("save private message: %w", err)
 	}
 
+	err = r.db.QueryRow(`
+		SELECT username, first_name, last_name, COALESCE(profile_photo, '')
+		FROM users
+		WHERE id = ?
+	`, senderID).Scan(
+		&msg.SenderUsername,
+		&msg.SenderFirstName,
+		&msg.SenderLastName,
+		&msg.SenderAvatar,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("load message sender: %w", err)
+	}
+
 	return &msg, nil
 }
 
@@ -46,10 +60,13 @@ func (r *Repository) GetPrivateHistory(userA, userB int64, limit, offset int) ([
 	}
 
 	query := `
-		SELECT id, sender_id, recipient_id, content, created_at, read_at
-		FROM private_messages
-		WHERE (sender_id = ? AND recipient_id = ?) OR (sender_id = ? AND recipient_id = ?)
-		ORDER BY created_at DESC, id DESC
+		SELECT pm.id, pm.sender_id, pm.recipient_id,
+		       u.username, u.first_name, u.last_name, COALESCE(u.profile_photo, ''),
+		       pm.content, pm.created_at, pm.read_at
+		FROM private_messages pm
+		JOIN users u ON u.id = pm.sender_id
+		WHERE (pm.sender_id = ? AND pm.recipient_id = ?) OR (pm.sender_id = ? AND pm.recipient_id = ?)
+		ORDER BY pm.created_at DESC, pm.id DESC
 		LIMIT ? OFFSET ?
 	`
 
@@ -66,6 +83,10 @@ func (r *Repository) GetPrivateHistory(userA, userB int64, limit, offset int) ([
 			&m.ID,
 			&m.SenderID,
 			&m.RecipientID,
+			&m.SenderUsername,
+			&m.SenderFirstName,
+			&m.SenderLastName,
+			&m.SenderAvatar,
 			&m.Content,
 			&m.CreatedAt,
 			&m.ReadAt,

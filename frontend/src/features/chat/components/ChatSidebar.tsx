@@ -5,6 +5,7 @@ import type { ChatSidebarProps } from "../types/chat";
 import { formatConversationDate, getDisplayName, getInitials } from "@/lib/utils";
 import { parseSharedPost } from "@/features/interactions/utils/sharedPost";
 import NewChatModal from "./NewChatModal";
+import { getChatAvatarUrl } from "../utils/avatar";
 import styles from "./Chat.module.css";
 
 export default function ChatSidebar({
@@ -152,6 +153,7 @@ export default function ChatSidebar({
             const previewText = sharedPost
               ? `${c.last_message_from_me ? "You" : c.partner_username} sent a post`
               : c.last_message || "No messages yet";
+            const avatarUrl = getChatAvatarUrl(c.partner_avatar);
 
             return (
               <div
@@ -170,9 +172,9 @@ export default function ChatSidebar({
                 }}
               >
                 <div className={styles.avatarWrapper}>
-                  {c.partner_avatar ? (
+                  {avatarUrl ? (
                     <img
-                      src={c.partner_avatar}
+                      src={avatarUrl}
                       alt={displayName}
                       className={styles.avatarImg}
                     />

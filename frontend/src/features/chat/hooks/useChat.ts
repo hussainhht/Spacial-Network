@@ -219,6 +219,10 @@ export function useChat() {
         id: lastMessage.id || Date.now(),
         sender_id: senderId,
         recipient_id: recipientId,
+        sender_username: lastMessage.sender_username,
+        sender_first_name: lastMessage.sender_first_name,
+        sender_last_name: lastMessage.sender_last_name,
+        sender_avatar: lastMessage.sender_avatar,
         content: lastMessage.content,
         created_at: lastMessage.created_at || new Date().toISOString(),
       };
@@ -244,6 +248,8 @@ export function useChat() {
       if (existing) {
         const updated: ConversationSummary = {
           ...existing,
+          partner_avatar:
+            senderId === partnerId ? lastMessage.sender_avatar || existing.partner_avatar : existing.partner_avatar,
           last_message: lastMessage.content,
           last_message_at: lastMessage.created_at || new Date().toISOString(),
           last_message_from_me: senderId === myUserId,
@@ -255,9 +261,10 @@ export function useChat() {
 
       const newItem: ConversationSummary = {
         partner_id: partnerId,
-        partner_username: `User ${partnerId}`,
-        partner_first_name: "",
-        partner_last_name: "",
+        partner_username: lastMessage.sender_username || `User ${partnerId}`,
+        partner_first_name: lastMessage.sender_first_name || "",
+        partner_last_name: lastMessage.sender_last_name || "",
+        partner_avatar: lastMessage.sender_avatar,
         last_message: lastMessage.content,
         last_message_at: lastMessage.created_at || new Date().toISOString(),
         last_message_from_me: senderId === myUserId,
