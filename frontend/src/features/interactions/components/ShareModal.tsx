@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import AppIcon from "@/components/layout/AppIcon";
 import { getEligibleContacts } from "@/features/chat/api/chat";
 import type { EligibleContact } from "@/features/chat/types/chat";
 import { getMyGroups } from "@/features/groups/api/groups";
@@ -8,25 +9,35 @@ import type { Group } from "@/features/groups/types/group";
 import { getBackendBaseUrl } from "@/lib/api";
 import { getDisplayName, getInitials } from "@/lib/utils";
 import { sharePost } from "../api/share";
-// Reuses the chat feature's modal styling so the share picker matches the
-// app's existing contact-picker look (see NewChatModal) without a new CSS
-// file.
-import styles from "@/features/chat/components/Chat.module.css";
+import styles from "./ShareModal.module.css";
 
 interface ShareModalProps {
   postId: number;
   onClose: () => void;
 }
 
+type ShareTarget = "user" | "group";
+
+function recipientKey(target: ShareTarget, id: number) {
+  return `${target}:${id}`;
+}
+
 export default function ShareModal({ postId, onClose }: ShareModalProps) {
-  const [target, setTarget] = useState<"user" | "group">("user");
+  const [target, setTarget] = useState<ShareTarget>("user");
   const [contacts, setContacts] = useState<EligibleContact[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [sendingId, setSendingId] = useState<number | null>(null);
-  const [sentId, setSentId] = useState<number | null>(null);
+  const [sendingKey, setSendingKey] = useState<string | null>(null);
+  const [sentKeys, setSentKeys] = useState<Set<string>>(() => new Set());
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const onCloseRef = useRef(onClose);
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   useEffect(() => {
     let isMounted = true;
@@ -34,8 +45,7 @@ export default function ShareModal({ postId, onClose }: ShareModalProps) {
     const delay = trimmed ? 250 : 0;
 
     const timer = setTimeout(() => {
-      setLoading(true);
-      setError(null);
+      setLoadError(null);
       const request =
         target === "user"
           ? getEligibleContacts(trimmed, 20, 0).then((data) => {
@@ -48,7 +58,7 @@ export default function ShareModal({ postId, onClose }: ShareModalProps) {
       request
         .catch((err) => {
           if (isMounted) {
-            setError(
+            setLoadError(
               err instanceof Error
                 ? err.message
                 : `Failed to load ${target === "user" ? "contacts" : "groups"}`
@@ -67,12 +77,43 @@ export default function ShareModal({ postId, onClose }: ShareModalProps) {
   }, [searchQuery, target]);
 
   useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        onCloseRef.current();
+        return;
+      }
+
+      if (event.key !== "Tab" || !dialogRef.current) return;
+
+      const focusable = Array.from(
+        dialogRef.current.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), input:not([disabled]), [href], [tabindex]:not([tabindex="-1"])',
+        ),
+      );
+      if (focusable.length === 0) return;
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     }
+
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onClose]);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+      previouslyFocused?.focus();
+    };
+  }, []);
 
   const getFullPhotoUrl = (path: string) => {
     if (/^https?:\/\//i.test(path)) return path;
@@ -81,54 +122,74 @@ export default function ShareModal({ postId, onClose }: ShareModalProps) {
   };
 
   async function handleSend(targetId: number) {
-    setSendingId(targetId);
-    setError(null);
+    const currentTarget = target;
+    const key = recipientKey(currentTarget, targetId);
+    setSendingKey(key);
+    setActionError(null);
     try {
-      await sharePost(postId, { target, target_id: targetId });
-      setSentId(targetId);
-      setTimeout(onClose, 700);
+      await sharePost(postId, { target: currentTarget, target_id: targetId });
+      setSentKeys((current) => {
+        const next = new Set(current);
+        next.add(key);
+        return next;
+      });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to share post");
+      setActionError(err instanceof Error ? err.message : "Failed to share post");
     } finally {
-      setSendingId(null);
+      setSendingKey(null);
     }
   }
 
-  function handleTabChange(nextTarget: "user" | "group") {
+  function handleTabChange(nextTarget: ShareTarget) {
     if (nextTarget === target) return;
+    setLoading(true);
     setTarget(nextTarget);
-    setError(null);
-    setSentId(null);
+    setLoadError(null);
+    setActionError(null);
   }
+
+  const sharedCount = sentKeys.size;
 
   return (
     <div
       className={styles.modalBackdrop}
       onClick={onClose}
-      aria-modal="true"
-      role="dialog"
-      aria-labelledby="share-modal-title"
     >
-      <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>
+      <div
+        ref={dialogRef}
+        className={styles.modalCard}
+        onClick={(event) => event.stopPropagation()}
+        aria-modal="true"
+        role="dialog"
+        aria-labelledby="share-modal-title"
+        aria-describedby="share-modal-description"
+      >
         <div className={styles.modalHeader}>
-          <h2 id="share-modal-title" className={styles.modalTitle}>
-            Share to a chat
-          </h2>
+          <div>
+            <h2 id="share-modal-title" className={styles.modalTitle}>Share post</h2>
+            <p id="share-modal-description" className={styles.modalDescription}>
+              Send this post to people or groups.
+            </p>
+          </div>
           <button
             type="button"
             onClick={onClose}
             className={styles.modalCloseBtn}
-            aria-label="Close modal"
+            aria-label="Close share dialog"
           >
-            &times;
+            <AppIcon name="x" width={19} height={19} />
           </button>
         </div>
 
-        <div className={styles.filterChips} style={{ padding: "0 16px 12px" }}>
+        <div className={styles.filterChips} role="tablist" aria-label="Share destination">
           <button
             type="button"
             onClick={() => handleTabChange("user")}
             className={`${styles.filterChip} ${target === "user" ? styles.filterChipActive : ""}`}
+            role="tab"
+            id="share-people-tab"
+            aria-selected={target === "user"}
+            aria-controls="share-recipient-list"
           >
             People
           </button>
@@ -136,6 +197,10 @@ export default function ShareModal({ postId, onClose }: ShareModalProps) {
             type="button"
             onClick={() => handleTabChange("group")}
             className={`${styles.filterChip} ${target === "group" ? styles.filterChipActive : ""}`}
+            role="tab"
+            id="share-groups-tab"
+            aria-selected={target === "group"}
+            aria-controls="share-recipient-list"
           >
             Groups
           </button>
@@ -143,7 +208,9 @@ export default function ShareModal({ postId, onClose }: ShareModalProps) {
 
         <div className={styles.modalSearchWrapper}>
           <div className={styles.searchWrapper}>
-            <span className={styles.searchIcon}>🔍</span>
+            <span className={styles.searchIcon}>
+              <AppIcon name="search" width={17} height={17} />
+            </span>
             <input
               type="text"
               autoFocus
@@ -151,25 +218,44 @@ export default function ShareModal({ postId, onClose }: ShareModalProps) {
                 target === "user" ? "Search people you follow or followers..." : "Search your groups..."
               }
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(event) => {
+                setLoading(true);
+                setSearchQuery(event.target.value);
+              }}
               className={styles.searchInput}
+              aria-label={target === "user" ? "Search people" : "Search groups"}
             />
             {searchQuery && (
               <button
                 type="button"
-                onClick={() => setSearchQuery("")}
+                onClick={() => {
+                  setLoading(true);
+                  setSearchQuery("");
+                }}
                 className={styles.searchClearBtn}
                 aria-label="Clear search"
               >
-                &times;
+                <AppIcon name="x" width={15} height={15} />
               </button>
             )}
           </div>
         </div>
 
-        <div className={styles.modalContactList}>
-          {loading && contacts.length === 0 && groups.length === 0 && (
+        <div
+          id="share-recipient-list"
+          className={styles.modalContactList}
+          role="tabpanel"
+          aria-labelledby={target === "user" ? "share-people-tab" : "share-groups-tab"}
+        >
+          {actionError && (
+            <div className={styles.actionError} role="alert">
+              {actionError}
+            </div>
+          )}
+
+          {loading && (
             <div className={styles.loadingNotice}>
+              <span className={styles.spinner} aria-hidden="true" />
               {target === "user"
                 ? searchQuery.trim()
                   ? "Searching contacts..."
@@ -180,29 +266,25 @@ export default function ShareModal({ postId, onClose }: ShareModalProps) {
             </div>
           )}
 
-          {error && !loading && (
-            <div className={styles.emptyNotice} style={{ color: "var(--space-error-text, #fca5a5)" }}>
-              <p>{error}</p>
+          {loadError && !loading && (
+            <div className={`${styles.emptyNotice} ${styles.loadError}`} role="alert">
+              <p>{loadError}</p>
             </div>
           )}
 
-          {target === "user" && !loading && !error && contacts.length === 0 && (
+          {target === "user" && !loading && !loadError && contacts.length === 0 && (
             <div className={styles.emptyNotice}>
               {searchQuery.trim() ? (
                 <>
-                  <p style={{ margin: 0, fontWeight: 600, color: "var(--space-text-heading, #f8fafc)" }}>
-                    No contacts found
-                  </p>
-                  <p style={{ margin: "4px 0 0", fontSize: "12px" }}>
+                  <p className={styles.emptyTitle}>No contacts found</p>
+                  <p className={styles.emptyCopy}>
                     No contacts matching &ldquo;{searchQuery.trim()}&rdquo;
                   </p>
                 </>
               ) : (
                 <>
-                  <p style={{ margin: 0, fontWeight: 600, color: "var(--space-text-heading, #f8fafc)" }}>
-                    No eligible contacts
-                  </p>
-                  <p style={{ margin: "4px 0 0", fontSize: "12px", lineHeight: 1.5 }}>
+                  <p className={styles.emptyTitle}>No eligible contacts</p>
+                  <p className={styles.emptyCopy}>
                     You can only share with users you follow or who follow you.
                   </p>
                 </>
@@ -210,23 +292,19 @@ export default function ShareModal({ postId, onClose }: ShareModalProps) {
             </div>
           )}
 
-          {target === "group" && !loading && !error && groups.length === 0 && (
+          {target === "group" && !loading && !loadError && groups.length === 0 && (
             <div className={styles.emptyNotice}>
               {searchQuery.trim() ? (
                 <>
-                  <p style={{ margin: 0, fontWeight: 600, color: "var(--space-text-heading, #f8fafc)" }}>
-                    No groups found
-                  </p>
-                  <p style={{ margin: "4px 0 0", fontSize: "12px" }}>
+                  <p className={styles.emptyTitle}>No groups found</p>
+                  <p className={styles.emptyCopy}>
                     No groups matching &ldquo;{searchQuery.trim()}&rdquo;
                   </p>
                 </>
               ) : (
                 <>
-                  <p style={{ margin: 0, fontWeight: 600, color: "var(--space-text-heading, #f8fafc)" }}>
-                    No groups yet
-                  </p>
-                  <p style={{ margin: "4px 0 0", fontSize: "12px", lineHeight: 1.5 }}>
+                  <p className={styles.emptyTitle}>No groups yet</p>
+                  <p className={styles.emptyCopy}>
                     You can only share with groups you belong to.
                   </p>
                 </>
@@ -236,20 +314,18 @@ export default function ShareModal({ postId, onClose }: ShareModalProps) {
 
           {target === "user" &&
             !loading &&
-            !error &&
+            !loadError &&
             contacts.map((contact) => {
               const displayName = getDisplayName(contact.first_name, contact.last_name, contact.username);
               const initials = getInitials(contact.first_name, contact.last_name, contact.username);
               const avatarUrl = contact.profile_photo ? getFullPhotoUrl(contact.profile_photo) : "";
-              const isSending = sendingId === contact.id;
-              const isSent = sentId === contact.id;
+              const key = recipientKey("user", contact.id);
+              const isSending = sendingKey === key;
+              const isSent = sentKeys.has(key);
 
               return (
-                <button
+                <div
                   key={contact.id}
-                  type="button"
-                  onClick={() => handleSend(contact.id)}
-                  disabled={isSending || isSent}
                   className={styles.modalContactItem}
                 >
                   <div className={styles.avatarWrapper}>
@@ -265,28 +341,33 @@ export default function ShareModal({ postId, onClose }: ShareModalProps) {
                     <span className={styles.modalContactUsername}>@{contact.username}</span>
                   </div>
 
-                  <span className={styles.mutualBadge}>
+                  <button
+                    type="button"
+                    onClick={() => handleSend(contact.id)}
+                    disabled={Boolean(sendingKey) || isSent}
+                    className={`${styles.sendButton} ${isSent ? styles.sendButtonSent : ""}`}
+                    aria-label={isSent ? `Sent to ${displayName}` : `Send to ${displayName}`}
+                  >
+                    {isSent && <span aria-hidden="true">✓</span>}
                     {isSent ? "Sent" : isSending ? "Sending…" : "Send"}
-                  </span>
-                </button>
+                  </button>
+                </div>
               );
             })}
 
           {target === "group" &&
             !loading &&
-            !error &&
+            !loadError &&
             groups.map((group) => {
               const avatarUrl = group.groupPhoto ? getFullPhotoUrl(group.groupPhoto) : "";
               const initials = getInitials("", "", group.title);
-              const isSending = sendingId === group.id;
-              const isSent = sentId === group.id;
+              const key = recipientKey("group", group.id);
+              const isSending = sendingKey === key;
+              const isSent = sentKeys.has(key);
 
               return (
-                <button
+                <div
                   key={group.id}
-                  type="button"
-                  onClick={() => handleSend(group.id)}
-                  disabled={isSending || isSent}
                   className={styles.modalContactItem}
                 >
                   <div className={styles.avatarWrapper}>
@@ -304,12 +385,30 @@ export default function ShareModal({ postId, onClose }: ShareModalProps) {
                     </span>
                   </div>
 
-                  <span className={styles.mutualBadge}>
+                  <button
+                    type="button"
+                    onClick={() => handleSend(group.id)}
+                    disabled={Boolean(sendingKey) || isSent}
+                    className={`${styles.sendButton} ${isSent ? styles.sendButtonSent : ""}`}
+                    aria-label={isSent ? `Sent to ${group.title}` : `Send to ${group.title}`}
+                  >
+                    {isSent && <span aria-hidden="true">✓</span>}
                     {isSent ? "Sent" : isSending ? "Sending…" : "Send"}
-                  </span>
-                </button>
+                  </button>
+                </div>
               );
             })}
+        </div>
+
+        <div className={styles.modalFooter}>
+          <p className={styles.shareStatus} aria-live="polite">
+            {sharedCount > 0
+              ? `Shared with ${sharedCount} ${sharedCount === 1 ? "recipient" : "recipients"}`
+              : "Choose someone to share with"}
+          </p>
+          <button type="button" className={styles.doneButton} onClick={onClose}>
+            Done
+          </button>
         </div>
       </div>
     </div>
