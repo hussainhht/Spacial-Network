@@ -13,6 +13,7 @@ import (
 
 	"social/internal/chat"
 	"social/internal/followers"
+	"social/internal/groups"
 	"social/internal/notifications"
 	"social/internal/websocket"
 	"social/tests/testutil"
@@ -23,6 +24,8 @@ type fixture struct {
 	chatSvc      *chat.Service
 	chatRepo     *chat.Repository
 	followersSvc *followers.Service
+	groupsSvc    *groups.Service
+	notifSvc     *notifications.Service
 }
 
 func setup(t *testing.T) fixture {
@@ -35,11 +38,14 @@ func setup(t *testing.T) fixture {
 	notifRepo := notifications.NewRepository(db)
 	notifSvc := notifications.NewService(notifRepo, nil)
 
-	chatRepo := chat.NewRepository(db)
+	groupsRepo := groups.NewRepository(db)
 	hub := websocket.NewHub()
-	chatSvc := chat.NewService(chatRepo, hub, notifSvc, followersSvc, nil)
+	groupsSvc := groups.NewService(groupsRepo, notifSvc, hub)
 
-	return fixture{db: db, chatSvc: chatSvc, chatRepo: chatRepo, followersSvc: followersSvc}
+	chatRepo := chat.NewRepository(db)
+	chatSvc := chat.NewService(chatRepo, hub, notifSvc, followersSvc, groupsSvc)
+
+	return fixture{db: db, chatSvc: chatSvc, chatRepo: chatRepo, followersSvc: followersSvc, groupsSvc: groupsSvc, notifSvc: notifSvc}
 }
 
 func (f fixture) newUser(t *testing.T, username string) int {
@@ -172,5 +178,71 @@ func TestHandlePrivateMessage_RejectsSelfMessage(t *testing.T) {
 	}
 	if len(history) != 0 {
 		t.Fatalf("expected no self-message to be persisted, got %d", len(history))
+	}
+}
+
+func TestHandlePrivateMessage_NotifiesRecipient(t *testing.T) {
+	f := setup(t)
+	a := f.newUser(t, "chatnotifyA")
+	b := f.newUser(t, "chatnotifyB")
+
+	if err := f.followersSvc.FollowUser(a, b); err != nil {
+		t.Fatalf("FollowUser: %v", err)
+	}
+
+	payload := []byte(`{"recipient_id":` + strconv.Itoa(b) + `,"content":"hi there"}`)
+	f.chatSvc.HandlePrivateMessage(int64(a), payload)
+
+	notifs, err := f.notifSvc.GetForUser(b, 10, 0)
+	if err != nil {
+		t.Fatalf("GetForUser(b): %v", err)
+	}
+	if len(notifs) != 1 {
+		t.Fatalf("expected 1 notification for the recipient, got %d", len(notifs))
+	}
+	if notifs[0].Type != notifications.NotificationPrivateMessage {
+		t.Errorf("notification type = %q, want %q", notifs[0].Type, notifications.NotificationPrivateMessage)
+	}
+}
+
+func TestHandleGroupMessage_NotifiesOtherMembersButNotSender(t *testing.T) {
+	f := setup(t)
+	sender := f.newUser(t, "gmsender")
+	memberA := f.newUser(t, "gmmemberA")
+	memberB := f.newUser(t, "gmmemberB")
+
+	groupID, err := f.groupsSvc.CreateGroup(sender, "Chat Notify Group", "", "", groups.GroupPrivacyPrivate)
+	if err != nil {
+		t.Fatalf("CreateGroup: %v", err)
+	}
+	if err := f.groupsSvc.AddMember(int(groupID), memberA); err != nil {
+		t.Fatalf("AddMember A: %v", err)
+	}
+	if err := f.groupsSvc.AddMember(int(groupID), memberB); err != nil {
+		t.Fatalf("AddMember B: %v", err)
+	}
+
+	payload := []byte(`{"group_id":` + strconv.FormatInt(groupID, 10) + `,"content":"hello group"}`)
+	f.chatSvc.HandleGroupMessage(int64(sender), payload)
+
+	for _, memberID := range []int{memberA, memberB} {
+		notifs, err := f.notifSvc.GetForUser(memberID, 10, 0)
+		if err != nil {
+			t.Fatalf("GetForUser(%d): %v", memberID, err)
+		}
+		if len(notifs) != 1 {
+			t.Fatalf("expected member %d to receive 1 notification, got %d", memberID, len(notifs))
+		}
+		if notifs[0].Type != notifications.NotificationGroupMessage {
+			t.Errorf("notification type = %q, want %q", notifs[0].Type, notifications.NotificationGroupMessage)
+		}
+	}
+
+	senderNotifs, err := f.notifSvc.GetForUser(sender, 10, 0)
+	if err != nil {
+		t.Fatalf("GetForUser(sender): %v", err)
+	}
+	if len(senderNotifs) != 0 {
+		t.Fatalf("expected the sender to receive no self-notification, got %d", len(senderNotifs))
 	}
 }
