@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { Fragment, type ReactNode, useEffect, useRef } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useFeed } from "@/features/posts/hooks/useFeed";
 import type { FeedScope } from "@/features/posts/types/post";
@@ -30,18 +30,56 @@ const EMPTY_COPY: Record<FeedScope, { title: string; body: string }> = {
   },
 };
 
-export default function PostFeed() {
+export default function PostFeed({
+  inlineDiscovery,
+}: {
+  inlineDiscovery?: ReactNode;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const feed = parseFeed(searchParams.get("feed"));
 
-  const { posts, loading, error, unauthorized, retry, removePost } =
-    useFeed(feed);
+  const {
+    posts,
+    loading,
+    error,
+    unauthorized,
+    hasMore,
+    loadingMore,
+    loadMoreError,
+    loadMore,
+    retry,
+    removePost,
+  } = useFeed(feed);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (unauthorized) router.push("/login");
   }, [unauthorized, router]);
+
+  useEffect(() => {
+    const target = loadMoreRef.current;
+    if (
+      !target ||
+      loading ||
+      loadingMore ||
+      loadMoreError ||
+      !hasMore ||
+      posts.length === 0
+    ) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) void loadMore();
+      },
+      // Begin fetching several cards before the visible end so the next page
+      // is usually ready before the reader reaches it.
+      { rootMargin: "1200px 0px" },
+    );
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [hasMore, loadMore, loadMoreError, loading, loadingMore, posts.length]);
 
   function handleFeedChange(next: FeedScope) {
     if (next === feed) return;
@@ -94,11 +132,39 @@ export default function PostFeed() {
 
         {!loading && !error && posts.length > 0 && (
           <div className="posts-list">
-            {posts.map((post) => (
-              <PostCard key={post.id} post={post} onDeleted={removePost} />
+            {posts.map((post, index) => (
+              <Fragment key={post.id}>
+                <PostCard post={post} onDeleted={removePost} />
+                {inlineDiscovery && index === Math.min(2, posts.length - 1)
+                  ? inlineDiscovery
+                  : null}
+              </Fragment>
             ))}
           </div>
         )}
+
+        {!loading && posts.length > 0 ? (
+          <div className="feed-pagination" aria-live="polite">
+            {loadingMore ? (
+              <div className="feed-load-more" role="status">
+                <span className="feed-load-more-spinner" aria-hidden="true" />
+                Loading more posts…
+              </div>
+            ) : loadMoreError ? (
+              <div className="feed-more-error" role="alert">
+                <span>{loadMoreError}</span>
+                <button type="button" className="feed-retry" onClick={() => void loadMore()}>
+                  Try again
+                </button>
+              </div>
+            ) : !hasMore ? (
+              <p className="feed-end">You’re all caught up.</p>
+            ) : null}
+            {hasMore && !loadMoreError ? <div ref={loadMoreRef} className="feed-load-more-sentinel" aria-hidden="true" /> : null}
+          </div>
+        ) : null}
+
+        {empty && inlineDiscovery}
       </div>
     </div>
   );
