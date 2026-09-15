@@ -12,6 +12,7 @@ import (
 
 func main() {
 	cleanFlag := flag.Bool("clean", true, "Truncate existing table data before seeding (starts IDs from 1)")
+	bulkFlag := flag.Int("bulk", 0, "Add this many repeat-safe bulk feed posts without deleting existing data")
 	flag.Parse()
 
 	log.Println("🚀 Initializing database seeder...")
@@ -30,11 +31,15 @@ func main() {
 		log.Fatalf("❌ Failed to run migrations: %v", err)
 	}
 
-	opts := seed.SeedOptions{
-		Clean: *cleanFlag,
+	if *bulkFlag > 0 {
+		if err := seed.RunBulk(db, *bulkFlag); err != nil {
+			log.Fatalf("❌ Bulk seeding failed: %v", err)
+		}
+		log.Printf("✅ Bulk seed ensured %d feed posts plus supporting social data", *bulkFlag)
+		return
 	}
 
-	if err := seed.Run(db, opts); err != nil {
+	if err := seed.Run(db, seed.SeedOptions{Clean: *cleanFlag}); err != nil {
 		log.Fatalf("❌ Seeding failed: %v", err)
 	}
 
