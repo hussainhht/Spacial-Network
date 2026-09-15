@@ -1,9 +1,5 @@
-import GroupStateSync from "@/features/groups/components/GroupStateSync";
 import AppShell from "@/components/layout/AppShell";
-import { NotificationProvider } from "@/features/notifications/context/NotificationProvider";
-import NotificationToastContainer from "@/features/notifications/components/NotificationToastContainer";
-import { SearchProvider } from "@/features/search/context/SearchContext";
-import AuthGuard from "@/features/auth/components/AuthGuard";
+import AuthenticatedProviders from "@/components/layout/AuthenticatedProviders";
 
 export default function MainLayout({
   children,
@@ -11,14 +7,8 @@ export default function MainLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <AuthGuard>
-      <NotificationProvider>
-        <SearchProvider>
-          <GroupStateSync />
-          <NotificationToastContainer />
-          <AppShell>{children}</AppShell>
-        </SearchProvider>
-      </NotificationProvider>
-    </AuthGuard>
+    <AuthenticatedProviders>
+      <AppShell>{children}</AppShell>
+    </AuthenticatedProviders>
   );
 }

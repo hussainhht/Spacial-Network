@@ -2682,57 +2682,20 @@ main:not(.chat-main):has(> form) form > p {
 /*  Group tabs & Events                                                */
 /* ================================================================== */
 
-.group-tabs {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  margin: 1.5rem 0 1.25rem;
-  border-bottom: 1px solid var(--space-border);
+.group-tabs[data-segmented-tabs] {
+  width: fit-content;
+  max-width: 100%;
+  margin: 1rem 0 1.25rem;
   overflow-x: auto;
-  scrollbar-width: thin;
+  scrollbar-width: none;
 }
 
-.group-tab {
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.75rem 1rem;
-  border: none;
-  border-bottom: 2px solid transparent;
-  background: none;
-  color: var(--space-text-muted);
-  font: 600 0.9rem inherit;
-  cursor: pointer;
-  transition:
-    color 0.15s ease,
-    border-color 0.15s ease;
+.group-tabs[data-segmented-tabs]::-webkit-scrollbar {
+  display: none;
 }
 
-.group-tab:hover:not(:disabled) {
-  color: var(--space-text-heading);
-}
-
-.group-tab[data-active="true"] {
-  color: var(--space-text-heading);
-  border-bottom-color: var(--planet-accent);
-}
-
-.group-tab:disabled {
-  color: var(--space-text-placeholder);
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.group-tab-lock {
-  font-size: 0.8em;
-}
-
-@media (max-width: 600px) {
-  .group-tab {
-    padding: 0.65rem 0.75rem;
-    font-size: 0.85rem;
-  }
+.group-tabs[data-segmented-tabs] > button {
+  flex: 0 0 auto;
 }
 
 .group-search {

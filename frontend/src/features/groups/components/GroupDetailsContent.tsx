@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import AppIcon from "@/components/layout/AppIcon";
 import {
@@ -10,7 +10,6 @@ import {
   useMembership,
   usePendingInvitations,
 } from "../hooks/useGroupData";
-import EditGroupForm from "./management/EditGroupForm";
 import GroupChatPanel from "./GroupChatPanel";
 import GroupEvents from "./events/GroupEvents";
 import GroupHeaderCard from "./GroupHeaderCard";
@@ -54,6 +53,7 @@ function GroupDetails({ groupId }: { groupId: number }) {
   const members = useGroupMembers(groupId);
   const membership = useMembership(groupId);
   const invitations = usePendingInvitations();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<ActiveGroupTab>("overview");
   const isCreator = membership.data?.role === "creator";
   const isMember = Boolean(membership.data?.isMember);
@@ -80,11 +80,9 @@ function GroupDetails({ groupId }: { groupId: number }) {
 
   return (
     <div className="group-details-container">
-      {activeTab !== "edit" && (
-        <Link href="/groups" className="back-link">
-          <AppIcon name="arrowLeft" width={16} height={16} /> Back to groups
-        </Link>
-      )}
+      <Link href="/groups" className="back-link">
+        <AppIcon name="arrowLeft" width={16} height={16} /> Back to groups
+      </Link>
       {group.loading && !group.data && (
         <div className="group-panel group-loading" role="status">
           Loading community…
@@ -95,22 +93,20 @@ function GroupDetails({ groupId }: { groupId: number }) {
       )}
       {group.data && (
         <>
-          {activeTab !== "edit" && (
-            <>
-              <GroupHeaderCard
-                group={group.data}
-                memberCount={memberCount}
-                isCreator={isCreator}
-                onEditClick={() => setActiveTab("edit")}
-                membershipStatus={membershipStatus}
-              />
-              <GroupTabs
-                activeTab={activeTab}
-                onTabChange={setActiveTab}
-                canEdit={isCreator}
-              />
-            </>
-          )}
+          <GroupHeaderCard
+            group={group.data}
+            memberCount={memberCount}
+            isCreator={isCreator}
+            membershipStatus={membershipStatus}
+          />
+          <GroupTabs
+            activeTab={activeTab}
+            onTabChange={(tab) => {
+              if (tab === "edit") router.push(`/groups/${groupId}/settings`);
+              else setActiveTab(tab);
+            }}
+            canEdit={isCreator}
+          />
           {activeTab === "overview" && (
             <div
               id="group-tabpanel-overview"
@@ -219,19 +215,6 @@ function GroupDetails({ groupId }: { groupId: number }) {
                 members={members.data ?? []}
                 membersLoading={members.loading}
                 isMember={isMember}
-                onViewMembers={() => setActiveTab("members")}
-              />
-            </div>
-          )}
-          {activeTab === "edit" && isCreator && (
-            <div
-              id="group-tabpanel-edit"
-              role="tabpanel"
-              aria-labelledby="group-tab-edit"
-            >
-              <EditGroupForm
-                group={group.data}
-                onBack={() => setActiveTab("overview")}
                 onViewMembers={() => setActiveTab("members")}
               />
             </div>

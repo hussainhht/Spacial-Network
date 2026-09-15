@@ -7,7 +7,7 @@ import { avatarUrl, updateGroup } from "../../api/groups";
 import { useGroupAction } from "../../hooks/useGroupAction";
 import type { Group } from "../../types/group";
 import GroupCard from "../GroupCard";
-import { JoinRequestsPanel } from "../GroupPanels";
+import { JoinRequestsPanel, MembersPanel } from "../GroupPanels";
 import GroupDangerZone from "./GroupDangerZone";
 import styles from "./GroupSettings.module.css";
 
@@ -15,19 +15,16 @@ const TITLE_MIN_LENGTH = 3;
 const TITLE_MAX_LENGTH = 100;
 const DESCRIPTION_MAX_LENGTH = 500;
 
-interface EditGroupFormProps {
-  group: Group;
-  onBack: () => void;
-  onViewMembers: () => void;
-}
+type SettingsSection = "general" | "members" | "danger";
 
-export default function EditGroupForm({ group, onBack, onViewMembers }: EditGroupFormProps) {
+export default function EditGroupForm({ group }: { group: Group }) {
   const { busy, error, run } = useGroupAction(`edit-group:${group.id}`, group.id);
   const [title, setTitle] = useState(group.title);
   const [description, setDescription] = useState(group.description);
   const [photo, setPhoto] = useState<File | null>(null);
   const [removePhoto, setRemovePhoto] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [section, setSection] = useState<SettingsSection>("general");
 
   const photoPreview = useMemo(() => (photo ? URL.createObjectURL(photo) : null), [photo]);
   useEffect(() => () => { if (photoPreview) URL.revokeObjectURL(photoPreview); }, [photoPreview]);
@@ -75,24 +72,26 @@ export default function EditGroupForm({ group, onBack, onViewMembers }: EditGrou
   return <div className={styles.settings}>
     <header className={styles.header}>
       <div>
-        <button type="button" className={styles.back} onClick={onBack}>
+        <Link href={`/groups/${group.id}`} className={styles.back}>
           <AppIcon name="arrowLeft" width={15} height={15} /> Back to Group
-        </button>
+        </Link>
         <h1>Group Settings</h1>
         <p>Manage your group details, members and settings.</p>
       </div>
       <Link href={`/groups/${group.id}`} className="group-button secondary">View Group</Link>
     </header>
 
-    {group.privacy === "public" && <JoinRequestsPanel groupId={group.id} compact />}
+    <div className={styles.workspace}>
+      <nav className={styles.nav} aria-label="Group settings sections">
+        <button type="button" onClick={() => setSection("general")} aria-current={section === "general" ? "page" : undefined}><AppIcon name="settings" width={17} height={17} /> General</button>
+        <button type="button" onClick={() => setSection("members")} aria-current={section === "members" ? "page" : undefined}><AppIcon name="groups" width={17} height={17} /> Members</button>
+        <button type="button" onClick={() => setSection("danger")} aria-current={section === "danger" ? "page" : undefined}><AppIcon name="warning" width={17} height={17} /> Danger Zone</button>
+      </nav>
 
-    <nav className={styles.nav} aria-label="Group settings sections">
-      <a href="#group-settings-general" aria-current="page">General</a>
-      <button type="button" onClick={onViewMembers}>Members</button>
-      <a href="#danger-zone-heading">Danger Zone</a>
-    </nav>
-
-    <form onSubmit={handleSubmit} className={styles.form}>
+      <div className={styles.content}>
+        {section === "general" && <>
+          {group.privacy === "public" && <JoinRequestsPanel groupId={group.id} compact />}
+          <form onSubmit={handleSubmit} className={styles.form}>
       <div className={styles.grid}>
         <section id="group-settings-general" className={`group-panel ${styles.information}`} aria-labelledby="edit-group-heading">
           <div className={styles.sectionHeading}>
@@ -147,8 +146,11 @@ export default function EditGroupForm({ group, onBack, onViewMembers }: EditGrou
         <button type="button" className="group-button secondary" onClick={resetForm} disabled={Boolean(busy) || !hasChanges}>Cancel</button>
         <button type="submit" className="group-button" disabled={Boolean(busy) || !titleValid || !hasChanges}>{busy ?? "Save Changes"}</button>
       </footer>
-    </form>
-
-    <GroupDangerZone group={group} />
+          </form>
+        </>}
+        {section === "members" && <MembersPanel groupId={group.id} creatorId={group.creatorId} />}
+        {section === "danger" && <GroupDangerZone group={group} />}
+      </div>
+    </div>
   </div>;
 }
