@@ -89,10 +89,11 @@ func (r *Repository) GetPrivateHistory(userA, userB int64, limit, offset int) ([
 func (r *Repository) GetRecentConversations(userID int64) ([]ConversationSummary, error) {
 	query := `
 		WITH RankedMessages AS (
-			SELECT 
+			SELECT
 				CASE WHEN sender_id = ? THEN recipient_id ELSE sender_id END AS partner_id,
 				content AS last_message,
 				created_at AS last_message_at,
+				sender_id = ? AS last_message_from_me,
 				ROW_NUMBER() OVER (
 					PARTITION BY CASE WHEN sender_id = ? THEN recipient_id ELSE sender_id END
 					ORDER BY created_at DESC, id DESC
@@ -100,7 +101,7 @@ func (r *Repository) GetRecentConversations(userID int64) ([]ConversationSummary
 			FROM private_messages
 			WHERE sender_id = ? OR recipient_id = ?
 		)
-		SELECT 
+		SELECT
 			rm.partner_id,
 			u.username,
 			u.first_name,
@@ -108,6 +109,7 @@ func (r *Repository) GetRecentConversations(userID int64) ([]ConversationSummary
 			COALESCE(u.profile_photo, ''),
 			rm.last_message,
 			rm.last_message_at,
+			rm.last_message_from_me,
 			(
 				SELECT COUNT(*) 
 				FROM private_messages 
@@ -119,7 +121,7 @@ func (r *Repository) GetRecentConversations(userID int64) ([]ConversationSummary
 		ORDER BY rm.last_message_at DESC
 	`
 
-	rows, err := r.db.Query(query, userID, userID, userID, userID, userID)
+	rows, err := r.db.Query(query, userID, userID, userID, userID, userID, userID)
 	if err != nil {
 		return nil, fmt.Errorf("query recent conversations: %w", err)
 	}
@@ -137,6 +139,7 @@ func (r *Repository) GetRecentConversations(userID int64) ([]ConversationSummary
 			&c.PartnerAvatar,
 			&c.LastMessage,
 			&rawTime,
+			&c.LastMessageFromMe,
 			&c.UnreadCount,
 		); err != nil {
 			return nil, fmt.Errorf("scan conversation summary: %w", err)
