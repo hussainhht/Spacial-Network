@@ -8,13 +8,21 @@ import "time"
 type NotificationType string
 
 const (
-	NotificationFollowRequest    NotificationType = "follow_request"
-	NotificationNewFollower      NotificationType = "new_follower"
-	NotificationFollowAccepted   NotificationType = "follow_accepted"
-	NotificationGroupInvitation  NotificationType = "group_invitation"
-	NotificationGroupJoinRequest NotificationType = "group_join_request"
-	NotificationGroupEvent       NotificationType = "group_event"
-	NotificationPrivateMessage   NotificationType = "private_message"
+	NotificationFollowRequest           NotificationType = "follow_request"
+	NotificationNewFollower             NotificationType = "new_follower"
+	NotificationFollowAccepted          NotificationType = "follow_accepted"
+	NotificationGroupInvitation         NotificationType = "group_invitation"
+	NotificationGroupInvitationAccepted NotificationType = "group_invitation_accepted"
+	NotificationGroupInvitationDeclined NotificationType = "group_invitation_declined"
+	NotificationGroupJoinRequest        NotificationType = "group_join_request"
+	NotificationGroupJoinAccepted       NotificationType = "group_join_accepted"
+	NotificationGroupJoinRejected       NotificationType = "group_join_rejected"
+	NotificationGroupEvent              NotificationType = "group_event"
+	NotificationEventRSVP               NotificationType = "event_rsvp"
+	NotificationGroupMessage            NotificationType = "group_message"
+	NotificationPrivateMessage          NotificationType = "private_message"
+	NotificationPostLike                NotificationType = "post_like"
+	NotificationPostComment             NotificationType = "post_comment"
 )
 
 // validNotificationTypes is the single source of truth for which types are
@@ -22,13 +30,21 @@ const (
 // post_comment, new_follower, mention, reel_like, ...) only requires a new
 // const above and an entry here - no schema change.
 var validNotificationTypes = map[NotificationType]bool{
-	NotificationFollowRequest:    true,
-	NotificationNewFollower:      true,
-	NotificationFollowAccepted:   true,
-	NotificationGroupInvitation:  true,
-	NotificationGroupJoinRequest: true,
-	NotificationGroupEvent:       true,
-	NotificationPrivateMessage:   true,
+	NotificationFollowRequest:           true,
+	NotificationNewFollower:             true,
+	NotificationFollowAccepted:          true,
+	NotificationGroupInvitation:         true,
+	NotificationGroupInvitationAccepted: true,
+	NotificationGroupInvitationDeclined: true,
+	NotificationGroupJoinRequest:        true,
+	NotificationGroupJoinAccepted:       true,
+	NotificationGroupJoinRejected:       true,
+	NotificationGroupEvent:              true,
+	NotificationEventRSVP:               true,
+	NotificationGroupMessage:            true,
+	NotificationPrivateMessage:          true,
+	NotificationPostLike:                true,
+	NotificationPostComment:             true,
 }
 
 // IsValidNotificationType reports whether t is a known notification type.
@@ -46,6 +62,8 @@ const (
 	EntityGroupJoinRequest = "group_join_request"
 	EntityEvent            = "event"
 	EntityPrivateMessage   = "private_message"
+	EntityGroup            = "group"
+	EntityPost             = "post"
 )
 
 // Notification is a single row in the notifications table. It carries only

@@ -141,7 +141,11 @@ const notificationSelect = `SELECT n.id, n.receiver_id, n.actor_id, n.type, n.en
  FROM notifications n
  LEFT JOIN group_invitations i ON n.entity_type = 'group_invitation' AND n.entity_id = i.id
  LEFT JOIN group_join_requests jr ON n.entity_type = 'group_join_request' AND n.entity_id = jr.id
- LEFT JOIN groups g ON g.id = COALESCE(i.group_id, jr.group_id)
+ LEFT JOIN events e ON n.entity_type = 'event' AND n.entity_id = e.id
+ LEFT JOIN groups g ON g.id = COALESCE(
+   i.group_id, jr.group_id, e.group_id,
+   CASE WHEN n.entity_type = 'group' THEN n.entity_id END
+ )
  LEFT JOIN users u ON u.id = n.actor_id`
 
 func (r *Repository) getByID(id, receiverID int) (*Notification, error) {
@@ -163,9 +167,12 @@ func (r *Repository) getByID(id, receiverID int) (*Notification, error) {
 
 func buildNotificationData(notificationType NotificationType, groupID *int, groupTitle, actorUsername *string) any {
 	switch notificationType {
-	case NotificationGroupInvitation, NotificationGroupJoinRequest:
+	case NotificationGroupInvitation, NotificationGroupInvitationAccepted, NotificationGroupInvitationDeclined,
+		NotificationGroupJoinRequest, NotificationGroupJoinAccepted, NotificationGroupJoinRejected,
+		NotificationGroupEvent, NotificationEventRSVP, NotificationGroupMessage:
 		return buildGroupData(groupID, groupTitle, actorUsername)
-	case NotificationFollowRequest, NotificationNewFollower, NotificationFollowAccepted:
+	case NotificationFollowRequest, NotificationNewFollower, NotificationFollowAccepted,
+		NotificationPostLike, NotificationPostComment:
 		return buildFollowData(actorUsername)
 	case NotificationPrivateMessage:
 		return buildPrivateMessageData(actorUsername)
