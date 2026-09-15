@@ -56,11 +56,11 @@ export default function CommentsSection({
   const composerElement = <CommentForm onSubmit={handleCreate} />;
 
   return (
-    <section className={`comments-section ${styles.container}`}>
+    <section id="comments" className={`comments-section ${styles.container}`} aria-labelledby="comments-heading">
       <hr className={styles.separator} aria-hidden="true" />
 
       <header className={styles.header}>
-        <h3 className={styles.title}>Comments</h3>
+        <h2 id="comments-heading" className={styles.title}>Comments</h2>
         {!loading && !error && comments.length > 0 && (
           <span className={styles.count}>{comments.length}</span>
         )}

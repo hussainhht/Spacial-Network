@@ -3,6 +3,7 @@
   flex-direction: column;
   width: 100%;
   margin-top: 4px;
+  scroll-margin-top: 88px;
 }
 
 .separator {
@@ -21,7 +22,7 @@
 
 .title {
   margin: 0;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
   color: var(--space-text-heading);
   letter-spacing: -0.01em;

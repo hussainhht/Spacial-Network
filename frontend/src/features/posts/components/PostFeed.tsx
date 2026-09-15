@@ -65,7 +65,7 @@ export default function PostFeed() {
       >
         {loading && (
           <>
-            <p className="sr-only" role="status">
+            <p className="sr-only" role="status" aria-live="polite">
               Loading posts...
             </p>
             <div className="feed-skeleton" aria-hidden="true">
@@ -77,7 +77,7 @@ export default function PostFeed() {
         )}
 
         {!loading && error && (
-          <div className="feed-error" role="alert">
+          <div className="feed-error" role="alert" aria-live="assertive">
             <span>{error}</span>
             <button type="button" className="feed-retry" onClick={retry}>
               Retry
