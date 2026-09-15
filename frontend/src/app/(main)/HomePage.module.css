@@ -1,0 +1,53 @@
+.page:global(.home-feed-page) {
+  padding-top: 0.75rem;
+}
+
+.layout {
+  width: min(100%, 640px);
+  margin: 0 auto;
+  padding: clamp(1rem, 3vw, 2rem);
+}
+
+.feed,
+.recommendations {
+  min-width: 0;
+}
+
+.feed {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.recommendations {
+  display: none;
+}
+
+.inlineDiscovery {
+  margin-block: .25rem;
+}
+
+@media (min-width: 1280px) {
+  .layout {
+    display: grid;
+    grid-template-columns: minmax(0, 620px) minmax(260px, 280px);
+    align-items: start;
+    width: min(100%, 932px);
+    gap: 2rem;
+    margin-inline: auto;
+    padding-inline: 1rem;
+  }
+
+  .recommendations {
+    display: block;
+    position: sticky;
+    top: 2rem;
+  }
+
+  .inlineDiscovery {
+    display: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .layout { padding: .75rem; }
+}

@@ -138,10 +138,19 @@ func authorScopeClause(feed string, viewerID int) (clause string, args []any) {
 //
 // The feed filter only narrows which authors are considered - it never
 // grants access to a post the viewer couldn't otherwise see.
-func (r *Repository) ListPosts(viewerID, limit int, feed string) ([]*post, error) {
+func (r *Repository) ListPosts(viewerID, limit int, feed string, cursor *FeedCursor) ([]*post, error) {
 	scopeClause, scopeArgs := authorScopeClause(feed, viewerID)
 
 	args := []any{viewerID, viewerID, viewerID, viewerID}
+	cursorClause := ""
+	if cursor != nil {
+		cursorClause = `
+		AND (
+			datetime(p.created_at) < datetime(?)
+			OR (datetime(p.created_at) = datetime(?) AND p.id < ?)
+		)`
+		args = append(args, cursor.CreatedAt, cursor.CreatedAt, cursor.ID)
+	}
 	args = append(args, scopeArgs...)
 	args = append(args, limit)
 
@@ -165,8 +174,8 @@ func (r *Repository) ListPosts(viewerID, limit int, feed string) ([]*post, error
 				WHERE gm.group_id = p.group_id AND gm.user_id = ?
 			))
 		)
-		`+scopeClause+`
-		ORDER BY p.created_at DESC
+		`+cursorClause+scopeClause+`
+		ORDER BY datetime(p.created_at) DESC, p.id DESC
 		LIMIT ?
 	`, args...)
 	if err != nil {

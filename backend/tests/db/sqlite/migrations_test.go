@@ -102,9 +102,9 @@ func TestPostMediaMigration_BackfillsLegacyImagePath(t *testing.T) {
 	if err := sqlite.MigrateUp(db); err != nil {
 		t.Fatalf("MigrateUp: %v", err)
 	}
-	// Roll back everything down to (and including) post-media, so it's
-	// gone regardless of how many migrations now sit on top of it.
-	migrateDownTo(t, db, groupPrivacyMigrationVersion)
+	if err := sqlite.MigrateDown(db); err != nil {
+		t.Fatalf("remove post-media migration: %v", err)
+	}
 
 	userResult, err := db.Exec(`
 		INSERT INTO users (uuid, username, age, gender, first_name, last_name, email, password_hash)
@@ -142,10 +142,14 @@ func TestGroupPrivacyMigration_BackfillsLegacyGroupsAsPublicAndPreservesMembersh
 	if err := sqlite.MigrateUp(db); err != nil {
 		t.Fatalf("initial MigrateUp: %v", err)
 	}
-	// Roll back everything newer than the privacy migration, then the
-	// privacy migration itself, to reproduce a group that existed before
-	// the privacy column was introduced.
-	migrateDownTo(t, db, beforeGroupPrivacyMigrationVersion)
+	// Roll back the newer post-media migration, then the privacy migration, to
+	// reproduce a group that existed before the privacy column was introduced.
+	if err := sqlite.MigrateDown(db); err != nil {
+		t.Fatalf("MigrateDown post-media migration: %v", err)
+	}
+	if err := sqlite.MigrateDown(db); err != nil {
+		t.Fatalf("MigrateDown privacy migration: %v", err)
+	}
 
 	result, err := db.Exec(`
 		INSERT INTO users (uuid, username, age, gender, first_name, last_name, email, password_hash)
@@ -224,7 +228,12 @@ func TestGroupPrivacyMigration_BackfillsLegacyGroupsAsPublicAndPreservesMembersh
 		t.Fatal("expected privacy CHECK constraint to reject hidden")
 	}
 
-	migrateDownTo(t, db, beforeGroupPrivacyMigrationVersion)
+	if err := sqlite.MigrateDown(db); err != nil {
+		t.Fatalf("final MigrateDown post-media migration: %v", err)
+	}
+	if err := sqlite.MigrateDown(db); err != nil {
+		t.Fatalf("final MigrateDown privacy migration: %v", err)
+	}
 	if err := db.QueryRow(`SELECT privacy FROM groups LIMIT 1`).Scan(&privacy); err == nil {
 		t.Fatal("privacy column still exists after down migration")
 	}

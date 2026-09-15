@@ -62,6 +62,11 @@ func NewRouter(db *sql.DB, cfg config.Config) (http.Handler, error) {
 	)
 
 	apiMux.Handle(
+		"GET /users/recommendations",
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Followers.GetRecommendationsHandler))),
+	)
+
+	apiMux.Handle(
 		"PATCH /users/me/profile",
 		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Users.UpdateProfileDetailsHandler))),
 	)
@@ -201,6 +206,10 @@ func NewRouter(db *sql.DB, cfg config.Config) (http.Handler, error) {
 	apiMux.Handle(
 		"POST /groups",
 		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Groups.CreateGroupHandler))),
+	)
+	apiMux.Handle(
+		"GET /groups/recommendations",
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Groups.GetRecommendationsHandler))),
 	)
 	apiMux.Handle(
 		"GET /groups/mine",

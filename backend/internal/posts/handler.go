@@ -474,7 +474,21 @@ func (h *Handler) ListPostsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	posts, err := h.service.ListPosts(userID, limit, feed)
+	var cursor *FeedCursor
+	before := r.URL.Query().Get("before")
+	beforeID := r.URL.Query().Get("before_id")
+	if before != "" || beforeID != "" {
+		createdAt, timeErr := time.Parse(time.RFC3339Nano, before)
+		id, idErr := strconv.Atoi(beforeID)
+		if timeErr != nil || idErr != nil || id <= 0 {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(Response{Error: "Invalid feed cursor"})
+			return
+		}
+		cursor = &FeedCursor{CreatedAt: createdAt, ID: id}
+	}
+
+	posts, err := h.service.ListPostsPage(userID, limit, feed, cursor)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(Response{Error: "Server error"})

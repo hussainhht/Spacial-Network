@@ -11,11 +11,14 @@ import (
 	"bytes"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strconv"
 	"testing"
+	"time"
 
 	"social/internal/followers"
 	"social/internal/groups"
@@ -376,6 +379,57 @@ func TestListPosts_IncludesOwnPostsRegardlessOfVisibility(t *testing.T) {
 	}
 	if len(list) != 2 {
 		t.Errorf("ListPosts for own user returned %d posts, want 2", len(list))
+	}
+}
+
+func TestListPosts_CursorPaginationHasNoOverlap(t *testing.T) {
+	f := setup(t)
+	viewer := f.newUser(t, "cursorviewer")
+	for i := 0; i < 5; i++ {
+		createPost(t, f, viewer, fmt.Sprintf("Cursor %d", i), "page me", posts.VisibilityPublic, nil)
+	}
+
+	requestPage := func(query string) []posts.PostResponse {
+		req := httptest.NewRequest(http.MethodGet, "/api/posts?"+query, nil)
+		req = req.WithContext(requestctx.WithUserID(req.Context(), viewer))
+		rr := httptest.NewRecorder()
+		f.postsHandler.ListPostsHandler(rr, req)
+		if rr.Code != http.StatusOK {
+			t.Fatalf("page status = %d; body=%s", rr.Code, rr.Body.String())
+		}
+		var page []posts.PostResponse
+		if err := json.Unmarshal(rr.Body.Bytes(), &page); err != nil {
+			t.Fatalf("unmarshal page: %v", err)
+		}
+		return page
+	}
+
+	first := requestPage("limit=2")
+	if len(first) != 2 {
+		t.Fatalf("first page length = %d, want 2", len(first))
+	}
+	cursor := first[len(first)-1]
+	second := requestPage("limit=2&before=" + url.QueryEscape(cursor.CreatedAt.Format(time.RFC3339Nano)) + "&before_id=" + strconv.Itoa(cursor.ID))
+	if len(second) != 2 {
+		t.Fatalf("second page length = %d, want 2", len(second))
+	}
+	seen := postIDs(first)
+	for _, post := range second {
+		if seen[post.ID] {
+			t.Fatalf("post %d appeared in both cursor pages", post.ID)
+		}
+	}
+}
+
+func TestListPosts_RejectsIncompleteCursor(t *testing.T) {
+	f := setup(t)
+	viewer := f.newUser(t, "badcursorviewer")
+	req := httptest.NewRequest(http.MethodGet, "/api/posts?limit=20&before_id=12", nil)
+	req = req.WithContext(requestctx.WithUserID(req.Context(), viewer))
+	rr := httptest.NewRecorder()
+	f.postsHandler.ListPostsHandler(rr, req)
+	if rr.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want 400; body=%s", rr.Code, rr.Body.String())
 	}
 }
 

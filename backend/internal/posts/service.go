@@ -99,10 +99,16 @@ const MaxListPosts = 50
 // FeedFriends - see Repository.ListPosts). limit is clamped to the range
 // [1, MaxListPosts]; a limit <= 0 defaults to MaxListPosts.
 func (s *Service) ListPosts(viewerID, limit int, feed string) ([]*post, error) {
+	return s.ListPostsPage(viewerID, limit, feed, nil)
+}
+
+// ListPostsPage returns one cursor-delimited page while preserving the
+// existing ListPosts method for callers that only need the first page.
+func (s *Service) ListPostsPage(viewerID, limit int, feed string, cursor *FeedCursor) ([]*post, error) {
 	if limit <= 0 || limit > MaxListPosts {
 		limit = MaxListPosts
 	}
-	return s.repo.ListPosts(viewerID, limit, feed)
+	return s.repo.ListPosts(viewerID, limit, feed, cursor)
 }
 
 // UpdatePost updates a post's editable fields, provided userID owns it. If

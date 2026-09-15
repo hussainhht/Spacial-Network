@@ -4,11 +4,41 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strconv"
 	"time"
 
 	"social/internal/requestctx"
 	"social/internal/upload"
 )
+
+func (h *Handler) GetRecommendationsHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	userID, ok := requestctx.UserID(r.Context())
+	if !ok || userID <= 0 {
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Unauthorized"})
+		return
+	}
+
+	limit := 3
+	if rawLimit := r.URL.Query().Get("limit"); rawLimit != "" {
+		parsed, err := strconv.Atoi(rawLimit)
+		if err != nil || parsed < 1 {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]string{"error": "limit must be a positive integer"})
+			return
+		}
+		limit = parsed
+	}
+
+	recommendations, err := h.service.GetRecommendations(userID, limit)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to load group recommendations"})
+		return
+	}
+	json.NewEncoder(w).Encode(recommendations)
+}
 
 func toGroupResponse(g *Group) GroupResponse {
 	return GroupResponse{

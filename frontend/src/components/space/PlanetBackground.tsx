@@ -6,9 +6,11 @@ import {
   memo,
   useCallback,
   useEffect,
+  useRef,
   useState,
   useSyncExternalStore,
   type ReactNode,
+  type RefObject,
 } from "react";
 import { useGLTF } from "@react-three/drei";
 import { Canvas, useThree } from "@react-three/fiber";
@@ -29,6 +31,7 @@ import styles from "./PlanetBackground.module.css";
 // Saturn's rings have transparent room at the edge. Moving the camera back by
 // the same factor preserves the established apparent size.
 const CANVAS_SCALE = 2.6;
+const SCROLL_ROTATION_RADIANS_PER_PIXEL = 0.0018;
 
 const CAMERA = {
   position: [0, 0, 4 * CANVAS_SCALE] as [number, number, number],
@@ -175,10 +178,12 @@ function PlanetScene({
   config,
   viewport,
   reducedMotion,
+  scrollRotation,
 }: {
   config: PlanetConfig;
   viewport: PlanetViewport;
   reducedMotion: boolean;
+  scrollRotation: RefObject<number>;
 }) {
   return (
     <Canvas
@@ -202,6 +207,7 @@ function PlanetScene({
             config={config}
             viewport={viewport}
             reducedMotion={reducedMotion}
+            scrollRotation={scrollRotation}
           />
         </Suspense>
       </SceneBoundary>
@@ -220,6 +226,25 @@ function PlanetBackground() {
   );
   const [displayedPlanetId, setDisplayedPlanetId] =
     useState<PlanetId>(selectedPlanetId);
+  const scrollRotation = useRef(0);
+
+  useEffect(() => {
+    if (reducedMotion) return;
+    const scrollPane = document.getElementById("page-content");
+    if (!scrollPane) return;
+
+    let previousScrollTop = scrollPane.scrollTop;
+    const handleScroll = () => {
+      const nextScrollTop = scrollPane.scrollTop;
+      const scrollDelta = nextScrollTop - previousScrollTop;
+      previousScrollTop = nextScrollTop;
+      scrollRotation.current +=
+        scrollDelta * SCROLL_ROTATION_RADIANS_PER_PIXEL;
+    };
+
+    scrollPane.addEventListener("scroll", handleScroll, { passive: true });
+    return () => scrollPane.removeEventListener("scroll", handleScroll);
+  }, [reducedMotion]);
 
   const handleAssetReady = useCallback((planetId: PlanetId) => {
     if (selectedPlanetId === planetId) {
@@ -251,6 +276,7 @@ function PlanetBackground() {
             config={displayedPlanet}
             viewport={viewport}
             reducedMotion={reducedMotion}
+            scrollRotation={scrollRotation}
           />
         </div>
       </div>

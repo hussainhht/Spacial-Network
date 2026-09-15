@@ -17,6 +17,16 @@ type UserSummary struct {
 	ProfilePhoto string `json:"profile_photo,omitempty"`
 }
 
+type Recommendation struct {
+	ID            int      `json:"id"`
+	Name          string   `json:"name"`
+	Username      string   `json:"username"`
+	AvatarURL     string   `json:"avatarUrl"`
+	MutualCount   int      `json:"mutualCount"`
+	MutualPreview []string `json:"mutualPreview"`
+	IsFollowing   bool     `json:"isFollowing"`
+}
+
 type FollowListResponse struct {
 	Success bool          `json:"success"`
 	Message string        `json:"message,omitempty"`
