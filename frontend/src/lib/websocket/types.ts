@@ -11,7 +11,8 @@ export type EventType =
   | "invite_user_search_results"
   | "error"
   | "notification"
-  | "group_event_response_updated";
+  | "group_event_response_updated"
+  | "follow_removed";
 
 export interface WSEvent<T = unknown> {
   type: EventType;
@@ -122,6 +123,18 @@ export interface GroupEventResponseUpdatedPayload {
   response: "going" | "not_going";
 }
 
+// FollowRemovedPayload mirrors the "follow_removed" websocket event pushed
+// when a follow relationship or a pending request the current user sent
+// goes away because the other side acted - see
+// backend/internal/followers/ws.go. Like GroupEventResponseUpdatedPayload,
+// it's kept separate from NotificationEventPayload on purpose: unfollows and
+// declines are ephemeral realtime sync, not a persisted, per-user
+// notification.
+export interface FollowRemovedPayload {
+  actor_id: number;
+  reason: "unfollowed" | "declined";
+}
+
 export interface WebSocketContextType {
   isConnected: boolean;
   onlineUserIDs: number[];
@@ -132,6 +145,7 @@ export interface WebSocketContextType {
   lastEventResponseUpdate: GroupEventResponseUpdatedPayload | null;
   subscribeGroupMessages: (listener: (msg: GroupMessagePayload) => void) => () => void;
   subscribeEventResponses: (listener: (event: GroupEventResponseUpdatedPayload) => void) => () => void;
+  subscribeFollowRemoved: (listener: (event: FollowRemovedPayload) => void) => () => void;
   subscribeNotifications: (
     listener: (notification: NotificationEventPayload) => void,
   ) => () => void;

@@ -4,6 +4,7 @@ import type { NotificationEventPayload } from "@/lib/websocket/types";
 export type SupportedNotificationType =
   | "follow_request"
   | "new_follower"
+  | "follow_accepted"
   | "group_invitation"
   | "group_join_request"
   | "private_message";
@@ -11,6 +12,7 @@ export type SupportedNotificationType =
 const SUPPORTED_NOTIFICATION_TYPES: readonly string[] = [
   "follow_request",
   "new_follower",
+  "follow_accepted",
   "group_invitation",
   "group_join_request",
   "private_message",
@@ -106,7 +108,8 @@ export function isGroupNotification(notification: Notification): boolean {
 export function isFollowNotification(notification: Notification): boolean {
   return (
     notification.type === "follow_request" ||
-    notification.type === "new_follower"
+    notification.type === "new_follower" ||
+    notification.type === "follow_accepted"
   );
 }
 
@@ -115,7 +118,9 @@ export function isFollowNotification(notification: Notification): boolean {
 export function toNotification(raw: RawNotification): Notification | null {
   if (!isSupportedNotificationType(raw.type)) return null;
   const isFollowType =
-    raw.type === "follow_request" || raw.type === "new_follower";
+    raw.type === "follow_request" ||
+    raw.type === "new_follower" ||
+    raw.type === "follow_accepted";
   const data = isFollowType
     ? getFollowNotificationData(raw)
     : getGroupNotificationData(raw);

@@ -19,6 +19,7 @@ import {
 const TYPE_LABELS: Record<SupportedNotificationType, string> = {
   follow_request: "Follow request",
   new_follower: "New follower",
+  follow_accepted: "Follow accepted",
   group_invitation: "Group invitation",
   group_join_request: "Join request",
   private_message: "Direct message",
