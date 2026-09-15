@@ -91,6 +91,9 @@ type PostResponse struct {
 	CanDelete bool `json:"can_delete"`
 	// GroupID is set when this post was created within a group.
 	GroupID *int `json:"group_id,omitempty"`
+	// GroupTitle is exposed with group posts so clients can show useful
+	// navigation context without issuing a request per card.
+	GroupTitle string `json:"group_title,omitempty"`
 	// AuthorLeftGroup is only set on a group post whose author is no
 	// longer a member of that group.
 	AuthorLeftGroup bool `json:"author_left_group,omitempty"`
@@ -108,7 +111,7 @@ type MediaResponse struct {
 	Order int    `json:"order"`
 }
 
-func (h *Handler) newPostResponse(p *post, viewerID int, authors map[int]users.Summary) PostResponse {
+func (h *Handler) newPostResponse(p *post, viewerID int, authors map[int]users.Summary, groupTitles map[int]string) PostResponse {
 	isOwner := p.User_ID == viewerID
 
 	canDelete := isOwner
@@ -144,6 +147,7 @@ func (h *Handler) newPostResponse(p *post, viewerID int, authors map[int]users.S
 	if p.GroupID.Valid {
 		groupID := int(p.GroupID.Int64)
 		resp.GroupID = &groupID
+		resp.GroupTitle = groupTitles[groupID]
 		if isMember, err := h.groupsService.IsGroupMember(groupID, p.User_ID); err == nil && !isMember {
 			resp.AuthorLeftGroup = true
 		}
@@ -156,6 +160,28 @@ func (h *Handler) newPostResponse(p *post, viewerID int, authors map[int]users.S
 	}
 
 	return resp
+}
+
+// groupTitlesFor fetches each referenced group at most once for a response
+// batch. It keeps the frontend's context labels useful without introducing a
+// client request or a repeated group lookup for every card in the same group.
+func (h *Handler) groupTitlesFor(posts []*post) map[int]string {
+	titles := make(map[int]string)
+	for _, p := range posts {
+		if !p.GroupID.Valid {
+			continue
+		}
+		groupID := int(p.GroupID.Int64)
+		if _, seen := titles[groupID]; seen {
+			continue
+		}
+		if group, err := h.groupsService.GetGroupByID(groupID); err == nil {
+			titles[groupID] = group.Title
+		} else {
+			titles[groupID] = ""
+		}
+	}
+	return titles
 }
 
 // authorsFor batch-fetches the author Summary for every distinct post owner
@@ -258,7 +284,7 @@ func (h *Handler) NewPostHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(h.newPostResponse(p, userID, h.authorsFor([]*post{p})))
+	json.NewEncoder(w).Encode(h.newPostResponse(p, userID, h.authorsFor([]*post{p}), h.groupTitlesFor([]*post{p})))
 }
 
 // NewGroupPostHandler creates a post within the group identified by the
@@ -321,7 +347,7 @@ func (h *Handler) NewGroupPostHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(h.newPostResponse(p, userID, h.authorsFor([]*post{p})))
+	json.NewEncoder(w).Encode(h.newPostResponse(p, userID, h.authorsFor([]*post{p}), h.groupTitlesFor([]*post{p})))
 }
 
 // saveMediaAttachments validates and stores repeated media fields in request
@@ -413,7 +439,7 @@ func (h *Handler) GetPostByIDHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(h.newPostResponse(p, userID, h.authorsFor([]*post{p})))
+	json.NewEncoder(w).Encode(h.newPostResponse(p, userID, h.authorsFor([]*post{p}), h.groupTitlesFor([]*post{p})))
 }
 
 // ListPostsHandler returns up to 50 posts visible to the logged-in user,
@@ -456,9 +482,10 @@ func (h *Handler) ListPostsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	authors := h.authorsFor(posts)
+	groupTitles := h.groupTitlesFor(posts)
 	res := make([]PostResponse, 0, len(posts))
 	for _, p := range posts {
-		res = append(res, h.newPostResponse(p, userID, authors))
+		res = append(res, h.newPostResponse(p, userID, authors, groupTitles))
 	}
 
 	w.WriteHeader(http.StatusOK)
@@ -502,9 +529,10 @@ func (h *Handler) ListGroupPostsHandler(w http.ResponseWriter, r *http.Request) 
 	}
 
 	authors := h.authorsFor(posts)
+	groupTitles := h.groupTitlesFor(posts)
 	res := make([]PostResponse, 0, len(posts))
 	for _, p := range posts {
-		res = append(res, h.newPostResponse(p, userID, authors))
+		res = append(res, h.newPostResponse(p, userID, authors, groupTitles))
 	}
 
 	w.WriteHeader(http.StatusOK)
