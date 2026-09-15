@@ -125,8 +125,10 @@ export default function GroupChatPanel({ groupId, isMember }: GroupChatPanelProp
         )}
 
         {!loading &&
-          messages.map((msg) => {
+          messages.map((msg, index) => {
             const isMine = myUserId !== null && msg.user_id === myUserId;
+            const previousMessage = messages[index - 1];
+            const showSender = !isMine && (index === 0 || previousMessage?.user_id !== msg.user_id);
             const displayName = getDisplayName(
               msg.first_name || "",
               msg.last_name || "",
@@ -146,22 +148,24 @@ export default function GroupChatPanel({ groupId, isMember }: GroupChatPanelProp
               >
                 {!isMine && (
                   <div className="shrink-0 pt-0.5">
-                    {avatarUrl ? (
+                    {showSender && avatarUrl ? (
                       <img
                         src={avatarUrl}
                         alt={displayName}
                         className="w-7 h-7 rounded-full object-cover"
                       />
-                    ) : (
+                    ) : showSender ? (
                       <div className="w-7 h-7 rounded-full bg-[var(--planet-accent-active)] text-white flex items-center justify-center font-bold text-[10px]">
                         {initials}
                       </div>
+                    ) : (
+                      <div className="w-7 h-7" aria-hidden="true" />
                     )}
                   </div>
                 )}
 
                 <div className="flex flex-col max-w-[75%] min-w-0">
-                  {!isMine && (
+                  {showSender && (
                     <div className="flex items-baseline gap-1.5 mb-1 px-1">
                       <Link
                         href={`/profile/${msg.username}`}

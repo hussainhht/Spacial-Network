@@ -762,6 +762,12 @@
   font-weight: 700;
 }
 
+.messageAvatarSpacer {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+}
+
 .messageAvatarImage {
   width: 100%;
   height: 100%;

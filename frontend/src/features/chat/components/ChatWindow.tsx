@@ -218,8 +218,14 @@ export default function ChatWindow({
             msg.sender_last_name || "",
             msg.sender_username || (isMine ? "You" : partnerUsername)
           );
+          const previousMessage = messages[index - 1];
           const showDateDivider =
-            index === 0 || isDifferentDay(messages[index - 1]?.created_at, msg.created_at);
+            index === 0 || isDifferentDay(previousMessage?.created_at, msg.created_at);
+          const showPartnerAvatar =
+            !isMine &&
+            (index === 0 ||
+              previousMessage?.sender_id !== msg.sender_id ||
+              isDifferentDay(previousMessage?.created_at, msg.created_at));
 
           return (
             <Fragment key={msg.id || index}>
@@ -233,12 +239,12 @@ export default function ChatWindow({
 
               <div className={isMine ? styles.messageRowMine : styles.messageRowPartner}>
                 {!isMine && (
-                  <div className={styles.messageAvatar}>
-                    {senderAvatarUrl ? (
+                  <div className={showPartnerAvatar ? styles.messageAvatar : styles.messageAvatarSpacer}>
+                    {showPartnerAvatar && (senderAvatarUrl ? (
                       <img src={senderAvatarUrl} alt="" className={styles.messageAvatarImage} />
                     ) : (
                       <span>{senderInitials}</span>
-                    )}
+                    ))}
                   </div>
                 )}
                 <div className={isMine ? styles.bubbleMine : styles.bubblePartner}>
@@ -264,15 +270,6 @@ export default function ChatWindow({
                     )}
                   </div>
                 </div>
-                {isMine && (
-                  <div className={styles.messageAvatar}>
-                    {senderAvatarUrl ? (
-                      <img src={senderAvatarUrl} alt="" className={styles.messageAvatarImage} />
-                    ) : (
-                      <span>{senderInitials}</span>
-                    )}
-                  </div>
-                )}
               </div>
             </Fragment>
           );
