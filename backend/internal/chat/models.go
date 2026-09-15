@@ -15,12 +15,16 @@ const (
 )
 
 type PrivateMessage struct {
-	ID          int64      `json:"id"`
-	SenderID    int64      `json:"sender_id"`
-	RecipientID int64      `json:"recipient_id"`
-	Content     string     `json:"content"`
-	CreatedAt   time.Time  `json:"created_at"`
-	ReadAt      *time.Time `json:"read_at,omitempty"`
+	ID              int64      `json:"id"`
+	SenderID        int64      `json:"sender_id"`
+	RecipientID     int64      `json:"recipient_id"`
+	SenderUsername  string     `json:"sender_username,omitempty"`
+	SenderFirstName string     `json:"sender_first_name,omitempty"`
+	SenderLastName  string     `json:"sender_last_name,omitempty"`
+	SenderAvatar    string     `json:"sender_avatar,omitempty"`
+	Content         string     `json:"content"`
+	CreatedAt       time.Time  `json:"created_at"`
+	ReadAt          *time.Time `json:"read_at,omitempty"`
 }
 
 type GroupMessage struct {
@@ -48,11 +52,15 @@ type GroupMessagePayload struct {
 }
 
 type MessagePayload struct {
-	ID          int64  `json:"id,omitempty"`
-	SenderID    int64  `json:"sender_id"`
-	RecipientID int64  `json:"recipient_id"`
-	Content     string `json:"content"`
-	CreatedAt   string `json:"created_at,omitempty"`
+	ID              int64  `json:"id,omitempty"`
+	SenderID        int64  `json:"sender_id"`
+	RecipientID     int64  `json:"recipient_id"`
+	SenderUsername  string `json:"sender_username,omitempty"`
+	SenderFirstName string `json:"sender_first_name,omitempty"`
+	SenderLastName  string `json:"sender_last_name,omitempty"`
+	SenderAvatar    string `json:"sender_avatar,omitempty"`
+	Content         string `json:"content"`
+	CreatedAt       string `json:"created_at,omitempty"`
 }
 
 type TypingPayload struct {
@@ -72,12 +80,13 @@ type MessagesReadPayload struct {
 }
 
 type ConversationSummary struct {
-	PartnerID        int64  `json:"partner_id"`
-	PartnerUsername  string `json:"partner_username"`
-	PartnerFirstName string `json:"partner_first_name"`
-	PartnerLastName  string `json:"partner_last_name"`
-	PartnerAvatar    string `json:"partner_avatar,omitempty"`
-	LastMessage      string `json:"last_message"`
-	LastMessageAt    string `json:"last_message_at"`
-	UnreadCount      int    `json:"unread_count"`
+	PartnerID         int64  `json:"partner_id"`
+	PartnerUsername   string `json:"partner_username"`
+	PartnerFirstName  string `json:"partner_first_name"`
+	PartnerLastName   string `json:"partner_last_name"`
+	PartnerAvatar     string `json:"partner_avatar,omitempty"`
+	LastMessage       string `json:"last_message"`
+	LastMessageAt     string `json:"last_message_at"`
+	LastMessageFromMe bool   `json:"last_message_from_me"`
+	UnreadCount       int    `json:"unread_count"`
 }

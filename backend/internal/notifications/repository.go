@@ -167,6 +167,8 @@ func buildNotificationData(notificationType NotificationType, groupID *int, grou
 		return buildGroupData(groupID, groupTitle, actorUsername)
 	case NotificationFollowRequest, NotificationNewFollower, NotificationFollowAccepted:
 		return buildFollowData(actorUsername)
+	case NotificationPrivateMessage:
+		return buildPrivateMessageData(actorUsername)
 	default:
 		return nil
 	}
@@ -189,6 +191,16 @@ func buildFollowData(actorUsername *string) any {
 	}
 
 	return &FollowNotificationData{
+		ActorUsername: *actorUsername,
+	}
+}
+
+func buildPrivateMessageData(actorUsername *string) any {
+	if actorUsername == nil {
+		return nil
+	}
+
+	return &PrivateMessageNotificationData{
 		ActorUsername: *actorUsername,
 	}
 }

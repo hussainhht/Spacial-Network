@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { getEligibleContacts } from "../api/chat";
 import type { EligibleContact } from "../types/chat";
 import { getDisplayName, getInitials } from "@/lib/utils";
-import { getBackendBaseUrl } from "@/lib/api";
+import { getChatAvatarUrl } from "../utils/avatar";
 import styles from "./Chat.module.css";
 
 interface NewChatModalProps {
@@ -72,12 +72,6 @@ function NewChatDialog({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [onClose]);
-
-  const getFullPhotoUrl = (path: string) => {
-    if (/^https?:\/\//i.test(path)) return path;
-    const cleanPath = path.startsWith("/") ? path : `/${path}`;
-    return `${getBackendBaseUrl()}${cleanPath}`;
-  };
 
   return (
     <div
@@ -205,9 +199,7 @@ function NewChatDialog({
                 contact.last_name,
                 contact.username
               );
-              const avatarUrl = contact.profile_photo
-                ? getFullPhotoUrl(contact.profile_photo)
-                : "";
+              const avatarUrl = getChatAvatarUrl(contact.profile_photo);
 
               return (
                 <button

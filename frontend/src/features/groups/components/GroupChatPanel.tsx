@@ -10,6 +10,8 @@ import { useGroupChat } from "../hooks/useGroupChat";
 import type { Group, GroupMember } from "../types/group";
 import GroupAvatar from "./GroupAvatar";
 import styles from "./GroupChatPanel.module.css";
+import PostSharePreview from "@/features/interactions/components/PostSharePreview";
+import { parseSharedPost } from "@/features/interactions/utils/sharedPost";
 
 const MAX_MESSAGE_LENGTH = 2000;
 const NEAR_LIMIT_THRESHOLD = 1800;
@@ -103,14 +105,23 @@ export default function GroupChatPanel({ group, members, membersLoading, isMembe
           const name = isMine ? "Me" : getDisplayName(message.first_name ?? "", message.last_name ?? "", message.username ?? "");
           const image = avatarUrl(message.avatar);
           const showDate = index === 0 || startsNewDay(message.created_at, chat.messages[index - 1]?.created_at);
+          const previousMessage = chat.messages[index - 1];
+          const showSender = !isMine && (showDate || !previousMessage || previousMessage.user_id !== message.user_id);
           return <Fragment key={message.id ?? `${message.user_id}-${message.created_at}-${index}`}>
             {showDate && <div className={chatStyles.dateDivider}><span className={chatStyles.dateDividerText}>{dateLabel(message.created_at)}</span></div>}
             <div className={`${styles.messageRow} ${isMine ? styles.messageRowMine : ""}`}>
-              {!isMine && (image ? <Image unoptimized src={image} alt="" width={30} height={30} className={styles.senderAvatar} /> : <span className={styles.senderFallback} aria-hidden="true">{getInitials(message.first_name ?? "", message.last_name ?? "", message.username ?? "")}</span>)}
+              {!isMine && (showSender ? (image ? <Image unoptimized src={image} alt="" width={30} height={30} className={styles.senderAvatar} /> : <span className={styles.senderFallback} aria-hidden="true">{getInitials(message.first_name ?? "", message.last_name ?? "", message.username ?? "")}</span>) : <span className={styles.senderSpacer} aria-hidden="true" />)}
               <div className={styles.messageStack}>
-                <div className={`${styles.senderName} ${isMine ? styles.senderNameMine : ""}`}>{isMine ? name : <Link href={`/profile/${message.username}`}>{name}</Link>}</div>
+                {(isMine || showSender) && <div className={`${styles.senderName} ${isMine ? styles.senderNameMine : ""}`}>{isMine ? name : <Link href={`/profile/${message.username}`}>{name}</Link>}</div>}
                 <div className={isMine ? chatStyles.bubbleMine : chatStyles.bubblePartner}>
-                  <div className={chatStyles.messageContent}>{message.content}</div>
+                  {(() => {
+                    const shared = parseSharedPost(message.content);
+                    if (!shared) return <div className={chatStyles.messageContent}>{message.content}</div>;
+                    return <>
+                      {shared.note && <div className={chatStyles.messageContent}>{shared.note}</div>}
+                      <PostSharePreview postId={shared.postId} />
+                    </>;
+                  })()}
                   <div className={`${chatStyles.bubbleMeta} ${isMine ? chatStyles.bubbleMetaMine : chatStyles.bubbleMetaPartner}`}><time className={chatStyles.bubbleTime}>{formatMessageTime(message.created_at)}</time></div>
                 </div>
               </div>

@@ -47,11 +47,7 @@ a.contextItem:hover { color: var(--space-text-heading); text-decoration: underli
 .content { margin: 0; max-width: 68ch; color: var(--space-text-body); font-size: 14px; line-height: 1.65; white-space: pre-wrap; }
 .feed .content { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 4; white-space: normal; }
 
-.footer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 12px; padding-top: 11px; border-top: 1px solid rgba(148, 163, 184, 0.11); }
-.comments { display: inline-flex; align-items: center; gap: 7px; min-height: 36px; color: var(--space-text-label); font-size: 13px; font-weight: 520; }
-.comments { margin-left: -7px; padding: 4px 7px; border-radius: 8px; text-decoration: none; }
-a.comments:hover { background: var(--planet-accent-soft); color: var(--space-text-heading); }
-.comments svg:last-child { color: var(--planet-accent); }
+.footer { display: flex; align-items: center; flex-wrap: wrap; }
 
 .card :is(a:not(.cardLink), button, summary) { position: relative; z-index: 2; }
 .card :is(a:not(.cardLink), button, summary):focus-visible { outline: 2px solid var(--planet-focus-ring); outline-offset: 3px; }
