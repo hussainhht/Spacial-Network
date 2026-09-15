@@ -532,6 +532,10 @@ export default function ProfilePage({ username }: ProfilePageProps) {
             canMessage={canMessage}
             followLoading={followLoading}
             followError={followError}
+            showStats={!isLocked}
+            postsCount={posts.length}
+            followersCount={followers.length}
+            followingCount={following.length}
             onEditProfile={handleEditProfile}
             onToggleFollow={handleToggleFollow}
           />

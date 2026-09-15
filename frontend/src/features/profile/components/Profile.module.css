@@ -330,6 +330,33 @@
   color: var(--planet-accent);
 }
 
+.statsRow {
+  display: flex;
+  align-items: baseline;
+  gap: 1.5rem;
+  margin: 0.75rem 0 0;
+  animation: profileRise 800ms var(--profile-ease) 230ms both;
+}
+
+.statItem {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+}
+
+.statValue {
+  margin: 0;
+  color: var(--space-text-heading);
+  font-size: 0.95rem;
+  font-weight: 650;
+}
+
+.statLabel {
+  margin: 0;
+  color: var(--space-text-muted);
+  font-size: 0.8rem;
+}
+
 .actionsRow {
   display: flex;
   flex-wrap: wrap;

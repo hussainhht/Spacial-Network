@@ -77,6 +77,10 @@ interface ProfileHeaderProps {
   canMessage?: boolean;
   followLoading: boolean;
   followError?: string | null;
+  showStats?: boolean;
+  postsCount: number;
+  followersCount: number;
+  followingCount: number;
   onEditProfile: () => void;
   onToggleFollow: () => void;
 }
@@ -89,6 +93,10 @@ export default function ProfileHeader({
   canMessage = false,
   followLoading,
   followError = null,
+  showStats = true,
+  postsCount,
+  followersCount,
+  followingCount,
   onEditProfile,
   onToggleFollow,
 }: ProfileHeaderProps) {
@@ -148,6 +156,23 @@ export default function ProfileHeader({
             {profile.isPrivate ? "Private profile" : "Public profile"}
           </span>
         </p>
+
+        {showStats && (
+          <dl className={styles.statsRow}>
+            <div className={styles.statItem}>
+              <dt className={styles.statLabel}>Posts</dt>
+              <dd className={styles.statValue}>{postsCount}</dd>
+            </div>
+            <div className={styles.statItem}>
+              <dt className={styles.statLabel}>Following</dt>
+              <dd className={styles.statValue}>{followingCount}</dd>
+            </div>
+            <div className={styles.statItem}>
+              <dt className={styles.statLabel}>Followers</dt>
+              <dd className={styles.statValue}>{followersCount}</dd>
+            </div>
+          </dl>
+        )}
 
         <div className={styles.actionsRow}>
           {isOwnProfile ? (
