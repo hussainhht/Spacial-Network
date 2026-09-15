@@ -78,8 +78,8 @@ export function MembersPanel({
   creatorId: number;
 }) {
   const state = useGroupMembers(groupId);
-  // Shares the same cached resource as MembershipPanel's useMembership call,
-  // so this does not trigger a second membership request.
+  // Shares the same cached useMembership resource as other panels on this
+  // page, so this does not trigger a second membership request.
   const membership = useMembership(groupId);
   const isCreator = membership.data?.role === "creator";
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
@@ -364,61 +364,7 @@ export function InvitationsPanel() {
   );
 }
 
-export function MembershipPanel({
-  groupId,
-  privacy,
-}: {
-  groupId: number;
-  privacy: GroupPrivacy;
-}) {
-  const membership = useMembership(groupId);
-  return (
-    <>
-      <section
-        id="invitations"
-        className="group-panel"
-        aria-labelledby="membership-heading"
-      >
-        <div className="group-section-heading">
-          <h2 id="membership-heading">Your membership</h2>
-        </div>
-        {membership.loading && (
-          <p className="group-muted">Checking membership…</p>
-        )}
-        {membership.error && (
-          <GroupLoadError error={membership.error} retry={membership.refresh} />
-        )}
-        {!membership.loading &&
-          !membership.error &&
-          membership.data &&
-          (membership.data.isMember ? (
-            <>
-              <MembershipBadge role={membership.data.role} />
-              <p className="group-muted">
-                {membership.data.role === "creator"
-                  ? "Manage requests and invite people to grow your community."
-                  : "You’re part of this community."}
-              </p>
-            </>
-          ) : (
-            <NonMemberActions
-              groupId={groupId}
-              privacy={privacy}
-              pending={membership.data.hasPendingJoinRequest}
-            />
-          ))}
-      </section>
-      {!membership.error &&
-        membership.data?.isMember &&
-        membership.data.role === "creator" &&
-        privacy === "public" && (
-          <JoinRequestsPanel groupId={groupId} />
-        )}
-    </>
-  );
-}
-
-function NonMemberActions({
+export function NonMemberActions({
   groupId,
   privacy,
   pending,

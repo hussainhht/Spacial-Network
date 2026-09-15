@@ -34,45 +34,78 @@ function MemberGroupPosts({ groupId }: { groupId: number }) {
   }
 
   return (
-    <section className="group-panel group-posts" aria-labelledby="posts-heading">
-      <div className="group-section-heading">
-        <h2 id="posts-heading">Posts</h2>
+    <>
+      <section
+        className="group-panel group-post-composer"
+        aria-label="Create a post"
+      >
         <button
           type="button"
-          className="group-button secondary"
+          className="group-composer-trigger"
           onClick={() => setIsCreateOpen(true)}
         >
-          + New Post
+          <span className="group-composer-avatar" aria-hidden="true">
+            +
+          </span>
+          <span className="group-composer-placeholder">
+            Share something with the group…
+          </span>
         </button>
-      </div>
-      <p className="group-muted">Posts shared with this group.</p>
+        <div className="group-composer-actions">
+          <button
+            type="button"
+            className="group-composer-action"
+            onClick={() => setIsCreateOpen(true)}
+          >
+            + Add Image
+          </button>
+          <button
+            type="button"
+            className="group-button"
+            onClick={() => setIsCreateOpen(true)}
+          >
+            Post
+          </button>
+        </div>
+      </section>
 
-      {posts.loading && !posts.data && (
-        <p className="group-muted" role="status">
-          Loading posts...
-        </p>
-      )}
+      <section className="group-panel group-posts" aria-labelledby="posts-list-heading">
+        <div className="group-section-heading">
+          <h2 id="posts-list-heading">Posts</h2>
+        </div>
 
-      {posts.error && (
-        <GroupLoadError error={posts.error} retry={posts.refresh} />
-      )}
-
-      {!posts.loading && !posts.error && posts.data?.length === 0 && (
-        <div className="group-empty">
-          <h3>No posts yet</h3>
-          <p>
-            Be the first to share something with this group.
+        {posts.loading && !posts.data && (
+          <p className="group-muted" role="status">
+            Loading posts...
           </p>
-        </div>
-      )}
+        )}
 
-      {posts.data && posts.data.length > 0 && (
-        <div className="posts-list">
-          {posts.data.map((post) => (
-            <PostCard key={post.id} post={post} onDeleted={handleDeleted} />
-          ))}
-        </div>
-      )}
+        {posts.error && (
+          <GroupLoadError error={posts.error} retry={posts.refresh} />
+        )}
+
+        {!posts.loading && !posts.error && posts.data?.length === 0 && (
+          <div className="group-empty group-posts-empty">
+            <h3>No posts yet</h3>
+            <p>Be the first to start a conversation in this group.</p>
+            <button
+              type="button"
+              className="group-button secondary"
+              onClick={() => setIsCreateOpen(true)}
+            >
+              Create Post
+            </button>
+          </div>
+        )}
+
+        {posts.data && posts.data.length > 0 && (
+          <div className="posts-list">
+            {posts.data.map((post) => (
+              <PostCard key={post.id} post={post} onDeleted={handleDeleted} />
+            ))}
+          </div>
+        )}
+      </section>
 
       {isCreateOpen && (
         <CreateGroupPostModal
@@ -80,6 +113,6 @@ function MemberGroupPosts({ groupId }: { groupId: number }) {
           onClose={() => setIsCreateOpen(false)}
         />
       )}
-    </section>
+    </>
   );
 }
