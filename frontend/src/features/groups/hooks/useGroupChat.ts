@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useWebSocket } from "@/providers/WebSocketProvider";
 import { getCurrentUser } from "@/features/auth/api/getCurrentUser";
 import { getGroupChatHistory } from "../api/chat";
@@ -9,7 +9,7 @@ import type { GroupMessagePayload } from "@/lib/websocket/types";
 const PAGE_SIZE = 20;
 
 export function useGroupChat(groupId: number, isMember: boolean) {
-  const { isConnected, sendEvent, subscribeGroupMessages, errorMessage } =
+  const { isConnected, onlineUserIDs, sendEvent, subscribeGroupMessages, errorMessage } =
     useWebSocket();
   const [messages, setMessages] = useState<GroupMessagePayload[]>([]);
   const [loading, setLoading] = useState(true);
@@ -17,9 +17,6 @@ export function useGroupChat(groupId: number, isMember: boolean) {
   const [hasMore, setHasMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [myUserId, setMyUserId] = useState<number | null>(null);
-
-  const groupIdRef = useRef(groupId);
-  groupIdRef.current = groupId;
 
   // Load current user
   useEffect(() => {
@@ -40,15 +37,20 @@ export function useGroupChat(groupId: number, isMember: boolean) {
   // Load initial history when group or membership changes
   useEffect(() => {
     if (!isMember || !groupId) {
-      setMessages([]);
-      setLoading(false);
-      setHasMore(false);
+      queueMicrotask(() => {
+        setMessages([]);
+        setLoading(false);
+        setHasMore(false);
+      });
       return;
     }
 
     let isMounted = true;
-    setLoading(true);
-    setError(null);
+    queueMicrotask(() => {
+      if (!isMounted) return;
+      setLoading(true);
+      setError(null);
+    });
 
     getGroupChatHistory(groupId, PAGE_SIZE, 0)
       .then((history) => {
@@ -76,7 +78,7 @@ export function useGroupChat(groupId: number, isMember: boolean) {
   // Subscribe to real-time incoming group messages
   useEffect(() => {
     const unsubscribe = subscribeGroupMessages((newMsg) => {
-      if (newMsg.group_id !== groupIdRef.current) return;
+      if (newMsg.group_id !== groupId) return;
 
       setError(null);
 
@@ -90,7 +92,7 @@ export function useGroupChat(groupId: number, isMember: boolean) {
     });
 
     return unsubscribe;
-  }, [subscribeGroupMessages]);
+  }, [groupId, subscribeGroupMessages]);
 
   const loadMoreHistory = useCallback(async () => {
     if (!isMember || !groupId || loadingMore || !hasMore) return;
@@ -128,6 +130,7 @@ export function useGroupChat(groupId: number, isMember: boolean) {
 
   return {
     isConnected,
+    onlineUserIDs,
     myUserId,
     messages,
     loading,

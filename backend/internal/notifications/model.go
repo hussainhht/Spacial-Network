@@ -78,6 +78,10 @@ type FollowNotificationData struct {
 	ActorUsername string `json:"actor_username"`
 }
 
+type PrivateMessageNotificationData struct {
+	ActorUsername string `json:"actor_username"`
+}
+
 type CreateNotificationRequest struct {
 	ReceiverID int
 	ActorID    *int

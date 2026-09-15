@@ -151,11 +151,15 @@ func (s *Service) HandlePrivateMessage(senderID int64, rawPayload json.RawMessag
 	}
 
 	outPayload := MessagePayload{
-		ID:          savedMsg.ID,
-		SenderID:    savedMsg.SenderID,
-		RecipientID: savedMsg.RecipientID,
-		Content:     savedMsg.Content,
-		CreatedAt:   savedMsg.CreatedAt.UTC().Format(time.RFC3339),
+		ID:              savedMsg.ID,
+		SenderID:        savedMsg.SenderID,
+		RecipientID:     savedMsg.RecipientID,
+		SenderUsername:  savedMsg.SenderUsername,
+		SenderFirstName: savedMsg.SenderFirstName,
+		SenderLastName:  savedMsg.SenderLastName,
+		SenderAvatar:    savedMsg.SenderAvatar,
+		Content:         savedMsg.Content,
+		CreatedAt:       savedMsg.CreatedAt.UTC().Format(time.RFC3339),
 	}
 
 	outEvent, err := websocket.NewEvent(EventPrivateMessage, outPayload)

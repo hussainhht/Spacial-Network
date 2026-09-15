@@ -117,11 +117,14 @@ export function isFollowNotification(notification: Notification): boolean {
 // for a notification type this UI doesn't render.
 export function toNotification(raw: RawNotification): Notification | null {
   if (!isSupportedNotificationType(raw.type)) return null;
-  const isFollowType =
+  // private_message notifications carry the same { actor_username } shape as
+  // follow notifications (see backend PrivateMessageNotificationData).
+  const usesActorUsernameData =
     raw.type === "follow_request" ||
     raw.type === "new_follower" ||
-    raw.type === "follow_accepted";
-  const data = isFollowType
+    raw.type === "follow_accepted" ||
+    raw.type === "private_message";
+  const data = usesActorUsernameData
     ? getFollowNotificationData(raw)
     : getGroupNotificationData(raw);
 

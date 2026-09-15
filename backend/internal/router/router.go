@@ -123,8 +123,38 @@ func NewRouter(db *sql.DB, cfg config.Config) (http.Handler, error) {
 		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Comments.ListCommentsHandler))),
 	)
 	apiMux.Handle(
+		"GET /posts/{id}/comments/count",
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Comments.GetCommentCountHandler))),
+	)
+	apiMux.Handle(
 		"DELETE /comments/{commentID}",
 		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Comments.DeleteCommentHandler))),
+	)
+
+	// =========================
+	// Likes Routes
+	// =========================
+
+	apiMux.Handle(
+		"GET /posts/{id}/likes",
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Likes.GetLikeStatusHandler))),
+	)
+	apiMux.Handle(
+		"POST /posts/{id}/likes",
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Likes.LikePostHandler))),
+	)
+	apiMux.Handle(
+		"DELETE /posts/{id}/likes",
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Likes.UnlikePostHandler))),
+	)
+
+	// =========================
+	// Share Routes
+	// =========================
+
+	apiMux.Handle(
+		"POST /posts/{id}/share",
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Share.SharePostHandler))),
 	)
 
 	// =========================

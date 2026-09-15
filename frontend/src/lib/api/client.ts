@@ -28,11 +28,12 @@ export async function apiRequest<T>(path: string, init?: RequestInit): Promise<T
 
   if (!response.ok) {
     let message = `Request failed (${response.status})`;
+    const text = await response.text();
     try {
-      const data = await response.json();
+      const data = JSON.parse(text);
       if (data?.error) message = data.error;
     } catch {
-      console.warn("Failed to parse error response as JSON:", await response.text());
+      console.warn("Failed to parse error response as JSON:", text);
       // response had no JSON body
     }
     throw new ApiError(message, response.status);

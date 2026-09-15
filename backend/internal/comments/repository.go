@@ -83,6 +83,17 @@ func (r *Repository) ListCommentsByPost(postID int) ([]*comment, error) {
 	return comments, nil
 }
 
+// CountByPost returns how many comments exist on postID.
+func (r *Repository) CountByPost(postID int) (int, error) {
+	var count int
+	err := r.db.QueryRow(`SELECT COUNT(*) FROM comments WHERE post_id = ?`, postID).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
+}
+
 func (r *Repository) DeleteComment(id int) error {
 	res, err := r.db.Exec(`DELETE FROM comments WHERE id = ?`, id)
 	if err != nil {

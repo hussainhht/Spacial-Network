@@ -1,0 +1,67 @@
+.bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(148, 163, 184, 0.1);
+}
+
+.action {
+  border: 0;
+  background: none;
+  font-family: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  color: var(--space-text-label);
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: color 120ms ease, background-color 120ms ease;
+}
+
+.label {
+  line-height: 1;
+}
+
+.action:hover:not(:disabled) {
+  background: var(--planet-accent-soft);
+  color: var(--space-text-heading);
+}
+
+.action:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+/* The liked state borrows the app accent rather than a one-off red, so the
+   bar stays inside the same palette as the rest of the post card. */
+.liked,
+.liked:hover:not(:disabled) {
+  color: var(--planet-accent);
+}
+
+.bar :is(a, button):focus-visible {
+  outline: 2px solid var(--planet-focus-ring);
+  outline-offset: 3px;
+}
+
+.error {
+  flex-basis: 100%;
+  margin: 4px 0 0;
+  color: var(--space-error-text);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+@media (hover: none) {
+  .action:hover:not(:disabled) {
+    background: none;
+    color: var(--space-text-label);
+  }
+}
