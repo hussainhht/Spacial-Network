@@ -1328,6 +1328,25 @@ main:not(.chat-main):has(> form) form > p {
     flex: 1;
   }
 }
+
+@media (min-width: 701px) {
+  .group-details-page:has(#group-tabpanel-chat) {
+    height: 100%;
+    min-height: 100%;
+    overflow: hidden;
+  }
+
+  .group-details-page:has(#group-tabpanel-chat) > .group-details-container {
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  #group-tabpanel-chat {
+    flex: 1;
+    min-height: 0;
+  }
+}
 .group-panel {
   padding: 1.4rem;
   min-width: 0;
@@ -1646,6 +1665,61 @@ main:not(.chat-main):has(> form) form > p {
   scrollbar-width: thin;
 }
 
+.group-invite-modal {
+  width: min(92vw, 580px);
+  max-height: min(82vh, 680px);
+  background:
+    linear-gradient(var(--planet-surface-tint), var(--planet-surface-tint)),
+    rgba(8, 11, 26, 0.82);
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  box-shadow:
+    0 24px 70px -20px rgba(2, 6, 23, 0.92),
+    0 0 34px var(--planet-glow),
+    0 0 0 1px rgba(255, 255, 255, 0.025) inset;
+}
+
+.group-invite-modal-header {
+  align-items: flex-start;
+  padding-top: 1.3rem;
+  padding-bottom: 1.15rem;
+}
+
+.group-invite-modal-heading {
+  min-width: 0;
+}
+
+.group-invite-modal-heading h2 {
+  font-size: 1.15rem;
+  line-height: 1.35;
+}
+
+.group-invite-modal-heading p {
+  margin: 0.3rem 0 0;
+  color: var(--space-text-muted);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.group-invite-modal .group-modal-close {
+  border-color: transparent;
+  border-radius: 50%;
+}
+
+.group-invite-modal .group-modal-close svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+}
+
+.group-invite-modal .group-modal-close:focus-visible {
+  outline: 2px solid var(--planet-focus-ring);
+  outline-offset: 2px;
+}
+
 @media (max-width: 480px) {
   .group-modal-overlay {
     padding: 0.75rem;
@@ -1664,9 +1738,97 @@ main:not(.chat-main):has(> form) form > p {
 }
 
 .group-invite-status {
-  margin: 0 0 0.75rem;
+  margin: 1rem 0 0;
   color: var(--space-text-muted);
   font-size: 0.875rem;
+}
+
+.group-invite-search > .form-field {
+  gap: 0.5rem;
+}
+
+.group-invite-search > .form-field label {
+  color: var(--space-text-label);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.group-invite-input-wrap {
+  position: relative;
+}
+
+.group-invite-input-wrap svg {
+  position: absolute;
+  top: 50%;
+  left: 0.9rem;
+  z-index: 1;
+  width: 18px;
+  height: 18px;
+  transform: translateY(-50%);
+  fill: none;
+  stroke: var(--space-text-placeholder);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  pointer-events: none;
+  transition: stroke 0.2s ease;
+}
+
+.group-invite-input-wrap input {
+  width: 100%;
+  min-height: 48px;
+  padding: 0.75rem 2.5rem 0.75rem 2.75rem;
+  border: 1px solid var(--space-border);
+  border-radius: var(--space-radius-md);
+  outline: none;
+  background: var(--space-input-bg);
+  color: var(--space-text-heading);
+  font: inherit;
+  font-size: 0.92rem;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.25);
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.group-invite-input-wrap input::placeholder {
+  color: var(--space-text-placeholder);
+}
+
+.group-invite-input-wrap:focus-within svg {
+  stroke: var(--planet-accent);
+}
+
+.group-invite-input-wrap input:focus-visible {
+  border-color: var(--planet-accent);
+  background: var(--space-input-bg-focus);
+  box-shadow: 0 0 0 3px var(--planet-border), 0 0 18px var(--planet-glow);
+}
+
+.group-invite-input-wrap input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.group-invite-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.group-invite-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--space-border-strong);
+  border-top-color: var(--planet-accent);
+  border-radius: 50%;
+  animation: group-invite-spin 0.7s linear infinite;
+}
+
+@keyframes group-invite-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .group-invite-results {
@@ -1676,6 +1838,10 @@ main:not(.chat-main):has(> form) form > p {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  max-height: min(43vh, 360px);
+  overflow-y: auto;
+  padding-right: 0.2rem;
+  scrollbar-width: thin;
 }
 
 .group-invite-result {
@@ -1777,6 +1943,37 @@ main:not(.chat-main):has(> form) form > p {
   background: var(--planet-border);
   border-color: var(--planet-border-strong);
   transform: translateY(-1px);
+}
+
+.group-invite-action-btn:focus-visible {
+  outline: 2px solid var(--planet-focus-ring);
+  outline-offset: 2px;
+}
+
+@media (max-width: 480px) {
+  .group-invite-modal-header {
+    padding-top: 1.1rem;
+  }
+
+  .group-invite-result {
+    flex-wrap: nowrap;
+    padding: 0.7rem;
+  }
+
+  .group-invite-result-info {
+    flex: 1;
+  }
+
+  .group-invite-action-btn {
+    min-height: 40px;
+    padding-inline: 0.8rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .group-invite-spinner {
+    animation-duration: 1.4s;
+  }
 }
 
 .group-invite-action-btn:disabled {

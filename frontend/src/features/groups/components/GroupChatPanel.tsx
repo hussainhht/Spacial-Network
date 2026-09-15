@@ -1,253 +1,156 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
+import chatStyles from "@/features/chat/components/Chat.module.css";
+import { formatMessageTime, getDisplayName, getInitials, parseDate } from "@/lib/utils";
+import { avatarUrl } from "../api/groups";
 import { useGroupChat } from "../hooks/useGroupChat";
-import { formatMessageDateTime, getDisplayName, getInitials } from "@/lib/utils";
-import { getBackendBaseUrl } from "@/lib/api";
+import type { Group, GroupMember } from "../types/group";
+import GroupAvatar from "./GroupAvatar";
+import styles from "./GroupChatPanel.module.css";
 
 const MAX_MESSAGE_LENGTH = 2000;
 const NEAR_LIMIT_THRESHOLD = 1800;
 
-interface GroupChatPanelProps {
-  groupId: number;
+interface Props {
+  group: Group;
+  members: GroupMember[];
+  membersLoading: boolean;
   isMember: boolean;
+  onViewMembers: () => void;
 }
 
-export default function GroupChatPanel({ groupId, isMember }: GroupChatPanelProps) {
-  const {
-    isConnected,
-    myUserId,
-    messages,
-    loading,
-    loadingMore,
-    hasMore,
-    error,
-    sendGroupMessage,
-    loadMoreHistory,
-  } = useGroupChat(groupId, isMember);
+function dateLabel(value?: string): string {
+  const date = parseDate(value);
+  if (!date) return "";
+  const today = new Date();
+  if (date.toDateString() === today.toDateString()) return "Today";
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+  if (date.toDateString() === yesterday.toDateString()) return "Yesterday";
+  return date.toLocaleDateString([], { month: "short", day: "numeric", ...(date.getFullYear() === today.getFullYear() ? {} : { year: "numeric" }) });
+}
 
+function startsNewDay(current?: string, previous?: string): boolean {
+  const a = parseDate(current);
+  const b = parseDate(previous);
+  return !a || !b || a.toDateString() !== b.toDateString();
+}
+
+export default function GroupChatPanel({ group, members, membersLoading, isMember, onViewMembers }: Props) {
+  const chat = useGroupChat(group.id, isMember);
   const [inputText, setInputText] = useState("");
+  const [showDetails, setShowDetails] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const charCount = inputText.length;
   const isOverLimit = charCount > MAX_MESSAGE_LENGTH;
   const isNearLimit = charCount >= NEAR_LIMIT_THRESHOLD;
+  const count = members.length || group.memberCount;
+  const onlineMembers = members.filter((member) => chat.onlineUserIDs.includes(member.userId));
 
-  // Auto-scroll on new messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  }, [messages.length]);
+  }, [chat.messages.length]);
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!inputText.trim() || isOverLimit || !isMember) return;
+  const resizeComposer = useCallback(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    textarea.style.height = "auto";
+    textarea.style.height = `${Math.min(Math.max(textarea.scrollHeight, 40), 120)}px`;
+  }, []);
 
-    sendGroupMessage(inputText.trim());
+  function submitMessage(event: React.FormEvent) {
+    event.preventDefault();
+    const content = inputText.trim();
+    if (!content || isOverLimit || !isMember) return;
+    chat.sendGroupMessage(content);
     setInputText("");
+    if (textareaRef.current) textareaRef.current.style.height = "40px";
   }
-
-  const getFullPhotoUrl = (path?: string) => {
-    if (!path) return "";
-    if (/^https?:\/\//i.test(path)) return path;
-    const cleanPath = path.startsWith("/") ? path : `/${path}`;
-    return `${getBackendBaseUrl()}${cleanPath}`;
-  };
 
   if (!isMember) {
-    return (
-      <div className="p-10 text-center bg-[#0b1026]/70 border border-[var(--planet-border)] rounded-2xl shadow-lg my-4">
-        <div className="text-4xl mb-3">🔒</div>
-        <h3 className="text-base font-semibold text-slate-100 mb-1.5">Group Chat is Member-Only</h3>
-        <p className="text-sm text-slate-400 max-w-md mx-auto mb-0 leading-relaxed">
-          You must be a member of this group to view and participate in the group chat. Request to join or accept an invitation to chat with members!
-        </p>
-      </div>
-    );
+    return <section className={`${chatStyles.floatingCard} ${styles.restricted}`}>
+      <span className={styles.restrictedIcon} aria-hidden="true">🔒</span>
+      <h2>Group chat is member-only</h2>
+      <p>Join this group to view its conversation and message members.</p>
+    </section>;
   }
 
-  return (
-    <div className="flex flex-col h-[650px] max-h-[75vh] bg-[#080b1a]/95 border border-[var(--planet-border)] rounded-2xl overflow-hidden shadow-xl my-4 min-w-0">
-      {/* Header */}
-      <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-700/30 bg-[#0f1533]">
-        <div className="flex items-center gap-2.5">
-          <span className="text-lg">💬</span>
-          <span className="font-semibold text-slate-100 text-sm">Community Chat</span>
+  return <div className={styles.layout}>
+    <section className={`${chatStyles.floatingCard} ${styles.conversation}`} aria-label={`${group.title} group chat`}>
+      <header className={`${chatStyles.windowHeader} ${styles.header}`}>
+        <div className={styles.headerIdentity}>
+          <GroupAvatar group={group} size={44} className={styles.groupAvatar} />
+          <div className={styles.headerCopy}><h2>{group.title}</h2><p>Group chat · {count} {count === 1 ? "member" : "members"}</p></div>
         </div>
-        <div className="flex items-center gap-2">
-          <span
-            className={`w-2 h-2 rounded-full ${
-              isConnected ? "bg-emerald-500 shadow-sm shadow-emerald-500/50" : "bg-amber-500"
-            }`}
-          />
-          <span className="text-xs text-slate-400">
-            {isConnected ? "Connected" : "Connecting..."}
-          </span>
+        <div className={styles.headerActions}>
+          <span className={`${styles.connection} ${chat.isConnected ? styles.connected : styles.reconnecting}`} role="status"><span className={styles.connectionDot} />{chat.isConnected ? "Connected" : "Reconnecting"}</span>
+          <button type="button" className={styles.detailsButton} onClick={() => setShowDetails(true)} aria-label="Show group chat details">Members</button>
         </div>
-      </div>
+      </header>
 
-      {error && (
-        <div className="px-4 py-2 bg-red-500/15 border-b border-red-500/30 text-red-300 text-xs">
-          ⚠️ {error}
-        </div>
-      )}
+      {chat.error && <div className={styles.errorBanner} role="alert">{chat.error}</div>}
 
-      {/* Messages Scroll Area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3.5 min-w-0">
-        {hasMore && (
-          <div className="text-center py-1">
-            <button
-              type="button"
-              onClick={loadMoreHistory}
-              disabled={loadingMore}
-              className="text-xs text-[var(--planet-accent)] hover:text-[var(--planet-accent-hover)] font-medium px-3.5 py-1.5 rounded-lg bg-[var(--planet-accent-soft)] hover:bg-[var(--planet-border)] transition-colors disabled:opacity-50 cursor-pointer"
-            >
-              {loadingMore ? "Loading older messages..." : "↑ Load older messages"}
-            </button>
-          </div>
-        )}
-
-        {loading && (
-          <div className="py-16 text-center text-slate-400 text-sm">
-            <div className="inline-block w-5 h-5 border-2 border-[var(--planet-accent)] border-t-transparent rounded-full animate-spin mb-2" />
-            <p className="m-0 text-xs text-slate-400">Loading chat history...</p>
-          </div>
-        )}
-
-        {!loading && messages.length === 0 && (
-          <div className="py-20 text-center text-slate-400">
-            <div className="text-4xl mb-2">💬</div>
-            <h4 className="text-sm font-semibold text-slate-200 m-0">No messages yet</h4>
-            <p className="text-xs text-slate-400 mt-1 mb-0">
-              Send the first message to kick off the group chat!
-            </p>
-          </div>
-        )}
-
-        {!loading &&
-          messages.map((msg) => {
-            const isMine = myUserId !== null && msg.user_id === myUserId;
-            const displayName = getDisplayName(
-              msg.first_name || "",
-              msg.last_name || "",
-              msg.username || ""
-            );
-            const initials = getInitials(
-              msg.first_name || "",
-              msg.last_name || "",
-              msg.username || ""
-            );
-            const avatarUrl = getFullPhotoUrl(msg.avatar);
-
-            return (
-              <div
-                key={msg.id ?? `${msg.user_id}-${msg.created_at}`}
-                className={`flex gap-2.5 min-w-0 ${isMine ? "justify-end" : "justify-start"}`}
-              >
-                {!isMine && (
-                  <div className="shrink-0 pt-0.5">
-                    {avatarUrl ? (
-                      <img
-                        src={avatarUrl}
-                        alt={displayName}
-                        className="w-7 h-7 rounded-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-7 h-7 rounded-full bg-[var(--planet-accent-active)] text-white flex items-center justify-center font-bold text-[10px]">
-                        {initials}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                <div className="flex flex-col max-w-[75%] min-w-0">
-                  {!isMine && (
-                    <div className="flex items-baseline gap-1.5 mb-1 px-1">
-                      <Link
-                        href={`/profile/${msg.username}`}
-                        className="text-xs font-semibold text-slate-200 hover:text-[var(--planet-accent)] transition-colors truncate"
-                      >
-                        {displayName}
-                      </Link>
-                      {msg.username && (
-                        <span className="text-[11px] text-slate-400 truncate">
-                          @{msg.username}
-                        </span>
-                      )}
-                    </div>
-                  )}
-
-                  <div
-                    className={`px-3.5 py-2 rounded-2xl text-sm min-w-0 ${
-                      isMine
-                        ? "rounded-br-xs bg-[var(--planet-accent-active)] text-white"
-                        : "rounded-bl-xs bg-slate-800/90 text-slate-100 border border-slate-700/50"
-                    }`}
-                  >
-                    <div className="whitespace-pre-wrap break-words [overflow-wrap:anywhere] leading-relaxed text-[13.5px]">
-                      {msg.content}
-                    </div>
-                    <div
-                      className={`text-[10px] mt-1 text-right shrink-0 ${
-                        isMine ? "text-slate-200" : "text-slate-400"
-                      }`}
-                    >
-                      {msg.created_at ? formatMessageDateTime(msg.created_at) : ""}
-                    </div>
-                  </div>
+      <div className={`${chatStyles.messagesContainer} ${styles.messages}`} aria-live="polite" aria-busy={chat.loading}>
+        {chat.hasMore && <button type="button" onClick={chat.loadMoreHistory} disabled={chat.loadingMore} className={chatStyles.loadMoreBtn}>{chat.loadingMore ? "Loading older messages…" : "↑ Load older messages"}</button>}
+        {chat.loading && <div className={styles.state} role="status"><span className={styles.spinner} />Loading chat history…</div>}
+        {!chat.loading && chat.messages.length === 0 && <div className={styles.emptyState}><h3>Group conversation</h3><p>No messages yet.</p><span>Start the conversation with the group.</span></div>}
+        {!chat.loading && chat.messages.map((message, index) => {
+          const isMine = chat.myUserId !== null && message.user_id === chat.myUserId;
+          const name = isMine ? "Me" : getDisplayName(message.first_name ?? "", message.last_name ?? "", message.username ?? "");
+          const image = avatarUrl(message.avatar);
+          const showDate = index === 0 || startsNewDay(message.created_at, chat.messages[index - 1]?.created_at);
+          return <Fragment key={message.id ?? `${message.user_id}-${message.created_at}-${index}`}>
+            {showDate && <div className={chatStyles.dateDivider}><span className={chatStyles.dateDividerText}>{dateLabel(message.created_at)}</span></div>}
+            <div className={`${styles.messageRow} ${isMine ? styles.messageRowMine : ""}`}>
+              {!isMine && (image ? <Image unoptimized src={image} alt="" width={30} height={30} className={styles.senderAvatar} /> : <span className={styles.senderFallback} aria-hidden="true">{getInitials(message.first_name ?? "", message.last_name ?? "", message.username ?? "")}</span>)}
+              <div className={styles.messageStack}>
+                <div className={`${styles.senderName} ${isMine ? styles.senderNameMine : ""}`}>{isMine ? name : <Link href={`/profile/${message.username}`}>{name}</Link>}</div>
+                <div className={isMine ? chatStyles.bubbleMine : chatStyles.bubblePartner}>
+                  <div className={chatStyles.messageContent}>{message.content}</div>
+                  <div className={`${chatStyles.bubbleMeta} ${isMine ? chatStyles.bubbleMetaMine : chatStyles.bubbleMetaPartner}`}><time className={chatStyles.bubbleTime}>{formatMessageTime(message.created_at)}</time></div>
                 </div>
               </div>
-            );
-          })}
-
+            </div>
+          </Fragment>;
+        })}
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input Form */}
-      <form
-        onSubmit={handleSubmit}
-        className="flex items-center gap-2.5 px-4 py-3.5 border-t border-slate-700/30 bg-[#0b1026]/90 min-w-0 shrink-0"
-      >
-        <div className="flex-1 relative flex items-center min-w-0">
-          <input
-            type="text"
-            placeholder="Message the group..."
-            value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
-            className={`w-full min-w-0 py-2 rounded-full border bg-[#10152f]/80 text-slate-100 placeholder-slate-400 text-sm focus:outline-none transition-colors ${
-              isNearLimit ? "pr-20" : "pr-4"
-            } pl-4 ${
-              isOverLimit
-                ? "border-red-500 focus:border-red-500"
-                : isNearLimit
-                ? "border-amber-500 focus:border-amber-500"
-                : "border-slate-700/60 focus:border-[var(--planet-accent)] focus:ring-2 focus:ring-[var(--planet-border)]"
-            }`}
-          />
-          {isNearLimit && (
-            <span
-              className={`absolute right-3 text-xs font-semibold pointer-events-none select-none bg-[#0b1026]/90 px-1.5 py-0.5 rounded-md shrink-0 ${
-                isOverLimit ? "text-red-400" : "text-amber-400"
-              }`}
-            >
-              {isOverLimit
-                ? `-${charCount - MAX_MESSAGE_LENGTH}`
-                : `${charCount}/${MAX_MESSAGE_LENGTH}`}
-            </span>
-          )}
+      <form onSubmit={submitMessage} className={chatStyles.composer}>
+        <div className={chatStyles.composerInputWrapper}>
+          <textarea ref={textareaRef} rows={1} value={inputText} maxLength={MAX_MESSAGE_LENGTH + 1} placeholder="Message the group…" className={chatStyles.composerTextarea}
+            onChange={(event) => { setInputText(event.target.value); resizeComposer(); }}
+            onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); submitMessage(event); } }} />
+          <span className={`${chatStyles.charCounter} ${isOverLimit ? chatStyles.charCounterOver : isNearLimit ? chatStyles.charCounterNear : ""}`} aria-live="polite">{isOverLimit ? `-${charCount - MAX_MESSAGE_LENGTH}` : `${charCount}/${MAX_MESSAGE_LENGTH}`}</span>
         </div>
-        <button
-          type="submit"
-          disabled={!inputText.trim() || isOverLimit}
-          className={`shrink-0 px-4.5 py-2 rounded-full font-semibold text-xs transition-all duration-150 ${
-            !inputText.trim() || isOverLimit
-              ? "bg-slate-700 text-slate-400 opacity-50 cursor-not-allowed"
-              : "bg-[var(--planet-accent-active)] hover:brightness-110 text-white cursor-pointer shadow-sm"
-          }`}
-        >
-          Send
+        <button type="submit" disabled={!inputText.trim() || isOverLimit} className={chatStyles.sendButton} aria-label="Send message">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>
         </button>
       </form>
-    </div>
-  );
+    </section>
+
+    <aside className={`${chatStyles.floatingCard} ${styles.sidebar} ${showDetails ? styles.sidebarOpen : ""}`} aria-label="Group chat details">
+      <button type="button" className={styles.closeDetails} onClick={() => setShowDetails(false)} aria-label="Close group chat details">×</button>
+      <div className={styles.sidebarIntro}><GroupAvatar group={group} size={58} className={styles.sidebarAvatar} /><div><h2>{group.title}</h2><p>{count} {count === 1 ? "member" : "members"}</p></div></div>
+      <div className={styles.sidebarStatus}><span className={`${styles.connectionDot} ${chat.isConnected ? styles.dotOnline : ""}`} />{chat.isConnected ? "Chat connected" : "Reconnecting to chat"}</div>
+      <div className={styles.memberHeading}><div><h3>Members</h3>{onlineMembers.length > 0 && <span>{onlineMembers.length} online</span>}</div><button type="button" onClick={onViewMembers}>View all</button></div>
+      <div className={styles.memberList}>
+        {membersLoading && <p className={styles.memberState}>Loading members…</p>}
+        {!membersLoading && members.length === 0 && <p className={styles.memberState}>No members to show.</p>}
+        {members.map((member) => {
+          const image = avatarUrl(member.avatar);
+          const online = chat.onlineUserIDs.includes(member.userId);
+          return <Link href={`/profile/${member.username}`} className={styles.member} key={member.userId}>
+            <span className={styles.memberAvatarWrap}>{image ? <Image unoptimized src={image} alt="" width={34} height={34} /> : <span>{getInitials("", "", member.username)}</span>}{online && <i title="Online" />}</span>
+            <span className={styles.memberCopy}><strong>{member.username}</strong><small>{member.role === "creator" ? "Group creator" : online ? "Online" : "Member"}</small></span>
+          </Link>;
+        })}
+      </div>
+    </aside>
+    {showDetails && <button type="button" className={styles.backdrop} onClick={() => setShowDetails(false)} aria-label="Close group chat details" />}
+  </div>;
 }

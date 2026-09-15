@@ -210,7 +210,13 @@ function GroupDetails({ groupId }: { groupId: number }) {
               role="tabpanel"
               aria-labelledby="group-tab-chat"
             >
-              <GroupChatPanel groupId={groupId} isMember={isMember} />
+              <GroupChatPanel
+                group={group.data}
+                members={members.data ?? []}
+                membersLoading={members.loading}
+                isMember={isMember}
+                onViewMembers={() => setActiveTab("members")}
+              />
             </div>
           )}
           {activeTab === "edit" && isCreator && (

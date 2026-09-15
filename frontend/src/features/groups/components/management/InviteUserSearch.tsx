@@ -32,34 +32,49 @@ export default function InviteUserSearch({
 
   return (
     <section className="group-invite-search">
-      {!isConnected && (
-        <p className="group-invite-status">Reconnecting to the server...</p>
-      )}
-
       <div className="form-field">
         <label htmlFor={`invite-search-${groupId}`}>
           Search by name or username
         </label>
 
-        <input
-          id={`invite-search-${groupId}`}
-          type="text"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="Search people to invite..."
-          disabled={!isConnected}
-          autoFocus={autoFocus}
-        />
+        <div className="group-invite-input-wrap">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="11" cy="11" r="7" />
+            <path d="m20 20-4-4" />
+          </svg>
+          <input
+            id={`invite-search-${groupId}`}
+            type="search"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search people to invite..."
+            disabled={!isConnected}
+            autoFocus={autoFocus}
+            autoComplete="off"
+          />
+        </div>
       </div>
 
-      {loading && !wsErrorPending && (
-        <p className="group-invite-status">Searching...</p>
+      {!isConnected && (
+        <p className="group-invite-status" role="status">
+          Reconnecting to the server…
+        </p>
       )}
-      {wsErrorPending && <p className="form-error">{errorMessage}</p>}
+      {loading && !wsErrorPending && (
+        <p className="group-invite-status group-invite-loading" role="status">
+          <span className="group-invite-spinner" aria-hidden="true" />
+          Searching…
+        </p>
+      )}
+      {wsErrorPending && (
+        <p className="form-error" role="alert">
+          {errorMessage}
+        </p>
+      )}
 
       {!loading && !wsErrorPending && trimmedQuery.length === 0 && (
         <p className="group-invite-status">
-          Search for people you’d like to invite.
+          Search for people to invite to this group.
         </p>
       )}
 
@@ -67,7 +82,7 @@ export default function InviteUserSearch({
         !wsErrorPending &&
         trimmedQuery.length > 0 &&
         results.length === 0 && (
-          <p className="group-invite-status">No users found.</p>
+          <p className="group-invite-status">No people found.</p>
         )}
 
       {results.length > 0 && (
