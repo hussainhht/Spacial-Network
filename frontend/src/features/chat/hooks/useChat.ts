@@ -109,6 +109,15 @@ export function useChat() {
 
   const selectConversation = useCallback(
     async (partnerId: number, partnerUsername: string, partnerAvatar?: string) => {
+      if (partnerId <= 0) {
+        setActivePartnerId(null);
+        setActivePartnerUsername("");
+        setActivePartnerAvatar(undefined);
+        setMessages([]);
+        setHistoryOffset(0);
+        return;
+      }
+
       setActivePartnerId(partnerId);
       setActivePartnerUsername(partnerUsername);
       setMessages([]);

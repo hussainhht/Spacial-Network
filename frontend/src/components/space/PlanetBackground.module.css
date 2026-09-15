@@ -4,6 +4,8 @@
   z-index: 1;
   overflow: hidden;
   pointer-events: none;
+  contain: layout paint;
+  transform: translateZ(0);
 }
 
 .planetFrame {
@@ -27,8 +29,8 @@
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 160%;
-  height: 160%;
+  width: 260%;
+  height: 260%;
   transform: translate(-50%, -50%);
   pointer-events: none;
 }

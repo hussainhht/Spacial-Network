@@ -41,10 +41,10 @@
   height: 100%;
 }
 .destination {
-  display: flex;
+  position: relative;
+  display: inline-flex;
   align-items: center;
   justify-self: start;
-  gap: 15px;
   margin-left: 6px;
   min-height: 56px;
   border-radius: 999px;
@@ -58,6 +58,56 @@
 .destination:nth-child(3) {
   margin-left: 40px;
 }
+
+/* Tooltip label that appears strictly on hover or focus */
+.orbitalLabel {
+  position: absolute;
+  left: calc(100% + 12px);
+  top: 50%;
+  transform: translateY(-50%) translateX(-6px) !important;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  white-space: nowrap;
+  padding: 6px 14px;
+  font: 500 13px/1.2 ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: 0.02em;
+  color: var(--space-text-heading, #ffffff);
+  background: rgba(8, 14, 30, 0.88);
+  border: 1px solid var(--planet-border-strong, rgba(255, 255, 255, 0.16));
+  border-radius: 999px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45), 0 0 14px var(--planet-glow);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 20;
+  transition: opacity 160ms ease, transform 160ms ease, visibility 160ms ease, border-color 160ms ease;
+}
+
+.orbitalLabel::after {
+  display: none !important;
+}
+
+.destination:hover .orbitalLabel,
+.destination:focus-visible .orbitalLabel {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateY(-50%) translateX(0) !important;
+}
+
+.destination[aria-current="page"] .orbitalLabel {
+  border-color: var(--planet-accent);
+  color: var(--planet-accent-hover, #ffffff);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45), 0 0 16px var(--planet-glow);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .orbitalLabel {
+    transition: none !important;
+    transform: translateY(-50%) !important;
+  }
+}
+
 @media (max-width: 760px), (max-height: 430px) {
   .orbitalNav {
     display: none;

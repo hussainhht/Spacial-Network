@@ -58,7 +58,7 @@ func (r *Repository) GetByUser(userID, limit, offset int) ([]Notification, error
 			return nil, fmt.Errorf("scan notification: %w", err)
 		}
 		n.Type = NotificationType(typ)
-		n.Data = buildGroupData(groupID, groupTitle, actorUsername)
+		n.Data = buildNotificationData(n.Type, groupID, groupTitle, actorUsername)
 		result = append(result, n)
 	}
 
@@ -146,19 +146,31 @@ const notificationSelect = `SELECT n.id, n.receiver_id, n.actor_id, n.type, n.en
 
 func (r *Repository) getByID(id, receiverID int) (*Notification, error) {
 	var n Notification
+	var typ string
 	var groupID *int
 	var groupTitle, actorUsername *string
 	err := r.db.QueryRow(notificationSelect+` WHERE n.id = ? AND n.receiver_id = ?`, id, receiverID).Scan(
-		&n.ID, &n.ReceiverID, &n.ActorID, &n.Type, &n.EntityType, &n.EntityID, &n.Message, &n.ReadAt, &n.CreatedAt,
+		&n.ID, &n.ReceiverID, &n.ActorID, &typ, &n.EntityType, &n.EntityID, &n.Message, &n.ReadAt, &n.CreatedAt,
 		&groupID, &groupTitle, &actorUsername,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("load notification context: %w", err)
 	}
-	n.Data = buildGroupData(groupID, groupTitle, actorUsername)
+	n.Type = NotificationType(typ)
+	n.Data = buildNotificationData(n.Type, groupID, groupTitle, actorUsername)
 	return &n, nil
 }
 
+func buildNotificationData(notificationType NotificationType, groupID *int, groupTitle, actorUsername *string) any {
+	switch notificationType {
+	case NotificationGroupInvitation, NotificationGroupJoinRequest:
+		return buildGroupData(groupID, groupTitle, actorUsername)
+	case NotificationFollowRequest, NotificationNewFollower:
+		return buildFollowData(actorUsername)
+	default:
+		return nil
+	}
+}
 
 func buildGroupData(groupID *int, groupTitle, actorUsername *string) any {
 	if groupID == nil || groupTitle == nil {
@@ -168,5 +180,15 @@ func buildGroupData(groupID *int, groupTitle, actorUsername *string) any {
 		GroupID:       *groupID,
 		GroupTitle:    *groupTitle,
 		ActorUsername: actorUsername,
+	}
+}
+
+func buildFollowData(actorUsername *string) any {
+	if actorUsername == nil {
+		return nil
+	}
+
+	return &FollowNotificationData{
+		ActorUsername: *actorUsername,
 	}
 }

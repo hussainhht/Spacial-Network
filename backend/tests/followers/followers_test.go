@@ -23,7 +23,7 @@ func setup(t *testing.T) fixture {
 	t.Helper()
 	db := testutil.NewTestDB(t)
 	repo := followers.NewRepository(db)
-	svc := followers.NewService(repo)
+	svc := followers.NewService(repo, nil)
 
 	usersRepo := users.NewRepository(db)
 	usersSvc := users.NewService(usersRepo, svc)

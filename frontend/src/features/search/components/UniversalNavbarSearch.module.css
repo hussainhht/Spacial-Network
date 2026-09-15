@@ -1,0 +1,539 @@
+/* ==========================================================================
+   UniversalNavbarSearch Module CSS
+   Connected searchbar & dropdown extending downwards from the top bar.
+   Harmonized with the page's celestial palette & frosted glass design.
+   ========================================================================== */
+
+.searchContainer {
+  position: relative;
+  width: 100%;
+}
+
+/* ==========================================================================
+   Trigger Button (Closed state in navbar)
+   ========================================================================== */
+.searchTriggerButton {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 14px;
+  border: 1px solid var(--planet-border, rgba(148, 163, 184, 0.16));
+  border-radius: 10px;
+  background:
+    linear-gradient(var(--planet-surface-tint), var(--planet-surface-tint)),
+    rgba(13, 18, 42, 0.55);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: var(--space-text-muted, #94a3b8);
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  user-select: none;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.searchTriggerButton:hover {
+  border-color: var(--planet-border-strong);
+  background:
+    linear-gradient(var(--planet-surface-tint), var(--planet-surface-tint)),
+    rgba(17, 23, 52, 0.7);
+  box-shadow: 0 0 12px var(--planet-glow);
+}
+
+.searchTriggerPlaceholder {
+  flex: 1;
+  font-size: 13px;
+  color: var(--space-text-muted, #94a3b8);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kbdBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  font-size: 10px;
+  font-weight: 600;
+  color: #94a3b8;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   Active Search Bar (Open state, connected at the top bar)
+   ========================================================================== */
+.searchBarActive {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 14px;
+  background:
+    linear-gradient(var(--planet-surface-tint), var(--planet-surface-tint)),
+    rgba(11, 15, 36, 0.96);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid var(--planet-border-strong);
+  border-bottom: 1px solid var(--planet-border);
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  box-shadow:
+    0 0 24px var(--planet-glow),
+    0 4px 16px rgba(0, 0, 0, 0.4);
+  z-index: 102;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.searchIconWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--planet-accent-hover, var(--planet-accent, #86c3f7));
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+}
+
+.searchIconWrapper svg {
+  width: 18px;
+  height: 18px;
+}
+
+.searchInput {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  color: var(--space-text-heading, #f8fafc);
+  font-size: 14px;
+  font-weight: 500;
+  outline: none;
+  padding: 0;
+}
+
+.searchInput::placeholder {
+  color: var(--space-text-placeholder, #64748b);
+  font-weight: 400;
+}
+
+.clearButton {
+  background: rgba(148, 163, 184, 0.14);
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #cbd5e1;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.clearButton:hover {
+  background: rgba(148, 163, 184, 0.28);
+  color: #ffffff;
+}
+
+.escPill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: 6px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: rgba(255, 255, 255, 0.06);
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.escPill:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #f1f5f9;
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--planet-border, rgba(148, 163, 184, 0.2));
+  border-top-color: var(--planet-accent, #69aef0);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ==========================================================================
+   Dropdown Tray (Extends downwards from the top bar and is connected to it)
+   ========================================================================== */
+.dropdownTray {
+  position: absolute;
+  top: calc(100% - 1px);
+  left: 0;
+  right: 0;
+  z-index: 101;
+  display: flex;
+  flex-direction: column;
+  background:
+    linear-gradient(var(--planet-surface-tint), var(--planet-surface-tint)),
+    rgba(11, 15, 36, 0.97);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--planet-border-strong);
+  border-top: none;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 16px;
+  box-shadow:
+    0 24px 64px rgba(0, 0, 0, 0.8),
+    0 0 32px var(--planet-glow);
+  overflow: hidden;
+  max-height: calc(80vh - var(--app-navbar-height, 64px));
+  transform-origin: top center;
+  animation: extendDownwards 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes extendDownwards {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scaleY(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scaleY(1);
+  }
+}
+
+/* ==========================================================================
+   Category Filter Tabs
+   ========================================================================== */
+.tabsBar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--planet-border, rgba(148, 163, 184, 0.12));
+  background: rgba(8, 11, 28, 0.65);
+  overflow-x: auto;
+  scrollbar-width: none;
+  flex-shrink: 0;
+}
+
+.tabsBar::-webkit-scrollbar {
+  display: none;
+}
+
+.tabChip {
+  padding: 4px 11px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--space-text-muted, #94a3b8);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.tabChip:hover {
+  background: var(--planet-accent-soft);
+  color: var(--space-text-heading, #f8fafc);
+  border-color: var(--planet-border);
+}
+
+.tabChipActive {
+  background: linear-gradient(
+    135deg,
+    var(--planet-accent-active),
+    var(--planet-accent-soft)
+  );
+  border-color: var(--planet-border-strong);
+  color: #ffffff;
+  box-shadow: 0 0 12px var(--planet-glow);
+}
+
+/* ==========================================================================
+   Results Content Area
+   ========================================================================== */
+.resultsContent {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 140px;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 6px 2px;
+  color: var(--planet-accent-hover, var(--planet-accent, #86c3f7));
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.recentsContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 4px 6px;
+}
+
+.recentChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--planet-border, rgba(148, 163, 184, 0.14));
+  background: rgba(255, 255, 255, 0.04);
+  color: #cbd5e1;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.recentChip:hover {
+  background: var(--planet-accent-soft);
+  border-color: var(--planet-border-strong);
+  color: var(--space-text-heading, #ffffff);
+}
+
+.clearRecentsBtn {
+  background: transparent;
+  border: none;
+  color: #64748b;
+  font-size: 11px;
+  cursor: pointer;
+  text-decoration: underline;
+  transition: color 0.15s ease;
+}
+
+.clearRecentsBtn:hover {
+  color: var(--space-text-muted, #94a3b8);
+}
+
+/* Result Item */
+.resultItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--space-text-heading, #f1f5f9);
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.12s ease;
+  outline: none;
+}
+
+.resultItem:hover,
+.resultItemActive {
+  background: var(--planet-accent-soft);
+  border-color: var(--planet-border);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+
+.itemAvatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background:
+    linear-gradient(var(--planet-surface-tint), var(--planet-surface-tint)),
+    rgba(18, 24, 52, 0.8);
+  border: 1px solid var(--planet-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--planet-accent-hover, #86c3f7);
+  font-size: 13px;
+  font-weight: 600;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.itemAvatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.itemInfo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.itemTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.itemTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--space-text-heading, #f8fafc);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.itemBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  border-radius: 5px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  background: var(--planet-accent-soft);
+  border: 1px solid var(--planet-border);
+  color: var(--planet-accent-hover, #86c3f7);
+  flex-shrink: 0;
+}
+
+.itemSubtitle {
+  font-size: 12px;
+  color: var(--space-text-muted, #94a3b8);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.itemActionIcon {
+  display: flex;
+  align-items: center;
+  color: #64748b;
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: all 0.15s ease;
+}
+
+.resultItem:hover .itemActionIcon,
+.resultItemActive .itemActionIcon {
+  opacity: 1;
+  transform: translateX(0);
+  color: var(--planet-accent-hover, #86c3f7);
+}
+
+.stateBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  text-align: center;
+  color: var(--space-text-muted, #94a3b8);
+  gap: 8px;
+}
+
+.stateIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--planet-accent-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--planet-accent, #69aef0);
+  margin-bottom: 2px;
+}
+
+.stateTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--space-text-heading, #f1f5f9);
+}
+
+.stateSubtitle {
+  font-size: 12px;
+  color: var(--space-text-placeholder, #64748b);
+  max-width: 300px;
+}
+
+/* ==========================================================================
+   Dropdown Footer
+   ========================================================================== */
+.dropdownFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 16px;
+  background:
+    linear-gradient(var(--planet-surface-tint), var(--planet-surface-tint)),
+    rgba(8, 11, 28, 0.95);
+  border-top: 1px solid var(--planet-border);
+  color: var(--space-text-muted, #64748b);
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.footerHints {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.hintItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.kbd {
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  color: var(--space-text-muted, #94a3b8);
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.footerBrand {
+  font-size: 10px;
+  color: #475569;
+  letter-spacing: 0.3px;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .dropdownTray {
+    animation: none;
+  }
+}

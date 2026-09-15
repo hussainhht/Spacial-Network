@@ -26,9 +26,15 @@ func NewRouter(db *sql.DB, cfg config.Config) (http.Handler, error) {
 
 	apiMux := http.NewServeMux()
 
+	// rateLimit enforces internal/ratelimit's two-tier (global + per-
+	// endpoint) cap on every route below, keyed by the authenticated
+	// session user where available (falling back to IP on the public
+	// login/register routes, which run before any session exists).
+	rateLimit := middleware.RateLimit(deps.RateLimiter, nil, nil)
+
 	//* Public API routes
-	apiMux.HandleFunc("/login", deps.Handlers.Auth.LoginHandler)
-	apiMux.HandleFunc("/register", deps.Handlers.Auth.RegisterHandler)
+	apiMux.Handle("/login", rateLimit(http.HandlerFunc(deps.Handlers.Auth.LoginHandler)))
+	apiMux.Handle("/register", rateLimit(http.HandlerFunc(deps.Handlers.Auth.RegisterHandler)))
 
 	//* Protected API routes
 	sessionMiddleware := middleware.SessionMiddleware(
@@ -37,32 +43,37 @@ func NewRouter(db *sql.DB, cfg config.Config) (http.Handler, error) {
 	)
 	apiMux.Handle(
 		"/logout",
-		sessionMiddleware(http.HandlerFunc(deps.Handlers.Auth.LogoutHandler)),
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Auth.LogoutHandler))),
 	)
 
-	apiMux.Handle("GET /ws", sessionMiddleware(http.HandlerFunc(deps.Handlers.Websocket.ServeWS)))
-	apiMux.Handle("GET /chat/history", sessionMiddleware(http.HandlerFunc(deps.Handlers.Chat.GetHistoryHandler)))
-	apiMux.Handle("GET /chat/conversations", sessionMiddleware(http.HandlerFunc(deps.Handlers.Chat.GetConversationsHandler)))
-	apiMux.Handle("GET /chat/eligible-contacts", sessionMiddleware(http.HandlerFunc(deps.Handlers.Chat.GetEligibleContactsHandler)))
+	apiMux.Handle("GET /ws", sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Websocket.ServeWS))))
+	apiMux.Handle("GET /chat/history", sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Chat.GetHistoryHandler))))
+	apiMux.Handle("GET /chat/conversations", sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Chat.GetConversationsHandler))))
+	apiMux.Handle("GET /chat/eligible-contacts", sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Chat.GetEligibleContactsHandler))))
 
 	apiMux.Handle(
 		"/users/me",
-		sessionMiddleware(http.HandlerFunc(deps.Handlers.Users.GetMeHandler)),
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Users.GetMeHandler))),
 	)
 
 	apiMux.Handle(
 		"/users/me/privacy",
-		sessionMiddleware(http.HandlerFunc(deps.Handlers.Users.UpdateProfilePrivacyHandler)),
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Users.UpdateProfilePrivacyHandler))),
 	)
 
 	apiMux.Handle(
 		"PATCH /users/me/profile",
-		sessionMiddleware(http.HandlerFunc(deps.Handlers.Users.UpdateProfileDetailsHandler)),
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Users.UpdateProfileDetailsHandler))),
+	)
+
+	apiMux.Handle(
+		"PATCH /users/me/avatar",
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Users.UpdateProfileAvatarHandler))),
 	)
 
 	apiMux.Handle(
 		"/profiles/{username}",
-		sessionMiddleware(http.HandlerFunc(deps.Handlers.Users.GetProfileHandler)),
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Users.GetProfileHandler))),
 	)
 
 	// =========================
@@ -71,27 +82,27 @@ func NewRouter(db *sql.DB, cfg config.Config) (http.Handler, error) {
 
 	apiMux.Handle(
 		"POST /posts",
-		sessionMiddleware(http.HandlerFunc(deps.Handlers.Posts.NewPostHandler)),
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Posts.NewPostHandler))),
 	)
 	apiMux.Handle(
 		"GET /posts",
-		sessionMiddleware(http.HandlerFunc(deps.Handlers.Posts.ListPostsHandler)),
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Posts.ListPostsHandler))),
 	)
 	apiMux.Handle(
 		"GET /posts/{id}",
-		sessionMiddleware(http.HandlerFunc(deps.Handlers.Posts.GetPostByIDHandler)),
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Posts.GetPostByIDHandler))),
 	)
 	apiMux.Handle(
 		"PUT /posts/{id}",
-		sessionMiddleware(http.HandlerFunc(deps.Handlers.Posts.EditPostHandler)),
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Posts.EditPostHandler))),
 	)
 	apiMux.Handle(
 		"PATCH /posts/{id}",
-		sessionMiddleware(http.HandlerFunc(deps.Handlers.Posts.EditPostHandler)),
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Posts.EditPostHandler))),
 	)
 	apiMux.Handle(
 		"DELETE /posts/{id}",
-		sessionMiddleware(http.HandlerFunc(deps.Handlers.Posts.DeletePostHandler)),
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Posts.DeletePostHandler))),
 	)
 
 	// =========================
@@ -100,15 +111,15 @@ func NewRouter(db *sql.DB, cfg config.Config) (http.Handler, error) {
 
 	apiMux.Handle(
 		"POST /posts/{id}/comments",
-		sessionMiddleware(http.HandlerFunc(deps.Handlers.Comments.NewCommentHandler)),
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Comments.NewCommentHandler))),
 	)
 	apiMux.Handle(
 		"GET /posts/{id}/comments",
-		sessionMiddleware(http.HandlerFunc(deps.Handlers.Comments.ListCommentsHandler)),
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Comments.ListCommentsHandler))),
 	)
 	apiMux.Handle(
 		"DELETE /comments/{commentID}",
-		sessionMiddleware(http.HandlerFunc(deps.Handlers.Comments.DeleteCommentHandler)),
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Comments.DeleteCommentHandler))),
 	)
 
 	// =========================
@@ -117,36 +128,36 @@ func NewRouter(db *sql.DB, cfg config.Config) (http.Handler, error) {
 
 	apiMux.Handle(
 		"POST /profiles/{username}/follow",
-		sessionMiddleware(http.HandlerFunc(deps.Handlers.Followers.FollowUserHandler)),
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Followers.FollowUserHandler))),
 	)
 	apiMux.Handle(
 		"DELETE /profiles/{username}/follow",
-		sessionMiddleware(http.HandlerFunc(deps.Handlers.Followers.UnfollowUserHandler)),
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Followers.UnfollowUserHandler))),
 	)
 	apiMux.Handle(
 		"GET /profiles/{username}/followers",
-		sessionMiddleware(http.HandlerFunc(deps.Handlers.Followers.GetFollowersHandler)),
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Followers.GetFollowersHandler))),
 	)
 	apiMux.Handle(
 		"GET /profiles/{username}/following",
-		sessionMiddleware(http.HandlerFunc(deps.Handlers.Followers.GetFollowingHandler)),
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Followers.GetFollowingHandler))),
 	)
 	apiMux.Handle(
 		"GET /profiles/{username}/follow-status",
-		sessionMiddleware(http.HandlerFunc(deps.Handlers.Followers.FollowStatusHandler)),
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Followers.FollowStatusHandler))),
 	)
 	apiMux.Handle(
 		"GET /follow-requests",
-		sessionMiddleware(http.HandlerFunc(deps.Handlers.Followers.GetPendingFollowRequestsHandler)),
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Followers.GetPendingFollowRequestsHandler))),
 	)
 
 	apiMux.Handle(
 		"POST /follow-requests/{requestID}/accept",
-		sessionMiddleware(http.HandlerFunc(deps.Handlers.Followers.AcceptFollowRequestHandler)),
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Followers.AcceptFollowRequestHandler))),
 	)
 	apiMux.Handle(
 		"POST /follow-requests/{requestID}/decline",
-		sessionMiddleware(http.HandlerFunc(deps.Handlers.Followers.DeclineFollowRequestHandler)),
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Followers.DeclineFollowRequestHandler))),
 	)
 
 	// =========================
@@ -155,71 +166,71 @@ func NewRouter(db *sql.DB, cfg config.Config) (http.Handler, error) {
 
 	apiMux.Handle(
 		"GET /groups",
-		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.ListGroupsHandler)),
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Groups.ListGroupsHandler))),
 	)
 	apiMux.Handle(
 		"POST /groups",
-		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.CreateGroupHandler)),
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Groups.CreateGroupHandler))),
 	)
 	apiMux.Handle(
 		"GET /groups/mine",
-		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.GetMyGroupsHandler)),
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Groups.GetMyGroupsHandler))),
 	)
 	apiMux.Handle(
 		"GET /groups/{id}",
-		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.GetGroupHandler)),
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Groups.GetGroupHandler))),
 	)
 	apiMux.Handle(
 		"PUT /groups/{id}",
-		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.UpdateGroupHandler)),
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Groups.UpdateGroupHandler))),
 	)
 	apiMux.Handle(
 		"DELETE /groups/{id}",
-		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.DeleteGroupHandler)),
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Groups.DeleteGroupHandler))),
 	)
 	apiMux.Handle(
 		"GET /groups/{id}/members",
-		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.GetGroupMembersHandler)),
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Groups.GetGroupMembersHandler))),
 	)
 	apiMux.Handle(
 		"GET /groups/{id}/membership",
-		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.GetMembershipHandler)),
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Groups.GetMembershipHandler))),
 	)
 	apiMux.Handle(
 		"DELETE /groups/{id}/members/{memberID}",
-		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.RemoveMemberHandler)),
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Groups.RemoveMemberHandler))),
 	)
 	apiMux.Handle(
 		"POST /groups/{id}/join-requests",
-		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.CreateJoinRequestHandler)),
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Groups.CreateJoinRequestHandler))),
 	)
 	apiMux.Handle(
 		"GET /groups/{id}/join-requests",
-		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.GetPendingJoinRequestsHandler)),
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Groups.GetPendingJoinRequestsHandler))),
 	)
 	apiMux.Handle(
 		"POST /groups/{id}/join-requests/{requestID}/accept",
-		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.AcceptJoinRequestHandler)),
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Groups.AcceptJoinRequestHandler))),
 	)
 	apiMux.Handle(
 		"POST /groups/{id}/join-requests/{requestID}/reject",
-		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.RejectJoinRequestHandler)),
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Groups.RejectJoinRequestHandler))),
 	)
 	apiMux.Handle(
 		"POST /groups/{id}/invitations",
-		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.CreateGroupInvitationHandler)),
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Groups.CreateGroupInvitationHandler))),
 	)
 	apiMux.Handle(
 		"GET /group-invitations",
-		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.GetPendingInvitationsHandler)),
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Groups.GetPendingInvitationsHandler))),
 	)
 	apiMux.Handle(
 		"POST /group-invitations/{invitationID}/accept",
-		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.AcceptGroupInvitationHandler)),
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Groups.AcceptGroupInvitationHandler))),
 	)
 	apiMux.Handle(
 		"POST /group-invitations/{invitationID}/decline",
-		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.DeclineGroupInvitationHandler)),
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Groups.DeclineGroupInvitationHandler))),
 	)
 
 	// =========================
@@ -228,23 +239,23 @@ func NewRouter(db *sql.DB, cfg config.Config) (http.Handler, error) {
 
 	apiMux.Handle(
 		"POST /groups/{id}/events",
-		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.CreateEventHandler)),
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Groups.CreateEventHandler))),
 	)
 	apiMux.Handle(
 		"GET /groups/{id}/events",
-		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.GetGroupEventsHandler)),
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Groups.GetGroupEventsHandler))),
 	)
 	apiMux.Handle(
 		"GET /groups/{id}/events/{eventID}",
-		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.GetEventHandler)),
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Groups.GetEventHandler))),
 	)
 	apiMux.Handle(
 		"GET /groups/{id}/events/{eventID}/responses",
-		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.GetEventResponsesHandler)),
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Groups.GetEventResponsesHandler))),
 	)
 	apiMux.Handle(
 		"PUT /groups/{id}/events/{eventID}/response",
-		sessionMiddleware(http.HandlerFunc(deps.Handlers.Groups.RespondToEventHandler)),
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Groups.RespondToEventHandler))),
 	)
 
 	// =========================
@@ -253,11 +264,11 @@ func NewRouter(db *sql.DB, cfg config.Config) (http.Handler, error) {
 
 	apiMux.Handle(
 		"POST /groups/{id}/posts",
-		sessionMiddleware(http.HandlerFunc(deps.Handlers.Posts.NewGroupPostHandler)),
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Posts.NewGroupPostHandler))),
 	)
 	apiMux.Handle(
 		"GET /groups/{id}/posts",
-		sessionMiddleware(http.HandlerFunc(deps.Handlers.Posts.ListGroupPostsHandler)),
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Posts.ListGroupPostsHandler))),
 	)
 
 	// =========================
@@ -266,7 +277,7 @@ func NewRouter(db *sql.DB, cfg config.Config) (http.Handler, error) {
 
 	apiMux.Handle(
 		"GET /groups/{id}/messages",
-		sessionMiddleware(http.HandlerFunc(deps.Handlers.Chat.GetGroupHistoryHandler)),
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Chat.GetGroupHistoryHandler))),
 	)
 
 	// =========================
@@ -275,19 +286,28 @@ func NewRouter(db *sql.DB, cfg config.Config) (http.Handler, error) {
 
 	apiMux.Handle(
 		"GET /notifications",
-		sessionMiddleware(http.HandlerFunc(deps.Handlers.Notifications.ListNotificationsHandler)),
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Notifications.ListNotificationsHandler))),
 	)
 	apiMux.Handle(
 		"GET /notifications/unread-count",
-		sessionMiddleware(http.HandlerFunc(deps.Handlers.Notifications.UnreadCountHandler)),
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Notifications.UnreadCountHandler))),
 	)
 	apiMux.Handle(
 		"PATCH /notifications/read-all",
-		sessionMiddleware(http.HandlerFunc(deps.Handlers.Notifications.MarkAllAsReadHandler)),
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Notifications.MarkAllAsReadHandler))),
 	)
 	apiMux.Handle(
 		"PATCH /notifications/{id}/read",
-		sessionMiddleware(http.HandlerFunc(deps.Handlers.Notifications.MarkAsReadHandler)),
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Notifications.MarkAsReadHandler))),
+	)
+
+	// =========================
+	// Search Routes
+	// =========================
+
+	apiMux.Handle(
+		"GET /search",
+		sessionMiddleware(http.HandlerFunc(deps.Handlers.Search.SearchHandler)),
 	)
 
 	handler := middleware.CORS(apiMux)

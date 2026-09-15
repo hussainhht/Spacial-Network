@@ -5,10 +5,10 @@
     -apple-system,
     sans-serif;
   color-scheme: dark;
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(140px, 1fr) minmax(320px, 460px) minmax(140px, 1fr);
   align-items: center;
-  justify-content: space-between;
-  gap: 20px;
+  gap: 16px;
   width: 100%;
   height: var(--app-navbar-height, 64px);
   flex-shrink: 0;
@@ -32,6 +32,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  justify-self: start;
   flex-shrink: 0;
   min-width: 0;
 }
@@ -77,11 +78,19 @@
 
 /* ================= Center Section (Search Bar) ================= */
 .searchSection {
-  flex: 1;
-  max-width: 420px;
+  width: 100%;
+  max-width: 440px;
+  justify-self: center;
   display: flex;
   align-items: center;
-  margin: 0 12px;
+  margin: 0;
+  position: relative;
+  transition: max-width 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.searchSectionOpen {
+  max-width: 660px;
+  z-index: 100;
 }
 
 .searchBar {
@@ -152,6 +161,7 @@
 .actionsSection {
   display: flex;
   align-items: center;
+  justify-self: end;
   gap: 14px;
   flex-shrink: 0;
 }
@@ -460,13 +470,14 @@
   .userName {
     display: none;
   }
-  .searchSection {
-    max-width: 280px;
-    margin: 0 8px;
-  }
   .navbar {
+    grid-template-columns: minmax(80px, 1fr) minmax(240px, 360px) minmax(80px, 1fr);
     gap: 12px;
     padding-inline: 20px;
+  }
+  .searchSection {
+    max-width: 360px;
+    margin: 0;
   }
 }
 

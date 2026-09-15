@@ -6,24 +6,30 @@
 package profile_test
 
 import (
+	"bytes"
 	"database/sql"
 	"encoding/json"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
 	"social/internal/followers"
 	"social/internal/requestctx"
+	"social/internal/upload"
 	"social/internal/users"
 	"social/tests/testutil"
 )
 
 type fixture struct {
-	db          *sql.DB
-	usersSvc    *users.Service
+	db           *sql.DB
+	usersSvc     *users.Service
 	usersHandler *users.Handler
 	followersSvc *followers.Service
+	uploadsRoot  string
 }
 
 func setup(t *testing.T) fixture {
@@ -31,16 +37,22 @@ func setup(t *testing.T) fixture {
 	db := testutil.NewTestDB(t)
 
 	followersRepo := followers.NewRepository(db)
-	followersSvc := followers.NewService(followersRepo)
+	followersSvc := followers.NewService(followersRepo, nil)
 
 	usersRepo := users.NewRepository(db)
 	usersSvc := users.NewService(usersRepo, followersSvc)
+	uploadsRoot := t.TempDir()
+	avatarStorage, err := upload.NewAvatarStorage(uploadsRoot, upload.AvatarSubdir, 5<<20)
+	if err != nil {
+		t.Fatalf("NewAvatarStorage: %v", err)
+	}
 
 	return fixture{
 		db:           db,
 		usersSvc:     usersSvc,
-		usersHandler: users.NewHandler(usersSvc),
+		usersHandler: users.NewHandler(usersSvc, avatarStorage),
 		followersSvc: followersSvc,
+		uploadsRoot:  uploadsRoot,
 	}
 }
 
@@ -60,6 +72,50 @@ func getProfile(t *testing.T, h *users.Handler, viewerID int, username string) *
 	req = req.WithContext(requestctx.WithUserID(req.Context(), viewerID))
 	rr := httptest.NewRecorder()
 	h.GetProfileHandler(rr, req)
+	return rr
+}
+
+func updateAvatar(t *testing.T, h *users.Handler, userID int, filename string, data []byte) *httptest.ResponseRecorder {
+	t.Helper()
+
+	var body bytes.Buffer
+	writer := multipart.NewWriter(&body)
+	part, err := writer.CreateFormFile("profilePhoto", filename)
+	if err != nil {
+		t.Fatalf("CreateFormFile: %v", err)
+	}
+	if _, err := part.Write(data); err != nil {
+		t.Fatalf("write avatar: %v", err)
+	}
+	if err := writer.Close(); err != nil {
+		t.Fatalf("close multipart writer: %v", err)
+	}
+
+	req := httptest.NewRequest(http.MethodPatch, "/api/users/me/avatar", &body)
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	req = req.WithContext(requestctx.WithUserID(req.Context(), userID))
+	rr := httptest.NewRecorder()
+	h.UpdateProfileAvatarHandler(rr, req)
+	return rr
+}
+
+func removeAvatar(t *testing.T, h *users.Handler, userID int) *httptest.ResponseRecorder {
+	t.Helper()
+
+	var body bytes.Buffer
+	writer := multipart.NewWriter(&body)
+	if err := writer.WriteField("remove_photo", "true"); err != nil {
+		t.Fatalf("write remove_photo: %v", err)
+	}
+	if err := writer.Close(); err != nil {
+		t.Fatalf("close multipart writer: %v", err)
+	}
+
+	req := httptest.NewRequest(http.MethodPatch, "/api/users/me/avatar", &body)
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	req = req.WithContext(requestctx.WithUserID(req.Context(), userID))
+	rr := httptest.NewRecorder()
+	h.UpdateProfileAvatarHandler(rr, req)
 	return rr
 }
 
@@ -167,6 +223,88 @@ func TestUpdateProfilePrivacy_PersistsVisibilityFlag(t *testing.T) {
 	}
 	if profile.IsPrivate {
 		t.Errorf("expected IsPrivate=false after toggling back to public")
+	}
+}
+
+func TestUpdateProfileAvatar_StoresValidatedImage(t *testing.T) {
+	f := setup(t)
+	userID := f.newUser(t, "avataruser", false)
+	jpeg := []byte{0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 'J', 'F', 'I', 'F', 0x00, 0x01, 0x01, 0x00}
+
+	rr := updateAvatar(t, f.usersHandler, userID, "avatar.txt", jpeg)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d; body=%s", rr.Code, http.StatusOK, rr.Body.String())
+	}
+
+	var resp users.UpdateProfileAvatarResponse
+	if err := json.Unmarshal(rr.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("unmarshal response: %v", err)
+	}
+	if resp.Profile == nil || !strings.HasPrefix(resp.Profile.ProfilePhoto, "/uploads/avatars/") {
+		t.Fatalf("profile_photo = %q, want /uploads/avatars/...", resp.Profile.ProfilePhoto)
+	}
+
+	storedPath := strings.TrimPrefix(resp.Profile.ProfilePhoto, "/uploads/")
+	if _, err := os.Stat(filepath.Join(f.uploadsRoot, storedPath)); err != nil {
+		t.Fatalf("expected uploaded avatar to exist: %v", err)
+	}
+
+	profile, err := f.usersSvc.GetProfileByID(userID)
+	if err != nil {
+		t.Fatalf("GetProfileByID: %v", err)
+	}
+	if !profile.ProfilePhoto.Valid || !strings.HasPrefix(profile.ProfilePhoto.String, "avatars/") {
+		t.Fatalf("stored profile photo = %#v, want avatars/... path", profile.ProfilePhoto)
+	}
+}
+
+func TestUpdateProfileAvatar_RejectsDisallowedFileType(t *testing.T) {
+	f := setup(t)
+	userID := f.newUser(t, "badavatar", false)
+
+	rr := updateAvatar(t, f.usersHandler, userID, "avatar.png", []byte("not really an image"))
+	if rr.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want %d; body=%s", rr.Code, http.StatusBadRequest, rr.Body.String())
+	}
+
+	profile, err := f.usersSvc.GetProfileByID(userID)
+	if err != nil {
+		t.Fatalf("GetProfileByID: %v", err)
+	}
+	if profile.ProfilePhoto.Valid {
+		t.Fatalf("profile photo should not be stored after invalid upload: %#v", profile.ProfilePhoto)
+	}
+}
+
+func TestUpdateProfileAvatar_RemoveClearsProfilePhoto(t *testing.T) {
+	f := setup(t)
+	userID := f.newUser(t, "removeavatar", false)
+	jpeg := []byte{0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 'J', 'F', 'I', 'F', 0x00, 0x01, 0x01, 0x00}
+
+	rr := updateAvatar(t, f.usersHandler, userID, "avatar.jpg", jpeg)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("upload status = %d, want %d; body=%s", rr.Code, http.StatusOK, rr.Body.String())
+	}
+	var uploadResp users.UpdateProfileAvatarResponse
+	if err := json.Unmarshal(rr.Body.Bytes(), &uploadResp); err != nil {
+		t.Fatalf("unmarshal upload response: %v", err)
+	}
+	oldPath := strings.TrimPrefix(uploadResp.Profile.ProfilePhoto, "/uploads/")
+
+	rr = removeAvatar(t, f.usersHandler, userID)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("remove status = %d, want %d; body=%s", rr.Code, http.StatusOK, rr.Body.String())
+	}
+
+	profile, err := f.usersSvc.GetProfileByID(userID)
+	if err != nil {
+		t.Fatalf("GetProfileByID: %v", err)
+	}
+	if profile.ProfilePhoto.Valid {
+		t.Fatalf("profile photo should be cleared after removal: %#v", profile.ProfilePhoto)
+	}
+	if _, err := os.Stat(filepath.Join(f.uploadsRoot, oldPath)); !os.IsNotExist(err) {
+		t.Fatalf("old avatar file should be removed, stat err=%v", err)
 	}
 }
 

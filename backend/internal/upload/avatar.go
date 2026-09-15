@@ -10,6 +10,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 
 	"github.com/google/uuid"
 )
@@ -20,8 +21,9 @@ const (
 )
 
 var (
-	ErrInvalidFileType = errors.New("unsupported image file type")
-	ErrFileTooLarge    = errors.New("file exceeds the maximum allowed size")
+	ErrInvalidFileType   = errors.New("unsupported image file type")
+	ErrFileTooLarge      = errors.New("file exceeds the maximum allowed size")
+	ErrInvalidUploadPath = errors.New("invalid upload path")
 )
 
 var allowedAvatarTypes = map[string]string{
@@ -107,7 +109,13 @@ func removeUpload(root, relPath string) error {
 	if relPath == "" {
 		return nil
 	}
-	return os.Remove(filepath.Join(root, relPath))
+
+	cleaned := filepath.Clean(relPath)
+	if filepath.IsAbs(cleaned) || cleaned == ".." || strings.HasPrefix(cleaned, ".."+string(os.PathSeparator)) {
+		return ErrInvalidUploadPath
+	}
+
+	return os.Remove(filepath.Join(root, cleaned))
 }
 
 func randomFilename(ext string) string {

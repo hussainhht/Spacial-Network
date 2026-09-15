@@ -46,7 +46,7 @@
   align-self: start;
   min-width: 0;
   height: calc(100svh - var(--app-navbar-height));
-  overflow: hidden;
+  overflow: visible;
   z-index: 3;
 }
 .routeContent {

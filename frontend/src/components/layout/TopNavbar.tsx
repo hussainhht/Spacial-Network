@@ -3,28 +3,25 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { getNavbarContext } from "./navbarContext";
-import { useGroupsSearch } from "@/features/groups/context/GroupsSearchProvider";
-import GroupSearchInput from "@/features/groups/components/GroupSearchInput";
 import { useEffect, useRef, useState } from "react";
 import AppIcon from "./AppIcon";
 import { useNotifications } from "@/features/notifications/context/NotificationProvider";
 import NotificationDropdown from "@/features/notifications/components/NotificationDropdown";
+import { useSearchModal } from "@/features/search/context/SearchContext";
+import UniversalNavbarSearch from "@/features/search/components/UniversalNavbarSearch";
 import { useLogout } from "./useLogout";
 import styles from "./TopNavbar.module.css";
 
 export default function TopNavbar() {
   const pathname = usePathname();
   const context = getNavbarContext(pathname);
-  const { search, setSearch } = useGroupsSearch();
+  const { isOpen, closeSearch } = useSearchModal();
   // Real notifications context
   const { unreadCount } = useNotifications();
   const { logout, loggingOut, error: logoutError } = useLogout();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [menuRoute, setMenuRoute] = useState(pathname);
   const bellRef = useRef<HTMLDivElement>(null);
-
-  // Visual-only input state (no API, no filtering, no side-effects)
-  const [searchValue, setSearchValue] = useState("");
 
   // Dropdown mockup state
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -33,7 +30,15 @@ export default function TopNavbar() {
     setMenuRoute(pathname);
     setNotificationsOpen(false);
     setUserMenuOpen(false);
+    closeSearch();
   }
+
+  useEffect(() => {
+    if (isOpen) {
+      setNotificationsOpen(false);
+      setUserMenuOpen(false);
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (!userMenuOpen && !notificationsOpen) return;
@@ -88,50 +93,25 @@ export default function TopNavbar() {
         </div>
       </div>
 
-      {/* 2. Search Bar: Visual placeholder only */}
-      <div className={styles.searchSection}>
-        {context.searchMode === "groups" ? (
-          <GroupSearchInput value={search} onChange={setSearch} />
-        ) : (
-          <div className={styles.searchBar}>
-            <span className={styles.searchIcon} aria-hidden="true">
-              <AppIcon name="search" />
-            </span>
-            <input
-              type="search"
-              className={styles.searchInput}
-              placeholder="Search people, posts, groups..."
-              aria-label="Search people, posts, groups"
-              value={searchValue}
-              onChange={(e) => setSearchValue(e.target.value)}
-            />
-          </div>
-        )}
+      {/* 2. Search Bar: Universal Search Trigger (⌘K) */}
+      <div
+        className={`${styles.searchSection} ${
+          isOpen ? styles.searchSectionOpen : ""
+        }`}
+      >
+        <UniversalNavbarSearch />
       </div>
 
-      {/* 3, 4, 5. Right Section: New Post, Notifications & User Area */}
+      {/* Right Section: Notifications & User Area */}
       <div className={styles.actionsSection}>
-        {/* 3. New Post Button */}
-        {context.action && (
-          <Link
 
-            href={context.action.href}
-            className={styles.newPostButton}
-            aria-label={context.action.ariaLabel}
-          >
-            <span className={styles.newPostIcon} aria-hidden="true">
-              <AppIcon name="plus" />
-            </span>
-            <span className={styles.newPostText}>{context.action.label}</span>
-          </Link>
-        )}
-
-        {/* 4. Notifications */}
+        {/* Notifications */}
         <div className={styles.bellWrapper} ref={bellRef}>
           <button
             type="button"
             className={styles.bellButton}
             onClick={() => {
+              closeSearch();
               setMenuRoute(pathname);
               setNotificationsOpen((prev) => !(prev && menuRoute === pathname));
               setUserMenuOpen(false);
@@ -166,6 +146,7 @@ export default function TopNavbar() {
             type="button"
             className={styles.userButton}
             onClick={() => {
+              closeSearch();
               setMenuRoute(pathname);
               setUserMenuOpen((prev) => !(prev && menuRoute === pathname));
               setNotificationsOpen(false);

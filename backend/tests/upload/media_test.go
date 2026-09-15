@@ -118,3 +118,16 @@ func TestMediaStorage_Save_RejectsOversizedFile(t *testing.T) {
 		t.Fatalf("expected ErrFileTooLarge, got %v", err)
 	}
 }
+
+func TestAvatarStorage_Remove_RejectsPathTraversal(t *testing.T) {
+	root := t.TempDir()
+	storage, err := upload.NewAvatarStorage(root, upload.AvatarSubdir, 5<<20)
+	if err != nil {
+		t.Fatalf("NewAvatarStorage: %v", err)
+	}
+
+	err = storage.Remove("../outside.png")
+	if err != upload.ErrInvalidUploadPath {
+		t.Fatalf("expected ErrInvalidUploadPath, got %v", err)
+	}
+}
