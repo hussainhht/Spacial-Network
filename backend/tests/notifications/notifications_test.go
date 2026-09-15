@@ -233,3 +233,230 @@ func TestNewGroupEvent_GeneratesNotificationForMembers(t *testing.T) {
 		t.Errorf("expected the event creator to receive no self-notification, got %d", len(creatorNotifs))
 	}
 }
+
+func TestGroupEventNotification_CarriesGroupData(t *testing.T) {
+	f := setup(t)
+	creator := f.newUser(t, "gnevdatacreator")
+	member := f.newUser(t, "gnevdatamember")
+
+	groupID, err := f.groupsSvc.CreateGroup(creator, "Data Event Group", "", "", groups.GroupPrivacyPrivate)
+	if err != nil {
+		t.Fatalf("CreateGroup: %v", err)
+	}
+	if err := f.groupsSvc.AddMember(int(groupID), member); err != nil {
+		t.Fatalf("AddMember: %v", err)
+	}
+
+	future := time.Now().Add(24 * time.Hour)
+	if _, err := f.groupsSvc.CreateEvent(int(groupID), creator, "Data Meetup", "Come along", future); err != nil {
+		t.Fatalf("CreateEvent: %v", err)
+	}
+
+	notifs, err := f.notifSvc.GetForUser(member, 10, 0)
+	if err != nil {
+		t.Fatalf("GetForUser(member): %v", err)
+	}
+	if len(notifs) != 1 {
+		t.Fatalf("expected 1 notification for the member, got %d", len(notifs))
+	}
+
+	data, ok := notifs[0].Data.(*notifications.GroupNotificationData)
+	if !ok || data == nil {
+		t.Fatalf("expected group_event notification to carry GroupNotificationData, got %#v", notifs[0].Data)
+	}
+	if data.GroupID != int(groupID) {
+		t.Errorf("Data.GroupID = %d, want %d", data.GroupID, groupID)
+	}
+	if data.GroupTitle != "Data Event Group" {
+		t.Errorf("Data.GroupTitle = %q, want %q", data.GroupTitle, "Data Event Group")
+	}
+}
+
+func TestAcceptJoinRequest_NotifiesRequester(t *testing.T) {
+	f := setup(t)
+	creator := f.newUser(t, "ajrcreator")
+	requester := f.newUser(t, "ajrrequester")
+
+	groupID, err := f.groupsSvc.CreateGroup(creator, "Accept Join Group", "", "", groups.GroupPrivacyPublic)
+	if err != nil {
+		t.Fatalf("CreateGroup: %v", err)
+	}
+	if err := f.groupsSvc.RequestToJoin(int(groupID), requester); err != nil {
+		t.Fatalf("RequestToJoin: %v", err)
+	}
+
+	pending, err := f.groupsSvc.GetPendingJoinRequests(int(groupID), creator)
+	if err != nil {
+		t.Fatalf("GetPendingJoinRequests: %v", err)
+	}
+	if len(pending) != 1 {
+		t.Fatalf("expected 1 pending join request, got %d", len(pending))
+	}
+
+	if err := f.groupsSvc.AcceptJoinRequest(int(groupID), pending[0].ID, creator); err != nil {
+		t.Fatalf("AcceptJoinRequest: %v", err)
+	}
+
+	notifs, err := f.notifSvc.GetForUser(requester, 10, 0)
+	if err != nil {
+		t.Fatalf("GetForUser(requester): %v", err)
+	}
+	if len(notifs) != 1 {
+		t.Fatalf("expected 1 notification for the requester, got %d", len(notifs))
+	}
+	if notifs[0].Type != notifications.NotificationGroupJoinAccepted {
+		t.Errorf("notification type = %q, want %q", notifs[0].Type, notifications.NotificationGroupJoinAccepted)
+	}
+}
+
+func TestRejectJoinRequest_NotifiesRequester(t *testing.T) {
+	f := setup(t)
+	creator := f.newUser(t, "rjrcreator")
+	requester := f.newUser(t, "rjrrequester")
+
+	groupID, err := f.groupsSvc.CreateGroup(creator, "Reject Join Group", "", "", groups.GroupPrivacyPublic)
+	if err != nil {
+		t.Fatalf("CreateGroup: %v", err)
+	}
+	if err := f.groupsSvc.RequestToJoin(int(groupID), requester); err != nil {
+		t.Fatalf("RequestToJoin: %v", err)
+	}
+
+	pending, err := f.groupsSvc.GetPendingJoinRequests(int(groupID), creator)
+	if err != nil {
+		t.Fatalf("GetPendingJoinRequests: %v", err)
+	}
+
+	if err := f.groupsSvc.RejectJoinRequest(int(groupID), pending[0].ID, creator); err != nil {
+		t.Fatalf("RejectJoinRequest: %v", err)
+	}
+
+	notifs, err := f.notifSvc.GetForUser(requester, 10, 0)
+	if err != nil {
+		t.Fatalf("GetForUser(requester): %v", err)
+	}
+	if len(notifs) != 1 {
+		t.Fatalf("expected 1 notification for the requester, got %d", len(notifs))
+	}
+	if notifs[0].Type != notifications.NotificationGroupJoinRejected {
+		t.Errorf("notification type = %q, want %q", notifs[0].Type, notifications.NotificationGroupJoinRejected)
+	}
+}
+
+func TestAcceptGroupInvitation_NotifiesInviter(t *testing.T) {
+	f := setup(t)
+	creator := f.newUser(t, "aginvcreator")
+	invitee := f.newUser(t, "aginvinvitee")
+
+	groupID, err := f.groupsSvc.CreateGroup(creator, "Accept Invite Group", "", "", groups.GroupPrivacyPrivate)
+	if err != nil {
+		t.Fatalf("CreateGroup: %v", err)
+	}
+	if err := f.groupsSvc.CreateGroupInvitation(int(groupID), creator, invitee); err != nil {
+		t.Fatalf("CreateGroupInvitation: %v", err)
+	}
+
+	pending, err := f.groupsSvc.GetPendingInvitations(invitee)
+	if err != nil {
+		t.Fatalf("GetPendingInvitations: %v", err)
+	}
+	if len(pending) != 1 {
+		t.Fatalf("expected 1 pending invitation, got %d", len(pending))
+	}
+
+	if err := f.groupsSvc.AcceptGroupInvitation(pending[0].ID, invitee); err != nil {
+		t.Fatalf("AcceptGroupInvitation: %v", err)
+	}
+
+	notifs, err := f.notifSvc.GetForUser(creator, 10, 0)
+	if err != nil {
+		t.Fatalf("GetForUser(creator): %v", err)
+	}
+	if len(notifs) != 1 {
+		t.Fatalf("expected 1 notification for the inviter, got %d", len(notifs))
+	}
+	if notifs[0].Type != notifications.NotificationGroupInvitationAccepted {
+		t.Errorf("notification type = %q, want %q", notifs[0].Type, notifications.NotificationGroupInvitationAccepted)
+	}
+}
+
+func TestDeclineGroupInvitation_NotifiesInviter(t *testing.T) {
+	f := setup(t)
+	creator := f.newUser(t, "dginvcreator")
+	invitee := f.newUser(t, "dginvinvitee")
+
+	groupID, err := f.groupsSvc.CreateGroup(creator, "Decline Invite Group", "", "", groups.GroupPrivacyPrivate)
+	if err != nil {
+		t.Fatalf("CreateGroup: %v", err)
+	}
+	if err := f.groupsSvc.CreateGroupInvitation(int(groupID), creator, invitee); err != nil {
+		t.Fatalf("CreateGroupInvitation: %v", err)
+	}
+
+	pending, err := f.groupsSvc.GetPendingInvitations(invitee)
+	if err != nil {
+		t.Fatalf("GetPendingInvitations: %v", err)
+	}
+
+	if err := f.groupsSvc.DeclineGroupInvitation(pending[0].ID, invitee); err != nil {
+		t.Fatalf("DeclineGroupInvitation: %v", err)
+	}
+
+	notifs, err := f.notifSvc.GetForUser(creator, 10, 0)
+	if err != nil {
+		t.Fatalf("GetForUser(creator): %v", err)
+	}
+	if len(notifs) != 1 {
+		t.Fatalf("expected 1 notification for the inviter, got %d", len(notifs))
+	}
+	if notifs[0].Type != notifications.NotificationGroupInvitationDeclined {
+		t.Errorf("notification type = %q, want %q", notifs[0].Type, notifications.NotificationGroupInvitationDeclined)
+	}
+}
+
+func TestRespondToEvent_NotifiesEventCreatorButNotSelfRSVP(t *testing.T) {
+	f := setup(t)
+	creator := f.newUser(t, "rsvpcreator")
+	member := f.newUser(t, "rsvpmember")
+
+	groupID, err := f.groupsSvc.CreateGroup(creator, "RSVP Group", "", "", groups.GroupPrivacyPrivate)
+	if err != nil {
+		t.Fatalf("CreateGroup: %v", err)
+	}
+	if err := f.groupsSvc.AddMember(int(groupID), member); err != nil {
+		t.Fatalf("AddMember: %v", err)
+	}
+
+	future := time.Now().Add(24 * time.Hour)
+	eventID, err := f.groupsSvc.CreateEvent(int(groupID), creator, "RSVP Party", "Fun", future)
+	if err != nil {
+		t.Fatalf("CreateEvent: %v", err)
+	}
+
+	// The creator's own RSVP to their event must not self-notify.
+	if err := f.groupsSvc.RespondToEvent(int(groupID), int(eventID), creator, groups.EventResponseGoing); err != nil {
+		t.Fatalf("RespondToEvent(creator): %v", err)
+	}
+	creatorNotifs, err := f.notifSvc.GetForUser(creator, 10, 0)
+	if err != nil {
+		t.Fatalf("GetForUser(creator): %v", err)
+	}
+	if len(creatorNotifs) != 0 {
+		t.Fatalf("expected no self-notification for the creator's own RSVP, got %d", len(creatorNotifs))
+	}
+
+	if err := f.groupsSvc.RespondToEvent(int(groupID), int(eventID), member, groups.EventResponseGoing); err != nil {
+		t.Fatalf("RespondToEvent(member): %v", err)
+	}
+
+	notifs, err := f.notifSvc.GetForUser(creator, 10, 0)
+	if err != nil {
+		t.Fatalf("GetForUser(creator) after member RSVP: %v", err)
+	}
+	if len(notifs) != 1 {
+		t.Fatalf("expected 1 notification for the creator, got %d", len(notifs))
+	}
+	if notifs[0].Type != notifications.NotificationEventRSVP {
+		t.Errorf("notification type = %q, want %q", notifs[0].Type, notifications.NotificationEventRSVP)
+	}
+}

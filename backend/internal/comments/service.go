@@ -2,19 +2,27 @@ package comments
 
 import (
 	"database/sql"
+	"log"
 
+	"social/internal/notifications"
 	"social/internal/posts"
 )
+
+type NotificationSender interface {
+	Notify(notifications.CreateNotificationRequest) error
+}
 
 type Service struct {
 	repo         *Repository
 	postsService *posts.Service
+	notifier     NotificationSender
 }
 
-func NewService(repo *Repository, postsService *posts.Service) *Service {
+func NewService(repo *Repository, postsService *posts.Service, notifier NotificationSender) *Service {
 	return &Service{
 		repo:         repo,
 		postsService: postsService,
+		notifier:     notifier,
 	}
 }
 
@@ -37,7 +45,41 @@ func (s *Service) CreateComment(userID, postID int, content string, imagePath sq
 		return nil, err
 	}
 
+	s.notifyAuthor(userID, postID)
+
 	return c, nil
+}
+
+// notifyAuthor tells postID's author that userID commented on their post,
+// provided they aren't commenting on their own post. Best-effort: a
+// notification failure never fails the comment itself.
+func (s *Service) notifyAuthor(userID, postID int) {
+	if s.notifier == nil {
+		return
+	}
+
+	post, err := s.postsService.GetPostByID(postID)
+	if err != nil {
+		log.Printf("comments: failed to load post %d for comment notification: %v", postID, err)
+		return
+	}
+	if post.User_ID == userID {
+		return
+	}
+
+	actor := userID
+	entityType := notifications.EntityPost
+	entityID := postID
+	if err := s.notifier.Notify(notifications.CreateNotificationRequest{
+		ReceiverID: post.User_ID,
+		ActorID:    &actor,
+		Type:       notifications.NotificationPostComment,
+		EntityType: &entityType,
+		EntityID:   &entityID,
+		Message:    "commented on your post",
+	}); err != nil {
+		log.Printf("comments: post_comment notification for post %d failed: %v", postID, err)
+	}
 }
 
 // ListComments returns every comment on postID, oldest first, provided

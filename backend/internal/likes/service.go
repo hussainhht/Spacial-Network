@@ -1,18 +1,27 @@
 package likes
 
 import (
+	"log"
+
+	"social/internal/notifications"
 	"social/internal/posts"
 )
+
+type NotificationSender interface {
+	Notify(notifications.CreateNotificationRequest) error
+}
 
 type Service struct {
 	repo         *Repository
 	postsService *posts.Service
+	notifier     NotificationSender
 }
 
-func NewService(repo *Repository, postsService *posts.Service) *Service {
+func NewService(repo *Repository, postsService *posts.Service, notifier NotificationSender) *Service {
 	return &Service{
 		repo:         repo,
 		postsService: postsService,
+		notifier:     notifier,
 	}
 }
 
@@ -33,7 +42,41 @@ func (s *Service) LikePost(userID, postID int) (*LikeStatus, error) {
 		return nil, err
 	}
 
+	s.notifyAuthor(userID, postID)
+
 	return s.repo.GetStatus(postID, userID)
+}
+
+// notifyAuthor tells postID's author that userID liked their post, provided
+// they aren't liking their own post. Best-effort: a notification failure
+// never fails the like itself.
+func (s *Service) notifyAuthor(userID, postID int) {
+	if s.notifier == nil {
+		return
+	}
+
+	post, err := s.postsService.GetPostByID(postID)
+	if err != nil {
+		log.Printf("likes: failed to load post %d for like notification: %v", postID, err)
+		return
+	}
+	if post.User_ID == userID {
+		return
+	}
+
+	actor := userID
+	entityType := notifications.EntityPost
+	entityID := postID
+	if err := s.notifier.Notify(notifications.CreateNotificationRequest{
+		ReceiverID: post.User_ID,
+		ActorID:    &actor,
+		Type:       notifications.NotificationPostLike,
+		EntityType: &entityType,
+		EntityID:   &entityID,
+		Message:    "liked your post",
+	}); err != nil {
+		log.Printf("likes: post_like notification for post %d failed: %v", postID, err)
+	}
 }
 
 // UnlikePost removes userID's like of postID. It uses the same permission

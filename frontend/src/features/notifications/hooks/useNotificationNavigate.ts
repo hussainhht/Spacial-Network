@@ -35,6 +35,31 @@ export function useNotificationNavigate() {
           break;
         }
 
+        case "group_invitation_accepted":
+        case "group_invitation_declined":
+        case "group_join_accepted":
+        case "group_join_rejected":
+        case "group_event":
+        case "event_rsvp": {
+          const groupData = getGroupNotificationData(notification);
+          if (groupData) {
+            router.push(`/groups/${groupData.group_id}`);
+          } else {
+            router.push("/groups");
+          }
+          break;
+        }
+
+        case "group_message": {
+          const groupData = getGroupNotificationData(notification);
+          if (groupData) {
+            router.push(`/groups/${groupData.group_id}#chat`);
+          } else {
+            router.push("/groups");
+          }
+          break;
+        }
+
         case "private_message":
           if (notification.actorId) {
             router.push(`/chat?partnerId=${notification.actorId}`);
@@ -60,20 +85,14 @@ export function useNotificationNavigate() {
           break;
         }
 
-        //todo add more notification types here in the future, such as post_comment, post_like, etc.
-        /*
-         * TODO: Add post notification navigation.
-         *
-         * Example future notification types:
-         * - post_comment
-         * - post_like
-         *
-         * Expected navigation:
-         * /posts/{postId}
-         *
-         * This should be implemented only after post notifications
-         * and postId are supported by the backend notification system.
-         */
+        case "post_like":
+        case "post_comment":
+          if (notification.entityId) {
+            router.push(`/posts/${notification.entityId}`);
+          } else {
+            router.push("/");
+          }
+          break;
 
         default:
           router.push("/");
