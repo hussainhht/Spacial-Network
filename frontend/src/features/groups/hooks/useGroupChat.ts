@@ -9,7 +9,8 @@ import type { GroupMessagePayload } from "@/lib/websocket/types";
 const PAGE_SIZE = 20;
 
 export function useGroupChat(groupId: number, isMember: boolean) {
-  const { isConnected, sendEvent, subscribeGroupMessages } = useWebSocket();
+  const { isConnected, sendEvent, subscribeGroupMessages, errorMessage } =
+    useWebSocket();
   const [messages, setMessages] = useState<GroupMessagePayload[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -77,6 +78,8 @@ export function useGroupChat(groupId: number, isMember: boolean) {
     const unsubscribe = subscribeGroupMessages((newMsg) => {
       if (newMsg.group_id !== groupIdRef.current) return;
 
+      setError(null);
+
       setMessages((prev) => {
         // Prevent duplicate messages if already present
         if (newMsg.id && prev.some((m) => m.id === newMsg.id)) {
@@ -113,6 +116,8 @@ export function useGroupChat(groupId: number, isMember: boolean) {
       const trimmed = content.trim();
       if (!trimmed || !groupId || !isMember) return;
 
+      setError(null);
+
       sendEvent("group_message", {
         group_id: groupId,
         content: trimmed,
@@ -128,7 +133,7 @@ export function useGroupChat(groupId: number, isMember: boolean) {
     loading,
     loadingMore,
     hasMore,
-    error,
+    error: error ?? errorMessage,
     sendGroupMessage,
     loadMoreHistory,
   };
