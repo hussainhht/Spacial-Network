@@ -187,6 +187,40 @@ func (h *Handler) ListCommentsHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(res)
 }
 
+// CommentCountResponse is the JSON-serializable view of a post's comment
+// count.
+type CommentCountResponse struct {
+	PostID int `json:"post_id"`
+	Count  int `json:"count"`
+}
+
+// GetCommentCountHandler returns how many comments exist on the post
+// identified by the {id} path segment.
+func (h *Handler) GetCommentCountHandler(w http.ResponseWriter, r *http.Request) {
+	userID, ok := requestctx.UserID(r.Context())
+	if !ok {
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(Response{Error: "Not logged in"})
+		return
+	}
+
+	postID, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(Response{Error: "Invalid post id"})
+		return
+	}
+
+	count, err := h.service.CountComments(userID, postID)
+	if err != nil {
+		writeCommentError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(CommentCountResponse{PostID: postID, Count: count})
+}
+
 // DeleteCommentHandler deletes the comment identified by the {commentID}
 // path segment. Only the comment's author may delete it.
 func (h *Handler) DeleteCommentHandler(w http.ResponseWriter, r *http.Request) {
