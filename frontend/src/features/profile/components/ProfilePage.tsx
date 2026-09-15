@@ -47,7 +47,7 @@ const emptyFollowStatus: FollowStatus = {
 };
 
 export default function ProfilePage({ username }: ProfilePageProps) {
-  const { subscribeNotifications } = useWebSocket();
+  const { subscribeNotifications, subscribeFollowRemoved } = useWebSocket();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isOwnProfile, setIsOwnProfile] = useState(!username);
   const [privacyOverride, setPrivacyOverride] = useState<boolean | null>(null);
@@ -276,23 +276,64 @@ export default function ProfilePage({ username }: ProfilePageProps) {
     };
   }, [profile, isLocked, isOwnProfile]);
 
-  // The backend pushes a "new_follower" notification over the existing
-  // WebSocket connection to whoever just gained a follower. Reusing it here
-  // keeps this profile's follower list live instead of only refreshing on
-  // the next page load. (Unfollows and accepted/declined follow requests
-  // don't emit any event server-side, so those still require a refresh.)
+  // The backend pushes realtime WebSocket events for every follow-graph
+  // change - persisted "notification" events for new_follower/
+  // follow_accepted, and the ephemeral "follow_removed" event for unfollows
+  // and declined requests (see backend/internal/followers/{service,ws}.go) -
+  // so this profile's follow button and lists stay in sync without a manual
+  // refresh.
   useEffect(() => {
-    if (!isOwnProfile || !profile) {
+    if (!profile) {
       return;
     }
 
     return subscribeNotifications((notification) => {
-      if (notification.type === "new_follower") {
+      if (isOwnProfile && notification.type === "new_follower") {
+        refreshFollowLists();
+        return;
+      }
+
+      // The profile being viewed just accepted a request we sent them.
+      if (
+        !isOwnProfile &&
+        notification.type === "follow_accepted" &&
+        notification.actor_id === profile.id
+      ) {
+        getFollowStatus(profile.username)
+          .then((status) => {
+            setIsFollowing(status.isFollowing);
+            setHasPendingFollowRequest(status.hasPendingRequest);
+          })
+          .catch(() => undefined);
         refreshFollowLists();
       }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOwnProfile, profile, subscribeNotifications]);
+
+  useEffect(() => {
+    if (!profile) {
+      return;
+    }
+
+    return subscribeFollowRemoved((event) => {
+      if (isOwnProfile && event.reason === "unfollowed") {
+        refreshFollowLists();
+        return;
+      }
+
+      // The profile being viewed just declined a request we sent them.
+      if (
+        !isOwnProfile &&
+        event.reason === "declined" &&
+        event.actor_id === profile.id
+      ) {
+        setIsFollowing(false);
+        setHasPendingFollowRequest(false);
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOwnProfile, profile, subscribeFollowRemoved]);
 
   async function handleToggleFollow() {
     if (

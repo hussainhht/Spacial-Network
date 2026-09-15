@@ -23,6 +23,7 @@ import type {
   NotificationEventPayload,
   GroupEventResponseUpdatedPayload,
   GroupMessagePayload,
+  FollowRemovedPayload,
 } from "@/lib/websocket/types";
 
 const WebSocketContext = createContext<WebSocketContextType | undefined>(
@@ -61,6 +62,12 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   const subscribeEventResponses = useCallback((listener: (event: GroupEventResponseUpdatedPayload) => void) => {
     eventResponseListeners.current.add(listener);
     return () => { eventResponseListeners.current.delete(listener); };
+  }, []);
+
+  const followRemovedListeners = useRef(new Set<(event: FollowRemovedPayload) => void>());
+  const subscribeFollowRemoved = useCallback((listener: (event: FollowRemovedPayload) => void) => {
+    followRemovedListeners.current.add(listener);
+    return () => { followRemovedListeners.current.delete(listener); };
   }, []);
 
   const notificationListeners = useRef(
@@ -198,6 +205,13 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
               eventResponseListeners.current.forEach(listener => listener(update));
               break;
             }
+            case "follow_removed": {
+              const removed = data.payload as FollowRemovedPayload;
+              followRemovedListeners.current.forEach((listener) =>
+                listener(removed),
+              );
+              break;
+            }
             case "error": {
               const errPayload = data.payload as ErrorPayload;
               console.error("WS error:", errPayload?.message);
@@ -274,6 +288,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
       lastEventResponseUpdate,
       subscribeGroupMessages,
       subscribeEventResponses,
+      subscribeFollowRemoved,
       subscribeNotifications,
       subscribeMessages,
       subscribeReadReceipts,
@@ -288,6 +303,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
       lastNotification,
       lastEventResponseUpdate,
       subscribeGroupMessages,
+      subscribeFollowRemoved,
       subscribeNotifications,
       subscribeMessages,
       subscribeReadReceipts,
