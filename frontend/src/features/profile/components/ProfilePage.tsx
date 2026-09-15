@@ -508,9 +508,7 @@ export default function ProfilePage({ username }: ProfilePageProps) {
     isPrivate: privacyOverride ?? profile.isPrivate,
   };
 
-  function handleEditProfile() {
-    setActiveTab("settings");
-
+  function scrollToSections() {
     const prefersReducedMotion = window.matchMedia(
       "(prefers-reduced-motion: reduce)",
     ).matches;
@@ -518,6 +516,19 @@ export default function ProfilePage({ username }: ProfilePageProps) {
       behavior: prefersReducedMotion ? "auto" : "smooth",
       block: "start",
     });
+  }
+
+  function handleEditProfile() {
+    setActiveTab("settings");
+    scrollToSections();
+  }
+
+  function handleViewConnections() {
+    if (isLocked) {
+      return;
+    }
+    setActiveTab("connections");
+    scrollToSections();
   }
 
   return (
@@ -538,6 +549,7 @@ export default function ProfilePage({ username }: ProfilePageProps) {
             followingCount={following.length}
             onEditProfile={handleEditProfile}
             onToggleFollow={handleToggleFollow}
+            onViewConnections={handleViewConnections}
           />
 
           {!isLocked && (

@@ -83,6 +83,7 @@ interface ProfileHeaderProps {
   followingCount: number;
   onEditProfile: () => void;
   onToggleFollow: () => void;
+  onViewConnections: () => void;
 }
 
 export default function ProfileHeader({
@@ -99,6 +100,7 @@ export default function ProfileHeader({
   followingCount,
   onEditProfile,
   onToggleFollow,
+  onViewConnections,
 }: ProfileHeaderProps) {
   const displayName = getDisplayName(
     profile.firstName,
@@ -158,20 +160,28 @@ export default function ProfileHeader({
         </p>
 
         {showStats && (
-          <dl className={styles.statsRow}>
+          <div className={styles.statsRow}>
             <div className={styles.statItem}>
-              <dt className={styles.statLabel}>Posts</dt>
-              <dd className={styles.statValue}>{postsCount}</dd>
+              <span className={styles.statValue}>{postsCount}</span>
+              <span className={styles.statLabel}>Posts</span>
             </div>
-            <div className={styles.statItem}>
-              <dt className={styles.statLabel}>Following</dt>
-              <dd className={styles.statValue}>{followingCount}</dd>
-            </div>
-            <div className={styles.statItem}>
-              <dt className={styles.statLabel}>Followers</dt>
-              <dd className={styles.statValue}>{followersCount}</dd>
-            </div>
-          </dl>
+            <button
+              type="button"
+              className={`${styles.statItem} ${styles.statItemLink}`}
+              onClick={onViewConnections}
+            >
+              <span className={styles.statValue}>{followingCount}</span>
+              <span className={styles.statLabel}>Following</span>
+            </button>
+            <button
+              type="button"
+              className={`${styles.statItem} ${styles.statItemLink}`}
+              onClick={onViewConnections}
+            >
+              <span className={styles.statValue}>{followersCount}</span>
+              <span className={styles.statLabel}>Followers</span>
+            </button>
+          </div>
         )}
 
         <div className={styles.actionsRow}>
