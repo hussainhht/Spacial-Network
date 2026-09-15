@@ -126,8 +126,17 @@ func (r *Repository) SearchGroups(viewerID int, query string, limit int) ([]Grou
 			(SELECT COUNT(*) FROM group_members gm WHERE gm.group_id = g.id) AS member_count,
 			COALESCE((SELECT gm.role FROM group_members gm WHERE gm.group_id = g.id AND gm.user_id = ?), '') AS membership_role
 		FROM groups g
-		WHERE LOWER(g.title) LIKE LOWER(?) ESCAPE '\'
+		WHERE (
+			LOWER(g.title) LIKE LOWER(?) ESCAPE '\'
 		   OR LOWER(g.description) LIKE LOWER(?) ESCAPE '\'
+		)
+		AND (
+			g.privacy = 'public'
+			OR EXISTS (
+				SELECT 1 FROM group_members gm
+				WHERE gm.group_id = g.id AND gm.user_id = ?
+			)
+		)
 		ORDER BY
 		  CASE WHEN LOWER(g.title) = LOWER(?) THEN 0
 		       WHEN LOWER(g.title) LIKE LOWER(?) ESCAPE '\' THEN 1
@@ -136,7 +145,7 @@ func (r *Repository) SearchGroups(viewerID int, query string, limit int) ([]Grou
 		  member_count DESC,
 		  g.id DESC
 		LIMIT ?
-	`, viewerID, likePattern, likePattern, query, prefixPattern, limit)
+	`, viewerID, likePattern, likePattern, viewerID, query, prefixPattern, limit)
 	if err != nil {
 		return nil, err
 	}
