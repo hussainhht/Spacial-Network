@@ -63,7 +63,7 @@ func setup(t *testing.T) fixture {
 	postsHandler := posts.NewHandler(postsSvc, usersSvc, groupsSvc, mediaStorage, "session_token", false, 0)
 
 	commentsRepo := comments.NewRepository(db)
-	commentsSvc := comments.NewService(commentsRepo, postsSvc)
+	commentsSvc := comments.NewService(commentsRepo, postsSvc, nil)
 
 	return fixture{
 		db: db, groupsSvc: groupsSvc, notificationsSvc: notifSvc,

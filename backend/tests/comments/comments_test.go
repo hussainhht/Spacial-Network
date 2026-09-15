@@ -18,6 +18,7 @@ import (
 	"social/internal/comments"
 	"social/internal/followers"
 	"social/internal/groups"
+	"social/internal/notifications"
 	"social/internal/posts"
 	"social/internal/requestctx"
 	"social/internal/upload"
@@ -31,6 +32,7 @@ type fixture struct {
 	postsHandler    *posts.Handler
 	commentsHandler *comments.Handler
 	commentsSvc     *comments.Service
+	notifSvc        *notifications.Service
 }
 
 func setup(t *testing.T) fixture {
@@ -55,8 +57,11 @@ func setup(t *testing.T) fixture {
 	}
 	postsHandler := posts.NewHandler(postsSvc, usersSvc, groupsSvc, postMedia, "session_token", false, 0)
 
+	notifRepo := notifications.NewRepository(db)
+	notifSvc := notifications.NewService(notifRepo, nil)
+
 	commentsRepo := comments.NewRepository(db)
-	commentsSvc := comments.NewService(commentsRepo, postsSvc)
+	commentsSvc := comments.NewService(commentsRepo, postsSvc, notifSvc)
 
 	commentMedia, err := upload.NewMediaStorage(t.TempDir(), upload.CommentsSubdir, 5<<20)
 	if err != nil {
@@ -64,7 +69,7 @@ func setup(t *testing.T) fixture {
 	}
 	commentsHandler := comments.NewHandler(commentsSvc, commentMedia)
 
-	return fixture{db: db, postsHandler: postsHandler, commentsHandler: commentsHandler, commentsSvc: commentsSvc}
+	return fixture{db: db, postsHandler: postsHandler, commentsHandler: commentsHandler, commentsSvc: commentsSvc, notifSvc: notifSvc}
 }
 
 func (f fixture) newUser(t *testing.T, username string) int {
@@ -216,5 +221,51 @@ func TestCreateComment_ImageAttachment_RejectsDisallowedType(t *testing.T) {
 
 	if rr.Code != http.StatusBadRequest {
 		t.Fatalf("status = %d, want %d; body=%s", rr.Code, http.StatusBadRequest, rr.Body.String())
+	}
+}
+
+func TestCreateComment_NotifiesAuthor(t *testing.T) {
+	f := setup(t)
+	author := f.newUser(t, "notifycommentauthor")
+	commenter := f.newUser(t, "notifycommenter")
+	postID := f.newPublicPost(t, author)
+
+	req := newCommentRequest(t, commenter, postID, "Nice post!", nil)
+	rr := httptest.NewRecorder()
+	f.commentsHandler.NewCommentHandler(rr, req)
+	if rr.Code != http.StatusCreated {
+		t.Fatalf("status = %d, want %d; body=%s", rr.Code, http.StatusCreated, rr.Body.String())
+	}
+
+	notifs, err := f.notifSvc.GetForUser(author, 10, 0)
+	if err != nil {
+		t.Fatalf("GetForUser(author): %v", err)
+	}
+	if len(notifs) != 1 {
+		t.Fatalf("expected 1 notification for the author, got %d", len(notifs))
+	}
+	if notifs[0].Type != notifications.NotificationPostComment {
+		t.Errorf("notification type = %q, want %q", notifs[0].Type, notifications.NotificationPostComment)
+	}
+}
+
+func TestCreateComment_SelfComment_NoNotification(t *testing.T) {
+	f := setup(t)
+	author := f.newUser(t, "selfcommentauthor")
+	postID := f.newPublicPost(t, author)
+
+	req := newCommentRequest(t, author, postID, "Commenting on my own post", nil)
+	rr := httptest.NewRecorder()
+	f.commentsHandler.NewCommentHandler(rr, req)
+	if rr.Code != http.StatusCreated {
+		t.Fatalf("status = %d, want %d; body=%s", rr.Code, http.StatusCreated, rr.Body.String())
+	}
+
+	notifs, err := f.notifSvc.GetForUser(author, 10, 0)
+	if err != nil {
+		t.Fatalf("GetForUser(author): %v", err)
+	}
+	if len(notifs) != 0 {
+		t.Fatalf("expected no self-notification for commenting on your own post, got %d", len(notifs))
 	}
 }
