@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import type { ChatSidebarProps } from "../types/chat";
 import { formatConversationDate, getDisplayName, getInitials } from "@/lib/utils";
 import NewChatModal from "./NewChatModal";
+import { getChatAvatarUrl } from "../utils/avatar";
 import styles from "./Chat.module.css";
 
 export default function ChatSidebar({
@@ -147,6 +148,7 @@ export default function ChatSidebar({
               c.partner_last_name,
               c.partner_username
             );
+            const avatarUrl = getChatAvatarUrl(c.partner_avatar);
 
             return (
               <div
@@ -165,9 +167,9 @@ export default function ChatSidebar({
                 }}
               >
                 <div className={styles.avatarWrapper}>
-                  {c.partner_avatar ? (
+                  {avatarUrl ? (
                     <img
-                      src={c.partner_avatar}
+                      src={avatarUrl}
                       alt={displayName}
                       className={styles.avatarImg}
                     />

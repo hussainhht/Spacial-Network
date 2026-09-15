@@ -145,7 +145,7 @@ export default function NewPostForm() {
       </Link>
 
       <div className={styles.layout}>
-        <form className={styles.composer} onSubmit={handleSubmit}>
+        <form id="new-post-form" className={styles.composer} onSubmit={handleSubmit}>
           <header className={styles.panelHeader}>
             <span className={styles.headerIcon}><AppIcon name="plus" /></span>
             <div><h1>Create a new post</h1><p>Share something with the community.</p></div>
@@ -165,7 +165,7 @@ export default function NewPostForm() {
 
           <section className={styles.section} aria-labelledby="media-heading">
             <div className={styles.sectionHeading}><div><h2 id="media-heading">Media</h2><p>JPEG, PNG, GIF or WebP · 5 MB each</p></div><span>{media.length}/{MAX_POST_MEDIA}</span></div>
-            <button
+            {media.length === 0 && <button
               className={`${styles.dropzone} ${dragging ? styles.dragging : ""}`}
               type="button"
               onClick={() => inputRef.current?.click()}
@@ -173,12 +173,11 @@ export default function NewPostForm() {
               onDragOver={(event) => event.preventDefault()}
               onDragLeave={() => setDragging(false)}
               onDrop={(event) => { event.preventDefault(); setDragging(false); void addFiles(event.dataTransfer.files); }}
-              disabled={media.length >= MAX_POST_MEDIA}
             >
               <span className={styles.uploadIcon}><AppIcon name="image" width={25} height={25} /></span>
-              <strong>{media.length >= MAX_POST_MEDIA ? "Media limit reached" : "Upload images or GIFs"}</strong>
+              <strong>Upload images or GIFs</strong>
               <span>Drag and drop or click to browse</span>
-            </button>
+            </button>}
             <input
               ref={inputRef}
               className="sr-only"
@@ -200,30 +199,31 @@ export default function NewPostForm() {
             </div>}
           </section>
 
-          <fieldset className={styles.privacy}>
-            <legend>Who can see this post?</legend>
-            <div className={styles.privacyGrid}>
-              {privacyOptions.map((option) => <label className={`${styles.privacyOption} ${visibility === option.value ? styles.selected : ""}`} key={option.value}>
-                <input className="sr-only" type="radio" name="visibility" value={option.value} checked={visibility === option.value} onChange={() => setVisibility(option.value)} />
-                <AppIcon name={option.icon} />
-                <span><strong>{option.label}</strong><small>{option.description}</small></span>
-              </label>)}
-            </div>
-          </fieldset>
-
-          {visibility === "custom" && <div className={styles.audience}><CustomViewerPicker selectedIds={viewerIds} onChange={setViewerIds} /></div>}
           {error && <p className={styles.error} role="alert" aria-live="assertive">{error}</p>}
-
-          <div className={styles.actions}>
-            <Link href="/">Cancel</Link>
-            <button type="submit" disabled={loading}>{loading ? "Creating…" : <><AppIcon name="send" width={17} height={17} /> Create post</>}</button>
-          </div>
         </form>
 
         <aside className={styles.preview} aria-labelledby="preview-heading">
           <header className={styles.previewHeader}><div><h2 id="preview-heading">Post preview</h2><p>This is how your post will look.</p></div><span>Live</span></header>
           <PostCard post={previewPost} preview />
-          <div className={styles.previewInfo}><span aria-hidden="true">i</span><div><strong>Preview updates in real time</strong><p>Your changes stay private until you create the post.</p></div></div>
+          <div className={styles.previewControls}>
+            <fieldset className={styles.privacy}>
+              <legend>Who can see this post?</legend>
+              <div className={styles.privacyGrid}>
+                {privacyOptions.map((option) => <label className={`${styles.privacyOption} ${visibility === option.value ? styles.selected : ""}`} key={option.value}>
+                  <input className="sr-only" type="radio" name="visibility" value={option.value} checked={visibility === option.value} onChange={() => setVisibility(option.value)} />
+                  <AppIcon name={option.icon} />
+                  <span><strong>{option.label}</strong><small>{option.description}</small></span>
+                </label>)}
+              </div>
+            </fieldset>
+
+            {visibility === "custom" && <div className={styles.audience}><CustomViewerPicker selectedIds={viewerIds} onChange={setViewerIds} /></div>}
+
+            <div className={styles.actions}>
+              <Link href="/">Cancel</Link>
+              <button type="submit" form="new-post-form" disabled={loading}>{loading ? "Creating…" : <><AppIcon name="send" width={17} height={17} /> Create post</>}</button>
+            </div>
+          </div>
         </aside>
       </div>
     </div>

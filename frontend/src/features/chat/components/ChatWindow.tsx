@@ -4,6 +4,7 @@ import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { ChatWindowProps } from "../types/chat";
 import { formatMessageTime, parseDate, getInitials } from "@/lib/utils";
+import { getChatAvatarUrl } from "../utils/avatar";
 import styles from "./Chat.module.css";
 
 const MAX_MESSAGE_LENGTH = 2000;
@@ -124,6 +125,7 @@ export default function ChatWindow({
   }
 
   const initials = getInitials("", "", partnerUsername);
+  const partnerAvatarUrl = getChatAvatarUrl(partnerAvatar);
 
   return (
     <section className={`${styles.floatingCard} ${styles.chatWindowCard}`}>
@@ -147,9 +149,9 @@ export default function ChatWindow({
             aria-label={`View ${partnerUsername}'s profile`}
           >
             <div className={styles.avatarWrapper}>
-              {partnerAvatar ? (
+              {partnerAvatarUrl ? (
                 <img
-                  src={partnerAvatar}
+                  src={partnerAvatarUrl}
                   alt={partnerUsername}
                   className={styles.avatarImg}
                 />
@@ -210,6 +212,12 @@ export default function ChatWindow({
         {messages.map((msg, index) => {
           const isMine = myUserId !== null && msg.sender_id === myUserId;
           const isRead = Boolean(msg.read_at);
+          const senderAvatarUrl = getChatAvatarUrl(msg.sender_avatar);
+          const senderInitials = getInitials(
+            msg.sender_first_name || "",
+            msg.sender_last_name || "",
+            msg.sender_username || (isMine ? "You" : partnerUsername)
+          );
           const showDateDivider =
             index === 0 || isDifferentDay(messages[index - 1]?.created_at, msg.created_at);
 
@@ -224,6 +232,15 @@ export default function ChatWindow({
               )}
 
               <div className={isMine ? styles.messageRowMine : styles.messageRowPartner}>
+                {!isMine && (
+                  <div className={styles.messageAvatar}>
+                    {senderAvatarUrl ? (
+                      <img src={senderAvatarUrl} alt="" className={styles.messageAvatarImage} />
+                    ) : (
+                      <span>{senderInitials}</span>
+                    )}
+                  </div>
+                )}
                 <div className={isMine ? styles.bubbleMine : styles.bubblePartner}>
                   <div className={styles.messageContent}>{msg.content}</div>
 
@@ -247,6 +264,15 @@ export default function ChatWindow({
                     )}
                   </div>
                 </div>
+                {isMine && (
+                  <div className={styles.messageAvatar}>
+                    {senderAvatarUrl ? (
+                      <img src={senderAvatarUrl} alt="" className={styles.messageAvatarImage} />
+                    ) : (
+                      <span>{senderInitials}</span>
+                    )}
+                  </div>
+                )}
               </div>
             </Fragment>
           );

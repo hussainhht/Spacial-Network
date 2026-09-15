@@ -55,10 +55,8 @@
 .previewHeader h2 { font-size: 16px; }
 .previewHeader > span { padding: 5px 9px; border: 1px solid var(--planet-border-strong); border-radius: 999px; background: var(--planet-accent-soft); color: var(--planet-accent); font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
 .preview :global(article) { --post-media-max-height: 360px; }
-.previewInfo { display: flex; gap: 10px; padding: 12px; border: 1px solid var(--space-border); border-radius: 12px; background: rgba(148,163,184,.035); }
-.previewInfo > span { display: grid; place-items: center; flex: 0 0 auto; width: 22px; height: 22px; border: 1px solid var(--planet-border-strong); border-radius: 50%; color: var(--planet-accent); font: 600 12px Georgia, serif; }
-.previewInfo strong { color: var(--space-text-label); font-size: 12px; }
-.previewInfo p { margin: 3px 0 0; color: var(--space-text-muted); font-size: 11px; line-height: 1.45; }
+.previewControls { display: grid; gap: 18px; padding-top: 2px; }
+.previewControls .actions { padding-top: 18px; }
 
 @media (max-width: 1050px) { .layout { grid-template-columns: minmax(0, 1fr); } .preview { position: static; } }
 @media (max-width: 620px) { .composer { padding: 19px; gap: 20px; } .privacyGrid { grid-template-columns: 1fr; } .privacyOption { min-height: 58px; } .thumbnails { grid-template-columns: repeat(3, minmax(0, 1fr)); } .preview { padding: 14px; } }
