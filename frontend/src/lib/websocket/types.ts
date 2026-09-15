@@ -23,6 +23,10 @@ export interface MessagePayload {
   id?: number;
   sender_id: number;
   recipient_id: number;
+  sender_username?: string;
+  sender_first_name?: string;
+  sender_last_name?: string;
+  sender_avatar?: string;
   content: string;
   created_at?: string;
 }

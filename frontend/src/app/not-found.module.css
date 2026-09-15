@@ -1,0 +1,115 @@
+.page {
+  display: grid;
+  min-height: 100dvh;
+  place-items: center;
+  padding: 24px;
+  color: var(--space-text-body);
+}
+
+.content {
+  display: grid;
+  justify-items: center;
+  width: min(100%, 540px);
+  padding: clamp(32px, 6vw, 56px);
+  border: 1px solid var(--planet-border-strong);
+  border-radius: 8px;
+  background: rgba(5, 10, 25, 0.82);
+  box-shadow: 0 22px 55px rgba(0, 0, 0, 0.3), inset 0 1px rgba(255, 255, 255, 0.04);
+  text-align: center;
+  backdrop-filter: blur(18px) saturate(135%);
+}
+
+.code {
+  color: var(--planet-accent);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+}
+
+.icon {
+  display: grid;
+  width: 58px;
+  height: 58px;
+  margin: 18px 0;
+  place-items: center;
+  border: 1px solid var(--planet-border-strong);
+  border-radius: 50%;
+  background: var(--planet-accent-soft);
+  color: var(--planet-accent);
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--space-text-label);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.content h1 {
+  margin: 8px 0 0;
+  color: var(--space-text-heading);
+  font-size: clamp(24px, 4vw, 32px);
+  font-weight: 650;
+  letter-spacing: 0;
+}
+
+.description {
+  max-width: 390px;
+  margin: 12px 0 0;
+  color: var(--space-text-muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 28px;
+}
+
+.primaryAction,
+.secondaryAction {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 15px;
+  border: 1px solid var(--planet-border-strong);
+  border-radius: 8px;
+  color: var(--space-text-heading);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.primaryAction {
+  background: var(--planet-accent-active);
+  box-shadow: 0 9px 22px -10px var(--planet-glow);
+}
+
+.secondaryAction {
+  color: var(--space-text-label);
+  background: rgba(148, 163, 184, 0.04);
+}
+
+.primaryAction:hover,
+.secondaryAction:hover {
+  border-color: var(--planet-accent);
+}
+
+.primaryAction:focus-visible,
+.secondaryAction:focus-visible {
+  outline: 2px solid var(--planet-focus-ring);
+  outline-offset: 3px;
+}
+
+@media (max-width: 480px) {
+  .page { padding: 16px; }
+  .content { padding: 30px 22px; }
+  .actions { width: 100%; }
+  .primaryAction,
+  .secondaryAction { flex: 1; }
+}

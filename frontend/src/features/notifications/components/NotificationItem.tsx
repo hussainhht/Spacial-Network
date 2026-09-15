@@ -5,6 +5,7 @@ import {
   InvitationActions,
   JoinRequestActions,
 } from "@/features/groups/components/GroupResponseActions";
+import { parseSharedPost } from "@/features/interactions/utils/sharedPost";
 import { timeAgo } from "@/lib/utils";
 import { useNotifications } from "../context/NotificationProvider";
 import { useNotificationNavigate } from "../hooks/useNotificationNavigate";
@@ -60,6 +61,14 @@ export default function NotificationItem({
   const groupData = getGroupNotificationData(notification);
   const followData = getFollowNotificationData(notification);
   const actorUsername = groupData?.actor_username ?? followData?.actor_username;
+  // A private_message notification's message is raw chat content, which for a
+  // shared post is a /posts/<id> link (+ optional note) - never show that
+  // raw link/id, mirror ChatSidebar's "sent a post" convention instead.
+  const sharedPost =
+    notification.type === "private_message"
+      ? parseSharedPost(notification.message)
+      : null;
+  const messageText = sharedPost ? "sent a post" : notification.message;
 
   return (
     <li className="notification-item" data-unread={!notification.isRead}>
@@ -75,7 +84,7 @@ export default function NotificationItem({
           </span>
           <span className="notification-item-message">
             {actorUsername && `@${actorUsername} `}
-            {notification.message}
+            {messageText}
           </span>
           {groupData?.group_title && (
             <span className="notification-group-title">
