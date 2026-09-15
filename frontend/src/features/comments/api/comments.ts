@@ -1,10 +1,14 @@
 // Client for the Go backend's Comments API (see backend/internal/comments).
 
 import { apiRequest } from "@/lib/api/client";
-import type { Comment } from "../types/comment";
+import type { Comment, CommentCount } from "../types/comment";
 
 export function listComments(postId: number): Promise<Comment[]> {
   return apiRequest<Comment[]>(`/posts/${postId}/comments`);
+}
+
+export function getCommentCount(postId: number): Promise<CommentCount> {
+  return apiRequest<CommentCount>(`/posts/${postId}/comments/count`);
 }
 
 export function createComment(

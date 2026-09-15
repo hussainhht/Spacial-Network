@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import type { ChatSidebarProps } from "../types/chat";
 import { formatConversationDate, getDisplayName, getInitials } from "@/lib/utils";
+import { parseSharedPost } from "@/features/interactions/utils/sharedPost";
 import NewChatModal from "./NewChatModal";
 import styles from "./Chat.module.css";
 
@@ -147,6 +148,10 @@ export default function ChatSidebar({
               c.partner_last_name,
               c.partner_username
             );
+            const sharedPost = c.last_message ? parseSharedPost(c.last_message) : null;
+            const previewText = sharedPost
+              ? `${c.last_message_from_me ? "You" : c.partner_username} sent a post`
+              : c.last_message || "No messages yet";
 
             return (
               <div
@@ -198,7 +203,7 @@ export default function ChatSidebar({
                         c.unread_count > 0 ? styles.itemSnippetUnread : ""
                       }`}
                     >
-                      {c.last_message || "No messages yet"}
+                      {previewText}
                     </span>
                     {c.unread_count > 0 && (
                       <span className={styles.itemUnreadPill}>

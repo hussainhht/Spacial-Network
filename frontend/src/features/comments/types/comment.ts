@@ -9,3 +9,9 @@ export interface Comment {
   is_owner: boolean;
   can_delete: boolean;
 }
+
+/** A post's comment count as last read from the server. */
+export interface CommentCount {
+  post_id: number;
+  count: number;
+}

@@ -246,6 +246,7 @@ export function useChat() {
           ...existing,
           last_message: lastMessage.content,
           last_message_at: lastMessage.created_at || new Date().toISOString(),
+          last_message_from_me: senderId === myUserId,
           unread_count: isUnread ? existing.unread_count + 1 : existing.unread_count,
         };
 
@@ -259,6 +260,7 @@ export function useChat() {
         partner_last_name: "",
         last_message: lastMessage.content,
         last_message_at: lastMessage.created_at || new Date().toISOString(),
+        last_message_from_me: senderId === myUserId,
         unread_count: isUnread ? 1 : 0,
       };
       return [newItem, ...prev];

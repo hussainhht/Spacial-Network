@@ -54,6 +54,21 @@ func (s *Service) ListComments(userID, postID int) ([]*comment, error) {
 	return s.repo.ListCommentsByPost(postID)
 }
 
+// CountComments returns how many comments exist on postID, provided userID
+// can view the post. Read-only, so it gates on visibility alone rather
+// than on group membership.
+func (s *Service) CountComments(userID, postID int) (int, error) {
+	canAccess, err := s.postsService.CanAccess(userID, postID)
+	if err != nil {
+		return 0, err
+	}
+	if !canAccess {
+		return 0, ErrPostNotFound
+	}
+
+	return s.repo.CountByPost(postID)
+}
+
 // IsGroupModerator reports whether userID is the creator of the group that
 // postID's post belongs to (false, nil if it isn't a group post). Meant to
 // be looked up once per request and reused across every comment on that
