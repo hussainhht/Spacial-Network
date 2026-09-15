@@ -70,6 +70,46 @@ func TestCreateEvent_TimeMustBeInFuture(t *testing.T) {
 	}
 }
 
+func TestCreateEvent_OptionalImageIsReturnedByListAndDetails(t *testing.T) {
+	f := setup(t)
+	creator := f.newUser(t, "evimagecreator")
+	groupID, err := f.groupsSvc.CreateGroup(creator, "Image Event Group", "", "", groups.GroupPrivacyPrivate)
+	if err != nil {
+		t.Fatalf("CreateGroup: %v", err)
+	}
+
+	eventID, err := f.groupsSvc.CreateEventWithImage(int(groupID), creator, "With cover", "Image event", time.Now().Add(24*time.Hour), "events/random-cover.webp")
+	if err != nil {
+		t.Fatalf("CreateEventWithImage: %v", err)
+	}
+	events, err := f.groupsSvc.GetGroupEvents(int(groupID), creator)
+	if err != nil {
+		t.Fatalf("GetGroupEvents: %v", err)
+	}
+	if len(events) != 1 || !events[0].ImagePath.Valid || events[0].ImagePath.String != "events/random-cover.webp" {
+		t.Fatalf("list image path = %#v, want events/random-cover.webp", events)
+	}
+	details, err := f.groupsSvc.GetEventDetails(int(groupID), int(eventID), creator)
+	if err != nil {
+		t.Fatalf("GetEventDetails: %v", err)
+	}
+	if !details.ImagePath.Valid || details.ImagePath.String != "events/random-cover.webp" {
+		t.Fatalf("details image path = %#v", details.ImagePath)
+	}
+
+	withoutImageID, err := f.groupsSvc.CreateEvent(int(groupID), creator, "Without cover", "Optional image", time.Now().Add(48*time.Hour))
+	if err != nil {
+		t.Fatalf("CreateEvent without image: %v", err)
+	}
+	withoutImage, err := f.groupsSvc.GetEventDetails(int(groupID), int(withoutImageID), creator)
+	if err != nil {
+		t.Fatalf("GetEventDetails without image: %v", err)
+	}
+	if withoutImage.ImagePath.Valid {
+		t.Fatalf("image path = %q, want NULL", withoutImage.ImagePath.String)
+	}
+}
+
 func TestCreateEvent_NonMemberCannotCreate(t *testing.T) {
 	for _, privacy := range []groups.GroupPrivacy{groups.GroupPrivacyPublic, groups.GroupPrivacyPrivate} {
 		t.Run(string(privacy), func(t *testing.T) {

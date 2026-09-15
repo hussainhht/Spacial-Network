@@ -7,6 +7,7 @@ import { respondToGroupEvent } from "../../api/groups";
 import { useGroupAction } from "../../hooks/useGroupAction";
 import type { EventResponseStatus, GroupEvent } from "../../types/group";
 import EventCountdown from "./EventCountdown";
+import AppIcon from "@/components/layout/AppIcon";
 
 interface EventCardProps {
   event: GroupEvent;
@@ -25,6 +26,19 @@ function formatEventTime(iso: string): string {
     hour: "numeric",
     minute: "2-digit",
   });
+}
+
+function EventCover({ event }: { event: GroupEvent }) {
+  const [failed, setFailed] = useState(false);
+  if (!event.imageUrl || failed) {
+    return <div className="group-event-cover group-event-cover-fallback" aria-label="Event cover placeholder"><AppIcon name="orbit" width={34} height={34} /></div>;
+  }
+  return (
+    <div className="group-event-cover">
+      {/* eslint-disable-next-line @next/next/no-img-element -- authenticated backend upload URL */}
+      <img src={event.imageUrl} alt="" onError={() => setFailed(true)} />
+    </div>
+  );
 }
 
 export default function EventCard({
@@ -50,17 +64,16 @@ export default function EventCard({
 
   return (
     <article className="group-event-card">
-      <h3 className="group-event-title">{event.title}</h3>
-      <p className="group-event-time">{formatEventTime(event.eventTime)}</p>
-      <EventCountdown eventTime={event.eventTime} />
-      {event.description && (
-        <p className="group-event-description">{event.description}</p>
-      )}
-      {creatorUsername && (
-        <p className="group-event-creator">Created by @{creatorUsername}</p>
-      )}
+	  <EventCover event={event} />
+	  <div className="group-event-details">
+		<h3 className="group-event-title">{event.title}</h3>
+		{event.description && <p className="group-event-description" title={event.description}>{event.description}</p>}
+		<p className="group-event-time"><AppIcon name="calendar" width={16} height={16} /> {formatEventTime(event.eventTime)}</p>
+		<EventCountdown eventTime={event.eventTime} />
+		{creatorUsername && <p className="group-event-creator">Created by <strong>@{creatorUsername}</strong></p>}
+	  </div>
       {isMember && (
-        <>
+		<div className="group-event-rsvp">
           <div
             className="group-event-attendee-actions"
             aria-label="Group responses"
@@ -69,14 +82,14 @@ export default function EventCard({
               <button
                 key={status}
                 type="button"
-                className="group-response-btn"
+				className={`group-response-stat ${status}${currentResponse === status ? " is-selected" : ""}`}
                 aria-expanded={openList === status}
                 aria-controls={`event-${event.id}-attendees`}
                 onClick={() => setOpenList(openList === status ? null : status)}
               >
-                {status === "going"
-                  ? `Going · ${event.goingCount}`
-                  : `Not Going · ${event.notGoingCount}`}
+				<span aria-hidden="true">{status === "going" ? "✓" : "×"}</span>
+				<strong>{status === "going" ? event.goingCount : event.notGoingCount}</strong>
+				<small>{status === "going" ? "Going" : "Not going"}</small>
               </button>
             ))}
           </div>
@@ -87,9 +100,7 @@ export default function EventCard({
               status={openList}
             />
           )}
-          <p className="group-muted group-event-response-label">
-            Your response
-          </p>
+		  <p className="group-event-response-label">{currentResponse ? `Your response: ${currentResponse === "going" ? "Going" : "Not going"}` : "Respond to this event"}</p>
           <div
             className="group-event-response-actions"
             aria-busy={Boolean(busy)}
@@ -101,7 +112,7 @@ export default function EventCard({
               aria-pressed={currentResponse === "going"}
               onClick={() => void respond("going")}
             >
-              {currentResponse === "going" ? "✓ Going" : "Going"}
+			  ✓ Going
             </button>
             <button
               type="button"
@@ -110,10 +121,10 @@ export default function EventCard({
               aria-pressed={currentResponse === "not_going"}
               onClick={() => void respond("not_going")}
             >
-              {currentResponse === "not_going" ? "✓ Not Going" : "Not Going"}
+			  × Not going
             </button>
           </div>
-        </>
+		</div>
       )}
       {error && (
         <p className="form-error" role="alert">

@@ -271,7 +271,8 @@ func (r *Repository) SearchEvents(viewerID int, query string, limit int) ([]Even
 			COALESCE(g.title, ''),
 			e.title,
 			e.description,
-			e.event_time
+			e.event_time,
+			e.image_path
 		FROM events e
 		JOIN groups g ON g.id = e.group_id
 		WHERE EXISTS (
@@ -300,8 +301,12 @@ func (r *Repository) SearchEvents(viewerID int, query string, limit int) ([]Even
 			&e.Title,
 			&e.Description,
 			&e.EventTime,
+			&e.ImagePath,
 		); err != nil {
 			return nil, err
+		}
+		if e.ImagePath.Valid {
+			e.ImageURL = normalizePhotoURL(e.ImagePath.String)
 		}
 		results = append(results, e)
 	}

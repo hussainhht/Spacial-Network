@@ -2,13 +2,23 @@ package groups
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
+	"strings"
 	"time"
 
 	"social/internal/requestctx"
+	"social/internal/upload"
 )
 
+const maxCreateEventRequestSize = 8 << 20
+
 func toEventResponse(e *Event) EventResponse {
+	var imagePath *string
+	if e.ImagePath.Valid {
+		url := "/uploads/" + e.ImagePath.String
+		imagePath = &url
+	}
 	return EventResponse{
 		ID: e.ID, GroupID: e.GroupID, CreatedBy: e.CreatedBy,
 		Title:               e.Title,
@@ -18,6 +28,7 @@ func toEventResponse(e *Event) EventResponse {
 		UpdatedAt:           e.UpdatedAt.Format(time.RFC3339),
 		CurrentUserResponse: e.CurrentUserResponse,
 		GoingCount:          e.GoingCount, NotGoingCount: e.NotGoingCount,
+		ImagePath: imagePath,
 	}
 }
 
@@ -45,7 +56,50 @@ func (h *Handler) CreateEventHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req CreateEventRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	var imagePath string
+	keepImage := false
+	defer func() {
+		if imagePath != "" && !keepImage && h.eventStorage != nil {
+			_ = h.eventStorage.Remove(imagePath)
+		}
+	}()
+	contentType := r.Header.Get("Content-Type")
+	if strings.HasPrefix(contentType, "multipart/form-data") {
+		r.Body = http.MaxBytesReader(w, r.Body, maxCreateEventRequestSize)
+		if err := r.ParseMultipartForm(maxCreateEventRequestSize); err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(CreateEventResponse{Success: false, Message: "Invalid request payload"})
+			return
+		}
+		if r.MultipartForm != nil {
+			defer r.MultipartForm.RemoveAll()
+		}
+		req = CreateEventRequest{Title: r.FormValue("title"), Description: r.FormValue("description"), EventTime: r.FormValue("event_time")}
+		file, header, fileErr := r.FormFile("image")
+		if fileErr == nil {
+			defer file.Close()
+			if h.eventStorage == nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				json.NewEncoder(w).Encode(CreateEventResponse{Success: false, Message: "Unable to store event image"})
+				return
+			}
+			imagePath, err = h.eventStorage.Save(file, header)
+			if err != nil {
+				status := http.StatusInternalServerError
+				message := "Unable to store event image"
+				if errors.Is(err, upload.ErrInvalidFileType) || errors.Is(err, upload.ErrFileTooLarge) {
+					status, message = http.StatusBadRequest, "Invalid event image upload"
+				}
+				w.WriteHeader(status)
+				json.NewEncoder(w).Encode(CreateEventResponse{Success: false, Message: message})
+				return
+			}
+		} else if !errors.Is(fileErr, http.ErrMissingFile) {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(CreateEventResponse{Success: false, Message: "Invalid event image upload"})
+			return
+		}
+	} else if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(CreateEventResponse{
 			Success: false,
@@ -84,7 +138,7 @@ func (h *Handler) CreateEventHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	eventID, err := h.service.CreateEvent(groupID, userID, title, description, eventTime)
+	eventID, err := h.service.CreateEventWithImage(groupID, userID, title, description, eventTime, imagePath)
 	if err != nil {
 		status, message := eventErrorResponse(err)
 		w.WriteHeader(status)
@@ -94,12 +148,19 @@ func (h *Handler) CreateEventHandler(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
+	keepImage = true
+	var imageURL *string
+	if imagePath != "" {
+		url := "/uploads/" + imagePath
+		imageURL = &url
+	}
 
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(CreateEventResponse{
-		Success: true,
-		Message: "Event created successfully",
-		EventID: eventID,
+		Success:   true,
+		Message:   "Event created successfully",
+		EventID:   eventID,
+		ImagePath: imageURL,
 	})
 }
 

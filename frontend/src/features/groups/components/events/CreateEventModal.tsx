@@ -4,6 +4,7 @@ import { type FormEvent, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { createGroupEvent } from "../../api/groups";
 import { useGroupAction } from "../../hooks/useGroupAction";
+import ImageAttachmentField from "@/components/ImageAttachmentField";
 
 interface CreateEventModalProps {
   groupId: number;
@@ -41,6 +42,7 @@ export default function CreateEventModal({
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
+  const [image, setImage] = useState<File | null>(null);
 
   useEffect(() => {
     previouslyFocusedRef.current = document.activeElement as HTMLElement | null;
@@ -96,6 +98,7 @@ export default function CreateEventModal({
         title: trimmedTitle,
         description: description.trim(),
         eventTime,
+        image,
       }),
     );
     if (ok) onClose();
@@ -170,6 +173,12 @@ export default function CreateEventModal({
                 />
               </div>
             </div>
+
+			<ImageAttachmentField
+			  id="event-cover"
+			  label="Event cover (optional)"
+			  onChange={setImage}
+			/>
 
             {(formError || error) && (
               <p className="form-error" role="alert">

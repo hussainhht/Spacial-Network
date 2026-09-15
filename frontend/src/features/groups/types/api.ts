@@ -67,4 +67,5 @@ export interface ApiEvent {
   current_user_response: EventResponseStatus | null;
   going_count: number;
   not_going_count: number;
+  image_path: string | null;
 }
