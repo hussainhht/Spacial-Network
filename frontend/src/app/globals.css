@@ -3123,6 +3123,159 @@ main:not(.chat-main):has(> form) form > p {
   font-size: 0.8rem;
 }
 
+/* ===================== Notification toast popups ===================== */
+
+.notification-toast-container {
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 0px) + 1.25rem);
+  right: 1.25rem;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  width: min(360px, calc(100vw - 2rem));
+  pointer-events: none;
+}
+
+.notification-toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  background:
+    linear-gradient(var(--planet-surface-tint), var(--planet-surface-tint)),
+    var(--space-bg-elevated);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--planet-border);
+  border-radius: var(--space-radius-md);
+  box-shadow:
+    0 20px 45px -12px rgba(2, 6, 23, 0.75),
+    0 0 0 1px rgba(255, 255, 255, 0.02) inset;
+  overflow: hidden;
+  animation: notification-toast-in 0.22s ease-out;
+}
+
+.notification-toast[data-leaving="true"] {
+  animation: notification-toast-out 0.22s ease-in forwards;
+}
+
+@keyframes notification-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes notification-toast-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
+}
+
+.notification-toast-button {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  flex: 1;
+  min-width: 0;
+  padding: 0.8rem 0.5rem 0.8rem 0.9rem;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.notification-toast-button:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.notification-toast-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--planet-accent-soft);
+  color: var(--planet-accent);
+}
+
+.notification-toast-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.notification-toast-type {
+  color: var(--space-text-label);
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.notification-toast-message {
+  color: var(--space-text-heading);
+  font-size: 0.85rem;
+  font-weight: 500;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.notification-toast-meta {
+  color: var(--space-text-muted);
+  font-size: 0.78rem;
+}
+
+.notification-toast-close {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin: 0.6rem 0.6rem 0 0;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: var(--space-text-muted);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.notification-toast-close:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--space-text-heading);
+}
+
+.notification-toast-close svg {
+  width: 14px;
+  height: 14px;
+}
+
+@media (max-width: 520px) {
+  .notification-toast-container {
+    left: 1rem;
+    right: 1rem;
+    width: auto;
+  }
+}
+
 .group-event-attendee-actions {
   display: flex;
   flex-wrap: wrap;
