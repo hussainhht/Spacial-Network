@@ -47,7 +47,8 @@ export function useNotificationNavigate() {
           router.push("/profile");
           break;
 
-        case "new_follower": {
+        case "new_follower":
+        case "follow_accepted": {
           const followData = getFollowNotificationData(notification);
           if (followData) {
             router.push(

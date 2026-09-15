@@ -17,7 +17,7 @@ export interface Profile {
   dateOfBirth: string;
 }
 
-export type ProfileTab = "posts" | "about";
+export type ProfileTab = "posts" | "connections" | "settings";
 
 export interface ProfileUserSummary {
   id: number;

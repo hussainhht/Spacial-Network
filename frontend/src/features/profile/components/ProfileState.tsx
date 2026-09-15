@@ -1,47 +1,41 @@
 "use client";
 
+import AppIcon from "@/components/layout/AppIcon";
 import styles from "./Profile.module.css";
 
 export function ProfileLoadingState() {
   return (
     <div
-      className={`${styles.container} ${styles.headerCard}`}
+      className={styles.container}
       role="status"
       aria-label="Loading profile..."
     >
-      <div className={`${styles.skeleton} ${styles.skeletonCover}`} />
-
-      <div className={styles.headerBody}>
-        <div className={styles.avatarAndActions}>
+      <div className={styles.identitySurface}>
+        <div className={styles.hero}>
           <div className={`${styles.skeleton} ${styles.skeletonAvatar}`} />
-          <div className={styles.actionsRow}>
+
+          <div className={styles.identity}>
+            <div className={`${styles.skeleton} ${styles.skeletonTitle}`} />
+            <div className={`${styles.skeleton} ${styles.skeletonText}`} />
             <div className={`${styles.skeleton} ${styles.skeletonButton}`} />
           </div>
         </div>
 
-        <div className={styles.identity}>
-          <div className={`${styles.skeleton} ${styles.skeletonTitle}`} />
-          <div
-            className={`${styles.skeleton} ${styles.skeletonText}`}
-            style={{ width: "100px", marginTop: "6px" }}
-          />
-        </div>
-
-        <div className={styles.statsRow}>
-          <div
-            className={`${styles.skeleton} ${styles.skeletonStats}`}
-            style={{ width: "90px" }}
-          />
+        <div className={styles.about}>
+          <div className={styles.aboutAside}>
+            <div className={`${styles.skeleton} ${styles.skeletonLabel}`} />
+          </div>
+          <div className={styles.aboutBody}>
+            <div className={`${styles.skeleton} ${styles.skeletonLine}`} />
+            <div className={`${styles.skeleton} ${styles.skeletonLine}`} />
+            <div
+              className={`${styles.skeleton} ${styles.skeletonLine} ${styles.skeletonLineShort}`}
+            />
+          </div>
         </div>
       </div>
 
-      <div style={{ padding: "0 2rem 2rem" }}>
-        <div
-          className={`${styles.skeleton} ${styles.skeletonTabs}`}
-          style={{ marginBottom: "1.5rem" }}
-        />
-        <div className={`${styles.skeleton} ${styles.skeletonCard}`} />
-      </div>
+      <div className={`${styles.skeleton} ${styles.skeletonTabs}`} />
     </div>
   );
 }
@@ -57,15 +51,20 @@ export function ProfileErrorState({
 }: ProfileErrorStateProps) {
   return (
     <div className={styles.errorCard} role="alert">
-      <div
-        className={styles.emptyIconCircle}
-        style={{
-          borderColor: "rgba(248, 113, 113, 0.3)",
-          color: "var(--space-error-text)",
-        }}
-      >
-        ⚠️
-      </div>
+      <span className={styles.errorIconCircle} aria-hidden="true">
+        <svg
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z M12 9v4 M12 17h.01" />
+        </svg>
+      </span>
       <h2 className={styles.errorTitle}>Unable to load profile</h2>
       <p className={styles.errorMessage}>{message}</p>
       {onRetry && (
@@ -80,14 +79,15 @@ export function ProfileErrorState({
 export function PrivateProfileState() {
   return (
     <section className={styles.lockedCard} aria-label="Private profile notice">
-      <div className={styles.lockedIconCircle} aria-hidden="true">
-        🔒
-      </div>
+      <span className={styles.lockedIconCircle} aria-hidden="true">
+        <AppIcon name="lock" width={22} height={22} />
+      </span>
 
       <h2 className={styles.lockedTitle}>This profile is private</h2>
 
       <p className={styles.lockedDescription}>
-        This user has set their profile to private. Protected content is hidden.
+        Only approved followers can see this person&apos;s introduction, posts,
+        and connections.
       </p>
     </section>
   );

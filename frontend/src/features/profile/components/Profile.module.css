@@ -1,10 +1,19 @@
 /* Profile Page Component Styles */
 
 .profilePage {
+  --profile-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --profile-avatar-size: clamp(72px, 7vw, 96px);
+  /* Width of the avatar column including its orbit rings; the About section
+     reuses it so its text aligns with the display name. */
+  --profile-lead: calc(var(--profile-avatar-size) + 28px);
+  --profile-gap: clamp(1rem, 2.5vw, 1.75rem);
+  --profile-hairline: rgba(148, 163, 184, 0.12);
+  --profile-surface: rgba(7, 10, 26, 0.7);
+
   position: relative;
   isolation: isolate;
   min-height: 100%;
-  padding: clamp(1.5rem, 3vw, 2.5rem) 1rem 3rem;
+  padding: clamp(0.75rem, 2vw, 1.25rem) clamp(0.75rem, 2vw, 1.5rem) 1.5rem;
   color: var(--space-text-body);
   font-family:
     ui-sans-serif,
@@ -20,9 +29,9 @@
   background: transparent;
 }
 
-.profilePage::before {
-  content: none;
-  display: none;
+.profilePage ::selection {
+  background: var(--planet-border-strong);
+  color: #ffffff;
 }
 
 .container {
@@ -30,153 +39,197 @@
   z-index: 1;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: clamp(0.85rem, 2vw, 1.25rem);
   width: 100%;
-  max-width: 1000px;
+  max-width: 980px;
   margin: 0 auto;
 }
 
 /* ================================================================== */
-/*  Profile Cover & Header                                            */
+/*  Identity Surface                                                  */
 /* ================================================================== */
 
-.headerCard {
-  overflow: hidden;
-  background:
-    linear-gradient(var(--planet-surface-tint), var(--planet-surface-tint)),
-    var(--space-card-bg);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid var(--planet-border);
-  border-radius: var(--space-radius-lg);
-  box-shadow:
-    0 20px 50px -15px rgba(2, 6, 23, 0.7),
-    0 0 0 1px rgba(255, 255, 255, 0.03) inset;
-}
-
-.coverBanner {
+/* One quiet surface holds the identity and introduction, keeping text
+   legible over the shared star field and optional 3D planet. */
+.identitySurface {
   position: relative;
-  height: 180px;
-  width: 100%;
-  background: linear-gradient(
-    135deg,
-    var(--space-bg-elevated) 0%,
-    var(--space-bg-soft) 100%
-  );
+  isolation: isolate;
   overflow: hidden;
+  padding: clamp(0.9rem, 2.2vw, 1.5rem);
+  border: 1px solid var(--profile-hairline);
+  border-radius: 28px;
+  background:
+    linear-gradient(180deg, rgba(7, 10, 26, 0.84), var(--profile-surface));
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow:
+    0 32px 80px -40px rgba(0, 0, 0, 0.85),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
-.coverArt {
+/* Faint nebula light behind the avatar. */
+.identitySurface::before {
+  content: "";
   position: absolute;
-  inset: 0;
-  opacity: 0.6;
-  background-image:
+  inset: -20%;
+  z-index: -1;
+  background:
     radial-gradient(
-      circle at 20% 40%,
+      circle at 24% 26%,
       var(--planet-glow) 0%,
-      transparent 50%
+      transparent 32%
     ),
     radial-gradient(
-      circle at 80% 30%,
-      var(--planet-glow) 0%,
-      transparent 55%
+      ellipse 45% 35% at 88% 8%,
+      rgba(132, 118, 214, 0.07) 0%,
+      transparent 70%
     ),
     radial-gradient(
-      1px 1px at 30px 40px,
-      rgba(255, 255, 255, 0.8),
-      transparent 100%
-    ),
-    radial-gradient(
-      1.5px 1.5px at 120px 80px,
-      rgba(255, 255, 255, 0.9),
-      transparent 100%
-    ),
-    radial-gradient(
-      1px 1px at 280px 50px,
-      rgba(255, 255, 255, 0.7),
-      transparent 100%
-    ),
-    radial-gradient(
-      2px 2px at 450px 110px,
-      rgba(224, 231, 255, 0.8),
-      transparent 100%
-    ),
-    radial-gradient(
-      1px 1px at 620px 30px,
-      rgba(255, 255, 255, 0.6),
-      transparent 100%
-    ),
-    radial-gradient(
-      1.5px 1.5px at 780px 100px,
-      rgba(255, 255, 255, 0.85),
-      transparent 100%
+      ellipse 60% 40% at 70% 110%,
+      var(--planet-surface-tint) 0%,
+      transparent 70%
     );
-  background-size:
-    100% 100%,
-    100% 100%,
-    250px 160px,
-    250px 160px,
-    250px 160px,
-    350px 180px,
-    250px 160px,
-    350px 180px;
+  pointer-events: none;
+  animation: nebulaDrift 26s ease-in-out infinite alternate;
 }
 
-.coverAccentLine {
+/* A handful of distant stars in the upper right. */
+.identitySurface::after {
+  content: "";
   position: absolute;
-  bottom: 0;
-  left: 0;
+  top: 0;
   right: 0;
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    var(--planet-border-strong) 30%,
-    var(--planet-border-strong) 70%,
-    transparent 100%
-  );
+  z-index: -1;
+  width: min(50%, 420px);
+  height: 180px;
+  background:
+    radial-gradient(1.2px 1.2px at 18% 34%, rgba(226, 236, 255, 0.7), transparent),
+    radial-gradient(1px 1px at 46% 18%, rgba(226, 236, 255, 0.5), transparent),
+    radial-gradient(1.6px 1.6px at 72% 52%, rgba(226, 236, 255, 0.75), transparent),
+    radial-gradient(1px 1px at 90% 26%, rgba(226, 236, 255, 0.45), transparent),
+    radial-gradient(1px 1px at 60% 80%, rgba(226, 236, 255, 0.35), transparent);
+  pointer-events: none;
 }
 
-.headerBody {
-  padding: 0 2rem 1.75rem;
-}
+/* ================================================================== */
+/*  Hero                                                              */
+/* ================================================================== */
 
-.avatarAndActions {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 1.5rem;
-  margin-top: -60px;
-  margin-bottom: 1.25rem;
+.hero {
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--profile-lead) minmax(0, 1fr);
+  align-items: center;
+  gap: var(--profile-gap);
 }
 
 /* ================================================================== */
 /*  Avatar                                                            */
 /* ================================================================== */
 
-.avatarWrapper {
+.avatarOrbit {
   position: relative;
-  flex-shrink: 0;
+  justify-self: center;
+  width: var(--profile-avatar-size);
+  aspect-ratio: 1;
+  animation: profileRise 900ms var(--profile-ease) both;
+}
+
+/* Scattered stars around the orbit. */
+.avatarOrbit::before {
+  content: "";
+  position: absolute;
+  inset: -22px;
+  background:
+    radial-gradient(1.6px 1.6px at 10% 20%, rgba(226, 236, 255, 0.85), transparent),
+    radial-gradient(1px 1px at 92% 34%, rgba(226, 236, 255, 0.65), transparent),
+    radial-gradient(1.2px 1.2px at 80% 94%, rgba(226, 236, 255, 0.55), transparent);
+  pointer-events: none;
+}
+
+/* Outer orbit drawn as a single lit arc that fades around the circle. */
+.avatarOrbit::after {
+  content: "";
+  position: absolute;
+  inset: -12px;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 200deg,
+    transparent 0deg,
+    var(--planet-border-strong) 80deg,
+    transparent 170deg,
+    transparent 360deg
+  );
+  -webkit-mask: radial-gradient(
+    farthest-side,
+    transparent calc(100% - 1.5px),
+    #000 calc(100% - 0.5px)
+  );
+  mask: radial-gradient(
+    farthest-side,
+    transparent calc(100% - 1.5px),
+    #000 calc(100% - 0.5px)
+  );
+  pointer-events: none;
+}
+
+.avatarHalo {
+  position: absolute;
+  inset: -40%;
+  border-radius: 50%;
+  background:
+    radial-gradient(closest-side, var(--planet-glow), transparent 75%),
+    radial-gradient(closest-side, var(--planet-glow), transparent 55%);
+  pointer-events: none;
+  animation: haloBreathe 7s ease-in-out infinite alternate;
+}
+
+.orbitRing {
+  position: absolute;
+  inset: -6px;
+  border: 1px solid var(--planet-border);
+  border-radius: 50%;
+  pointer-events: none;
+  animation: orbitSpin 64s linear infinite;
+}
+
+.orbitMoon {
+  position: absolute;
+  top: 50%;
+  left: -2.5px;
+  width: 5px;
+  height: 5px;
+  margin-top: -2.5px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 35% 35%,
+    #ffffff,
+    var(--planet-accent-hover) 75%
+  );
+  box-shadow:
+    0 0 10px 2px var(--planet-glow),
+    0 0 3px var(--planet-accent);
 }
 
 .avatar {
   position: relative;
-  width: 124px;
-  height: 124px;
-  border-radius: 50%;
-  border: 4px solid #0d122b;
-  box-shadow:
-    0 8px 24px -4px rgba(2, 6, 23, 0.8),
-    0 0 0 1px var(--planet-border);
+  z-index: 1;
+  width: 100%;
+  height: 100%;
   overflow: hidden;
+  border-radius: 50%;
   background: var(--space-bg-elevated);
+  box-shadow:
+    0 0 0 1px var(--planet-border-strong),
+    0 0 0 4px rgba(5, 8, 22, 0.92),
+    0 18px 40px -14px rgba(0, 0, 0, 0.85);
 }
 
 .avatarImage {
+  display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  display: block;
 }
 
 .avatarFallback {
@@ -185,340 +238,491 @@
   justify-content: center;
   width: 100%;
   height: 100%;
-  font-size: 2.5rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  font-size: calc(var(--profile-avatar-size) * 0.3);
+  font-weight: 600;
+  letter-spacing: 0.02em;
   color: var(--space-text-heading);
   background:
-    linear-gradient(var(--planet-accent-soft), var(--planet-accent-soft)),
-    var(--space-bg-elevated);
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
-}
-
-.privacyBadgeIcon {
-  position: absolute;
-  bottom: 4px;
-  right: 4px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: #111634;
-  border: 2px solid #0d122b;
-  color: var(--planet-accent-hover);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    radial-gradient(
+      circle at 30% 25%,
+      var(--planet-accent-soft),
+      transparent 70%
+    ),
+    linear-gradient(160deg, #141b3c 0%, #0a0e22 100%);
 }
 
 /* ================================================================== */
-/*  Header Actions                                                    */
-/* ================================================================== */
-
-.actionsRow {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-  padding-bottom: 0.5rem;
-}
-
-.btnPrimary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  min-height: 42px;
-  padding: 0.55rem 1.25rem;
-  border: 1px solid var(--planet-border-strong);
-  border-radius: var(--space-radius-md);
-  background: var(--planet-accent-active);
-  color: #ffffff;
-  font-size: 0.9rem;
-  font-weight: 600;
-  font-family: inherit;
-  letter-spacing: 0.01em;
-  cursor: pointer;
-  text-decoration: none;
-  box-shadow: 0 6px 18px -4px var(--planet-glow);
-  transition:
-    transform 0.15s ease,
-    filter 0.15s ease,
-    box-shadow 0.15s ease;
-}
-
-.btnPrimary:hover:not(:disabled) {
-  transform: translateY(-1px);
-  filter: brightness(1.1);
-  box-shadow: 0 8px 22px -4px var(--planet-glow);
-}
-
-.btnPrimary:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.btnSecondary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  min-height: 42px;
-  padding: 0.55rem 1.15rem;
-  border: 1px solid var(--space-border-strong);
-  border-radius: var(--space-radius-md);
-  background: rgba(19, 26, 56, 0.7);
-  color: var(--space-text-heading);
-  font-size: 0.9rem;
-  font-weight: 500;
-  font-family: inherit;
-  cursor: pointer;
-  text-decoration: none;
-  transition:
-    background-color 0.15s ease,
-    border-color 0.15s ease;
-}
-
-.btnSecondary:hover:not(:disabled) {
-  background: rgba(30, 41, 80, 0.85);
-  border-color: var(--planet-border-strong);
-}
-
-.btnSecondary:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-/* ================================================================== */
-/*  Identity Details                                                  */
+/*  Identity                                                          */
 /* ================================================================== */
 
 .identity {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
-}
-
-.nameRow {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  flex-wrap: wrap;
+  align-items: flex-start;
+  min-width: 0;
 }
 
 .fullName {
   margin: 0;
-  font-size: 1.65rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  max-width: 100%;
   color: var(--space-text-heading);
-}
-
-.privacyPill {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.2rem 0.65rem;
-  border-radius: 999px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-}
-
-.privacyPill[data-private="true"] {
-  background: var(--planet-accent-soft);
-  border: 1px solid var(--planet-border-strong);
-  color: var(--planet-accent-hover);
-}
-
-.privacyPill[data-private="false"] {
-  background: var(--planet-accent-soft);
-  border: 1px solid var(--planet-border-strong);
-  color: var(--planet-accent-hover);
-}
-
-.username {
-  margin: 0;
-  font-size: 0.95rem;
-  color: var(--space-text-muted);
-  font-weight: 400;
+  font-size: clamp(1.15rem, 0.95rem + 1vw, 1.6rem);
+  font-weight: 650;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+  animation: profileRise 800ms var(--profile-ease) 80ms both;
 }
 
 .nickname {
-  margin: 0.35rem 0 0;
-  color: var(--space-text-heading);
-  font-size: 1rem;
-  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.3rem 0 0;
+  max-width: 100%;
+  color: var(--space-text-label);
+  font-size: clamp(0.8rem, 0.76rem + 0.2vw, 0.9rem);
+  font-weight: 400;
+  overflow-wrap: anywhere;
+  animation: profileRise 800ms var(--profile-ease) 140ms both;
 }
 
-.aboutMe {
-  margin: 0.6rem 0 0;
-  max-width: 680px;
-  color: var(--space-text-body);
-  font-size: 0.95rem;
-  line-height: 1.6;
+.nickname::before {
+  content: "";
+  flex-shrink: 0;
+  width: 1.5rem;
+  height: 1px;
+  background: linear-gradient(90deg, var(--planet-accent), transparent);
 }
 
-/* ================================================================== */
-/*  Stats Bar                                                         */
-/* ================================================================== */
+.metaRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem 0.7rem;
+  margin: 0.5rem 0 0;
+  color: var(--space-text-muted);
+  font-size: 0.8rem;
+  animation: profileRise 800ms var(--profile-ease) 200ms both;
+}
+
+.username {
+  color: var(--space-text-label);
+  overflow-wrap: anywhere;
+}
+
+.metaDot {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.55;
+}
+
+.metaItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.metaItem svg {
+  color: var(--planet-accent);
+}
 
 .statsRow {
   display: flex;
-  align-items: center;
-  gap: 2rem;
-  margin-top: 1.5rem;
-  padding-top: 1.25rem;
-  border-top: 1px solid rgba(148, 163, 184, 0.12);
+  align-items: baseline;
+  gap: 1.5rem;
+  margin: 0.75rem 0 0;
+  animation: profileRise 800ms var(--profile-ease) 230ms both;
 }
 
 .statItem {
-  display: inline-flex;
+  display: flex;
   align-items: baseline;
-  gap: 0.45rem;
-  background: none;
+  gap: 0.4rem;
+  padding: 0;
   border: none;
-  padding: 0.3rem 0.5rem;
-  margin: -0.3rem -0.5rem;
-  border-radius: var(--space-radius-sm);
-  color: inherit;
+  background: none;
   font-family: inherit;
+}
+
+.statItemLink {
   cursor: pointer;
-  transition:
-    background-color 0.15s ease,
-    color 0.15s ease;
+  border-radius: 6px;
+  transition: color 150ms ease;
 }
 
-.statItem:hover {
-  background: rgba(148, 163, 184, 0.08);
+.statItemLink:hover {
+  color: var(--planet-accent);
 }
 
-.statNumber {
-  font-size: 1.2rem;
-  font-weight: 700;
+.statItemLink:hover .statValue,
+.statItemLink:hover .statLabel {
+  color: var(--planet-accent);
+}
+
+.statValue {
+  margin: 0;
   color: var(--space-text-heading);
+  font-size: 0.95rem;
+  font-weight: 650;
 }
 
 .statLabel {
-  font-size: 0.85rem;
+  margin: 0;
   color: var(--space-text-muted);
+  font-size: 0.8rem;
 }
 
-/* ================================================================== */
-/*  Tabs                                                              */
-/* ================================================================== */
-
-.tabsContainer {
+.actionsRow {
   display: flex;
-  gap: 0.5rem;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.15);
-  padding: 0 0.5rem 0.5rem;
-  overflow-x: auto;
-  scrollbar-width: thin;
-}
-
-.tabButton {
-  position: relative;
-  display: inline-flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.65rem 1.25rem;
-  border: 1px solid transparent;
-  border-radius: var(--space-radius-md);
-  background: transparent;
-  color: var(--space-text-muted);
-  font-size: 0.9rem;
-  font-weight: 500;
+  margin-top: 0.65rem;
+  animation: profileRise 800ms var(--profile-ease) 260ms both;
+}
+
+.followError {
+  margin: 0.5rem 0 0;
+}
+
+/* ================================================================== */
+/*  Buttons                                                           */
+/* ================================================================== */
+
+.btnPrimary,
+.btnSecondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 34px;
+  padding: 0.4rem 1rem;
+  border-radius: 999px;
   font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  white-space: nowrap;
   cursor: pointer;
   transition:
-    color 0.15s ease,
-    background-color 0.15s ease,
-    border-color 0.15s ease;
-  white-space: nowrap;
+    transform 180ms var(--profile-ease),
+    background-color 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    filter 180ms ease;
 }
 
-.tabButton:hover {
-  color: var(--space-text-heading);
-  background: rgba(148, 163, 184, 0.07);
+.btnPrimary {
+  border: 1px solid var(--planet-border-strong);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.1), transparent),
+    var(--planet-accent-active);
+  color: #ffffff;
+  box-shadow: 0 8px 22px -8px var(--planet-glow);
 }
 
-.tabButton[aria-selected="true"] {
+.btnPrimary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.1);
+  box-shadow: 0 10px 26px -8px var(--planet-glow);
+}
+
+.btnSecondary {
+  border: 1px solid var(--space-border-strong);
+  background: rgba(15, 21, 46, 0.6);
   color: var(--space-text-heading);
-  background: var(--planet-accent-soft);
+  font-weight: 500;
+}
+
+.btnSecondary:hover:not(:disabled) {
   border-color: var(--planet-border-strong);
-  box-shadow: 0 2px 12px var(--planet-glow);
+  background: rgba(26, 36, 72, 0.8);
 }
 
-.tabBadge {
-  padding: 0.1rem 0.45rem;
-  border-radius: 999px;
-  background: rgba(148, 163, 184, 0.15);
-  color: var(--space-text-muted);
-  font-size: 0.75rem;
-  font-weight: 600;
+.btnPrimary:disabled,
+.btnSecondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
-.tabButton[aria-selected="true"] .tabBadge {
-  background: var(--planet-border);
-  color: var(--space-text-heading);
+.textButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0;
+  border: 0;
+  background: none;
+  color: var(--planet-accent-hover);
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.textButton svg {
+  transition: transform 200ms var(--profile-ease);
+}
+
+.textButton:hover svg {
+  transform: translateX(3px);
 }
 
 /* ================================================================== */
-/*  Tab Content Areas                                                 */
+/*  About                                                             */
 /* ================================================================== */
 
-.tabContent {
+.about {
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--profile-lead) minmax(0, 1fr);
+  gap: var(--profile-gap);
+  margin-top: clamp(0.75rem, 2vw, 1.15rem);
+  padding-top: clamp(0.75rem, 2vw, 1.15rem);
+  animation: profileRise 900ms var(--profile-ease) 320ms both;
+}
+
+/* Horizon line: brightest at the avatar axis, fading out to the right. */
+.about::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--planet-border-strong) 18%,
+    var(--profile-hairline) 55%,
+    transparent
+  );
+}
+
+.aboutAside {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  align-items: flex-end;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.sectionEyebrow {
+  margin: 0;
+  color: var(--planet-accent-hover);
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.constellation {
+  width: 56px;
+  height: auto;
+  overflow: visible;
+  opacity: 0.75;
+}
+
+.constellation polyline {
+  fill: none;
+  stroke: var(--planet-border-strong);
+  stroke-width: 0.8;
+  stroke-linejoin: round;
+}
+
+.constellation circle {
+  fill: #dbe7ff;
+}
+
+.aboutBody {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.aboutText {
+  margin: 0;
+  max-width: 62ch;
+  /* Caps how tall a long bio can grow so the card's height stays
+     predictable regardless of content - it scrolls internally instead. */
+  max-height: 4.4em;
+  overflow-y: auto;
+  color: var(--space-text-body);
+  font-size: clamp(0.85rem, 0.82rem + 0.15vw, 0.95rem);
+  line-height: 1.45;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+  text-wrap: pretty;
+}
+
+.aboutEmpty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.4rem;
+}
+
+.aboutEmptyText {
+  margin: 0;
+  max-width: 52ch;
+  color: var(--space-text-muted);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  margin: 0.75rem 0 0;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--profile-hairline);
+}
+
+.detail {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.detailLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--space-text-muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.detailLabel svg {
+  color: var(--planet-accent);
+}
+
+.detailValue {
+  margin: 0;
+  color: var(--space-text-heading);
+  font-size: 0.88rem;
+  font-weight: 500;
+}
+
+.detailNote {
+  margin: 0;
+  color: var(--space-text-placeholder);
+  font-size: 0.7rem;
 }
 
 /* ================================================================== */
-/*  About Section & Info Cards                                        */
+/*  Sections & Tabs                                                   */
 /* ================================================================== */
 
-.aboutGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+.sections {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  scroll-margin-top: 1.5rem;
+  animation: profileRise 900ms var(--profile-ease) 420ms both;
+}
+
+.backButton {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 0.4rem;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--space-text-label);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 150ms ease;
+}
+
+.backButton:hover {
+  color: var(--planet-accent);
+}
+
+.tabPanel {
+  display: flex;
+  flex-direction: column;
   gap: 1.25rem;
+  min-width: 0;
+  animation: profileFade 360ms ease both;
 }
 
-.card {
-  padding: 1.5rem;
+.connectionsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.settingsGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.settingsColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  min-width: 0;
+}
+
+/* ================================================================== */
+/*  Cards & Info Rows                                                 */
+/* ================================================================== */
+
+.card,
+.privacyCard {
+  min-width: 0;
+  padding: clamp(1.25rem, 3vw, 1.75rem);
+  border: 1px solid var(--profile-hairline);
+  border-radius: 20px;
   background:
     linear-gradient(var(--planet-surface-tint), var(--planet-surface-tint)),
-    var(--space-card-bg);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid var(--planet-border);
-  border-radius: var(--space-radius-lg);
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+    var(--profile-surface);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
 }
 
 .cardTitle {
-  margin: 0 0 1.25rem;
-  font-size: 1.05rem;
-  font-weight: 600;
-  color: var(--space-text-heading);
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  margin: 0 0 1.15rem;
+  color: var(--space-text-muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
 }
 
 .infoList {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.85rem;
+  margin: 0;
 }
 
 .infoRow {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   justify-content: space-between;
   gap: 1rem;
-  padding-bottom: 0.75rem;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid var(--profile-hairline);
 }
 
 .infoRow:last-child {
@@ -530,24 +734,28 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  margin: 0;
   color: var(--space-text-muted);
-  font-size: 0.85rem;
+  font-size: 0.875rem;
 }
 
 .infoValue {
+  margin: 0;
+  min-width: 0;
   color: var(--space-text-heading);
   font-size: 0.9rem;
   font-weight: 500;
   text-align: right;
-  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 /* ================================================================== */
 /*  Profile Details Form                                              */
 /* ================================================================== */
 
-.detailsFormCard {
-  grid-column: 1 / -1;
+.detailsFormCard,
+.avatarFormCard {
+  width: 100%;
 }
 
 .profileForm {
@@ -583,9 +791,9 @@
   width: 100%;
   min-width: 0;
   padding: 0.65rem 0.85rem;
-  background: var(--space-input-bg);
   border: 1px solid var(--space-border);
   border-radius: var(--space-radius-md);
+  background: var(--space-input-bg);
   color: var(--space-text-heading);
   font: inherit;
   font-size: 0.95rem;
@@ -597,8 +805,8 @@
 
 .profileFormControl:focus {
   outline: none;
-  background: var(--space-input-bg-focus);
   border-color: var(--planet-accent);
+  background: var(--space-input-bg-focus);
   box-shadow: 0 0 0 3px var(--planet-border);
 }
 
@@ -608,9 +816,9 @@
 }
 
 .profileFormTextarea {
-  min-height: 120px;
+  min-height: 140px;
   resize: vertical;
-  line-height: 1.5;
+  line-height: 1.6;
 }
 
 .profileFormMeta {
@@ -622,17 +830,13 @@
 .profileFormActions {
   display: flex;
   justify-content: flex-end;
-  gap: 0.75rem;
   flex-wrap: wrap;
+  gap: 0.75rem;
 }
 
 /* ================================================================== */
 /*  Profile Avatar Form                                               */
 /* ================================================================== */
-
-.avatarFormCard {
-  grid-column: 1 / -1;
-}
 
 .avatarFormBody {
   display: flex;
@@ -642,43 +846,44 @@
 
 .avatarPreview {
   display: inline-flex;
+  flex: 0 0 88px;
   align-items: center;
   justify-content: center;
-  width: 96px;
-  height: 96px;
-  flex: 0 0 96px;
-  border-radius: 50%;
+  width: 88px;
+  height: 88px;
   overflow: hidden;
-  border: 3px solid rgba(167, 139, 250, 0.35);
-  background: linear-gradient(135deg, #4c338a 0%, #29386d 100%);
-  box-shadow: 0 8px 24px -8px rgba(2, 6, 23, 0.8);
+  border-radius: 50%;
+  background: linear-gradient(160deg, #141b3c 0%, #0a0e22 100%);
+  box-shadow:
+    0 0 0 1px var(--planet-border-strong),
+    0 0 0 4px rgba(5, 8, 22, 0.9);
 }
 
 .avatarPreviewImage {
+  display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  display: block;
 }
 
 .avatarPreviewFallback {
-  color: #ede9fe;
-  font-size: 1.8rem;
-  font-weight: 700;
+  color: var(--space-text-heading);
+  font-size: 1.6rem;
+  font-weight: 600;
 }
 
 .avatarFormControls {
   display: flex;
   flex: 1;
-  min-width: 0;
   flex-direction: column;
   gap: 0.65rem;
+  min-width: 0;
 }
 
 .avatarButtonRow {
   display: flex;
-  gap: 0.75rem;
   flex-wrap: wrap;
+  gap: 0.6rem;
 }
 
 .fileInput {
@@ -693,6 +898,10 @@
   border: 0;
 }
 
+.avatarFormControls .profileFormMeta {
+  align-self: flex-start;
+}
+
 .avatarFormSuccess {
   margin: 0;
   color: #86efac;
@@ -704,28 +913,38 @@
 /* ================================================================== */
 
 .userList {
-  list-style: none;
-  margin: 0;
-  padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
 .userListItem {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  min-width: 0;
+  margin: 0 -0.6rem;
+  padding: 0.5rem 0.6rem;
+  border-radius: 12px;
+  transition: background-color 150ms ease;
+}
+
+.userListItem:hover {
+  background: rgba(148, 163, 184, 0.06);
 }
 
 .userListAvatar {
+  flex-shrink: 0;
   border-radius: 50%;
   object-fit: cover;
-  flex-shrink: 0;
 }
 
 .userListAvatarFallback {
   display: inline-flex;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
   width: 40px;
@@ -735,28 +954,28 @@
   color: var(--planet-accent-hover);
   font-size: 0.8rem;
   font-weight: 600;
-  flex-shrink: 0;
 }
 
 .userListLink {
+  min-width: 0;
   color: var(--space-text-heading);
   font-size: 0.9rem;
   font-weight: 500;
   text-decoration: none;
+  overflow-wrap: anywhere;
 }
 
 .userListLink:hover {
   color: var(--planet-accent-hover);
-  text-decoration: underline;
 }
 
 .requestList {
-  list-style: none;
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
   margin: 0;
   padding: 0;
+  list-style: none;
 }
 
 .requestItem {
@@ -765,7 +984,7 @@
   justify-content: space-between;
   gap: 1rem;
   padding-bottom: 0.85rem;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+  border-bottom: 1px solid var(--profile-hairline);
 }
 
 .requestItem:last-child {
@@ -789,16 +1008,16 @@
 
 .requestActions {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
   flex-wrap: wrap;
+  align-items: center;
   justify-content: flex-end;
+  gap: 0.5rem;
 }
 
 .requestActions .btnPrimary,
 .requestActions .btnSecondary {
   min-height: 36px;
-  padding: 0.45rem 0.85rem;
+  padding: 0.4rem 0.95rem;
 }
 
 /* ================================================================== */
@@ -808,43 +1027,35 @@
 .privacyCard {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
-  padding: 1.5rem;
-  background:
-    linear-gradient(var(--planet-surface-tint), var(--planet-surface-tint)),
-    rgba(17, 24, 52, 0.75);
-  border: 1px solid var(--planet-border);
-  border-radius: var(--space-radius-lg);
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+  gap: 1rem;
 }
 
 .privacyCardHeader {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 1rem;
+}
+
+.privacyCardHeader .cardTitle {
+  margin: 0;
 }
 
 .privacyStatusTag {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  padding: 0.35rem 0.85rem;
+  padding: 0.25rem 0.7rem;
+  border: 1px solid var(--planet-border-strong);
   border-radius: 999px;
-  font-size: 0.825rem;
+  background: var(--planet-accent-soft);
+  color: var(--space-text-heading);
+  font-size: 0.8rem;
   font-weight: 600;
 }
 
-.privacyStatusTag[data-private="true"] {
-  background: var(--planet-accent-soft);
-  border: 1px solid var(--planet-border-strong);
-  color: var(--space-text-heading);
-}
-
-.privacyStatusTag[data-private="false"] {
-  background: var(--planet-accent-soft);
-  border: 1px solid var(--planet-border-strong);
-  color: var(--space-text-heading);
+.privacyStatusTag svg {
+  color: var(--planet-accent-hover);
 }
 
 .privacyCardDesc {
@@ -856,112 +1067,223 @@
 
 .privacyActions {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
   flex-wrap: wrap;
-  padding-top: 0.5rem;
+  align-items: center;
+  gap: 1rem;
 }
 
 /* ================================================================== */
-/*  Empty States & Locked State                                       */
+/*  Empty, Locked & Error States                                      */
 /* ================================================================== */
 
-.emptyCard {
+.emptyCard,
+.lockedCard,
+.errorCard {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  text-align: center;
-  padding: 3.5rem 2rem;
-  background:
-    linear-gradient(var(--planet-surface-tint), var(--planet-surface-tint)),
-    var(--space-card-bg);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px dashed rgba(148, 163, 184, 0.25);
-  border-radius: var(--space-radius-lg);
   gap: 0.75rem;
+  padding: clamp(2.5rem, 6vw, 3.75rem) clamp(1.25rem, 4vw, 2rem);
+  border: 1px solid var(--profile-hairline);
+  border-radius: 20px;
+  background:
+    radial-gradient(
+      ellipse 60% 70% at 50% 0%,
+      var(--planet-surface-tint),
+      transparent 70%
+    ),
+    var(--profile-surface);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  text-align: center;
 }
 
-.emptyIconCircle {
+.errorCard {
+  border-color: var(--space-error-border);
+}
+
+.emptyIconCircle,
+.lockedIconCircle,
+.errorIconCircle {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 56px;
-  height: 56px;
+  width: 52px;
+  height: 52px;
+  margin-bottom: 0.25rem;
+  border: 1px solid var(--planet-border);
   border-radius: 50%;
   background: var(--planet-accent-soft);
-  border: 1px solid var(--planet-border);
   color: var(--planet-accent-hover);
-  margin-bottom: 0.25rem;
-}
-
-.emptyTitle {
-  margin: 0;
-  font-size: 1.15rem;
-  font-weight: 600;
-  color: var(--space-text-heading);
-}
-
-.emptyDescription {
-  margin: 0;
-  max-width: 440px;
-  color: var(--space-text-muted);
-  font-size: 0.9rem;
-  line-height: 1.5;
-}
-
-.lockedCard {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 4rem 2rem;
-  background:
-    linear-gradient(var(--planet-surface-tint), var(--planet-surface-tint)),
-    rgba(16, 20, 48, 0.8);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid var(--planet-border);
-  border-radius: var(--space-radius-lg);
-  box-shadow: 0 20px 50px -15px rgba(2, 6, 23, 0.7);
-  gap: 1rem;
 }
 
 .lockedIconCircle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  background: var(--planet-accent-soft);
-  border: 1px solid var(--planet-border-strong);
-  color: var(--planet-accent-hover);
-  font-size: 1.75rem;
-  box-shadow: 0 0 30px var(--planet-glow);
+  width: 60px;
+  height: 60px;
+  border-color: var(--planet-border-strong);
+  box-shadow: 0 0 32px var(--planet-glow);
+}
+
+.errorIconCircle {
+  border-color: var(--space-error-border);
+  background: var(--space-error-bg);
+  color: var(--space-error-text);
+}
+
+.emptyTitle,
+.lockedTitle,
+.errorTitle {
+  margin: 0;
+  color: var(--space-text-heading);
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 .lockedTitle {
-  margin: 0;
-  font-size: 1.35rem;
-  font-weight: 700;
-  color: var(--space-text-heading);
+  font-size: 1.3rem;
 }
 
-.lockedDescription {
+.errorTitle {
+  color: var(--space-error-text);
+}
+
+.emptyDescription,
+.lockedDescription,
+.errorMessage {
   margin: 0;
-  max-width: 420px;
-  color: var(--space-text-body);
-  font-size: 0.95rem;
+  max-width: 440px;
+  color: var(--space-text-muted);
+  font-size: 0.925rem;
   line-height: 1.6;
+}
+
+.lockedDescription,
+.errorMessage {
+  color: var(--space-text-body);
+}
+
+.errorCard .btnSecondary {
+  margin-top: 0.5rem;
 }
 
 /* ================================================================== */
 /*  Skeleton Loading Placeholders                                     */
 /* ================================================================== */
+
+.skeleton {
+  border-radius: var(--space-radius-sm);
+  background: rgba(148, 163, 184, 0.1);
+  animation: pulseGlow 1.8s ease-in-out infinite;
+}
+
+.skeletonAvatar {
+  justify-self: center;
+  width: var(--profile-avatar-size);
+  aspect-ratio: 1;
+  border-radius: 50%;
+}
+
+.skeletonTitle {
+  width: min(320px, 90%);
+  height: 2.5rem;
+  border-radius: 10px;
+}
+
+.skeletonText {
+  width: 180px;
+  height: 1rem;
+  margin-top: 1rem;
+}
+
+.skeletonButton {
+  width: 124px;
+  height: 42px;
+  margin-top: 1.6rem;
+  border-radius: 999px;
+}
+
+.skeletonLabel {
+  width: 56px;
+  height: 0.8rem;
+  margin-top: 0.5rem;
+}
+
+.skeletonLine {
+  width: 100%;
+  height: 1.05rem;
+}
+
+.skeletonLine + .skeletonLine {
+  margin-top: 0.85rem;
+}
+
+.skeletonLineShort {
+  width: 58%;
+}
+
+.skeletonTabs {
+  width: min(340px, 100%);
+  height: 50px;
+  border-radius: 999px;
+}
+
+.skeletonCard {
+  width: 100%;
+  height: 180px;
+  border-radius: 20px;
+}
+
+/* ================================================================== */
+/*  Motion                                                            */
+/* ================================================================== */
+
+@keyframes profileRise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 12px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes profileFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes orbitSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes haloBreathe {
+  from {
+    opacity: 0.6;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1.03);
+  }
+}
+
+@keyframes nebulaDrift {
+  from {
+    transform: translate3d(-1.5%, -1%, 0);
+  }
+  to {
+    transform: translate3d(1.5%, 1%, 0);
+  }
+}
 
 @keyframes pulseGlow {
   0%,
@@ -973,140 +1295,85 @@
   }
 }
 
-.skeleton {
-  background: rgba(148, 163, 184, 0.12);
-  border-radius: var(--space-radius-sm);
-  animation: pulseGlow 1.8s ease-in-out infinite;
-}
+@media (prefers-reduced-motion: reduce) {
+  .profilePage *,
+  .profilePage *::before,
+  .profilePage *::after {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+  }
 
-.skeletonCover {
-  height: 180px;
-  width: 100%;
-}
-
-.skeletonAvatar {
-  width: 124px;
-  height: 124px;
-  border-radius: 50%;
-  border: 4px solid #0d122b;
-}
-
-.skeletonTitle {
-  height: 28px;
-  width: 220px;
-  border-radius: 6px;
-}
-
-.skeletonText {
-  height: 16px;
-  width: 140px;
-  border-radius: 4px;
-}
-
-.skeletonButton {
-  height: 40px;
-  width: 110px;
-  border-radius: var(--space-radius-md);
-}
-
-.skeletonStats {
-  height: 24px;
-  width: 320px;
-  border-radius: 6px;
-}
-
-.skeletonTabs {
-  height: 44px;
-  width: 100%;
-  border-radius: var(--space-radius-md);
-}
-
-.skeletonCard {
-  height: 180px;
-  width: 100%;
-  border-radius: var(--space-radius-lg);
-}
-
-/* ================================================================== */
-/*  Error State Card                                                  */
-/* ================================================================== */
-
-.errorCard {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 3.5rem 2rem;
-  background: var(--space-card-bg);
-  border: 1px solid var(--space-error-border);
-  border-radius: var(--space-radius-lg);
-  gap: 1rem;
-}
-
-.errorTitle {
-  margin: 0;
-  font-size: 1.3rem;
-  color: var(--space-error-text);
-  font-weight: 600;
-}
-
-.errorMessage {
-  margin: 0;
-  color: var(--space-text-body);
-  font-size: 0.95rem;
+  .btnPrimary:hover:not(:disabled),
+  .textButton:hover svg {
+    transform: none;
+  }
 }
 
 /* ================================================================== */
 /*  Responsive Design                                                 */
 /* ================================================================== */
 
-@media (max-width: 768px) {
-  .coverBanner {
-    height: 140px;
+@media (max-width: 960px) {
+  .settingsGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 720px) {
+  .hero {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+    gap: 0.85rem;
+    text-align: center;
   }
 
-  .headerBody {
-    padding: 0 1.25rem 1.5rem;
+  .avatarOrbit {
+    margin-top: 0.25rem;
   }
 
-  .avatarAndActions {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
-    margin-top: -50px;
+  .identity {
+    align-items: center;
   }
 
-  .avatar {
-    width: 100px;
-    height: 100px;
+  .nickname::before {
+    display: none;
   }
 
-  .avatarFallback {
-    font-size: 2rem;
-  }
-
+  .metaRow,
   .actionsRow {
-    width: 100%;
-    justify-content: flex-start;
+    justify-content: center;
   }
 
-  .statsRow {
-    gap: 1.25rem;
-    flex-wrap: wrap;
+  .about {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.6rem;
   }
 
-  .aboutGrid {
-    grid-template-columns: 1fr;
+  .about::before {
+    background: linear-gradient(
+      90deg,
+      transparent,
+      var(--planet-border-strong) 50%,
+      transparent
+    );
+  }
+
+  .aboutAside {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .constellation {
+    width: 44px;
+  }
+
+  .connectionsGrid {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .profileFormGrid {
-    grid-template-columns: 1fr;
-  }
-
-  .avatarFormBody {
-    align-items: flex-start;
-    flex-direction: column;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .requestItem {
@@ -1115,31 +1382,39 @@
   }
 
   .requestActions {
-    width: 100%;
     justify-content: flex-start;
   }
 }
 
 @media (max-width: 480px) {
   .profilePage {
-    padding: 1rem 0.75rem 2.5rem;
+    --profile-avatar-size: 76px;
+    padding: 0.85rem 0.6rem 1.5rem;
   }
 
-  .fullName {
-    font-size: 1.35rem;
+  .identitySurface {
+    padding: 0.85rem 0.7rem;
+    border-radius: 22px;
   }
 
-  .statsRow {
-    gap: 1rem;
-    justify-content: space-between;
+  .avatarOrbit::before {
+    display: none;
   }
 
-  .statNumber {
-    font-size: 1.05rem;
+  .actionsRow {
+    width: 100%;
   }
 
-  .tabButton {
-    padding: 0.5rem 0.9rem;
-    font-size: 0.825rem;
+  .actionsRow > * {
+    flex: 1 1 auto;
+  }
+
+  .avatarFormBody {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .profileFormActions > * {
+    flex: 1 1 auto;
   }
 }

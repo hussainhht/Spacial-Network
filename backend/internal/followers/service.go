@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"social/internal/notifications"
+	"social/internal/websocket"
 )
 
 type NotificationSender interface {
@@ -13,12 +14,14 @@ type NotificationSender interface {
 type Service struct {
 	repo     *Repository
 	notifier NotificationSender
+	hub      *websocket.Hub
 }
 
-func NewService(repo *Repository, notifier NotificationSender) *Service {
+func NewService(repo *Repository, notifier NotificationSender, hub *websocket.Hub) *Service {
 	return &Service{
 		repo:     repo,
 		notifier: notifier,
+		hub:      hub,
 	}
 }
 
@@ -49,7 +52,13 @@ func (s *Service) UnfollowUser(followerID, followedID int) error {
 		return ErrCannotFollowSelf
 	}
 
-	return s.repo.UnfollowUser(followerID, followedID)
+	if err := s.repo.UnfollowUser(followerID, followedID); err != nil {
+		return err
+	}
+
+	s.broadcastFollowRemoved(followedID, followerID, FollowRemovedUnfollowed)
+
+	return nil
 }
 
 func (s *Service) IsFollowing(followerID, followedID int) (bool, error) {
@@ -123,11 +132,35 @@ func (s *Service) GetPendingFollowRequests(targetID int) ([]FollowRequestWithReq
 }
 
 func (s *Service) AcceptFollowRequest(requestID, targetID int) error {
-	return s.repo.AcceptFollowRequest(requestID, targetID)
+	requesterID, err := s.repo.AcceptFollowRequest(requestID, targetID)
+	if err != nil {
+		return err
+	}
+
+	s.notify(
+		requesterID,
+		targetID,
+		notifications.NotificationFollowAccepted,
+		notifications.EntityFollowRequest,
+		requestID,
+		"accepted your follow request",
+	)
+
+	return nil
 }
 
 func (s *Service) DeclineFollowRequest(requestID, targetID int) error {
-	return s.repo.DeclineFollowRequest(requestID, targetID)
+	requesterID, err := s.repo.DeclineFollowRequest(requestID, targetID)
+	if err != nil {
+		return err
+	}
+
+	// Declines stay quiet - see EventFollowRemoved's doc comment - so this
+	// only pushes the ephemeral WebSocket sync event, not a persisted
+	// notification.
+	s.broadcastFollowRemoved(requesterID, targetID, FollowRemovedDeclined)
+
+	return nil
 }
 
 // FilterFollowerIDs returns the subset of candidateIDs that currently

@@ -3,26 +3,19 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
+import AppIcon from "@/components/layout/AppIcon";
 import { getBackendBaseUrl } from "@/lib/api";
 import { getDisplayName, getInitials } from "@/lib/utils";
-import type { Profile, ProfileTab } from "../types/profile";
+import type { Profile } from "../types/profile";
 import styles from "./Profile.module.css";
 
-function ProfileCover() {
-  return (
-    <div className={styles.coverBanner} aria-hidden="true">
-      <div className={styles.coverArt} />
-      <div className={styles.coverAccentLine} />
-    </div>
-  );
-}
+const AVATAR_SIZE = 168;
 
 interface ProfileAvatarProps {
   firstName: string;
   lastName: string;
   username: string;
   profilePhoto?: string;
-  isPrivate: boolean;
 }
 
 function ProfileAvatar({
@@ -30,7 +23,6 @@ function ProfileAvatar({
   lastName,
   username,
   profilePhoto,
-  isPrivate,
 }: ProfileAvatarProps) {
   const [failedPhotoUrl, setFailedPhotoUrl] = useState<string | null>(null);
 
@@ -46,93 +38,33 @@ function ProfileAvatar({
   const hasPhoto = Boolean(photoUrl) && failedPhotoUrl !== photoUrl;
 
   return (
-    <div className={styles.avatarWrapper}>
+    <div className={styles.avatarOrbit}>
+      <span className={styles.avatarHalo} aria-hidden="true" />
+      <span className={styles.orbitRing} aria-hidden="true">
+        <span className={styles.orbitMoon} />
+      </span>
+
       <div className={styles.avatar}>
         {hasPhoto ? (
           <Image
             src={photoUrl}
             alt={`${username}'s avatar`}
-            width={124}
-            height={124}
+            width={AVATAR_SIZE}
+            height={AVATAR_SIZE}
             className={styles.avatarImage}
             onError={() => setFailedPhotoUrl(photoUrl)}
-            priority
+            preload
           />
         ) : (
           <div
             className={styles.avatarFallback}
+            role="img"
             aria-label={getDisplayName(firstName, lastName, username)}
           >
             {initials}
           </div>
         )}
       </div>
-
-      <span
-        className={styles.privacyBadgeIcon}
-        title={isPrivate ? "Private profile" : "Public profile"}
-        aria-label={isPrivate ? "Private profile" : "Public profile"}
-      >
-        {isPrivate ? "🔒" : "🌐"}
-      </span>
-    </div>
-  );
-}
-
-interface ProfileStatsProps {
-  postsCount: number;
-  followersCount: number;
-  followingCount: number;
-  onSelectPosts: () => void;
-  onSelectFollows: () => void;
-}
-
-function ProfileStats({
-  postsCount,
-  followersCount,
-  followingCount,
-  onSelectPosts,
-  onSelectFollows,
-}: ProfileStatsProps) {
-  return (
-    <div
-      className={styles.statsRow}
-      role="region"
-      aria-label="Profile statistics"
-    >
-      <button
-        type="button"
-        className={styles.statItem}
-        onClick={onSelectPosts}
-        title="View Posts"
-      >
-        <span className={styles.statNumber}>{postsCount}</span>
-        <span className={styles.statLabel}>
-          {postsCount === 1 ? "Post" : "Posts"}
-        </span>
-      </button>
-
-      <button
-        type="button"
-        className={styles.statItem}
-        onClick={onSelectFollows}
-        title="View Followers"
-      >
-        <span className={styles.statNumber}>{followersCount}</span>
-        <span className={styles.statLabel}>
-          {followersCount === 1 ? "Follower" : "Followers"}
-        </span>
-      </button>
-
-      <button
-        type="button"
-        className={styles.statItem}
-        onClick={onSelectFollows}
-        title="View Following"
-      >
-        <span className={styles.statNumber}>{followingCount}</span>
-        <span className={styles.statLabel}>Following</span>
-      </button>
     </div>
   );
 }
@@ -140,29 +72,35 @@ function ProfileStats({
 interface ProfileHeaderProps {
   profile: Profile;
   isOwnProfile: boolean;
-  postsCount: number;
-  followersCount: number;
-  followingCount: number;
   isFollowing: boolean;
   hasPendingFollowRequest: boolean;
   canMessage?: boolean;
   followLoading: boolean;
-  onSelectTab: (tab: ProfileTab) => void;
+  followError?: string | null;
+  showStats?: boolean;
+  postsCount: number;
+  followersCount: number;
+  followingCount: number;
+  onEditProfile: () => void;
   onToggleFollow: () => void;
+  onViewConnections: () => void;
 }
 
 export default function ProfileHeader({
   profile,
   isOwnProfile,
-  postsCount,
-  followersCount,
-  followingCount,
   isFollowing,
   hasPendingFollowRequest,
   canMessage = false,
   followLoading,
-  onSelectTab,
+  followError = null,
+  showStats = true,
+  postsCount,
+  followersCount,
+  followingCount,
+  onEditProfile,
   onToggleFollow,
+  onViewConnections,
 }: ProfileHeaderProps) {
   const displayName = getDisplayName(
     profile.firstName,
@@ -190,32 +128,73 @@ export default function ProfileHeader({
       : styles.btnPrimary;
 
   return (
-    <header className={styles.headerCard}>
-      <ProfileCover />
+    <header className={styles.hero}>
+      <ProfileAvatar
+        firstName={profile.firstName}
+        lastName={profile.lastName}
+        username={profile.username}
+        profilePhoto={profile.profilePhoto}
+      />
 
-      <div className={styles.headerBody}>
-        <div className={styles.avatarAndActions}>
-          <ProfileAvatar
-            firstName={profile.firstName}
-            lastName={profile.lastName}
-            username={profile.username}
-            profilePhoto={profile.profilePhoto}
-            isPrivate={profile.isPrivate}
-          />
+      <div className={styles.identity}>
+        <h1 className={styles.fullName}>{displayName}</h1>
 
-          {isOwnProfile ? (
-            <div className={styles.actionsRow}>
-              <button
-                type="button"
-                onClick={() => onSelectTab("about")}
-                className={styles.btnSecondary}
-                title="Privacy Settings"
-              >
-                Privacy Settings
-              </button>
+        {profile.nickname && (
+          <p className={styles.nickname}>
+            <span className="sr-only">Nickname: </span>
+            {profile.nickname}
+          </p>
+        )}
+
+        <p className={styles.metaRow}>
+          <span className={styles.username}>@{profile.username}</span>
+          <span className={styles.metaDot} aria-hidden="true" />
+          <span className={styles.metaItem}>
+            <AppIcon
+              name={profile.isPrivate ? "lock" : "globe"}
+              width={14}
+              height={14}
+            />
+            {profile.isPrivate ? "Private profile" : "Public profile"}
+          </span>
+        </p>
+
+        {showStats && (
+          <div className={styles.statsRow}>
+            <div className={styles.statItem}>
+              <span className={styles.statValue}>{postsCount}</span>
+              <span className={styles.statLabel}>Posts</span>
             </div>
+            <button
+              type="button"
+              className={`${styles.statItem} ${styles.statItemLink}`}
+              onClick={onViewConnections}
+            >
+              <span className={styles.statValue}>{followingCount}</span>
+              <span className={styles.statLabel}>Following</span>
+            </button>
+            <button
+              type="button"
+              className={`${styles.statItem} ${styles.statItemLink}`}
+              onClick={onViewConnections}
+            >
+              <span className={styles.statValue}>{followersCount}</span>
+              <span className={styles.statLabel}>Followers</span>
+            </button>
+          </div>
+        )}
+
+        <div className={styles.actionsRow}>
+          {isOwnProfile ? (
+            <button
+              type="button"
+              onClick={onEditProfile}
+              className={styles.btnSecondary}
+            >
+              Edit profile
+            </button>
           ) : (
-            <div className={styles.actionsRow}>
+            <>
               <button
                 type="button"
                 onClick={onToggleFollow}
@@ -232,41 +211,19 @@ export default function ProfileHeader({
                   className={styles.btnSecondary}
                   title={`Message @${profile.username}`}
                 >
-                  💬 Message
+                  <AppIcon name="chat" width={16} height={16} />
+                  Message
                 </Link>
               )}
-            </div>
+            </>
           )}
         </div>
 
-        <div className={styles.identity}>
-          <div className={styles.nameRow}>
-            <h1 className={styles.fullName}>{displayName}</h1>
-            <span
-              className={styles.privacyPill}
-              data-private={profile.isPrivate}
-            >
-              {profile.isPrivate ? "🔒 Private Profile" : "🌐 Public Profile"}
-            </span>
-          </div>
-
-          <p className={styles.username}>@{profile.username}</p>
-          {profile.nickname && (
-            <p className={styles.nickname}>{profile.nickname}</p>
-          )}
-
-          {profile.aboutMe && (
-            <p className={styles.aboutMe}>{profile.aboutMe}</p>
-          )}
-        </div>
-
-        <ProfileStats
-          postsCount={postsCount}
-          followersCount={followersCount}
-          followingCount={followingCount}
-          onSelectPosts={() => onSelectTab("posts")}
-          onSelectFollows={() => onSelectTab("about")}
-        />
+        {followError && (
+          <p className={`form-error ${styles.followError}`} role="alert">
+            {followError}
+          </p>
+        )}
       </div>
     </header>
   );

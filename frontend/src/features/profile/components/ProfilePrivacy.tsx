@@ -1,5 +1,6 @@
 "use client";
 
+import AppIcon from "@/components/layout/AppIcon";
 import styles from "./Profile.module.css";
 
 interface ProfilePrivacyProps {
@@ -21,14 +22,13 @@ export default function ProfilePrivacy({
       aria-labelledby="privacy-settings-heading"
     >
       <div className={styles.privacyCardHeader}>
-        <div>
-          <h3 id="privacy-settings-heading" className={styles.cardTitle}>
-            <span>Profile Visibility</span>
-          </h3>
-          <span className={styles.privacyStatusTag} data-private={isPrivate}>
-            {isPrivate ? "🔒 Private Account" : "🌐 Public Account"}
-          </span>
-        </div>
+        <h3 id="privacy-settings-heading" className={styles.cardTitle}>
+          <span>Profile Visibility</span>
+        </h3>
+        <span className={styles.privacyStatusTag} data-private={isPrivate}>
+          <AppIcon name={isPrivate ? "lock" : "globe"} width={14} height={14} />
+          {isPrivate ? "Private" : "Public"}
+        </span>
       </div>
 
       <p className={styles.privacyCardDesc}>

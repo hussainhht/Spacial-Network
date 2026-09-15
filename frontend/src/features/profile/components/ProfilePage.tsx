@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useWebSocket } from "@/providers/WebSocketProvider";
 import {
   followUser,
   getFollowers,
@@ -27,6 +28,7 @@ import type {
   ProfileUserSummary,
 } from "../types/profile";
 import ProfileHeader from "./ProfileHeader";
+import ProfileAbout from "./ProfileAbout";
 import ProfileContent from "./ProfileContent";
 import {
   ProfileLoadingState,
@@ -45,6 +47,7 @@ const emptyFollowStatus: FollowStatus = {
 };
 
 export default function ProfilePage({ username }: ProfilePageProps) {
+  const { subscribeNotifications, subscribeFollowRemoved } = useWebSocket();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isOwnProfile, setIsOwnProfile] = useState(!username);
   const [privacyOverride, setPrivacyOverride] = useState<boolean | null>(null);
@@ -273,6 +276,65 @@ export default function ProfilePage({ username }: ProfilePageProps) {
     };
   }, [profile, isLocked, isOwnProfile]);
 
+  // The backend pushes realtime WebSocket events for every follow-graph
+  // change - persisted "notification" events for new_follower/
+  // follow_accepted, and the ephemeral "follow_removed" event for unfollows
+  // and declined requests (see backend/internal/followers/{service,ws}.go) -
+  // so this profile's follow button and lists stay in sync without a manual
+  // refresh.
+  useEffect(() => {
+    if (!profile) {
+      return;
+    }
+
+    return subscribeNotifications((notification) => {
+      if (isOwnProfile && notification.type === "new_follower") {
+        refreshFollowLists();
+        return;
+      }
+
+      // The profile being viewed just accepted a request we sent them.
+      if (
+        !isOwnProfile &&
+        notification.type === "follow_accepted" &&
+        notification.actor_id === profile.id
+      ) {
+        getFollowStatus(profile.username)
+          .then((status) => {
+            setIsFollowing(status.isFollowing);
+            setHasPendingFollowRequest(status.hasPendingRequest);
+          })
+          .catch(() => undefined);
+        refreshFollowLists();
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOwnProfile, profile, subscribeNotifications]);
+
+  useEffect(() => {
+    if (!profile) {
+      return;
+    }
+
+    return subscribeFollowRemoved((event) => {
+      if (isOwnProfile && event.reason === "unfollowed") {
+        refreshFollowLists();
+        return;
+      }
+
+      // The profile being viewed just declined a request we sent them.
+      if (
+        !isOwnProfile &&
+        event.reason === "declined" &&
+        event.actor_id === profile.id
+      ) {
+        setIsFollowing(false);
+        setHasPendingFollowRequest(false);
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOwnProfile, profile, subscribeFollowRemoved]);
+
   async function handleToggleFollow() {
     if (
       !profile ||
@@ -446,22 +508,58 @@ export default function ProfilePage({ username }: ProfilePageProps) {
     isPrivate: privacyOverride ?? profile.isPrivate,
   };
 
+  function scrollToSections() {
+    const prefersReducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    document.getElementById("profile-sections")?.scrollIntoView({
+      behavior: prefersReducedMotion ? "auto" : "smooth",
+      block: "start",
+    });
+  }
+
+  function handleEditProfile() {
+    setActiveTab("settings");
+    scrollToSections();
+  }
+
+  function handleViewConnections() {
+    if (isLocked) {
+      return;
+    }
+    setActiveTab("connections");
+    scrollToSections();
+  }
+
   return (
     <div className={styles.profilePage}>
       <div className={styles.container}>
-        <ProfileHeader
-          profile={effectiveProfile}
-          isOwnProfile={isOwnProfile}
-          postsCount={posts.length}
-          followersCount={followers.length}
-          followingCount={following.length}
-          isFollowing={isFollowing}
-          hasPendingFollowRequest={hasPendingFollowRequest}
-          canMessage={canMessage}
-          followLoading={followLoading}
-          onSelectTab={setActiveTab}
-          onToggleFollow={handleToggleFollow}
-        />
+        <div className={styles.identitySurface}>
+          <ProfileHeader
+            profile={effectiveProfile}
+            isOwnProfile={isOwnProfile}
+            isFollowing={isFollowing}
+            hasPendingFollowRequest={hasPendingFollowRequest}
+            canMessage={canMessage}
+            followLoading={followLoading}
+            followError={followError}
+            showStats={!isLocked}
+            postsCount={posts.length}
+            followersCount={followers.length}
+            followingCount={following.length}
+            onEditProfile={handleEditProfile}
+            onToggleFollow={handleToggleFollow}
+            onViewConnections={handleViewConnections}
+          />
+
+          {!isLocked && (
+            <ProfileAbout
+              profile={effectiveProfile}
+              isOwnProfile={isOwnProfile}
+              onEditProfile={isOwnProfile ? handleEditProfile : undefined}
+            />
+          )}
+        </div>
 
         {isLocked ? (
           <PrivateProfileState />
@@ -490,7 +588,6 @@ export default function ProfilePage({ username }: ProfilePageProps) {
             followers={followers}
             following={following}
             followDataLoading={followDataLoading}
-            followError={followError}
             onFollowRequestsChanged={refreshFollowLists}
           />
         )}
