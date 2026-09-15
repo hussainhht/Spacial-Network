@@ -43,8 +43,11 @@ export default function LoginPage() {
       }
 
       console.log("Login successful");
+      const params = new URLSearchParams(window.location.search);
+      const next = params.get("next") ?? "/";
+      const safeNext = next.startsWith("/") && !next.startsWith("//") ? next : "/";
 
-      router.push("/");
+      router.replace(safeNext);
     } catch {
       setError("Could not connect to server");
     } finally {
