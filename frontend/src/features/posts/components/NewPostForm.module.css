@@ -1,0 +1,65 @@
+.pageContent { width: min(100%, 1240px); margin: 0 auto; }
+.backLink { display: inline-flex; align-items: center; gap: 7px; margin-bottom: 18px; color: var(--space-text-label); font-size: 13px; text-decoration: none; }
+.backLink:hover { color: var(--space-text-heading); }
+.layout { display: grid; grid-template-columns: minmax(0, 1.04fr) minmax(380px, .96fr); align-items: start; gap: clamp(20px, 2.4vw, 32px); }
+.composer, .preview { border: 1px solid var(--planet-border); border-top-color: var(--planet-border-strong); border-radius: calc(var(--space-radius-lg) + 4px); background: linear-gradient(var(--planet-surface-tint), var(--planet-surface-tint)), rgba(5, 10, 25, .82); box-shadow: 0 22px 55px rgba(0, 0, 0, .28), inset 0 1px rgba(255,255,255,.035); backdrop-filter: blur(18px) saturate(135%); }
+.composer { display: grid; gap: 24px; padding: clamp(22px, 3vw, 34px); }
+.panelHeader { display: flex; align-items: center; gap: 13px; padding-bottom: 22px; border-bottom: 1px solid var(--space-border); }
+.headerIcon, .uploadIcon { display: grid; place-items: center; flex: 0 0 auto; width: 42px; height: 42px; border: 1px solid var(--planet-border-strong); border-radius: 13px; background: var(--planet-accent-soft); color: var(--planet-accent); }
+.panelHeader h1, .previewHeader h2, .sectionHeading h2 { margin: 0; color: var(--space-text-heading); }
+.panelHeader h1 { font-size: clamp(20px, 2vw, 25px); letter-spacing: -.025em; }
+.panelHeader p, .previewHeader p, .sectionHeading p { margin: 4px 0 0; color: var(--space-text-muted); font-size: 13px; line-height: 1.45; }
+.field { position: relative; display: grid; gap: 8px; }
+.field label, .privacy legend { color: var(--space-text-label); font-size: 13px; font-weight: 600; letter-spacing: .015em; }
+.field input, .field textarea { width: 100%; border: 1px solid var(--space-border); border-radius: 13px; background: var(--space-input-bg); box-shadow: inset 0 1px 3px rgba(0,0,0,.24); color: var(--space-text-heading); font: inherit; }
+.field input { min-height: 47px; padding: 11px 72px 11px 14px; }
+.field textarea { min-height: 176px; padding: 13px 15px 30px; resize: vertical; line-height: 1.65; }
+.field input::placeholder, .field textarea::placeholder { color: var(--space-text-muted); opacity: .72; }
+.field input:focus-visible, .field textarea:focus-visible { outline: 2px solid var(--planet-focus-ring); outline-offset: 2px; border-color: var(--planet-accent); }
+.count { position: absolute; right: 12px; bottom: 10px; color: var(--space-text-muted); font-size: 11px; }
+.section { display: grid; gap: 12px; }
+.sectionHeading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.sectionHeading h2 { font-size: 14px; }
+.sectionHeading > span { color: var(--space-text-muted); font-size: 12px; }
+.dropzone { display: grid; justify-items: center; gap: 6px; min-height: 148px; padding: 20px; border: 1px dashed var(--space-border-strong); border-radius: 15px; background: rgba(148,163,184,.025); color: var(--space-text-muted); font: inherit; cursor: pointer; transition: border-color .18s ease, background-color .18s ease, transform .18s ease; }
+.dropzone strong { color: var(--space-text-heading); font-size: 14px; }
+.dropzone > span:last-child { font-size: 12px; }
+.dropzone:hover:not(:disabled), .dropzone.dragging { border-color: var(--planet-accent); background: var(--planet-accent-soft); transform: translateY(-1px); }
+.dropzone:focus-visible, .thumbnail button:focus-visible, .addTile:focus-visible, .actions a:focus-visible, .actions button:focus-visible, .privacyOption:has(input:focus-visible) { outline: 2px solid var(--planet-focus-ring); outline-offset: 3px; }
+.dropzone:disabled { cursor: default; opacity: .66; }
+.uploadIcon { width: 43px; height: 43px; border-radius: 50%; }
+.thumbnails { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 9px; }
+.thumbnail, .addTile { position: relative; aspect-ratio: 1; overflow: hidden; border: 1px solid var(--space-border); border-radius: 12px; background: var(--space-input-bg); }
+.thumbnail img { width: 100%; height: 100%; object-fit: cover; }
+.thumbnail button { position: absolute; top: 6px; right: 6px; display: grid; place-items: center; width: 28px; height: 28px; padding: 0; border: 1px solid rgba(255,255,255,.18); border-radius: 50%; background: rgba(2,6,23,.84); color: #f8fafc; cursor: pointer; }
+.thumbnail > span { position: absolute; left: 7px; bottom: 7px; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 7px; background: rgba(2,6,23,.8); color: #e2e8f0; font-size: 11px; }
+.addTile { display: grid; place-items: center; align-content: center; gap: 4px; border-style: dashed; color: var(--space-text-muted); font: inherit; font-size: 12px; cursor: pointer; }
+.privacy { min-width: 0; margin: 0; padding: 0; border: 0; }
+.privacy legend { margin-bottom: 11px; }
+.privacyGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; }
+.privacyOption { display: flex; align-items: center; gap: 9px; min-height: 70px; padding: 12px; border: 1px solid var(--space-border); border-radius: 13px; background: rgba(148,163,184,.025); color: var(--space-text-muted); cursor: pointer; transition: border-color .16s ease, background-color .16s ease; }
+.privacyOption > svg { flex: 0 0 auto; }
+.privacyOption > span { display: grid; gap: 3px; min-width: 0; }
+.privacyOption strong { color: var(--space-text-heading); font-size: 13px; }
+.privacyOption small { color: var(--space-text-muted); font-size: 11px; }
+.privacyOption:hover, .privacyOption.selected { border-color: var(--planet-border-strong); background: var(--planet-accent-soft); color: var(--planet-accent); }
+.audience :global(.post-visibility-picker) { margin: -9px 0 0; background: rgba(2,6,23,.28); }
+.error { margin: 0; padding: 10px 12px; border: 1px solid var(--space-error-border); border-radius: 11px; background: var(--space-error-bg); color: var(--space-error-text); font-size: 13px; }
+.actions { display: flex; align-items: center; justify-content: flex-end; gap: 12px; padding-top: 20px; border-top: 1px solid var(--space-border); }
+.actions a, .actions button { min-height: 43px; padding: 11px 17px; border-radius: 11px; font: inherit; font-size: 13px; font-weight: 600; text-decoration: none; }
+.actions a { color: var(--space-text-label); }
+.actions button { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--planet-border-strong); background: var(--planet-accent-active); box-shadow: 0 9px 22px -10px var(--planet-glow); color: #f8fafc; cursor: pointer; }
+.actions button:disabled { opacity: .58; cursor: wait; }
+.preview { position: sticky; top: 24px; display: grid; gap: 18px; padding: clamp(18px, 2.4vw, 25px); }
+.previewHeader { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.previewHeader h2 { font-size: 16px; }
+.previewHeader > span { padding: 5px 9px; border: 1px solid var(--planet-border-strong); border-radius: 999px; background: var(--planet-accent-soft); color: var(--planet-accent); font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.preview :global(article) { --post-media-max-height: 360px; }
+.previewInfo { display: flex; gap: 10px; padding: 12px; border: 1px solid var(--space-border); border-radius: 12px; background: rgba(148,163,184,.035); }
+.previewInfo > span { display: grid; place-items: center; flex: 0 0 auto; width: 22px; height: 22px; border: 1px solid var(--planet-border-strong); border-radius: 50%; color: var(--planet-accent); font: 600 12px Georgia, serif; }
+.previewInfo strong { color: var(--space-text-label); font-size: 12px; }
+.previewInfo p { margin: 3px 0 0; color: var(--space-text-muted); font-size: 11px; line-height: 1.45; }
+
+@media (max-width: 1050px) { .layout { grid-template-columns: minmax(0, 1fr); } .preview { position: static; } }
+@media (max-width: 620px) { .composer { padding: 19px; gap: 20px; } .privacyGrid { grid-template-columns: 1fr; } .privacyOption { min-height: 58px; } .thumbnails { grid-template-columns: repeat(3, minmax(0, 1fr)); } .preview { padding: 14px; } }
+@media (prefers-reduced-motion: reduce) { .dropzone, .privacyOption { transition: none; } .dropzone:hover:not(:disabled) { transform: none; } }

@@ -134,6 +134,19 @@ export function formatConversationDate(dateStr?: string): string {
 }
 
 /**
+ * Formats a date only (no time) in client's local time (e.g. "Dec 24, 2024").
+ */
+export function formatDate(dateStr?: string): string {
+  const d = parseDate(dateStr);
+  if (!d) return "";
+  try {
+    return d.toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" });
+  } catch {
+    return "";
+  }
+}
+
+/**
  * Formats a full date and time for posts or event details in client's local time (e.g. "Sep 5, 2026, 01:45 AM").
  */
 export function formatDateTime(dateStr?: string): string {

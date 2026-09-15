@@ -1,19 +1,5 @@
-import Link from "next/link";
 import NewPostForm from "@/features/posts/components/NewPostForm";
 
 export default function NewPostPage() {
-  return (
-    <main className="new-post-page">
-      <div className="new-post-container">
-        <Link href="/posts" className="back-link">
-          &larr; Back to posts
-        </Link>
-
-        <h1>Create a new post</h1>
-        <p>Share something with the community.</p>
-
-        <NewPostForm />
-      </div>
-    </main>
-  );
+  return <main className="new-post-page"><NewPostForm /></main>;
 }

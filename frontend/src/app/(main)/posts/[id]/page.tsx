@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { deletePost, getPost } from "@/features/posts/api/posts";
@@ -10,7 +9,7 @@ import type { Post } from "@/features/posts/types/post";
 import { formatDateTime } from "@/lib/utils";
 import CommentsSection from "@/features/comments/components/CommentsSection";
 import PostAuthorLink from "@/features/posts/components/PostAuthorLink";
-import { getBackendBaseUrl } from "@/lib/api";
+import PostMediaGrid from "@/features/posts/components/PostMediaGrid";
 
 export default function PostDetailPage() {
   const router = useRouter();
@@ -103,16 +102,7 @@ export default function PostDetailPage() {
 
             <p className="post-card-content">{post.content}</p>
 
-            {post.image_url && (
-              <Image
-                className="post-card-image"
-                src={`${getBackendBaseUrl()}${post.image_url}`}
-                alt=""
-                width={1000}
-                height={562}
-                style={{ width: "100%", height: "auto" }}
-              />
-            )}
+            <PostMediaGrid media={post.media ?? (post.image_url ? [{ id: 0, url: post.image_url, type: "image", order: 0 }] : [])} />
 
             <footer className="post-card-footer">
               <time dateTime={post.created_at}>

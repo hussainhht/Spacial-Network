@@ -1,6 +1,12 @@
 "use client";
 
-export type ActiveGroupTab = "overview" | "posts" | "events" | "chat" | "edit";
+export type ActiveGroupTab =
+  | "overview"
+  | "posts"
+  | "events"
+  | "members"
+  | "chat"
+  | "edit";
 
 interface GroupTabsProps {
   activeTab: ActiveGroupTab;
@@ -54,6 +60,18 @@ export default function GroupTabs({
       <button
         type="button"
         role="tab"
+        id="group-tab-members"
+        aria-selected={activeTab === "members"}
+        aria-controls="group-tabpanel-members"
+        data-active={activeTab === "members"}
+        className="group-tab"
+        onClick={() => onTabChange("members")}
+      >
+        Members
+      </button>
+      <button
+        type="button"
+        role="tab"
         id="group-tab-chat"
         aria-selected={activeTab === "chat"}
         aria-controls="group-tabpanel-chat"
@@ -74,7 +92,7 @@ export default function GroupTabs({
           className="group-tab"
           onClick={() => onTabChange("edit")}
         >
-          Edit
+          Settings
         </button>
       )}
     </div>

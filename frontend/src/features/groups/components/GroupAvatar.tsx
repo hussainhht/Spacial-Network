@@ -5,9 +5,11 @@ import type { Group } from "../types/group";
 export default function GroupAvatar({
   group,
   size = 48,
+  className,
 }: {
   group: Pick<Group, "title" | "groupPhoto">;
   size?: number;
+  className?: string;
 }) {
   if (group.groupPhoto) {
     return (
@@ -17,7 +19,11 @@ export default function GroupAvatar({
         alt=""
         width={size}
         height={size}
-        className="group-emblem group-emblem-photo"
+        className={
+          className
+            ? `group-emblem group-emblem-photo ${className}`
+            : "group-emblem group-emblem-photo"
+        }
         style={{ width: size, height: size }}
       />
     );
@@ -25,7 +31,7 @@ export default function GroupAvatar({
 
   return (
     <span
-      className="group-emblem"
+      className={className ? `group-emblem ${className}` : "group-emblem"}
       aria-hidden="true"
       style={{ width: size, height: size }}
     >
