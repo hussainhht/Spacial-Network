@@ -170,16 +170,6 @@ function GroupDetails({ groupId }: { groupId: number }) {
               </aside>
             </div>
           )}
-          {activeTab === "posts" && (
-            <div
-              id="group-tabpanel-posts"
-              role="tabpanel"
-              aria-labelledby="group-tab-posts"
-              data-motion-panel
-            >
-              <GroupPosts groupId={groupId} isMember={isMember} />
-            </div>
-          )}
           {activeTab === "events" && (
             <div
               id="group-tabpanel-events"
