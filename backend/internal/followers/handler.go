@@ -152,6 +152,34 @@ func (h *Handler) UnfollowUserHandler(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func (h *Handler) GetRecommendationsHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	currentUserID, ok := requestctx.UserID(r.Context())
+	if !ok || currentUserID <= 0 {
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Unauthorized"})
+		return
+	}
+
+	limit := maxRecommendationLimit
+	if rawLimit := r.URL.Query().Get("limit"); rawLimit != "" {
+		if parsed, err := strconv.Atoi(rawLimit); err == nil {
+			limit = parsed
+		}
+	}
+
+	recommendations, err := h.service.GetRecommendations(currentUserID, limit)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to load recommendations"})
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(recommendations)
+}
+
 func (h *Handler) GetFollowersHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 

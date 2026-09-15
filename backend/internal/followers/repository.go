@@ -18,6 +18,157 @@ func NewRepository(db *sql.DB) *Repository {
 	}
 }
 
+const (
+	minRecommendationLimit = 3
+	maxRecommendationLimit = 4
+)
+
+func (r *Repository) GetRecommendations(viewerID, limit int) ([]Recommendation, error) {
+	if limit < minRecommendationLimit {
+		limit = minRecommendationLimit
+	} else if limit > maxRecommendationLimit {
+		limit = maxRecommendationLimit
+	}
+
+	rows, err := r.db.Query(`
+		WITH mutual_candidates AS (
+			SELECT
+				c.id,
+				c.username,
+				c.first_name,
+				c.last_name,
+				COALESCE(c.profile_photo, '') AS profile_photo,
+				COUNT(m.id) AS mutual_count,
+				COALESCE(GROUP_CONCAT(m.username, char(31)), '') AS mutual_handles,
+				0 AS source_rank,
+				0 AS activity_count
+			FROM followers current_following
+			JOIN followers mutual_following
+				ON mutual_following.follower_id = current_following.followed_id
+			JOIN users c ON c.id = mutual_following.followed_id
+			JOIN users m ON m.id = current_following.followed_id
+			WHERE current_following.follower_id = ?
+				AND c.id != ?
+				AND c.is_private = 0
+				AND NOT EXISTS (
+					SELECT 1 FROM followers existing_follow
+					WHERE existing_follow.follower_id = ? AND existing_follow.followed_id = c.id
+				)
+				AND NOT EXISTS (
+					SELECT 1 FROM user_blocks block
+					WHERE (block.blocker_id = ? AND block.blocked_id = c.id)
+					   OR (block.blocker_id = c.id AND block.blocked_id = ?)
+				)
+				AND NOT EXISTS (
+					SELECT 1 FROM user_mutes mute
+					WHERE mute.muter_id = ? AND mute.muted_id = c.id
+				)
+			GROUP BY c.id, c.username, c.first_name, c.last_name, c.profile_photo
+		),
+		fallback_candidates AS (
+			SELECT
+				u.id,
+				u.username,
+				u.first_name,
+				u.last_name,
+				COALESCE(u.profile_photo, '') AS profile_photo,
+				0 AS mutual_count,
+				'' AS mutual_handles,
+				1 AS source_rank,
+				COUNT(p.id) AS activity_count
+			FROM users u
+			LEFT JOIN posts p
+				ON p.user_id = u.id
+				AND p.group_id IS NULL
+				AND p.visibility = 'public'
+			WHERE u.id != ?
+				AND u.is_private = 0
+				AND NOT EXISTS (
+					SELECT 1 FROM followers existing_follow
+					WHERE existing_follow.follower_id = ? AND existing_follow.followed_id = u.id
+				)
+				AND NOT EXISTS (
+					SELECT 1 FROM user_blocks block
+					WHERE (block.blocker_id = ? AND block.blocked_id = u.id)
+					   OR (block.blocker_id = u.id AND block.blocked_id = ?)
+				)
+				AND NOT EXISTS (
+					SELECT 1 FROM user_mutes mute
+					WHERE mute.muter_id = ? AND mute.muted_id = u.id
+				)
+				AND NOT EXISTS (
+					SELECT 1 FROM mutual_candidates mutual
+					WHERE mutual.id = u.id
+				)
+			GROUP BY u.id, u.username, u.first_name, u.last_name, u.profile_photo
+		),
+		ranked_candidates AS (
+			SELECT * FROM mutual_candidates
+			UNION ALL
+			SELECT * FROM fallback_candidates
+		)
+		SELECT id, username, first_name, last_name, profile_photo, mutual_count, mutual_handles
+		FROM ranked_candidates
+		ORDER BY source_rank ASC, mutual_count DESC, activity_count DESC, username ASC
+		LIMIT ?
+	`,
+		viewerID, viewerID, viewerID, viewerID, viewerID, viewerID,
+		viewerID, viewerID, viewerID, viewerID, viewerID,
+		limit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	recommendations := make([]Recommendation, 0, limit)
+	for rows.Next() {
+		var recommendation Recommendation
+		var firstName, lastName, rawPhoto, rawMutualHandles string
+		if err := rows.Scan(
+			&recommendation.ID,
+			&recommendation.Username,
+			&firstName,
+			&lastName,
+			&rawPhoto,
+			&recommendation.MutualCount,
+			&rawMutualHandles,
+		); err != nil {
+			return nil, err
+		}
+
+		recommendation.Name = strings.TrimSpace(firstName + " " + lastName)
+		if recommendation.Name == "" {
+			recommendation.Name = recommendation.Username
+		}
+		recommendation.AvatarURL = normalizeProfilePhotoURL(rawPhoto)
+		if rawMutualHandles != "" {
+			recommendation.MutualPreview = strings.Split(rawMutualHandles, string(rune(31)))
+			if len(recommendation.MutualPreview) > 2 {
+				recommendation.MutualPreview = recommendation.MutualPreview[:2]
+			}
+		} else {
+			recommendation.MutualPreview = []string{}
+		}
+		recommendation.IsFollowing = false
+
+		recommendations = append(recommendations, recommendation)
+	}
+
+	return recommendations, rows.Err()
+}
+
+func normalizeProfilePhotoURL(photo string) string {
+	photo = strings.TrimSpace(photo)
+	if photo == "" {
+		return ""
+	}
+	if strings.HasPrefix(photo, "/uploads/") || strings.HasPrefix(photo, "http://") || strings.HasPrefix(photo, "https://") {
+		return photo
+	}
+	return "/uploads/" + strings.TrimPrefix(photo, "/")
+}
+
 func (r *Repository) FollowUser(followerID, followedID int) (int64, error) {
 	var followID int64
 

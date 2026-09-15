@@ -43,6 +43,7 @@ func TestMigrateUp_AppliesAllMigrations(t *testing.T) {
 		"comments", "followers", "events", "event_responses", "follow_requests",
 		"post_allowed_viewers",
 		"post_media",
+		"user_blocks", "user_mutes",
 	}
 	for _, table := range wantTables {
 		var name string
@@ -68,6 +69,9 @@ func TestPostMediaMigration_BackfillsLegacyImagePath(t *testing.T) {
 	db := openMemoryDB(t)
 	if err := sqlite.MigrateUp(db); err != nil {
 		t.Fatalf("MigrateUp: %v", err)
+	}
+	if err := sqlite.MigrateDown(db); err != nil {
+		t.Fatalf("remove safety-preferences migration: %v", err)
 	}
 	if err := sqlite.MigrateDown(db); err != nil {
 		t.Fatalf("remove post-media migration: %v", err)
@@ -109,8 +113,12 @@ func TestGroupPrivacyMigration_BackfillsLegacyGroupsAsPublicAndPreservesMembersh
 	if err := sqlite.MigrateUp(db); err != nil {
 		t.Fatalf("initial MigrateUp: %v", err)
 	}
-	// Roll back the newer post-media migration, then the privacy migration, to
-	// reproduce a group that existed before the privacy column was introduced.
+	// Roll back the newer safety-preferences and post-media migrations, then
+	// the privacy migration, to reproduce a group that existed before the
+	// privacy column was introduced.
+	if err := sqlite.MigrateDown(db); err != nil {
+		t.Fatalf("MigrateDown safety-preferences migration: %v", err)
+	}
 	if err := sqlite.MigrateDown(db); err != nil {
 		t.Fatalf("MigrateDown post-media migration: %v", err)
 	}
@@ -195,6 +203,9 @@ func TestGroupPrivacyMigration_BackfillsLegacyGroupsAsPublicAndPreservesMembersh
 		t.Fatal("expected privacy CHECK constraint to reject hidden")
 	}
 
+	if err := sqlite.MigrateDown(db); err != nil {
+		t.Fatalf("final MigrateDown safety-preferences migration: %v", err)
+	}
 	if err := sqlite.MigrateDown(db); err != nil {
 		t.Fatalf("final MigrateDown post-media migration: %v", err)
 	}

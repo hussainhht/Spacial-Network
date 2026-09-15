@@ -62,6 +62,11 @@ func NewRouter(db *sql.DB, cfg config.Config) (http.Handler, error) {
 	)
 
 	apiMux.Handle(
+		"GET /users/recommendations",
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Followers.GetRecommendationsHandler))),
+	)
+
+	apiMux.Handle(
 		"PATCH /users/me/profile",
 		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Users.UpdateProfileDetailsHandler))),
 	)
