@@ -10,11 +10,18 @@ import styles from "./CommentsSection.module.css";
 interface CommentsSectionProps {
   postId: number;
   showAuthors?: boolean;
+  /**
+   * Called with the current comment count whenever it changes (after the
+   * initial load, and after every add/delete), so a parent showing its own
+   * count elsewhere - e.g. PostCard's InteractionsBar - can stay in sync.
+   */
+  onCountChange?: (count: number) => void;
 }
 
 export default function CommentsSection({
   postId,
   showAuthors = false,
+  onCountChange,
 }: CommentsSectionProps) {
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,6 +50,10 @@ export default function CommentsSection({
       cancelled = true;
     };
   }, [postId]);
+
+  useEffect(() => {
+    if (!loading) onCountChange?.(comments.length);
+  }, [comments.length, loading, onCountChange]);
 
   async function handleCreate(content: string, image?: File | null) {
     const comment = await createComment(postId, content, image);

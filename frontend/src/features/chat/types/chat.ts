@@ -6,6 +6,7 @@ export interface ConversationSummary {
   partner_avatar?: string;
   last_message: string;
   last_message_at: string;
+  last_message_from_me: boolean;
   unread_count: number;
 }
 

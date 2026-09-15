@@ -252,6 +252,7 @@ export function useChat() {
             senderId === partnerId ? lastMessage.sender_avatar || existing.partner_avatar : existing.partner_avatar,
           last_message: lastMessage.content,
           last_message_at: lastMessage.created_at || new Date().toISOString(),
+          last_message_from_me: senderId === myUserId,
           unread_count: isUnread ? existing.unread_count + 1 : existing.unread_count,
         };
 
@@ -266,6 +267,7 @@ export function useChat() {
         partner_avatar: lastMessage.sender_avatar,
         last_message: lastMessage.content,
         last_message_at: lastMessage.created_at || new Date().toISOString(),
+        last_message_from_me: senderId === myUserId,
         unread_count: isUnread ? 1 : 0,
       };
       return [newItem, ...prev];

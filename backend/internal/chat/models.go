@@ -80,12 +80,13 @@ type MessagesReadPayload struct {
 }
 
 type ConversationSummary struct {
-	PartnerID        int64  `json:"partner_id"`
-	PartnerUsername  string `json:"partner_username"`
-	PartnerFirstName string `json:"partner_first_name"`
-	PartnerLastName  string `json:"partner_last_name"`
-	PartnerAvatar    string `json:"partner_avatar,omitempty"`
-	LastMessage      string `json:"last_message"`
-	LastMessageAt    string `json:"last_message_at"`
-	UnreadCount      int    `json:"unread_count"`
+	PartnerID         int64  `json:"partner_id"`
+	PartnerUsername   string `json:"partner_username"`
+	PartnerFirstName  string `json:"partner_first_name"`
+	PartnerLastName   string `json:"partner_last_name"`
+	PartnerAvatar     string `json:"partner_avatar,omitempty"`
+	LastMessage       string `json:"last_message"`
+	LastMessageAt     string `json:"last_message_at"`
+	LastMessageFromMe bool   `json:"last_message_from_me"`
+	UnreadCount       int    `json:"unread_count"`
 }

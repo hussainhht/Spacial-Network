@@ -71,10 +71,15 @@ func toInviteCandidateResponse(c InviteCandidate) InviteCandidateResponse {
 // rejected.
 const maxCreateGroupRequestSize = 8 << 20 // 8 MiB
 
-func NewHandler(service *Service, photoStorage *upload.AvatarStorage) *Handler {
+func NewHandler(service *Service, photoStorage *upload.AvatarStorage, eventStorage ...*upload.MediaStorage) *Handler {
+	var events *upload.MediaStorage
+	if len(eventStorage) > 0 {
+		events = eventStorage[0]
+	}
 	return &Handler{
 		service:      service,
 		photoStorage: photoStorage,
+		eventStorage: events,
 	}
 }
 

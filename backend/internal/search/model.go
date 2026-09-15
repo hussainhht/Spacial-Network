@@ -1,6 +1,9 @@
 package search
 
-import "time"
+import (
+	"database/sql"
+	"time"
+)
 
 type UserResult struct {
 	ID           int    `json:"id"`
@@ -34,12 +37,14 @@ type PostResult struct {
 }
 
 type EventResult struct {
-	ID          int       `json:"id"`
-	GroupID     int       `json:"group_id"`
-	GroupTitle  string    `json:"group_title"`
-	Title       string    `json:"title"`
-	Description string    `json:"description"`
-	EventTime   time.Time `json:"event_time"`
+	ID          int            `json:"id"`
+	GroupID     int            `json:"group_id"`
+	GroupTitle  string         `json:"group_title"`
+	Title       string         `json:"title"`
+	Description string         `json:"description"`
+	EventTime   time.Time      `json:"event_time"`
+	ImagePath   sql.NullString `json:"-"`
+	ImageURL    string         `json:"image_path,omitempty"`
 }
 
 type SearchResults struct {

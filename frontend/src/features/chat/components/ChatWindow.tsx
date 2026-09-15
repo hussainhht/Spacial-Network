@@ -3,6 +3,8 @@
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { ChatWindowProps } from "../types/chat";
+import PostSharePreview from "@/features/interactions/components/PostSharePreview";
+import { parseSharedPost } from "@/features/interactions/utils/sharedPost";
 import { formatMessageTime, parseDate, getInitials } from "@/lib/utils";
 import { getChatAvatarUrl } from "../utils/avatar";
 import styles from "./Chat.module.css";
@@ -248,7 +250,18 @@ export default function ChatWindow({
                   </div>
                 )}
                 <div className={isMine ? styles.bubbleMine : styles.bubblePartner}>
-                  <div className={styles.messageContent}>{msg.content}</div>
+                  {(() => {
+                    const shared = parseSharedPost(msg.content);
+                    if (!shared) {
+                      return <div className={styles.messageContent}>{msg.content}</div>;
+                    }
+                    return (
+                      <>
+                        {shared.note && <div className={styles.messageContent}>{shared.note}</div>}
+                        <PostSharePreview postId={shared.postId} />
+                      </>
+                    );
+                  })()}
 
                   <div
                     className={`${styles.bubbleMeta} ${
