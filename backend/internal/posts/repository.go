@@ -2,6 +2,8 @@ package posts
 
 import (
 	"database/sql"
+	"fmt"
+	"strings"
 	"time"
 )
 
@@ -15,12 +17,24 @@ func NewRepository(db *sql.DB) *Repository {
 	}
 }
 
-func (r *Repository) CreatePost(post *post) error {
+// CreatePost persists the post, its ordered media, and its custom audience
+// atomically. image_path mirrors the first attachment for older clients and
+// safe rollback to the pre-media-table schema; post_media is authoritative.
+func (r *Repository) CreatePost(post *post, viewerIDs []int) error {
 	now := time.Now()
 	post.Created_At = now
 	post.Updated_At = now
+	if len(post.Media) > 0 {
+		post.ImagePath = sql.NullString{String: post.Media[0].FilePath, Valid: true}
+	}
 
-	res, err := r.db.Exec(`
+	tx, err := r.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	res, err := tx.Exec(`
 		INSERT INTO posts (user_id, visibility, title, content, image_path, group_id, created_at, updated_at)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 	`, post.User_ID, post.visibility, post.Title, post.Content, post.ImagePath, post.GroupID, post.Created_At, post.Updated_At)
@@ -34,7 +48,33 @@ func (r *Repository) CreatePost(post *post) error {
 	}
 	post.ID = int(id)
 
-	return nil
+	for i := range post.Media {
+		post.Media[i].PostID = post.ID
+		post.Media[i].SortOrder = i
+		post.Media[i].CreatedAt = now
+		mediaRes, err := tx.Exec(`
+			INSERT INTO post_media (post_id, file_path, media_type, sort_order, created_at)
+			VALUES (?, ?, ?, ?, ?)
+		`, post.ID, post.Media[i].FilePath, post.Media[i].MediaType, i, now)
+		if err != nil {
+			return err
+		}
+		mediaID, err := mediaRes.LastInsertId()
+		if err != nil {
+			return err
+		}
+		post.Media[i].ID = int(mediaID)
+	}
+
+	for _, viewerID := range viewerIDs {
+		if _, err := tx.Exec(`
+			INSERT INTO post_allowed_viewers (post_id, user_id) VALUES (?, ?)
+		`, post.ID, viewerID); err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit()
 }
 
 func (r *Repository) GetPostByID(id int) (*post, error) {
@@ -52,6 +92,9 @@ func (r *Repository) GetPostByID(id int) (*post, error) {
 		return nil, err
 	}
 
+	if err := r.loadMedia([]*post{&p}); err != nil {
+		return nil, err
+	}
 	return &p, nil
 }
 
@@ -142,7 +185,12 @@ func (r *Repository) ListPosts(viewerID, limit int, feed string) ([]*post, error
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
-
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := r.loadMedia(posts); err != nil {
+		return nil, err
+	}
 	return posts, nil
 }
 
@@ -172,8 +220,53 @@ func (r *Repository) ListPostsByGroup(groupID, limit int) ([]*post, error) {
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
-
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := r.loadMedia(posts); err != nil {
+		return nil, err
+	}
 	return posts, nil
+}
+
+// loadMedia fetches attachments for a result set in one query and preserves
+// their deterministic sort order without introducing a per-post query.
+func (r *Repository) loadMedia(posts []*post) error {
+	if len(posts) == 0 {
+		return nil
+	}
+
+	byID := make(map[int]*post, len(posts))
+	placeholders := make([]string, 0, len(posts))
+	args := make([]any, 0, len(posts))
+	for _, p := range posts {
+		p.Media = []postMedia{}
+		byID[p.ID] = p
+		placeholders = append(placeholders, "?")
+		args = append(args, p.ID)
+	}
+
+	rows, err := r.db.Query(fmt.Sprintf(`
+		SELECT id, post_id, file_path, media_type, sort_order, created_at
+		FROM post_media
+		WHERE post_id IN (%s)
+		ORDER BY post_id, sort_order, id
+	`, strings.Join(placeholders, ",")), args...)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var media postMedia
+		if err := rows.Scan(&media.ID, &media.PostID, &media.FilePath, &media.MediaType, &media.SortOrder, &media.CreatedAt); err != nil {
+			return err
+		}
+		if p := byID[media.PostID]; p != nil {
+			p.Media = append(p.Media, media)
+		}
+	}
+	return rows.Err()
 }
 
 func (r *Repository) UpdatePost(post *post) error {

@@ -1,21 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { useState } from "react";
 import { deletePost } from "@/features/posts/api/posts";
 import type { Post } from "@/features/posts/types/post";
-import { getBackendBaseUrl } from "@/lib/api";
 import AppIcon from "@/components/layout/AppIcon";
 import styles from "./PostCard.module.css";
 import PostAuthorLink from "./PostAuthorLink";
+import PostMediaGrid from "./PostMediaGrid";
 
 interface PostCardProps {
   post: Post;
-  onDeleted: (id: number) => void;
+  onDeleted?: (id: number) => void;
+  preview?: boolean;
 }
 
-export default function PostCard({ post, onDeleted }: PostCardProps) {
+export default function PostCard({ post, onDeleted, preview = false }: PostCardProps) {
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
 
@@ -29,7 +29,7 @@ export default function PostCard({ post, onDeleted }: PostCardProps) {
 
     try {
       await deletePost(post.id);
-      onDeleted(post.id);
+      onDeleted?.(post.id);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete post");
       setDeleting(false);
@@ -39,26 +39,26 @@ export default function PostCard({ post, onDeleted }: PostCardProps) {
   return (
     <article className={styles.card}>
       <header className={styles.header}>
-        <PostAuthorLink author={post.author} />
+        <PostAuthorLink author={post.author} disabled={preview} />
         <div className={styles.author}>
           <time
             className={styles.timestamp}
-            dateTime={post.created_at}
-            title={new Date(post.created_at).toLocaleString()}
+            dateTime={preview ? undefined : post.created_at}
+            title={preview ? undefined : new Date(post.created_at).toLocaleString()}
           >
-            {new Date(post.created_at).toLocaleDateString(undefined, {
+            {preview ? "Just now" : new Date(post.created_at).toLocaleDateString(undefined, {
               month: "short",
               day: "numeric",
               year: "numeric",
             })}
-            <span aria-hidden="true"> · </span>
+            {!preview && <><span aria-hidden="true"> · </span>
             {new Date(post.created_at).toLocaleTimeString(undefined, {
               hour: "numeric",
               minute: "2-digit",
-            })}
+            })}</>}
           </time>
         </div>
-        {(post.is_owner || post.can_delete) && (
+        {!preview && (post.is_owner || post.can_delete) && (
           <details
             className={styles.actions}
             onBlur={(event) => {
@@ -118,34 +118,33 @@ export default function PostCard({ post, onDeleted }: PostCardProps) {
 
       <div className={styles.body}>
         <h2 className={styles.title}>
-          <Link href={`/posts/${post.id}`}>{post.title}</Link>
+          {preview ? post.title : <Link href={`/posts/${post.id}`}>{post.title}</Link>}
         </h2>
         <p className={styles.content}>{post.content}</p>
       </div>
 
-      {post.image_url && (
-        <Image
-          className={styles.image}
-          src={`${getBackendBaseUrl()}${post.image_url}`}
-          alt=""
-          width={800}
-          height={450}
-          style={{ width: "100%", height: "auto" }}
-        />
-      )}
+      <PostMediaGrid media={post.media ?? (post.image_url ? [{ id: 0, url: post.image_url, type: "image", order: 0 }] : [])} />
 
       <footer className={styles.footer}>
-        <Link className={styles.comments} href={`/posts/${post.id}`}>
+        {preview ? <span className={styles.comments} aria-disabled="true">
           <AppIcon name="chat" width={17} height={17} />
           Comments
           <AppIcon name="arrow" width={15} height={15} />
-        </Link>
+        </span> : <Link className={styles.comments} href={`/posts/${post.id}`}>
+          <AppIcon name="chat" width={17} height={17} />
+          Comments
+          <AppIcon name="arrow" width={15} height={15} />
+        </Link>}
         <span className={styles.privacy}>
-          {post.visibility === "public" ? "Public" : "Private"}
+          {post.visibility === "public"
+            ? "Public"
+            : post.visibility === "followers"
+              ? "Followers"
+              : "Selected"}
         </span>
       </footer>
 
-      {error && <p className={styles.error} role="alert">{error}</p>}
+      {error && <p className={styles.error} role="alert" aria-live="assertive">{error}</p>}
     </article>
   );
 }

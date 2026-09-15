@@ -1,11 +1,12 @@
 package posts
 
 import (
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"net/http"
+	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"social/internal/groups"
@@ -14,9 +15,11 @@ import (
 	"social/internal/users"
 )
 
-// maxNewPostRequestSize bounds the total size of a create-post request
-// (form fields plus the optional image attachment).
-const maxNewPostRequestSize = 8 << 20 // 8 MiB
+const (
+	// MaxPostMedia is the product limit shared with the create-post UI.
+	MaxPostMedia          = 4
+	maxNewPostRequestSize = 24 << 20 // four 5 MiB files plus multipart overhead
+)
 
 type Handler struct {
 	service         *Service
@@ -69,15 +72,16 @@ func toAuthorResponse(s users.Summary) AuthorResponse {
 
 // PostResponse is the JSON-serializable view of a post returned to clients.
 type PostResponse struct {
-	ID         int            `json:"id"`
-	UserID     int            `json:"user_id"`
-	Author     AuthorResponse `json:"author"`
-	Visibility string         `json:"visibility"`
-	Title      string         `json:"title"`
-	Content    string         `json:"content"`
-	ImageURL   string         `json:"image_url,omitempty"`
-	CreatedAt  time.Time      `json:"created_at"`
-	UpdatedAt  time.Time      `json:"updated_at"`
+	ID         int             `json:"id"`
+	UserID     int             `json:"user_id"`
+	Author     AuthorResponse  `json:"author"`
+	Visibility string          `json:"visibility"`
+	Title      string          `json:"title"`
+	Content    string          `json:"content"`
+	ImageURL   string          `json:"image_url,omitempty"`
+	Media      []MediaResponse `json:"media"`
+	CreatedAt  time.Time       `json:"created_at"`
+	UpdatedAt  time.Time       `json:"updated_at"`
 	// IsOwner tells the client whether the requesting user owns this post,
 	// so it knows whether to offer an edit action.
 	IsOwner bool `json:"is_owner"`
@@ -93,6 +97,15 @@ type PostResponse struct {
 	// ViewerIDs is only populated for the owner of a custom-visibility post,
 	// so an edit form can prefill the current allowed-viewer list.
 	ViewerIDs []int `json:"viewer_ids,omitempty"`
+}
+
+// MediaResponse is an ordered post attachment. Type is "gif" for animated
+// GIFs and "image" for all supported still-image formats.
+type MediaResponse struct {
+	ID    int    `json:"id"`
+	URL   string `json:"url"`
+	Type  string `json:"type"`
+	Order int    `json:"order"`
 }
 
 func (h *Handler) newPostResponse(p *post, viewerID int, authors map[int]users.Summary) PostResponse {
@@ -113,12 +126,19 @@ func (h *Handler) newPostResponse(p *post, viewerID int, authors map[int]users.S
 		UpdatedAt:  p.Updated_At,
 		IsOwner:    isOwner,
 		CanDelete:  canDelete,
+		Media:      make([]MediaResponse, 0, len(p.Media)),
 	}
 	if author, ok := authors[p.User_ID]; ok {
 		resp.Author = toAuthorResponse(author)
 	}
-	if p.ImagePath.Valid {
-		resp.ImageURL = "/uploads/" + p.ImagePath.String
+	for _, media := range p.Media {
+		resp.Media = append(resp.Media, MediaResponse{
+			ID: media.ID, URL: "/uploads/" + media.FilePath,
+			Type: media.MediaType, Order: media.SortOrder,
+		})
+	}
+	if len(resp.Media) > 0 {
+		resp.ImageURL = resp.Media[0].URL
 	}
 
 	if p.GroupID.Valid {
@@ -175,7 +195,8 @@ func NewHandler(service *Service, usersService *users.Service, groupsService *gr
 // NewPostHandler expects a multipart/form-data body with "title", "content",
 // and "visibility" ("public", "followers", or "custom") fields, a repeated
 // "viewer_ids" field for each allowed viewer when visibility is "custom",
-// plus an optional "image" file attachment (JPEG, PNG, GIF, or WebP).
+// plus up to MaxPostMedia repeated "media" file attachments. The legacy
+// singular "image" field remains accepted for older clients.
 func (h *Handler) NewPostHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		w.WriteHeader(errMethodNotAllowed)
@@ -216,7 +237,7 @@ func (h *Handler) NewPostHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	imagePath, ok := h.saveImageAttachment(w, r)
+	media, ok := h.saveMediaAttachments(w, r)
 	if !ok {
 		return
 	}
@@ -226,11 +247,11 @@ func (h *Handler) NewPostHandler(w http.ResponseWriter, r *http.Request) {
 		visibility: req.Visibility,
 		Title:      req.Title,
 		Content:    req.Content,
-		ImagePath:  sql.NullString{String: imagePath, Valid: imagePath != ""},
+		Media:      media,
 	}
 
 	if err := h.service.CreatePost(p, req.ViewerIDs); err != nil {
-		h.mediaStorage.Remove(imagePath)
+		h.removeMedia(media)
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(Response{Error: "Server error"})
 		return
@@ -281,20 +302,20 @@ func (h *Handler) NewGroupPostHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	imagePath, ok := h.saveImageAttachment(w, r)
+	media, ok := h.saveMediaAttachments(w, r)
 	if !ok {
 		return
 	}
 
 	p := &post{
-		User_ID:   userID,
-		Title:     title,
-		Content:   content,
-		ImagePath: sql.NullString{String: imagePath, Valid: imagePath != ""},
+		User_ID: userID,
+		Title:   title,
+		Content: content,
+		Media:   media,
 	}
 
 	if err := h.service.CreateGroupPost(p, groupID); err != nil {
-		h.mediaStorage.Remove(imagePath)
+		h.removeMedia(media)
 		writePostError(w, err)
 		return
 	}
@@ -303,34 +324,54 @@ func (h *Handler) NewGroupPostHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(h.newPostResponse(p, userID, h.authorsFor([]*post{p})))
 }
 
-// saveImageAttachment reads the optional "image" form file from an
-// already-parsed multipart request and stores it, returning its relative
-// path (empty if no file was attached). On failure it writes the error
-// response itself and returns ok=false.
-func (h *Handler) saveImageAttachment(w http.ResponseWriter, r *http.Request) (imagePath string, ok bool) {
-	file, header, err := r.FormFile("image")
-	if err != nil {
-		if errors.Is(err, http.ErrMissingFile) {
-			return "", true
-		}
+// saveMediaAttachments validates and stores repeated media fields in request
+// order. If any file fails, every file written by this request is removed.
+func (h *Handler) saveMediaAttachments(w http.ResponseWriter, r *http.Request) ([]postMedia, bool) {
+	files := r.MultipartForm.File["media"]
+	files = append(files, r.MultipartForm.File["image"]...)
+	if len(files) > MaxPostMedia {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(Response{Error: "Invalid image upload"})
-		return "", false
+		json.NewEncoder(w).Encode(Response{Error: "A post can include up to 4 media items"})
+		return nil, false
 	}
-	defer file.Close()
 
-	imagePath, err = h.mediaStorage.Save(file, header)
-	if err != nil {
-		status := http.StatusBadRequest
-		if !errors.Is(err, upload.ErrInvalidFileType) && !errors.Is(err, upload.ErrFileTooLarge) {
-			status = http.StatusInternalServerError
+	media := make([]postMedia, 0, len(files))
+	for i, header := range files {
+		file, err := header.Open()
+		if err != nil {
+			h.removeMedia(media)
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(Response{Error: "Invalid media upload"})
+			return nil, false
 		}
-		w.WriteHeader(status)
-		json.NewEncoder(w).Encode(Response{Error: err.Error()})
-		return "", false
+
+		path, saveErr := h.mediaStorage.Save(file, header)
+		file.Close()
+		if saveErr != nil {
+			h.removeMedia(media)
+			status := http.StatusBadRequest
+			if !errors.Is(saveErr, upload.ErrInvalidFileType) && !errors.Is(saveErr, upload.ErrFileTooLarge) {
+				status = http.StatusInternalServerError
+			}
+			w.WriteHeader(status)
+			json.NewEncoder(w).Encode(Response{Error: saveErr.Error()})
+			return nil, false
+		}
+
+		kind := "image"
+		if strings.EqualFold(filepath.Ext(path), ".gif") {
+			kind = "gif"
+		}
+		media = append(media, postMedia{FilePath: path, MediaType: kind, SortOrder: i})
 	}
 
-	return imagePath, true
+	return media, true
+}
+
+func (h *Handler) removeMedia(media []postMedia) {
+	for _, item := range media {
+		_ = h.mediaStorage.Remove(item.FilePath)
+	}
 }
 
 // GetPostByIDHandler retrieves a post by its ID.
@@ -529,10 +570,17 @@ func (h *Handler) DeletePostHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	p, err := h.service.GetPostByID(postID)
+	if err != nil {
+		writePostError(w, err)
+		return
+	}
+
 	if err := h.service.DeletePost(userID, postID); err != nil {
 		writePostError(w, err)
 		return
 	}
+	h.removeMedia(p.Media)
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(Response{Message: "Post deleted"})

@@ -12,6 +12,13 @@ export interface PostAuthor {
   profile_photo?: string;
 }
 
+export interface PostMedia {
+  id: number;
+  url: string;
+  type: "image" | "gif";
+  order: number;
+}
+
 export interface Post {
   id: number;
   user_id: number;
@@ -20,6 +27,7 @@ export interface Post {
   title: string;
   content: string;
   image_url?: string;
+  media: PostMedia[];
   created_at: string;
   updated_at: string;
   is_owner: boolean;
@@ -47,7 +55,7 @@ export interface PostInput {
 }
 
 export interface NewPostInput extends PostInput {
-  image?: File | null;
+  media: File[];
 }
 
 // NewGroupPostInput is the payload for creating a post within a group -

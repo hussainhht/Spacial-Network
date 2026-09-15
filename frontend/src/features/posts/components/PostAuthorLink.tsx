@@ -7,6 +7,7 @@ import type { PostAuthor } from "@/features/posts/types/post";
 
 interface PostAuthorLinkProps {
   author: PostAuthor;
+  disabled?: boolean;
 }
 
 function getFullPhotoUrl(path: string) {
@@ -22,13 +23,13 @@ function getInitials(firstName: string, lastName: string, username: string) {
   return initials || username.slice(0, 2).toUpperCase();
 }
 
-export default function PostAuthorLink({ author }: PostAuthorLinkProps) {
+export default function PostAuthorLink({ author, disabled = false }: PostAuthorLinkProps) {
   const fullName = [author.first_name, author.last_name]
     .filter(Boolean)
     .join(" ");
 
-  return (
-    <Link href={`/profile/${author.username}`} className="post-author">
+  const contents = (
+    <>
       {author.profile_photo ? (
         <Image
           src={getFullPhotoUrl(author.profile_photo)}
@@ -47,6 +48,9 @@ export default function PostAuthorLink({ author }: PostAuthorLinkProps) {
         <span className="post-author-name">{fullName || author.username}</span>
         <span className="post-author-username">@{author.username}</span>
       </span>
-    </Link>
+    </>
   );
+
+  if (disabled) return <div className="post-author">{contents}</div>;
+  return <Link href={`/profile/${author.username}`} className="post-author">{contents}</Link>;
 }

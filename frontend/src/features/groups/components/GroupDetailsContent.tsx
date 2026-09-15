@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
+import AppIcon from "@/components/layout/AppIcon";
 import {
   useGroup,
   useGroupMembers,
@@ -10,19 +11,23 @@ import {
   usePendingInvitations,
 } from "../hooks/useGroupData";
 import EditGroupForm from "./management/EditGroupForm";
-import GroupAvatar from "./GroupAvatar";
 import GroupChatPanel from "./GroupChatPanel";
 import GroupDangerZone from "./management/GroupDangerZone";
 import GroupEvents from "./events/GroupEvents";
+import GroupHeaderCard from "./GroupHeaderCard";
 import GroupPosts from "./GroupPosts";
 import {
   GroupLoadError,
+  JoinRequestsPanel,
   MembersPanel,
   MembershipBadge,
-  MembershipPanel,
+  NonMemberActions,
 } from "./GroupPanels";
 import GroupTabs, { type ActiveGroupTab } from "./GroupTabs";
-import GroupPrivacyBadge from "./GroupPrivacyBadge";
+import GroupAboutCard from "./overview/GroupAboutCard";
+import GroupActivityPreview from "./overview/GroupActivityPreview";
+import GroupEventsPreview from "./overview/GroupEventsPreview";
+import GroupMembersPreview from "./overview/GroupMembersPreview";
 
 export default function GroupDetailsContent() {
   const { groupId } = useParams<{ groupId: string }>();
@@ -32,7 +37,7 @@ export default function GroupDetailsContent() {
     return (
       <div className="group-details-container">
         <Link href="/groups" className="back-link">
-          ← Back to groups
+          <AppIcon name="arrowLeft" width={16} height={16} /> Back to groups
         </Link>
         <p className="form-error" role="alert">
           Invalid group ID. Choose a group from the directory.
@@ -53,11 +58,34 @@ function GroupDetails({ groupId }: { groupId: number }) {
   const invitations = usePendingInvitations();
   const [activeTab, setActiveTab] = useState<ActiveGroupTab>("overview");
   const isCreator = membership.data?.role === "creator";
+  const isMember = Boolean(membership.data?.isMember);
+  const memberCount = members.data?.length ?? group.data?.memberCount ?? 0;
+
+  const membershipStatus = (
+    <>
+      {!membership.loading &&
+        !membership.error &&
+        membership.data &&
+        (membership.data.isMember ||
+          (!invitations.loading && !invitations.error)) && (
+          <MembershipBadge
+            role={
+              membership.data.isMember ? membership.data.role : undefined
+            }
+            pending={membership.data.hasPendingJoinRequest}
+            invited={invitations.data?.some((i) => i.groupId === groupId)}
+          />
+        )}
+      {membership.loading && (
+        <span className="group-muted-inline">Checking membership…</span>
+      )}
+    </>
+  );
 
   return (
     <div className="group-details-container">
       <Link href="/groups" className="back-link">
-        ← Back to groups
+        <AppIcon name="arrowLeft" width={16} height={16} /> Back to groups
       </Link>
       {group.loading && !group.data && (
         <div className="group-panel group-loading" role="status">
@@ -69,46 +97,13 @@ function GroupDetails({ groupId }: { groupId: number }) {
       )}
       {group.data && (
         <>
-          <header className="group-detail-card">
-            <div className="group-header-top">
-              <GroupAvatar group={group.data} size={64} />
-              <span className="group-eyebrow">Community</span>
-            </div>
-            <h1>{group.data.title}</h1>
-            <p className="group-detail-creator">
-              Created by @{group.data.creatorUsername}
-            </p>
-            <p className="group-detail-description">{group.data.description}</p>
-            <div className="group-header-meta">
-              <GroupPrivacyBadge privacy={group.data.privacy} detailed />
-              <span>
-                {members.data?.length ?? group.data.memberCount}{" "}
-                {(members.data?.length ?? group.data.memberCount) === 1
-                  ? "member"
-                  : "members"}
-              </span>
-              {!membership.loading &&
-                !membership.error &&
-                membership.data &&
-                (membership.data.isMember ||
-                  (!invitations.loading && !invitations.error)) && (
-                  <MembershipBadge
-                    role={
-                      membership.data.isMember
-                        ? membership.data.role
-                        : undefined
-                    }
-                    pending={membership.data.hasPendingJoinRequest}
-                    invited={invitations.data?.some(
-                      (i) => i.groupId === groupId,
-                    )}
-                  />
-                )}
-              {membership.loading && (
-                <span className="group-muted">Checking membership…</span>
-              )}
-            </div>
-          </header>
+          <GroupHeaderCard
+            group={group.data}
+            memberCount={memberCount}
+            isCreator={isCreator}
+            onEditClick={() => setActiveTab("edit")}
+            membershipStatus={membershipStatus}
+          />
           <GroupTabs
             activeTab={activeTab}
             onTabChange={setActiveTab}
@@ -119,18 +114,67 @@ function GroupDetails({ groupId }: { groupId: number }) {
               id="group-tabpanel-overview"
               role="tabpanel"
               aria-labelledby="group-tab-overview"
-              className="group-details-grid"
+              className="group-overview-grid"
             >
-              <div className="group-main-column">
-                <MembershipPanel
+              <div className="group-overview-about">
+                <GroupAboutCard group={group.data} />
+              </div>
+              <div className="group-overview-members">
+                <GroupMembersPreview
                   groupId={groupId}
-                  privacy={group.data.privacy}
+                  creatorId={group.data.creatorId}
+                  onSeeAll={() => setActiveTab("members")}
                 />
               </div>
-              <MembersPanel
-                groupId={groupId}
-                creatorId={group.data.creatorId}
-              />
+              <div className="group-overview-main">
+                {membership.loading && (
+                  <div
+                    className="group-panel group-loading"
+                    role="status"
+                  >
+                    Checking membership…
+                  </div>
+                )}
+                {membership.error && (
+                  <GroupLoadError
+                    error={membership.error}
+                    retry={membership.refresh}
+                  />
+                )}
+                {!membership.loading &&
+                  !membership.error &&
+                  membership.data &&
+                  (isMember ? (
+                    <GroupPosts groupId={groupId} isMember={isMember} />
+                  ) : (
+                    <section
+                      className="group-panel group-join-callout"
+                      aria-labelledby="join-heading"
+                    >
+                      <div className="group-section-heading">
+                        <h2 id="join-heading">Join this group</h2>
+                      </div>
+                      <NonMemberActions
+                        groupId={groupId}
+                        privacy={group.data.privacy}
+                        pending={membership.data.hasPendingJoinRequest}
+                      />
+                    </section>
+                  ))}
+              </div>
+              <div className="group-overview-events">
+                <GroupEventsPreview
+                  groupId={groupId}
+                  isMember={isMember}
+                  onSeeAll={() => setActiveTab("events")}
+                />
+              </div>
+              <div className="group-overview-activity">
+                <GroupActivityPreview
+                  group={group.data}
+                  members={members.data}
+                />
+              </div>
             </div>
           )}
           {activeTab === "posts" && (
@@ -139,10 +183,7 @@ function GroupDetails({ groupId }: { groupId: number }) {
               role="tabpanel"
               aria-labelledby="group-tab-posts"
             >
-              <GroupPosts
-                groupId={groupId}
-                isMember={Boolean(membership.data?.isMember)}
-              />
+              <GroupPosts groupId={groupId} isMember={isMember} />
             </div>
           )}
           {activeTab === "events" && (
@@ -153,8 +194,20 @@ function GroupDetails({ groupId }: { groupId: number }) {
             >
               <GroupEvents
                 groupId={groupId}
-                isMember={Boolean(membership.data?.isMember)}
+                isMember={isMember}
                 members={members.data}
+              />
+            </div>
+          )}
+          {activeTab === "members" && (
+            <div
+              id="group-tabpanel-members"
+              role="tabpanel"
+              aria-labelledby="group-tab-members"
+            >
+              <MembersPanel
+                groupId={groupId}
+                creatorId={group.data.creatorId}
               />
             </div>
           )}
@@ -164,10 +217,7 @@ function GroupDetails({ groupId }: { groupId: number }) {
               role="tabpanel"
               aria-labelledby="group-tab-chat"
             >
-              <GroupChatPanel
-                groupId={groupId}
-                isMember={Boolean(membership.data?.isMember)}
-              />
+              <GroupChatPanel groupId={groupId} isMember={isMember} />
             </div>
           )}
           {activeTab === "edit" && isCreator && (
@@ -176,6 +226,9 @@ function GroupDetails({ groupId }: { groupId: number }) {
               role="tabpanel"
               aria-labelledby="group-tab-edit"
             >
+              {group.data.privacy === "public" && (
+                <JoinRequestsPanel groupId={groupId} />
+              )}
               <EditGroupForm group={group.data} />
               <GroupDangerZone group={group.data} />
             </div>

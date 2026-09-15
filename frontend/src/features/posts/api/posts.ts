@@ -39,8 +39,8 @@ export function createPost(input: NewPostInput): Promise<Post> {
       formData.append("viewer_ids", String(id));
     }
   }
-  if (input.image) {
-    formData.append("image", input.image);
+  for (const file of input.media) {
+    formData.append("media", file);
   }
 
   return apiRequest<Post>("/posts", {

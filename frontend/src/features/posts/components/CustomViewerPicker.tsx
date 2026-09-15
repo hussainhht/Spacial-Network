@@ -38,10 +38,10 @@ export default function CustomViewerPicker({
   }
 
   return (
-    <div className="post-visibility-picker">
-      <p className="post-visibility-picker-heading">
+    <fieldset className="post-visibility-picker">
+      <legend className="post-visibility-picker-heading">
         Choose who can see this post &middot; {selectedIds.length} selected
-      </p>
+      </legend>
 
       <ul className="post-visibility-picker-list">
         {followers.map((user) => {
@@ -67,6 +67,6 @@ export default function CustomViewerPicker({
           );
         })}
       </ul>
-    </div>
+    </fieldset>
   );
 }
