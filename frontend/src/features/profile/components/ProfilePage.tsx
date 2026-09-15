@@ -27,6 +27,7 @@ import type {
   ProfileUserSummary,
 } from "../types/profile";
 import ProfileHeader from "./ProfileHeader";
+import ProfileAbout from "./ProfileAbout";
 import ProfileContent from "./ProfileContent";
 import {
   ProfileLoadingState,
@@ -446,22 +447,42 @@ export default function ProfilePage({ username }: ProfilePageProps) {
     isPrivate: privacyOverride ?? profile.isPrivate,
   };
 
+  function handleEditProfile() {
+    setActiveTab("settings");
+
+    const prefersReducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    document.getElementById("profile-sections")?.scrollIntoView({
+      behavior: prefersReducedMotion ? "auto" : "smooth",
+      block: "start",
+    });
+  }
+
   return (
     <div className={styles.profilePage}>
       <div className={styles.container}>
-        <ProfileHeader
-          profile={effectiveProfile}
-          isOwnProfile={isOwnProfile}
-          postsCount={posts.length}
-          followersCount={followers.length}
-          followingCount={following.length}
-          isFollowing={isFollowing}
-          hasPendingFollowRequest={hasPendingFollowRequest}
-          canMessage={canMessage}
-          followLoading={followLoading}
-          onSelectTab={setActiveTab}
-          onToggleFollow={handleToggleFollow}
-        />
+        <div className={styles.identitySurface}>
+          <ProfileHeader
+            profile={effectiveProfile}
+            isOwnProfile={isOwnProfile}
+            isFollowing={isFollowing}
+            hasPendingFollowRequest={hasPendingFollowRequest}
+            canMessage={canMessage}
+            followLoading={followLoading}
+            followError={followError}
+            onEditProfile={handleEditProfile}
+            onToggleFollow={handleToggleFollow}
+          />
+
+          {!isLocked && (
+            <ProfileAbout
+              profile={effectiveProfile}
+              isOwnProfile={isOwnProfile}
+              onEditProfile={isOwnProfile ? handleEditProfile : undefined}
+            />
+          )}
+        </div>
 
         {isLocked ? (
           <PrivateProfileState />
@@ -490,7 +511,6 @@ export default function ProfilePage({ username }: ProfilePageProps) {
             followers={followers}
             following={following}
             followDataLoading={followDataLoading}
-            followError={followError}
             onFollowRequestsChanged={refreshFollowLists}
           />
         )}
