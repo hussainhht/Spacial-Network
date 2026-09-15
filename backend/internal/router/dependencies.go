@@ -2,6 +2,9 @@ package router
 
 import (
 	"database/sql"
+	"encoding/json"
+	"math"
+	"strconv"
 
 	"social/internal/auth"
 	"social/internal/chat"
@@ -11,8 +14,8 @@ import (
 	"social/internal/groups"
 	"social/internal/notifications"
 	"social/internal/posts"
-	"social/internal/search"
 	"social/internal/ratelimit"
+	"social/internal/search"
 	"social/internal/upload"
 	"social/internal/users"
 	"social/internal/websocket"
@@ -194,7 +197,23 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 	wsRouter := websocket.NewRouter()
 	chatService.RegisterWSRoutes(wsRouter)
 	wsRouter.Register(groups.EventInviteUserSearch, inviteSearchWSHandler.HandleInviteUserSearch)
-	wsHandler.SetMessageHandler(wsRouter.Dispatch)
+
+	wsHandler.SetMessageHandler(func(senderID int64, raw []byte) {
+		eventType := websocketEventType(raw)
+
+		if shouldRateLimitWebSocketEvent(eventType) {
+			userKey := "user:" + strconv.FormatInt(senderID, 10)
+			endpoint := "WS " + string(eventType)
+
+			decision := rateLimiter.Check(userKey, endpoint, 1)
+			if !decision.Allowed {
+				sendWebSocketRateLimitError(hub, senderID, decision)
+				return
+			}
+		}
+
+		wsRouter.Dispatch(senderID, raw)
+	})
 
 	// =========================
 	// Search
@@ -225,4 +244,51 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 
 		// PostsService: postsService,
 	}, nil
+}
+
+type wsRateLimitEnvelope struct {
+	Type websocket.EventType `json:"type"`
+}
+
+func websocketEventType(raw []byte) websocket.EventType {
+	var event wsRateLimitEnvelope
+	if err := json.Unmarshal(raw, &event); err != nil {
+		return ""
+	}
+
+	return event.Type
+}
+
+func shouldRateLimitWebSocketEvent(eventType websocket.EventType) bool {
+	switch eventType {
+	case chat.EventPrivateMessage, chat.EventGroupMessage:
+		return true
+	default:
+		return false
+	}
+}
+
+func sendWebSocketRateLimitError(
+	hub *websocket.Hub,
+	userID int64,
+	decision ratelimit.Decision,
+) {
+	retrySeconds := int(math.Ceil(decision.RetryAfter.Seconds()))
+	if retrySeconds < 0 {
+		retrySeconds = 0
+	}
+
+	event, err := websocket.NewEvent(
+		websocket.EventError,
+		websocket.ErrorPayload{
+			Message: "Too many chat messages. Try again in " +
+				strconv.Itoa(retrySeconds) +
+				" seconds.",
+		},
+	)
+	if err != nil {
+		return
+	}
+
+	hub.SendToUser(userID, event)
 }
