@@ -1,10 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { type FormEvent, useRef, useState } from "react";
 import { removeGroupPost, useGroupPosts } from "../hooks/useGroupData";
+import { useGroupAction } from "../hooks/useGroupAction";
 import PostCard from "@/features/posts/components/PostCard";
+import { createGroupPost } from "@/features/posts/api/posts";
+import ImageAttachmentField from "@/components/ImageAttachmentField";
 import { GroupLoadError } from "./GroupPanels";
-import CreateGroupPostModal from "./CreateGroupPostModal";
+
+const MAX_TITLE_LENGTH = 200;
+const MAX_CONTENT_LENGTH = 10000;
 
 interface GroupPostsProps {
   groupId: number;
@@ -27,7 +32,50 @@ export default function GroupPosts({ groupId, isMember }: GroupPostsProps) {
 
 function MemberGroupPosts({ groupId }: { groupId: number }) {
   const posts = useGroupPosts(groupId);
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [image, setImage] = useState<File | null>(null);
+  const [imageFieldKey, setImageFieldKey] = useState(0);
+  const [formError, setFormError] = useState<string | null>(null);
+  const titleRef = useRef<HTMLInputElement>(null);
+  const { busy, error, run } = useGroupAction(
+    `create-group-post:${groupId}`,
+    groupId,
+  );
+
+  function expandComposer() {
+    setIsExpanded(true);
+    requestAnimationFrame(() => titleRef.current?.focus());
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (busy) return;
+
+    const trimmedTitle = title.trim();
+    const trimmedContent = content.trim();
+    if (!trimmedTitle || !trimmedContent) {
+      setFormError("Title and content cannot be empty.");
+      return;
+    }
+
+    setFormError(null);
+    const ok = await run("Posting…", async () => {
+      await createGroupPost(groupId, {
+        title: trimmedTitle,
+        content: trimmedContent,
+        image,
+      });
+    });
+    if (!ok) return;
+
+    setTitle("");
+    setContent("");
+    setImage(null);
+    setImageFieldKey((key) => key + 1);
+    setIsExpanded(false);
+  }
 
   function handleDeleted(postId: number) {
     removeGroupPost(groupId, postId);
@@ -35,38 +83,60 @@ function MemberGroupPosts({ groupId }: { groupId: number }) {
 
   return (
     <>
-      <section
-        className="group-panel group-post-composer"
-        aria-label="Create a post"
-      >
-        <button
-          type="button"
-          className="group-composer-trigger"
-          onClick={() => setIsCreateOpen(true)}
-        >
-          <span className="group-composer-avatar" aria-hidden="true">
-            +
-          </span>
-          <span className="group-composer-placeholder">
-            Share something with the group…
-          </span>
-        </button>
-        <div className="group-composer-actions">
+      <section className={`group-panel group-post-composer${isExpanded ? " is-expanded" : ""}`} aria-label="Create a post">
+        {!isExpanded ? (
           <button
             type="button"
-            className="group-composer-action"
-            onClick={() => setIsCreateOpen(true)}
+            className="group-composer-trigger"
+            onClick={expandComposer}
+            aria-expanded="false"
           >
-            + Add Image
+            <span className="group-composer-avatar" aria-hidden="true">+</span>
+            <span className="group-composer-placeholder">Share something with the group…</span>
           </button>
-          <button
-            type="button"
-            className="group-button"
-            onClick={() => setIsCreateOpen(true)}
-          >
-            Post
-          </button>
-        </div>
+        ) : (
+          <form className="group-inline-composer" onSubmit={handleSubmit}>
+            <div className="group-inline-field">
+              <label htmlFor={`group-post-title-${groupId}`}>Title</label>
+              <input
+                ref={titleRef}
+                id={`group-post-title-${groupId}`}
+                value={title}
+                onChange={(event) => setTitle(event.target.value)}
+                placeholder="Post title…"
+                maxLength={MAX_TITLE_LENGTH}
+                required
+              />
+            </div>
+            <div className="group-inline-field">
+              <label htmlFor={`group-post-content-${groupId}`}>Content</label>
+              <textarea
+                id={`group-post-content-${groupId}`}
+                value={content}
+                onChange={(event) => setContent(event.target.value)}
+                placeholder="Share something with the group…"
+                maxLength={MAX_CONTENT_LENGTH}
+                rows={4}
+                required
+              />
+            </div>
+            <ImageAttachmentField
+              key={imageFieldKey}
+              id={`group-post-image-${groupId}`}
+              label="Image (optional)"
+              onChange={setImage}
+            />
+            {(formError || error) && <p className="form-error" role="alert">{formError ?? error}</p>}
+            <div className="group-composer-actions">
+              <button type="button" className="group-composer-collapse" onClick={() => setIsExpanded(false)} disabled={Boolean(busy)}>
+                Collapse
+              </button>
+              <button type="submit" className="group-button" disabled={Boolean(busy) || !title.trim() || !content.trim()}>
+                {busy ?? "Post"}
+              </button>
+            </div>
+          </form>
+        )}
       </section>
 
       <section className="group-panel group-posts" aria-labelledby="posts-list-heading">
@@ -91,7 +161,7 @@ function MemberGroupPosts({ groupId }: { groupId: number }) {
             <button
               type="button"
               className="group-button secondary"
-              onClick={() => setIsCreateOpen(true)}
+              onClick={expandComposer}
             >
               Create Post
             </button>
@@ -107,12 +177,6 @@ function MemberGroupPosts({ groupId }: { groupId: number }) {
         )}
       </section>
 
-      {isCreateOpen && (
-        <CreateGroupPostModal
-          groupId={groupId}
-          onClose={() => setIsCreateOpen(false)}
-        />
-      )}
     </>
   );
 }
