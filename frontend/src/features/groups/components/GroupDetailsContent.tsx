@@ -12,13 +12,11 @@ import {
 } from "../hooks/useGroupData";
 import EditGroupForm from "./management/EditGroupForm";
 import GroupChatPanel from "./GroupChatPanel";
-import GroupDangerZone from "./management/GroupDangerZone";
 import GroupEvents from "./events/GroupEvents";
 import GroupHeaderCard from "./GroupHeaderCard";
 import GroupPosts from "./GroupPosts";
 import {
   GroupLoadError,
-  JoinRequestsPanel,
   MembersPanel,
   MembershipBadge,
   NonMemberActions,
@@ -82,9 +80,11 @@ function GroupDetails({ groupId }: { groupId: number }) {
 
   return (
     <div className="group-details-container">
-      <Link href="/groups" className="back-link">
-        <AppIcon name="arrowLeft" width={16} height={16} /> Back to groups
-      </Link>
+      {activeTab !== "edit" && (
+        <Link href="/groups" className="back-link">
+          <AppIcon name="arrowLeft" width={16} height={16} /> Back to groups
+        </Link>
+      )}
       {group.loading && !group.data && (
         <div className="group-panel group-loading" role="status">
           Loading community…
@@ -95,18 +95,22 @@ function GroupDetails({ groupId }: { groupId: number }) {
       )}
       {group.data && (
         <>
-          <GroupHeaderCard
-            group={group.data}
-            memberCount={memberCount}
-            isCreator={isCreator}
-            onEditClick={() => setActiveTab("edit")}
-            membershipStatus={membershipStatus}
-          />
-          <GroupTabs
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-            canEdit={isCreator}
-          />
+          {activeTab !== "edit" && (
+            <>
+              <GroupHeaderCard
+                group={group.data}
+                memberCount={memberCount}
+                isCreator={isCreator}
+                onEditClick={() => setActiveTab("edit")}
+                membershipStatus={membershipStatus}
+              />
+              <GroupTabs
+                activeTab={activeTab}
+                onTabChange={setActiveTab}
+                canEdit={isCreator}
+              />
+            </>
+          )}
           {activeTab === "overview" && (
             <div
               id="group-tabpanel-overview"
@@ -225,11 +229,11 @@ function GroupDetails({ groupId }: { groupId: number }) {
               role="tabpanel"
               aria-labelledby="group-tab-edit"
             >
-              {group.data.privacy === "public" && (
-                <JoinRequestsPanel groupId={groupId} />
-              )}
-              <EditGroupForm group={group.data} />
-              <GroupDangerZone group={group.data} />
+              <EditGroupForm
+                group={group.data}
+                onBack={() => setActiveTab("overview")}
+                onViewMembers={() => setActiveTab("members")}
+              />
             </div>
           )}
         </>
