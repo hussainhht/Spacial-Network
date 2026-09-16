@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useActionFeedback } from "@/components/feedback/ActionFeedbackProvider";
 import { createComment, listComments } from "@/features/comments/api/comments";
 import type { Comment } from "@/features/comments/types/comment";
 import CommentForm from "./CommentForm";
@@ -23,6 +24,7 @@ export default function CommentsSection({
   showAuthors = false,
   onCountChange,
 }: CommentsSectionProps) {
+  const { notify } = useActionFeedback();
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -56,8 +58,15 @@ export default function CommentsSection({
   }, [comments.length, loading, onCountChange]);
 
   async function handleCreate(content: string, image?: File | null) {
-    const comment = await createComment(postId, content, image);
-    setComments((current) => [...current, comment]);
+    try {
+      const comment = await createComment(postId, content, image);
+      setComments((current) => [...current, comment]);
+      notify("Comment posted.");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to post comment";
+      notify(message, "error");
+      throw error;
+    }
   }
 
   function handleDeleted(id: number) {
