@@ -15,6 +15,13 @@ import type {
 
 const RECENT_SEARCHES_KEY = "cosmic_recent_searches";
 const MAX_RECENT_SEARCHES = 6;
+const EMPTY_RESULTS: SearchResults = {
+  query: "",
+  users: [],
+  groups: [],
+  posts: [],
+  events: [],
+};
 
 export const DEFAULT_SHORTCUTS: NavigationShortcut[] = [
   {
@@ -68,15 +75,11 @@ export function useUniversalSearch(onClose?: () => void) {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<SearchCategory>("all");
-  const [results, setResults] = useState<SearchResults>({
-    query: "",
-    users: [],
-    groups: [],
-    posts: [],
-    events: [],
-  });
+  const [results, setResults] = useState<SearchResults>(EMPTY_RESULTS);
+  const [resultKey, setResultKey] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [retryRevision, setRetryRevision] = useState(0);
   const [recentSearches, setRecentSearches] = useState<string[]>(() => {
     if (typeof window === "undefined") return [];
     try {
@@ -126,31 +129,23 @@ export function useUniversalSearch(onClose?: () => void) {
   useEffect(() => {
     const trimmed = query.trim();
     if (!trimmed) {
-      setResults({
-        query: "",
-        users: [],
-        groups: [],
-        posts: [],
-        events: [],
-      });
-      setIsLoading(false);
-      setError(null);
       return;
     }
-
-    setIsLoading(true);
-    setError(null);
 
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
     const controller = new AbortController();
     abortControllerRef.current = controller;
+    const requestKey = `${trimmed}\u0000${category}`;
 
     const timeoutId = setTimeout(async () => {
+      setIsLoading(true);
+      setError(null);
       try {
         const data = await fetchSearchResults(trimmed, category, 10, controller.signal);
         setResults(data);
+        setResultKey(requestKey);
         setError(null);
       } catch (err: unknown) {
         if (err instanceof DOMException && err.name === "AbortError") {
@@ -158,7 +153,7 @@ export function useUniversalSearch(onClose?: () => void) {
         }
         setError(err instanceof Error ? err.message : "Failed to load search results");
       } finally {
-        setIsLoading(false);
+        if (abortControllerRef.current === controller) setIsLoading(false);
       }
     }, 250);
 
@@ -166,7 +161,23 @@ export function useUniversalSearch(onClose?: () => void) {
       clearTimeout(timeoutId);
       controller.abort();
     };
-  }, [query, category]);
+  }, [query, category, retryRevision]);
+
+  const retrySearch = () => {
+    setError(null);
+    setRetryRevision((revision) => revision + 1);
+  };
+  const updateQuery = (nextQuery: string) => {
+    setQuery(nextQuery);
+    setActiveIndex(0);
+  };
+  const updateCategory = (nextCategory: SearchCategory) => {
+    setCategory(nextCategory);
+    setActiveIndex(0);
+  };
+  const currentResultKey = `${query.trim()}\u0000${category}`;
+  const visibleResults =
+    query.trim() && resultKey === currentResultKey ? results : EMPTY_RESULTS;
 
   const matchingShortcuts = useMemo(() => {
     if (category !== "all" && category !== "shortcuts") return [];
@@ -194,7 +205,7 @@ export function useUniversalSearch(onClose?: () => void) {
     });
 
     if (category === "all" || category === "users") {
-      results.users.forEach((u) => {
+      visibleResults.users.forEach((u) => {
         items.push({
           id: `user-${u.id}`,
           type: "user",
@@ -208,7 +219,7 @@ export function useUniversalSearch(onClose?: () => void) {
     }
 
     if (category === "all" || category === "groups") {
-      results.groups.forEach((g) => {
+      visibleResults.groups.forEach((g) => {
         items.push({
           id: `group-${g.id}`,
           type: "group",
@@ -227,13 +238,13 @@ export function useUniversalSearch(onClose?: () => void) {
     }
 
     if (category === "all" || category === "posts") {
-      results.posts.forEach((p) => {
+      visibleResults.posts.forEach((p) => {
         items.push({
           id: `post-${p.id}`,
           type: "post",
           title: p.title || p.content_snippet,
           subtitle: `by @${p.author_username}${p.group_title ? ` in ${p.group_title}` : ""}`,
-          href: `/#post-${p.id}`,
+          href: `/posts/${p.id}`,
           badge: p.group_title ? p.group_title : "Post",
           data: p,
         });
@@ -241,7 +252,7 @@ export function useUniversalSearch(onClose?: () => void) {
     }
 
     if (category === "all" || category === "events") {
-      results.events.forEach((e) => {
+      visibleResults.events.forEach((e) => {
         items.push({
           id: `event-${e.id}`,
           type: "event",
@@ -255,11 +266,12 @@ export function useUniversalSearch(onClose?: () => void) {
     }
 
     return items;
-  }, [matchingShortcuts, results, category]);
+  }, [matchingShortcuts, visibleResults, category]);
 
-  useEffect(() => {
-    setActiveIndex(0);
-  }, [navigableItems.length, category]);
+  const visibleActiveIndex = Math.min(
+    activeIndex,
+    Math.max(0, navigableItems.length - 1),
+  );
 
   const selectItem = (item: NavigableItem) => {
     if (query.trim()) {
@@ -282,7 +294,7 @@ export function useUniversalSearch(onClose?: () => void) {
       setActiveIndex((prev) => (prev - 1 + navigableItems.length) % navigableItems.length);
     } else if (e.key === "Enter") {
       e.preventDefault();
-      const current = navigableItems[activeIndex];
+      const current = navigableItems[visibleActiveIndex];
       if (current) {
         selectItem(current);
       }
@@ -291,19 +303,20 @@ export function useUniversalSearch(onClose?: () => void) {
 
   return {
     query,
-    setQuery,
+    setQuery: updateQuery,
     category,
-    setCategory,
-    results,
-    isLoading,
-    error,
+    setCategory: updateCategory,
+    results: visibleResults,
+    isLoading: query.trim() ? isLoading : false,
+    error: query.trim() ? error : null,
+    retrySearch,
     recentSearches,
     saveRecentSearch,
     clearRecentSearches,
     removeRecentSearch,
     matchingShortcuts,
     navigableItems,
-    activeIndex,
+    activeIndex: visibleActiveIndex,
     setActiveIndex,
     selectItem,
     handleKeyDown,

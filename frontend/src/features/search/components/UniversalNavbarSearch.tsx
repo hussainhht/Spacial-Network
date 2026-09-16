@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import AppIcon from "@/components/layout/AppIcon";
 import { useSearchModal } from "../context/SearchContext";
 import {
@@ -22,8 +22,10 @@ const CATEGORIES: { id: SearchCategory; label: string }[] = [
 export default function UniversalNavbarSearch() {
   const { isOpen, openSearch, closeSearch } = useSearchModal();
   const inputRef = useRef<HTMLInputElement>(null);
-  const activeItemRef = useRef<HTMLDivElement>(null);
+  const activeItemRef = useRef<HTMLButtonElement>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const categoryRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   const {
     query,
@@ -31,6 +33,8 @@ export default function UniversalNavbarSearch() {
     category,
     setCategory,
     isLoading,
+    error,
+    retrySearch,
     recentSearches,
     clearRecentSearches,
     removeRecentSearch,
@@ -40,6 +44,31 @@ export default function UniversalNavbarSearch() {
     selectItem,
     handleKeyDown,
   } = useUniversalSearch(closeSearch);
+
+  const closeAndRestoreFocus = useCallback(() => {
+    closeSearch();
+    window.requestAnimationFrame(() => triggerRef.current?.focus());
+  }, [closeSearch]);
+
+  function handleCategoryKeyDown(
+    event: React.KeyboardEvent<HTMLButtonElement>,
+    index: number,
+  ) {
+    let nextIndex: number | null = null;
+    if (event.key === "ArrowLeft") {
+      nextIndex = (index - 1 + CATEGORIES.length) % CATEGORIES.length;
+    } else if (event.key === "ArrowRight") {
+      nextIndex = (index + 1) % CATEGORIES.length;
+    } else if (event.key === "Home") {
+      nextIndex = 0;
+    } else if (event.key === "End") {
+      nextIndex = CATEGORIES.length - 1;
+    }
+    if (nextIndex === null) return;
+    event.preventDefault();
+    setCategory(CATEGORIES[nextIndex].id);
+    categoryRefs.current[nextIndex]?.focus();
+  }
 
   // Auto-focus input when search opens
   useEffect(() => {
@@ -68,7 +97,7 @@ export default function UniversalNavbarSearch() {
     function handleGlobalKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") {
         e.preventDefault();
-        closeSearch();
+        closeAndRestoreFocus();
       }
     }
 
@@ -77,7 +106,7 @@ export default function UniversalNavbarSearch() {
         searchContainerRef.current &&
         !searchContainerRef.current.contains(e.target as Node)
       ) {
-        closeSearch();
+        closeAndRestoreFocus();
       }
     }
 
@@ -89,7 +118,7 @@ export default function UniversalNavbarSearch() {
       document.removeEventListener("mousedown", handleClickOutside);
       document.removeEventListener("touchstart", handleClickOutside);
     };
-  }, [isOpen, closeSearch]);
+  }, [isOpen, closeAndRestoreFocus]);
 
   const renderItemIcon = (item: NavigableItem) => {
     switch (item.type) {
@@ -151,6 +180,7 @@ export default function UniversalNavbarSearch() {
     return (
       <div className={styles.searchContainer}>
         <button
+          ref={triggerRef}
           type="button"
           className={styles.searchTriggerButton}
           onClick={openSearch}
@@ -174,9 +204,6 @@ export default function UniversalNavbarSearch() {
     <div
       ref={searchContainerRef}
       className={styles.searchContainer}
-      role="combobox"
-      aria-expanded="true"
-      aria-haspopup="listbox"
     >
       {/* 1. Active Search Input Bar connected in the TopNavbar */}
       <div className={styles.searchBarActive}>
@@ -198,6 +225,15 @@ export default function UniversalNavbarSearch() {
           autoComplete="off"
           spellCheck={false}
           aria-label="Search across the platform"
+          role="combobox"
+          aria-expanded="true"
+          aria-controls="universal-search-results"
+          aria-autocomplete="list"
+          aria-activedescendant={
+            navigableItems[activeIndex]
+              ? `search-option-${navigableItems[activeIndex].id}`
+              : undefined
+          }
         />
         {query ? (
           <button
@@ -213,18 +249,21 @@ export default function UniversalNavbarSearch() {
             ×
           </button>
         ) : (
-          <span
+          <button
+            type="button"
             className={styles.escPill}
-            onClick={closeSearch}
+            onClick={closeAndRestoreFocus}
             title="Close search (Esc)"
+            aria-label="Close search"
           >
             ESC
-          </span>
+          </button>
         )}
       </div>
 
       {/* 2. Connected Dropdown Tray extending downwards from the top bar */}
       <div
+        id="universal-search-results"
         className={styles.dropdownTray}
         role="listbox"
         aria-label="Search results"
@@ -235,12 +274,16 @@ export default function UniversalNavbarSearch() {
           role="tablist"
           aria-label="Filter categories"
         >
-          {CATEGORIES.map((tab) => (
+          {CATEGORIES.map((tab, index) => (
             <button
               key={tab.id}
+              ref={(element) => {
+                categoryRefs.current[index] = element;
+              }}
               type="button"
               role="tab"
               aria-selected={category === tab.id}
+              tabIndex={category === tab.id ? 0 : -1}
               className={`${styles.tabChip} ${
                 category === tab.id ? styles.tabChipActive : ""
               }`}
@@ -248,6 +291,7 @@ export default function UniversalNavbarSearch() {
                 setCategory(tab.id);
                 inputRef.current?.focus();
               }}
+              onKeyDown={(event) => handleCategoryKeyDown(event, index)}
             >
               {tab.label}
             </button>
@@ -270,28 +314,38 @@ export default function UniversalNavbarSearch() {
               </div>
               <div className={styles.recentsContainer}>
                 {recentSearches.map((term) => (
-                  <button
-                    key={term}
-                    type="button"
-                    className={styles.recentChip}
-                    onClick={() => {
-                      setQuery(term);
-                      inputRef.current?.focus();
-                    }}
-                  >
-                    <span>{term}</span>
-                    <span
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        removeRecentSearch(term);
+                  <span key={term} className={styles.recentItem}>
+                    <button
+                      type="button"
+                      className={styles.recentChip}
+                      onClick={() => {
+                        setQuery(term);
+                        inputRef.current?.focus();
                       }}
+                    >
+                      {term}
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.recentRemove}
+                      onClick={() => removeRecentSearch(term)}
                       title="Remove recent search"
+                      aria-label={`Remove recent search ${term}`}
                     >
                       ×
-                    </span>
-                  </button>
+                    </button>
+                  </span>
                 ))}
               </div>
+            </div>
+          )}
+
+          {error && query.trim() && !isLoading && (
+            <div className={styles.searchError} role="alert">
+              <span>{error}</span>
+              <button type="button" onClick={retrySearch}>
+                Try again
+              </button>
             </div>
           )}
 
@@ -305,8 +359,10 @@ export default function UniversalNavbarSearch() {
               {navigableItems.map((item, index) => {
                 const isActive = index === activeIndex;
                 return (
-                  <div
+                  <button
                     key={item.id}
+                    id={`search-option-${item.id}`}
+                    type="button"
                     ref={isActive ? activeItemRef : null}
                     className={`${styles.resultItem} ${
                       isActive ? styles.resultItemActive : ""
@@ -335,11 +391,11 @@ export default function UniversalNavbarSearch() {
                     <div className={styles.itemActionIcon}>
                       <AppIcon name="arrow" />
                     </div>
-                  </div>
+                  </button>
                 );
               })}
             </div>
-          ) : query.trim() && !isLoading ? (
+          ) : query.trim() && !isLoading && !error ? (
             <div className={styles.stateBox}>
               <div className={styles.stateIcon}>
                 <AppIcon name="search" />

@@ -157,6 +157,7 @@
   border: 1px solid rgba(148, 163, 184, 0.2);
   background: rgba(255, 255, 255, 0.06);
   color: #94a3b8;
+  font-family: inherit;
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.4px;
@@ -308,21 +309,47 @@
   padding: 4px 6px;
 }
 
+.recentItem {
+  display: inline-flex;
+  align-items: stretch;
+  overflow: hidden;
+  border: 1px solid var(--planet-border, rgba(148, 163, 184, 0.14));
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
 .recentChip {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 5px 10px;
-  border-radius: 8px;
-  border: 1px solid var(--planet-border, rgba(148, 163, 184, 0.14));
-  background: rgba(255, 255, 255, 0.04);
+  padding: 5px 4px 5px 10px;
+  border: 0;
+  background: transparent;
   color: #cbd5e1;
   font-size: 12px;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
-.recentChip:hover {
+.recentRemove {
+  display: grid;
+  width: 24px;
+  padding: 0 7px 0 0;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: #64748b;
+  font: inherit;
+  font-size: 17px;
+  cursor: pointer;
+}
+
+.recentRemove:hover,
+.recentRemove:focus-visible {
+  color: var(--space-text-heading);
+}
+
+.recentItem:hover {
   background: var(--planet-accent-soft);
   border-color: var(--planet-border-strong);
   color: var(--space-text-heading, #ffffff);
@@ -356,6 +383,33 @@
   text-decoration: none;
   transition: all 0.12s ease;
   outline: none;
+  width: 100%;
+  font: inherit;
+  text-align: left;
+}
+
+.searchError {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--space-error-border);
+  border-radius: 10px;
+  background: var(--space-error-bg);
+  color: var(--space-error-text);
+  font-size: 13px;
+}
+
+.searchError button {
+  padding: 7px 12px;
+  border: 1px solid var(--space-error-border);
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
 }
 
 .resultItem:hover,
