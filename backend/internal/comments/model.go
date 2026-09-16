@@ -3,6 +3,8 @@ package comments
 import (
 	"database/sql"
 	"time"
+
+	"social/internal/users"
 )
 
 type comment struct {
@@ -13,4 +15,5 @@ type comment struct {
 	ImagePath  sql.NullString
 	Created_At time.Time
 	Updated_At time.Time
+	Author     users.Summary
 }

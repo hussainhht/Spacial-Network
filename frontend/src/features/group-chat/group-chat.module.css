@@ -1,0 +1,1165 @@
+/* ==========================================================================
+   Group Chat Feature Scoped Styles
+   Dedicated channel-style community conversation surface
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Shell & Outer Layout
+   -------------------------------------------------------------------------- */
+.shell {
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 1500px;
+  margin: 0 auto;
+  min-height: 600px;
+  height: clamp(620px, calc(100dvh - 180px), 880px);
+  background: linear-gradient(
+    180deg,
+    rgba(13, 17, 38, 0.72) 0%,
+    rgba(8, 11, 26, 0.82) 100%
+  );
+  backdrop-filter: blur(18px) saturate(115%);
+  -webkit-backdrop-filter: blur(18px) saturate(115%);
+  border: 1px solid var(--space-border);
+  border-radius: var(--space-radius-lg, 20px);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+  position: relative;
+  box-sizing: border-box;
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .shell {
+    background: #080c1d;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Header
+   -------------------------------------------------------------------------- */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.875rem 1.25rem;
+  background: rgba(10, 15, 35, 0.88);
+  border-bottom: 1px solid var(--space-border);
+  z-index: 10;
+  flex-shrink: 0;
+}
+
+.headerIdentity {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  min-width: 0;
+}
+
+.headerEmblem {
+  flex-shrink: 0;
+  border-radius: var(--space-radius-sm, 8px);
+  overflow: hidden;
+}
+
+.headerMeta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.headerTitle {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--space-text-heading);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.headerSubtitle {
+  margin: 0.15rem 0 0;
+  font-size: 0.8rem;
+  color: var(--space-text-muted);
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.headerSubtitleDot {
+  display: inline-block;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background-color: var(--space-text-muted);
+  opacity: 0.7;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.headerInfoButton {
+  display: none;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 44px;
+  padding: 0 0.85rem;
+  background: var(--space-card-bg);
+  border: 1px solid var(--space-border);
+  border-radius: var(--space-radius-sm, 8px);
+  color: var(--space-text-body);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.headerInfoButton:hover {
+  background: var(--space-input-bg-focus);
+  border-color: var(--space-border-strong);
+}
+
+.headerInfoButton:focus-visible {
+  outline: 2px solid var(--planet-focus-ring, #78b6ef);
+  outline-offset: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   Connection Badge
+   -------------------------------------------------------------------------- */
+.connectionBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 0.3rem 0.65rem;
+  border-radius: 9999px;
+  background: rgba(16, 21, 47, 0.6);
+  border: 1px solid var(--space-border);
+  color: var(--space-text-muted);
+}
+
+.connectionDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.statusConnected .connectionDot {
+  background: #34d399;
+  box-shadow: 0 0 6px rgba(52, 211, 153, 0.6);
+}
+
+.statusConnected {
+  color: #a7f3d0;
+  border-color: rgba(52, 211, 153, 0.25);
+}
+
+.statusReconnecting .connectionDot {
+  background: #fbbf24;
+  box-shadow: 0 0 6px rgba(251, 191, 36, 0.6);
+  animation: connectionPulse 1.4s ease-in-out infinite;
+}
+
+.statusReconnecting {
+  color: #fde68a;
+  border-color: rgba(251, 191, 36, 0.25);
+}
+
+.statusOffline .connectionDot {
+  background: #f87171;
+  box-shadow: 0 0 6px rgba(248, 113, 113, 0.6);
+}
+
+.statusOffline {
+  color: #fca5a5;
+  border-color: rgba(248, 113, 113, 0.25);
+}
+
+@keyframes connectionPulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(0.8);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Main Body (Two columns on desktop)
+   -------------------------------------------------------------------------- */
+.body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) clamp(280px, 22cqw, 320px);
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.timelineColumn {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.timelineWrapper {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* --------------------------------------------------------------------------
+   Timeline (Scroll Container)
+   -------------------------------------------------------------------------- */
+.timeline {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--planet-border, rgba(103, 178, 239, 0.2)) transparent;
+}
+
+.timeline::-webkit-scrollbar {
+  width: 6px;
+}
+
+.timeline::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.timeline::-webkit-scrollbar-thumb {
+  background: var(--planet-border, rgba(103, 178, 239, 0.2));
+  border-radius: 9999px;
+}
+
+.timeline::-webkit-scrollbar-thumb:hover {
+  background: var(--planet-border-strong, rgba(103, 178, 239, 0.4));
+}
+
+/* --------------------------------------------------------------------------
+   Load Older Messages
+   -------------------------------------------------------------------------- */
+.loadOlderWrapper {
+  display: flex;
+  justify-content: center;
+  padding: 0.5rem 0;
+}
+
+.loadOlderButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 40px;
+  padding: 0.4rem 1rem;
+  background: rgba(16, 21, 47, 0.5);
+  border: 1px solid var(--space-border);
+  border-radius: 9999px;
+  color: var(--space-text-body);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.loadOlderButton:hover:not(:disabled) {
+  background: var(--space-input-bg-focus);
+  border-color: var(--space-border-strong);
+  color: var(--space-text-heading);
+}
+
+.loadOlderButton:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.loadOlderButton:focus-visible {
+  outline: 2px solid var(--planet-focus-ring, #78b6ef);
+  outline-offset: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   Day Divider
+   -------------------------------------------------------------------------- */
+.dayDivider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  margin: 0.75rem 0;
+}
+
+.dayDividerLine {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  background: var(--space-border);
+  z-index: 1;
+}
+
+.dayDividerPill {
+  position: relative;
+  z-index: 2;
+  padding: 0.2rem 0.75rem;
+  background: rgba(13, 17, 38, 0.95);
+  border: 1px solid var(--space-border);
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--space-text-muted);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* --------------------------------------------------------------------------
+   Message Cluster (Channel-Style)
+   -------------------------------------------------------------------------- */
+.messageGroup {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.875rem;
+  width: 100%;
+  padding: 0.3rem 0.15rem;
+  border-radius: var(--space-radius-md, 10px);
+  position: relative;
+}
+
+.messageGroupMine {
+  justify-content: flex-end;
+}
+
+.senderAvatarColumn {
+  flex-shrink: 0;
+  padding-top: 0.15rem;
+}
+
+.senderAvatarLink {
+  display: block;
+  border-radius: 50%;
+  transition: transform 0.15s ease;
+}
+
+.senderAvatarLink:hover {
+  transform: scale(1.05);
+}
+
+.senderAvatarLink:focus-visible {
+  outline: 2px solid var(--planet-focus-ring, #78b6ef);
+  outline-offset: 2px;
+}
+
+.messageClusterContent {
+  min-width: 0;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.messageGroup:not(.messageGroupMine) .messageClusterContent {
+  flex: 1;
+  align-items: flex-start;
+}
+
+.messageGroupMine .messageClusterContent {
+  align-items: flex-end;
+}
+
+.senderHeader {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.messageGroupMine .senderHeader {
+  justify-content: flex-end;
+}
+
+.senderNameLink {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--space-text-heading);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.senderNameLink:hover {
+  color: var(--planet-accent, #69aef0);
+  text-decoration: underline;
+}
+
+.senderNameLink:focus-visible {
+  outline: 2px solid var(--planet-focus-ring, #78b6ef);
+  outline-offset: 2px;
+}
+
+.badgeCreator {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  background: rgba(251, 191, 36, 0.12);
+  color: #fbbf24;
+  border: 1px solid rgba(251, 191, 36, 0.3);
+}
+
+.clusterTimestamp {
+  font-size: 0.75rem;
+  color: var(--space-text-muted);
+}
+
+.messagesStack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.3rem;
+  margin-top: 0.15rem;
+  max-width: 100%;
+}
+
+.messageGroupMine .messagesStack {
+  align-items: flex-end;
+}
+
+/* --------------------------------------------------------------------------
+   Message Item & Content (chat bubbles)
+   -------------------------------------------------------------------------- */
+.messageItem {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.4rem;
+  position: relative;
+  max-width: 100%;
+}
+
+.messageItemMine {
+  flex-direction: row-reverse;
+}
+
+/* Bubble sizes to its own content and never stretches to fill the row -
+   only the row/columns around it (messageGroup, messagesStack) are full
+   width, which is what keeps left/right alignment working. */
+.messageBody {
+  box-sizing: border-box;
+  width: fit-content;
+  max-width: min(70%, 40rem);
+  color: var(--space-text-body);
+  font-size: 0.925rem;
+  line-height: 1.5;
+  padding: 0.5rem 0.8rem;
+  border-radius: 14px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  unicode-bidi: plaintext;
+}
+
+.messageBodyOther {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--space-border);
+  border-top-left-radius: 4px;
+}
+
+.messageBodyMine {
+  background: var(--planet-accent-soft, rgba(82, 157, 224, 0.22));
+  border: 1px solid var(--planet-border, rgba(103, 178, 239, 0.4));
+  border-top-right-radius: 4px;
+  color: var(--space-text-heading);
+}
+
+.messageItemTime {
+  font-size: 0.7rem;
+  color: var(--space-text-muted);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  user-select: none;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.messageItem:hover .messageItemTime,
+.messageItem:focus-within .messageItemTime {
+  opacity: 0.8;
+}
+
+.sharedPostWrap {
+  margin-top: 0.35rem;
+  max-width: 100%;
+  width: min(420px, 100%);
+}
+
+/* --------------------------------------------------------------------------
+   Jump To Latest Button
+   -------------------------------------------------------------------------- */
+.jumpToLatestWrap {
+  position: absolute;
+  bottom: 0.85rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 15;
+  animation: jumpFadeIn 0.2s ease-out;
+}
+
+.jumpToLatestButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 40px;
+  padding: 0.4rem 1rem;
+  background: var(--space-bg-elevated);
+  border: 1px solid var(--planet-border-strong, #67b2ef);
+  border-radius: 9999px;
+  color: var(--space-text-heading);
+  font-size: 0.825rem;
+  font-weight: 600;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.jumpToLatestButton:hover {
+  background: var(--planet-accent-active, #285f96);
+  border-color: var(--planet-accent, #69aef0);
+  transform: translateY(-1px);
+}
+
+.jumpToLatestButton:focus-visible {
+  outline: 2px solid var(--planet-focus-ring, #78b6ef);
+  outline-offset: 2px;
+}
+
+.jumpBadge {
+  background: var(--planet-accent, #69aef0);
+  color: #050816;
+  font-size: 0.725rem;
+  font-weight: 700;
+  padding: 0.1rem 0.45rem;
+  border-radius: 9999px;
+}
+
+@keyframes jumpFadeIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Composer
+   -------------------------------------------------------------------------- */
+.composerForm {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
+  padding: 0.875rem 1.25rem;
+  padding-bottom: calc(0.875rem + env(safe-area-inset-bottom, 0px));
+  background: rgba(10, 15, 35, 0.92);
+  border-top: 1px solid var(--space-border);
+  z-index: 10;
+  flex-shrink: 0;
+}
+
+.composerInputWrapper {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: var(--space-input-bg, rgba(10, 15, 35, 0.65));
+  border: 1px solid var(--space-border);
+  border-radius: var(--space-radius-md, 10px);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.composerInputWrapper:focus-within {
+  background: var(--space-input-bg-focus, rgba(15, 23, 42, 0.85));
+  border-color: var(--planet-border-strong, #67b2ef);
+  box-shadow: 0 0 0 1px var(--planet-focus-ring, #78b6ef);
+}
+
+.composerTextarea {
+  flex: 1;
+  min-height: 44px;
+  max-height: 140px;
+  padding: 0.65rem 4rem 0.65rem 0.875rem;
+  background: transparent;
+  border: none;
+  color: var(--space-text-heading);
+  font-family: inherit;
+  font-size: 0.925rem;
+  line-height: 1.45;
+  resize: none;
+  outline: none;
+  unicode-bidi: plaintext;
+}
+
+.composerTextarea::placeholder {
+  color: var(--space-text-placeholder);
+}
+
+.charCounter {
+  position: absolute;
+  right: 0.75rem;
+  bottom: 0.65rem;
+  font-size: 0.75rem;
+  color: var(--space-text-placeholder);
+  pointer-events: none;
+  user-select: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.charCounterNear {
+  color: #fbbf24;
+}
+
+.charCounterOver {
+  color: var(--space-error-text, #fca5a5);
+  font-weight: 600;
+}
+
+.sendButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border-radius: var(--space-radius-md, 10px);
+  background: var(--planet-accent, #69aef0);
+  color: #050816;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.sendButton:hover:not(:disabled) {
+  background: var(--planet-accent-hover, #86c3f7);
+  transform: translateY(-1px);
+}
+
+.sendButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background: rgba(148, 163, 184, 0.2);
+  color: var(--space-text-muted);
+}
+
+.sendButton:focus-visible {
+  outline: 2px solid var(--planet-focus-ring, #78b6ef);
+  outline-offset: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   Info Rail (Desktop)
+   -------------------------------------------------------------------------- */
+.infoRail {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border-left: 1px solid var(--space-border);
+  background: rgba(10, 15, 35, 0.55);
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+}
+
+.infoRailSummary {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  border-bottom: 1px solid var(--space-border);
+  background: rgba(10, 15, 35, 0.35);
+}
+
+.infoRailEmblem {
+  margin-bottom: 0.75rem;
+  border-radius: var(--space-radius-md, 10px);
+  overflow: hidden;
+}
+
+.infoRailTitle {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--space-text-heading);
+}
+
+.infoRailPrivacyBadge {
+  margin-top: 0.35rem;
+  font-size: 0.75rem;
+  color: var(--space-text-muted);
+  text-transform: capitalize;
+}
+
+.infoRailDesc {
+  margin: 0.6rem 0 0;
+  font-size: 0.825rem;
+  color: var(--space-text-body);
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.infoRailMembersHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1.25rem 0.5rem;
+}
+
+.infoRailMembersHeading {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--space-text-label);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.infoRailOnlineBadge {
+  font-size: 0.725rem;
+  font-weight: 500;
+  color: #34d399;
+}
+
+.infoRailViewAllBtn {
+  background: transparent;
+  border: none;
+  color: var(--planet-accent, #69aef0);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+}
+
+.infoRailViewAllBtn:hover {
+  text-decoration: underline;
+}
+
+.infoRailViewAllBtn:focus-visible {
+  outline: 2px solid var(--planet-focus-ring, #78b6ef);
+}
+
+.memberSearchInputWrap {
+  padding: 0 1.25rem 0.65rem;
+}
+
+.memberSearchInput {
+  width: 100%;
+  padding: 0.45rem 0.75rem;
+  background: var(--space-input-bg);
+  border: 1px solid var(--space-border);
+  border-radius: var(--space-radius-sm, 8px);
+  color: var(--space-text-heading);
+  font-size: 0.8rem;
+  outline: none;
+}
+
+.memberSearchInput:focus {
+  border-color: var(--planet-border-strong, #67b2ef);
+}
+
+.membersList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0 0.85rem 1.25rem;
+  flex: 1;
+}
+
+.memberRow {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.4rem 0.5rem;
+  border-radius: var(--space-radius-sm, 8px);
+  text-decoration: none;
+  transition: background 0.15s ease;
+}
+
+.memberRow:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.memberRow:focus-visible {
+  outline: 2px solid var(--planet-focus-ring, #78b6ef);
+  outline-offset: 1px;
+}
+
+.memberAvatarWrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.memberOnlineDot {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #34d399;
+  border: 2px solid var(--space-bg-deep);
+}
+
+.memberDetails {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.memberUsername {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--space-text-heading);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.memberRole {
+  font-size: 0.725rem;
+  color: var(--space-text-muted);
+}
+
+/* --------------------------------------------------------------------------
+   Info Sheet / Drawer (Mobile & Tablet)
+   -------------------------------------------------------------------------- */
+.sheetBackdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 999;
+  animation: backdropFadeIn 0.2s ease-out;
+}
+
+.sheetContent {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(85vw, 360px);
+  background: var(--space-bg-soft, #0b1026);
+  border-left: 1px solid var(--space-border);
+  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.6);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  animation: sheetSlideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sheetHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--space-border);
+  background: var(--space-bg-deep);
+}
+
+.sheetHeaderTitle {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--space-text-heading);
+}
+
+.sheetCloseButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid var(--space-border);
+  border-radius: var(--space-radius-sm, 8px);
+  color: var(--space-text-body);
+  font-size: 1.25rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.sheetCloseButton:hover {
+  background: var(--space-input-bg-focus);
+  color: var(--space-text-heading);
+}
+
+.sheetCloseButton:focus-visible {
+  outline: 2px solid var(--planet-focus-ring, #78b6ef);
+  outline-offset: 2px;
+}
+
+@keyframes backdropFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes sheetSlideIn {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+/* --------------------------------------------------------------------------
+   States: Empty, Loading, Error, Restricted
+   -------------------------------------------------------------------------- */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  margin: auto;
+  padding: 2.5rem 1.5rem;
+  max-width: 420px;
+}
+
+.emptyStateIcon {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: var(--planet-accent-soft);
+  color: var(--planet-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.emptyStateTitle {
+  margin: 0 0 0.5rem;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--space-text-heading);
+}
+
+.emptyStateText {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--space-text-muted);
+  line-height: 1.5;
+}
+
+.restrictedState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 3rem 1.5rem;
+  margin: auto;
+  max-width: 460px;
+  background: rgba(13, 17, 38, 0.7);
+  border: 1px solid var(--space-border);
+  border-radius: var(--space-radius-lg, 20px);
+}
+
+.restrictedIcon {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+.restrictedTitle {
+  margin: 0 0 0.5rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--space-text-heading);
+}
+
+.restrictedDesc {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--space-text-muted);
+  line-height: 1.5;
+}
+
+.errorBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 1.25rem;
+  background: var(--space-error-bg);
+  border-bottom: 1px solid var(--space-error-border);
+  color: var(--space-error-text);
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.errorRetryBtn {
+  min-height: 36px;
+  padding: 0.25rem 0.75rem;
+  background: rgba(248, 113, 113, 0.2);
+  border: 1px solid var(--space-error-border);
+  border-radius: var(--space-radius-sm, 8px);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.errorRetryBtn:hover {
+  background: rgba(248, 113, 113, 0.35);
+}
+
+/* --------------------------------------------------------------------------
+   Skeleton / Loading State
+   -------------------------------------------------------------------------- */
+.timelineLoadingState {
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+  width: 100%;
+}
+
+.skeletonPulse {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.04) 25%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0.04) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeletonWave 1.6s ease-in-out infinite;
+  border-radius: 4px;
+}
+
+@keyframes skeletonWave {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* --------------------------------------------------------------------------
+   Container Queries & Responsive Adaptations
+   -------------------------------------------------------------------------- */
+@container (max-width: 960px) {
+  .body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .infoRail {
+    display: none;
+  }
+
+  .headerInfoButton {
+    display: inline-flex;
+  }
+
+  /* Tablet: bubbles may claim more of the (now single) column's width. */
+  .messageBody {
+    max-width: min(78%, 34rem);
+  }
+}
+
+/* .shell establishes the inline-size container above, so it can't be
+   targeted by a query against that same container (a container query only
+   matches descendants of the container, never the container itself) - its
+   own responsive height/radius must key off the viewport instead. */
+@media (max-width: 600px) {
+  .shell {
+    border-radius: var(--space-radius-md, 10px);
+    height: clamp(520px, calc(100dvh - 120px), 780px);
+  }
+}
+
+@container (max-width: 600px) {
+  .header {
+    padding: 0.65rem 0.85rem;
+  }
+
+  .timeline {
+    padding: 0.85rem;
+    gap: 0.85rem;
+  }
+
+  .composerForm {
+    padding: 0.65rem 0.85rem;
+    padding-bottom: calc(0.65rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* Mobile: the info rail is already gone, so bubbles can use most of the
+     available width while still leaving room to see who's replying. */
+  .messageBody {
+    max-width: 86%;
+  }
+
+  .sharedPostWrap {
+    width: 100%;
+  }
+}
+
+@container (max-width: 520px) {
+  .connectionText {
+    display: none;
+  }
+
+  .connectionBadge {
+    padding: 0.45rem;
+    min-width: 24px;
+    min-height: 24px;
+    justify-content: center;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Reduced Motion
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .shell,
+  .loadOlderButton,
+  .senderAvatarLink,
+  .senderNameLink,
+  .jumpToLatestButton,
+  .sendButton,
+  .sheetContent,
+  .sheetBackdrop,
+  .skeletonPulse {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+

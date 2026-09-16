@@ -226,13 +226,13 @@ func (r *Repository) GetMembership(groupID, userID int) (*GroupMember, error) {
 	var m GroupMember
 
 	err := r.db.QueryRow(
-		`SELECT gm.user_id, u.username, gm.role, gm.joined_at, COALESCE(u.profile_photo, '')
+		`SELECT gm.user_id, u.username, u.first_name, u.last_name, gm.role, gm.joined_at, COALESCE(u.profile_photo, '')
 		 FROM group_members gm
 		 JOIN users u ON u.id = gm.user_id
 		 WHERE gm.group_id = ? AND gm.user_id = ?`,
 		groupID,
 		userID,
-	).Scan(&m.UserID, &m.Username, &m.Role, &m.JoinedAt, &m.Avatar)
+	).Scan(&m.UserID, &m.Username, &m.FirstName, &m.LastName, &m.Role, &m.JoinedAt, &m.Avatar)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
@@ -350,7 +350,7 @@ func (r *Repository) DeleteGroup(groupID int) error {
 
 func (r *Repository) GetGroupMembers(groupID int) ([]GroupMember, error) {
 	rows, err := r.db.Query(
-		`SELECT gm.user_id, u.username, gm.role, gm.joined_at, COALESCE(u.profile_photo, '')
+		`SELECT gm.user_id, u.username, u.first_name, u.last_name, gm.role, gm.joined_at, COALESCE(u.profile_photo, '')
 		 FROM group_members gm
 		 JOIN users u ON u.id = gm.user_id
 		 WHERE gm.group_id = ?
@@ -365,7 +365,7 @@ func (r *Repository) GetGroupMembers(groupID int) ([]GroupMember, error) {
 	result := make([]GroupMember, 0)
 	for rows.Next() {
 		var m GroupMember
-		if err := rows.Scan(&m.UserID, &m.Username, &m.Role, &m.JoinedAt, &m.Avatar); err != nil {
+		if err := rows.Scan(&m.UserID, &m.Username, &m.FirstName, &m.LastName, &m.Role, &m.JoinedAt, &m.Avatar); err != nil {
 			return nil, err
 		}
 		result = append(result, m)

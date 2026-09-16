@@ -8,11 +8,11 @@ import {
   useState,
 } from "react";
 import Link from "next/link";
+import UserAvatar from "@/components/UserAvatar";
 import type { ChatWindowProps } from "../types/chat";
 import PostSharePreview from "@/features/interactions/components/PostSharePreview";
 import { parseSharedPost } from "@/features/interactions/utils/sharedPost";
-import { formatMessageTime, parseDate, getInitials } from "@/lib/utils";
-import { getChatAvatarUrl } from "../utils/avatar";
+import { formatMessageTime, parseDate } from "@/lib/utils";
 import styles from "./Chat.module.css";
 
 const MAX_MESSAGE_LENGTH = 2000;
@@ -54,7 +54,11 @@ function formatDateDivider(dateStr?: string): string {
     return d.toLocaleDateString([], { month: "short", day: "numeric" });
   }
 
-  return d.toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" });
+  return d.toLocaleDateString([], {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 }
 
 export default function ChatWindow({
@@ -196,12 +200,8 @@ export default function ChatWindow({
     onTyping(false);
   }
 
-  const initials = getInitials("", "", partnerUsername);
-  const partnerAvatarUrl = getChatAvatarUrl(partnerAvatar);
-
   return (
     <section className={`${styles.floatingCard} ${styles.chatWindowCard}`}>
-      {/* Transmission Header */}
       <header className={styles.windowHeader}>
         <div className={styles.headerLeft}>
           <button
@@ -221,17 +221,17 @@ export default function ChatWindow({
             aria-label={`View ${partnerUsername}'s profile`}
           >
             <div className={styles.avatarWrapper}>
-              {partnerAvatarUrl ? (
-                <img
-                  src={partnerAvatarUrl}
-                  alt={partnerUsername}
-                  className={styles.avatarImg}
-                />
-              ) : (
-                <div className={styles.avatarFallback}>{initials}</div>
-              )}
+              <UserAvatar
+                src={partnerAvatar}
+                username={partnerUsername}
+                size={44}
+                alt={partnerUsername}
+                className={styles.avatarImg}
+              />
               <span
-                className={isPartnerOnline ? styles.onlineRing : styles.offlineDot}
+                className={
+                  isPartnerOnline ? styles.onlineRing : styles.offlineDot
+                }
                 title={isPartnerOnline ? "Online" : "Offline"}
               />
             </div>
@@ -272,7 +272,9 @@ export default function ChatWindow({
             disabled={loadingHistory}
             className={styles.loadMoreBtn}
           >
-            {loadingHistory ? "Loading older messages..." : "↑ Load older messages"}
+            {loadingHistory
+              ? "Loading older messages..."
+              : "↑ Load older messages"}
           </button>
         )}
 
@@ -288,15 +290,10 @@ export default function ChatWindow({
         {messages.map((msg, index) => {
           const isMine = myUserId !== null && msg.sender_id === myUserId;
           const isRead = Boolean(msg.read_at);
-          const senderAvatarUrl = getChatAvatarUrl(msg.sender_avatar);
-          const senderInitials = getInitials(
-            msg.sender_first_name || "",
-            msg.sender_last_name || "",
-            msg.sender_username || (isMine ? "You" : partnerUsername)
-          );
           const previousMessage = messages[index - 1];
           const showDateDivider =
-            index === 0 || isDifferentDay(previousMessage?.created_at, msg.created_at);
+            index === 0 ||
+            isDifferentDay(previousMessage?.created_at, msg.created_at);
           const showPartnerAvatar =
             !isMine &&
             (index === 0 ||
@@ -313,25 +310,44 @@ export default function ChatWindow({
                 </div>
               )}
 
-              <div className={isMine ? styles.messageRowMine : styles.messageRowPartner}>
-                {!isMine && (
-                  <div className={showPartnerAvatar ? styles.messageAvatar : styles.messageAvatarSpacer}>
-                    {showPartnerAvatar && (senderAvatarUrl ? (
-                      <img src={senderAvatarUrl} alt="" className={styles.messageAvatarImage} />
-                    ) : (
-                      <span>{senderInitials}</span>
-                    ))}
-                  </div>
-                )}
-                <div className={isMine ? styles.bubbleMine : styles.bubblePartner}>
+              <div
+                className={
+                  isMine ? styles.messageRowMine : styles.messageRowPartner
+                }
+              >
+                {!isMine &&
+                  (showPartnerAvatar ? (
+                    <UserAvatar
+                      src={msg.sender_avatar}
+                      firstName={msg.sender_first_name}
+                      lastName={msg.sender_last_name}
+                      username={msg.sender_username || partnerUsername}
+                      size="xs"
+                      alt=""
+                      className={styles.messageAvatar}
+                    />
+                  ) : (
+                    <span className={styles.messageAvatarSpacer} aria-hidden="true" />
+                  ))}
+                <div
+                  className={isMine ? styles.bubbleMine : styles.bubblePartner}
+                >
                   {(() => {
                     const shared = parseSharedPost(msg.content);
                     if (!shared) {
-                      return <div className={styles.messageContent}>{msg.content}</div>;
+                      return (
+                        <div className={styles.messageContent}>
+                          {msg.content}
+                        </div>
+                      );
                     }
                     return (
                       <>
-                        {shared.note && <div className={styles.messageContent}>{shared.note}</div>}
+                        {shared.note && (
+                          <div className={styles.messageContent}>
+                            {shared.note}
+                          </div>
+                        )}
                         <PostSharePreview postId={shared.postId} />
                       </>
                     );
@@ -364,7 +380,10 @@ export default function ChatWindow({
 
         {isPartnerTyping && (
           <div className={styles.messageRowPartner}>
-            <div className={styles.typingWaveBubble} aria-label={`${partnerUsername} is typing`}>
+            <div
+              className={styles.typingWaveBubble}
+              aria-label={`${partnerUsername} is typing`}
+            >
               <span className={styles.waveDot} />
               <span className={styles.waveDot} />
               <span className={styles.waveDot} />
@@ -391,7 +410,10 @@ export default function ChatWindow({
           <div className={styles.ineligibleText}>
             <span>🔒 Mutual follow required to exchange direct messages.</span>
           </div>
-          <Link href={`/profile/${partnerUsername}`} className={styles.followBtn}>
+          <Link
+            href={`/profile/${partnerUsername}`}
+            className={styles.followBtn}
+          >
             Follow @{partnerUsername}
           </Link>
         </div>

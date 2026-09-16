@@ -31,9 +31,28 @@ type RegisterRequest struct {
 }
 
 type Response struct {
-	Message string `json:"message,omitempty"`
-	UserID  int    `json:"user_id,omitempty"`
-	Error   string `json:"error,omitempty"`
+	Message      string `json:"message,omitempty"`
+	UserID       int    `json:"user_id,omitempty"`
+	Username     string `json:"username,omitempty"`
+	FirstName    string `json:"first_name,omitempty"`
+	LastName     string `json:"last_name,omitempty"`
+	ProfilePhoto string `json:"profile_photo,omitempty"`
+	Error        string `json:"error,omitempty"`
+}
+
+func (h *Handler) responseForUser(userID int, message string) Response {
+	resp := Response{Message: message, UserID: userID}
+	summaries, err := h.usersService.GetSummariesByIDs([]int{userID})
+	if err != nil {
+		return resp
+	}
+	if summary, ok := summaries[userID]; ok {
+		resp.Username = summary.Username
+		resp.FirstName = summary.FirstName
+		resp.LastName = summary.LastName
+		resp.ProfilePhoto = summary.ProfilePhoto
+	}
+	return resp
 }
 
 type RegisterResponse struct {
@@ -71,11 +90,10 @@ func (h *Handler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
 		cookie, err := r.Cookie(h.cookieName)
 		if err == nil {
-			// Check if session is valid
 			userID, err := h.service.ValidateSession(cookie.Value)
 			if err == nil {
 				w.WriteHeader(http.StatusOK)
-				json.NewEncoder(w).Encode(Response{Message: "Already logged in", UserID: userID})
+				json.NewEncoder(w).Encode(h.responseForUser(userID, "Already logged in"))
 				return
 			}
 		}
@@ -111,7 +129,6 @@ func (h *Handler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Set cookie
 	http.SetCookie(w, &http.Cookie{
 		Name:     h.cookieName,
 		Value:    token,
@@ -123,12 +140,11 @@ func (h *Handler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	})
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(Response{Message: "Login successful", UserID: userID})
+	json.NewEncoder(w).Encode(h.responseForUser(userID, "Login successful"))
 }
 
 // LogoutHandler revokes the current session and clears its cookie.
 func (h *Handler) LogoutHandler(w http.ResponseWriter, r *http.Request) {
-	// accept GET for simple links and POST for API calls
 	if r.Method != http.MethodGet && r.Method != http.MethodPost {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
@@ -155,7 +171,6 @@ func (h *Handler) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// clear the cookie on client side
 	http.SetCookie(w, &http.Cookie{
 		Name:     h.cookieName,
 		Value:    "",
@@ -222,7 +237,6 @@ func (h *Handler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Check if username already exists
 	usernameExists, err := h.usersService.UsernameExists(payload.Username)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -241,7 +255,6 @@ func (h *Handler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Check if email already exists
 	emailExists, err := h.usersService.EmailExists(payload.Email)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -260,7 +273,6 @@ func (h *Handler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Handle the optional profile photo upload.
 	var profilePhotoPath string
 	file, header, err := r.FormFile("profilePhoto")
 	if err != nil && !errors.Is(err, http.ErrMissingFile) {
@@ -288,10 +300,8 @@ func (h *Handler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Generate UUID for the user
 	userUUID := uuid.New().String()
 
-	// Create the user
 	err = h.usersService.CreateUser(
 		userUUID,
 		payload.Username,
@@ -314,7 +324,6 @@ func (h *Handler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Success response
 	resp := RegisterResponse{
 		Success: true,
 		Message: "User registered successfully",

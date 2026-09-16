@@ -2,12 +2,13 @@
 
 import { useCallback, useEffect, useRef } from "react";
 import AppIcon from "@/components/layout/AppIcon";
+import UserAvatar from "@/components/UserAvatar";
 import { useSearchModal } from "../context/SearchContext";
 import {
   useUniversalSearch,
   type NavigableItem,
 } from "../hooks/useUniversalSearch";
-import type { SearchCategory } from "../types/search";
+import type { SearchCategory, UserResult } from "../types/search";
 import styles from "./UniversalNavbarSearch.module.css";
 
 const CATEGORIES: { id: SearchCategory; label: string }[] = [
@@ -80,7 +81,6 @@ export default function UniversalNavbarSearch() {
     }
   }, [isOpen]);
 
-  // Scroll active item into view
   useEffect(() => {
     if (activeItemRef.current) {
       activeItemRef.current.scrollIntoView({
@@ -90,7 +90,6 @@ export default function UniversalNavbarSearch() {
     }
   }, [activeIndex]);
 
-  // Close on Escape or click outside
   useEffect(() => {
     if (!isOpen) return;
 
@@ -135,20 +134,17 @@ export default function UniversalNavbarSearch() {
         return <AppIcon name={iconName} />;
       }
       case "user": {
-        const user = item.data as { profile_photo?: string; username: string };
-        if (user.profile_photo) {
-          return (
-            /* eslint-disable-next-line @next/next/no-img-element */
-            <img
-              src={user.profile_photo}
-              alt={item.title}
-              onError={(e) => {
-                (e.target as HTMLElement).style.display = "none";
-              }}
-            />
-          );
-        }
-        return <span>{item.title.charAt(0).toUpperCase()}</span>;
+        const user = item.data as UserResult;
+        return (
+          <UserAvatar
+            src={user.profile_photo}
+            firstName={user.first_name}
+            lastName={user.last_name}
+            username={user.username}
+            size={34}
+            alt=""
+          />
+        );
       }
       case "group": {
         const group = item.data as { group_photo?: string };
@@ -175,7 +171,6 @@ export default function UniversalNavbarSearch() {
     }
   };
 
-  // When closed: show the sleek trigger button in the navbar
   if (!isOpen) {
     return (
       <div className={styles.searchContainer}>
@@ -199,13 +194,11 @@ export default function UniversalNavbarSearch() {
     );
   }
 
-  // When open: active input in navbar with connected dropdown extending downwards
   return (
     <div
       ref={searchContainerRef}
       className={styles.searchContainer}
     >
-      {/* 1. Active Search Input Bar connected in the TopNavbar */}
       <div className={styles.searchBarActive}>
         <span className={styles.searchIconWrapper} aria-hidden="true">
           {isLoading ? (
@@ -261,14 +254,12 @@ export default function UniversalNavbarSearch() {
         )}
       </div>
 
-      {/* 2. Connected Dropdown Tray extending downwards from the top bar */}
       <div
         id="universal-search-results"
         className={styles.dropdownTray}
         role="listbox"
         aria-label="Search results"
       >
-        {/* Category filter tabs */}
         <div
           className={styles.tabsBar}
           role="tablist"
@@ -298,7 +289,6 @@ export default function UniversalNavbarSearch() {
           ))}
         </div>
 
-        {/* Results List */}
         <div className={styles.resultsContent}>
           {!query.trim() && recentSearches.length > 0 && (
             <div>
@@ -409,7 +399,6 @@ export default function UniversalNavbarSearch() {
           ) : null}
         </div>
 
-        {/* Dropdown Footer hints */}
         <div className={styles.dropdownFooter}>
           <div className={styles.footerHints}>
             <span className={styles.hintItem}>

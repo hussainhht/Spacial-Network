@@ -1,5 +1,3 @@
-/* Profile Page Component Styles */
-
 .profilePage {
   --profile-ease: cubic-bezier(0.22, 1, 0.36, 1);
   --profile-avatar-size: clamp(72px, 7vw, 96px);
@@ -44,10 +42,6 @@
   max-width: 980px;
   margin: 0 auto;
 }
-
-/* ================================================================== */
-/*  Identity Surface                                                  */
-/* ================================================================== */
 
 /* One quiet surface holds the identity and introduction, keeping text
    legible over the shared star field and optional 3D planet. */
@@ -111,10 +105,6 @@
   pointer-events: none;
 }
 
-/* ================================================================== */
-/*  Hero                                                              */
-/* ================================================================== */
-
 .hero {
   position: relative;
   display: grid;
@@ -122,10 +112,6 @@
   align-items: center;
   gap: var(--profile-gap);
 }
-
-/* ================================================================== */
-/*  Avatar                                                            */
-/* ================================================================== */
 
 .avatarOrbit {
   position: relative;
@@ -231,29 +217,6 @@
   height: 100%;
   object-fit: cover;
 }
-
-.avatarFallback {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-  font-size: calc(var(--profile-avatar-size) * 0.3);
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  color: var(--space-text-heading);
-  background:
-    radial-gradient(
-      circle at 30% 25%,
-      var(--planet-accent-soft),
-      transparent 70%
-    ),
-    linear-gradient(160deg, #141b3c 0%, #0a0e22 100%);
-}
-
-/* ================================================================== */
-/*  Identity                                                          */
-/* ================================================================== */
 
 .identity {
   display: flex;
@@ -389,10 +352,6 @@
   margin: 0.5rem 0 0;
 }
 
-/* ================================================================== */
-/*  Buttons                                                           */
-/* ================================================================== */
-
 .btnPrimary,
 .btnSecondary {
   display: inline-flex;
@@ -471,10 +430,6 @@
 .textButton:hover svg {
   transform: translateX(3px);
 }
-
-/* ================================================================== */
-/*  About                                                             */
-/* ================================================================== */
 
 .about {
   position: relative;
@@ -619,10 +574,6 @@
   font-size: 0.7rem;
 }
 
-/* ================================================================== */
-/*  Sections & Tabs                                                   */
-/* ================================================================== */
-
 .sections {
   display: flex;
   flex-direction: column;
@@ -679,10 +630,6 @@
   gap: 1.25rem;
   min-width: 0;
 }
-
-/* ================================================================== */
-/*  Cards & Info Rows                                                 */
-/* ================================================================== */
 
 .card,
 .privacyCard {
@@ -748,10 +695,6 @@
   text-align: right;
   overflow-wrap: anywhere;
 }
-
-/* ================================================================== */
-/*  Profile Details Form                                              */
-/* ================================================================== */
 
 .detailsFormCard,
 .avatarFormCard {
@@ -834,10 +777,6 @@
   gap: 0.75rem;
 }
 
-/* ================================================================== */
-/*  Profile Avatar Form                                               */
-/* ================================================================== */
-
 .avatarFormBody {
   display: flex;
   align-items: center;
@@ -864,12 +803,6 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-}
-
-.avatarPreviewFallback {
-  color: var(--space-text-heading);
-  font-size: 1.6rem;
-  font-weight: 600;
 }
 
 .avatarFormControls {
@@ -908,10 +841,6 @@
   font-size: 0.9rem;
 }
 
-/* ================================================================== */
-/*  Follow Lists                                                      */
-/* ================================================================== */
-
 .userList {
   display: flex;
   flex-direction: column;
@@ -940,20 +869,6 @@
   flex-shrink: 0;
   border-radius: 50%;
   object-fit: cover;
-}
-
-.userListAvatarFallback {
-  display: inline-flex;
-  flex-shrink: 0;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: var(--planet-accent-soft);
-  color: var(--planet-accent-hover);
-  font-size: 0.8rem;
-  font-weight: 600;
 }
 
 .userListLink {
@@ -1020,10 +935,6 @@
   padding: 0.4rem 0.95rem;
 }
 
-/* ================================================================== */
-/*  Privacy Settings Card                                             */
-/* ================================================================== */
-
 .privacyCard {
   display: flex;
   flex-direction: column;
@@ -1071,10 +982,6 @@
   align-items: center;
   gap: 1rem;
 }
-
-/* ================================================================== */
-/*  Empty, Locked & Error States                                      */
-/* ================================================================== */
 
 .emptyCard,
 .lockedCard,
@@ -1168,10 +1075,6 @@
   margin-top: 0.5rem;
 }
 
-/* ================================================================== */
-/*  Skeleton Loading Placeholders                                     */
-/* ================================================================== */
-
 .skeleton {
   border-radius: var(--space-radius-sm);
   background: rgba(148, 163, 184, 0.1);
@@ -1234,10 +1137,6 @@
   height: 180px;
   border-radius: 20px;
 }
-
-/* ================================================================== */
-/*  Motion                                                            */
-/* ================================================================== */
 
 @keyframes profileRise {
   from {
@@ -1308,10 +1207,6 @@
     transform: none;
   }
 }
-
-/* ================================================================== */
-/*  Responsive Design                                                 */
-/* ================================================================== */
 
 @media (max-width: 960px) {
   .settingsGrid {

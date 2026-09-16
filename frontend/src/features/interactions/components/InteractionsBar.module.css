@@ -22,7 +22,7 @@
   font-size: 13px;
   font-weight: 500;
   text-decoration: none;
-  transition: color 120ms ease, background-color 120ms ease;
+  transition: color 180ms ease, background-color 180ms ease, border-color 180ms ease;
 }
 
 .label {
@@ -59,9 +59,52 @@
   line-height: 1.5;
 }
 
+.detail {
+  width: 100%;
+  gap: 8px;
+  padding-top: 16px;
+  border-top-color: rgba(148, 163, 184, 0.14);
+}
+
+.detail .action {
+  min-height: 44px;
+  padding: 8px 14px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  font-size: 14px;
+}
+
+.detail .action:hover:not(:disabled) {
+  border-color: var(--planet-border);
+}
+
+@media (max-width: 420px) {
+  .detail {
+    justify-content: space-between;
+    gap: 4px;
+  }
+
+  .detail .action {
+    flex: 1 1 auto;
+    justify-content: center;
+    min-width: 0;
+    padding-inline: 9px;
+  }
+}
+
 @media (hover: none) {
   .action:hover:not(:disabled) {
     background: none;
     color: var(--space-text-label);
+  }
+
+  .detail .action:hover:not(:disabled) {
+    border-color: transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .action {
+    transition: none;
   }
 }

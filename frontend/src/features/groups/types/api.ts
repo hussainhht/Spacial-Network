@@ -19,6 +19,8 @@ export interface ApiGroup {
 export interface ApiGroupMember {
   user_id: number;
   username: string;
+  first_name: string;
+  last_name: string;
   role: string;
   joined_at: string;
   avatar?: string;

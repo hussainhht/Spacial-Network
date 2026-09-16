@@ -53,6 +53,26 @@ func (s *Service) CheckCredentials(identifier, password string) (int, error) {
 	return id, nil
 }
 
+// ChangePassword verifies the user's current password before replacing its
+// hash. Existing sessions are deliberately left intact.
+func (s *Service) ChangePassword(userID int, currentPassword, newPassword string) error {
+	passwordHash, err := s.repo.GetPasswordHashByID(userID)
+	if err != nil {
+		return err
+	}
+
+	if !comparePasswords(passwordHash, currentPassword) {
+		return ErrInvalidCredentials
+	}
+
+	newPasswordHash, err := hashPassword(newPassword)
+	if err != nil {
+		return err
+	}
+
+	return s.repo.UpdatePasswordHash(userID, newPasswordHash)
+}
+
 func (s *Service) GetUsernameByID(userID int) (string, error) {
 	return s.repo.GetUsernameByID(userID)
 }

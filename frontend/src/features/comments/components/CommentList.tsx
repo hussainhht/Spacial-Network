@@ -1,13 +1,16 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useState } from "react";
 import AppIcon from "@/components/layout/AppIcon";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { useActionFeedback } from "@/components/feedback/ActionFeedbackProvider";
+import UserAvatar from "@/components/UserAvatar";
 import { deleteComment } from "@/features/comments/api/comments";
 import type { Comment } from "@/features/comments/types/comment";
 import { getBackendBaseUrl } from "@/lib/api";
+import { getDisplayName } from "@/lib/utils";
 import styles from "./CommentList.module.css";
 
 interface CommentListProps {
@@ -46,9 +49,15 @@ export default function CommentList({
 }: CommentListProps) {
   if (comments.length === 0) {
     return (
-      <p className={styles.emptyState}>
-        No comments yet. Start the conversation.
-      </p>
+      <div className={styles.emptyState}>
+        <span className={styles.emptyIcon} aria-hidden="true">
+          <AppIcon name="chat" width={19} height={19} />
+        </span>
+        <div>
+          <p className={styles.emptyTitle}>No comments yet</p>
+          <p className={styles.emptyText}>Start the conversation.</p>
+        </div>
+      </div>
     );
   }
 
@@ -79,6 +88,11 @@ function CommentItem({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [error, setError] = useState("");
   const { notify } = useActionFeedback();
+  const authorName = getDisplayName(
+    comment.author.first_name,
+    comment.author.last_name,
+    comment.author.username,
+  );
 
   async function handleDelete() {
     setError("");
@@ -99,16 +113,31 @@ function CommentItem({
 
   return (
     <li className={styles.item}>
-      <div className={styles.avatar} aria-hidden="true">
-        <AppIcon name="user" width={15} height={15} />
-      </div>
+      <Link
+        href={`/profile/${encodeURIComponent(comment.author.username)}`}
+        className={styles.avatarLink}
+        aria-label={`View ${authorName}'s profile`}
+      >
+        <UserAvatar
+          src={comment.author.profile_photo}
+          firstName={comment.author.first_name}
+          lastName={comment.author.last_name}
+          username={comment.author.username}
+          size="sm"
+          alt=""
+          className={styles.avatar}
+        />
+      </Link>
 
       <div className={styles.contentWrapper}>
         <div className={styles.header}>
           {showAuthor && (
-            <span className={styles.authorName}>
-              {comment.is_owner ? "You" : `User #${comment.user_id}`}
-            </span>
+            <Link
+              href={`/profile/${encodeURIComponent(comment.author.username)}`}
+              className={styles.authorName}
+            >
+              {comment.is_owner ? `${authorName} (You)` : authorName}
+            </Link>
           )}
 
           <time
@@ -132,7 +161,7 @@ function CommentItem({
           )}
         </div>
 
-        <p className={styles.text}>{comment.content}</p>
+        <p className={styles.text} dir="auto">{comment.content}</p>
 
         {comment.image_url && (
           <div className={styles.imageWrapper}>

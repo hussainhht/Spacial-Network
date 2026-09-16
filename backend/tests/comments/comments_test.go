@@ -155,6 +155,52 @@ func TestCreateComment_AttachesToExistingPost(t *testing.T) {
 	if resp.Content != "Nice post!" {
 		t.Errorf("Content = %q, want %q", resp.Content, "Nice post!")
 	}
+	if resp.Author.ID != commenter || resp.Author.Username != "commenter" {
+		t.Errorf("Author = %#v, want commenter identity", resp.Author)
+	}
+}
+
+func TestListComments_IncludesEachAuthorProfile(t *testing.T) {
+	f := setup(t)
+	postAuthor := f.newUser(t, "profilepostauthor")
+	first := f.newUser(t, "firstcommenter")
+	second := f.newUser(t, "secondcommenter")
+	if _, err := f.db.Exec(`UPDATE users SET profile_photo = ? WHERE id = ?`, "avatars/first.jpg", first); err != nil {
+		t.Fatalf("set profile photo: %v", err)
+	}
+	postID := f.newPublicPost(t, postAuthor)
+
+	for _, userID := range []int{first, second} {
+		req := newCommentRequest(t, userID, postID, "Hello", nil)
+		rr := httptest.NewRecorder()
+		f.commentsHandler.NewCommentHandler(rr, req)
+		if rr.Code != http.StatusCreated {
+			t.Fatalf("create comment: status=%d body=%s", rr.Code, rr.Body.String())
+		}
+	}
+
+	req := httptest.NewRequest(http.MethodGet, "/api/posts/comments", nil)
+	req.SetPathValue("id", strconv.Itoa(postID))
+	req = req.WithContext(requestctx.WithUserID(req.Context(), postAuthor))
+	rr := httptest.NewRecorder()
+	f.commentsHandler.ListCommentsHandler(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("list comments: status=%d body=%s", rr.Code, rr.Body.String())
+	}
+
+	var response []comments.CommentResponse
+	if err := json.Unmarshal(rr.Body.Bytes(), &response); err != nil {
+		t.Fatalf("unmarshal comments: %v", err)
+	}
+	if len(response) != 2 {
+		t.Fatalf("comments length = %d, want 2", len(response))
+	}
+	if response[0].Author.Username != "firstcommenter" || response[0].Author.ProfilePhoto != "/uploads/avatars/first.jpg" {
+		t.Errorf("first author = %#v", response[0].Author)
+	}
+	if response[1].Author.Username != "secondcommenter" || response[1].Author.ProfilePhoto != "" {
+		t.Errorf("second author = %#v", response[1].Author)
+	}
 }
 
 func TestCreateComment_NonExistentPost_Fails(t *testing.T) {

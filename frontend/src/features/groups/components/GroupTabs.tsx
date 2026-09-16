@@ -4,7 +4,6 @@ import SegmentedTabs from "@/components/SegmentedTabs";
 
 export type ActiveGroupTab =
   | "overview"
-  | "posts"
   | "events"
   | "members"
   | "chat"
@@ -18,7 +17,6 @@ interface GroupTabsProps {
 
 const GROUP_TABS = [
   { value: "overview", label: "Overview" },
-  { value: "posts", label: "Posts" },
   { value: "events", label: "Events" },
   { value: "members", label: "Members" },
   { value: "chat", label: "Chat" },

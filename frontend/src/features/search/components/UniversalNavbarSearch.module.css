@@ -9,9 +9,6 @@
   width: 100%;
 }
 
-/* ==========================================================================
-   Trigger Button (Closed state in navbar)
-   ========================================================================== */
 .searchTriggerButton {
   position: relative;
   display: flex;
@@ -68,9 +65,6 @@
   flex-shrink: 0;
 }
 
-/* ==========================================================================
-   Active Search Bar (Open state, connected at the top bar)
-   ========================================================================== */
 .searchBarActive {
   position: relative;
   display: flex;
@@ -186,9 +180,6 @@
   }
 }
 
-/* ==========================================================================
-   Dropdown Tray (Extends downwards from the top bar and is connected to it)
-   ========================================================================== */
 .dropdownTray {
   position: absolute;
   top: calc(100% - 1px);
@@ -228,9 +219,6 @@
   }
 }
 
-/* ==========================================================================
-   Category Filter Tabs
-   ========================================================================== */
 .tabsBar {
   display: flex;
   align-items: center;
@@ -277,9 +265,6 @@
   box-shadow: 0 0 12px var(--planet-glow);
 }
 
-/* ==========================================================================
-   Results Content Area
-   ========================================================================== */
 .resultsContent {
   flex: 1;
   overflow-y: auto;
@@ -369,7 +354,6 @@
   color: var(--space-text-muted, #94a3b8);
 }
 
-/* Result Item */
 .resultItem {
   display: flex;
   align-items: center;
@@ -539,9 +523,6 @@
   max-width: 300px;
 }
 
-/* ==========================================================================
-   Dropdown Footer
-   ========================================================================== */
 .dropdownFooter {
   display: flex;
   align-items: center;

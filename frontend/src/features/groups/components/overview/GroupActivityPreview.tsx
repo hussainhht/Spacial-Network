@@ -1,6 +1,5 @@
-import Image from "next/image";
-import { formatDate, getInitials } from "@/lib/utils";
-import { avatarUrl } from "../../api/groups";
+import UserAvatar from "@/components/UserAvatar";
+import { formatDate } from "@/lib/utils";
 import type { Group, GroupMember } from "../../types/group";
 
 interface GroupActivityPreviewProps {
@@ -27,20 +26,13 @@ export default function GroupActivityPreview({
         <h2 id="activity-heading">Recent Activity</h2>
       </div>
       <div className="group-activity-item">
-        {creator?.avatar ? (
-          <Image
-            unoptimized
-            src={avatarUrl(creator.avatar)!}
-            alt=""
-            width={32}
-            height={32}
-            className="group-member-avatar"
-          />
-        ) : (
-          <span className="group-member-avatar fallback" aria-hidden="true">
-            {getInitials("", "", group.creatorUsername)}
-          </span>
-        )}
+        <UserAvatar
+          src={creator?.avatar}
+          username={group.creatorUsername}
+          size={32}
+          alt=""
+          className="group-member-avatar"
+        />
         <div className="group-activity-text">
           <p>
             <span className="group-title-link">@{group.creatorUsername}</span>{" "}

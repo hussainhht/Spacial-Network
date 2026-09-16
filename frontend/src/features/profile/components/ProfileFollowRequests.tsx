@@ -1,11 +1,10 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { getBackendBaseUrl } from "@/lib/api";
+import UserAvatar from "@/components/UserAvatar";
 import { useWebSocket } from "@/providers/WebSocketProvider";
-import { getDisplayName, getInitials } from "@/lib/utils";
+import { getDisplayName } from "@/lib/utils";
 import {
   acceptFollowRequest,
   declineFollowRequest,
@@ -19,12 +18,6 @@ interface ProfileFollowRequestsProps {
 }
 
 type FollowRequestAction = "accept" | "decline";
-
-function getFullPhotoUrl(path: string) {
-  if (/^https?:\/\//i.test(path)) return path;
-  const cleanPath = path.startsWith("/") ? path : `/${path}`;
-  return `${getBackendBaseUrl()}${cleanPath}`;
-}
 
 export default function ProfileFollowRequests({
   onChanged,
@@ -151,23 +144,14 @@ export default function ProfileFollowRequests({
             return (
               <li key={request.id} className={styles.requestItem}>
                 <div className={styles.requestUser}>
-                  {requester.profilePhoto ? (
-                    <Image
-                      src={getFullPhotoUrl(requester.profilePhoto)}
-                      alt={`${requester.username}'s avatar`}
-                      width={40}
-                      height={40}
-                      className={styles.userListAvatar}
-                    />
-                  ) : (
-                    <span className={styles.userListAvatarFallback}>
-                      {getInitials(
-                        requester.firstName,
-                        requester.lastName,
-                        requester.username,
-                      )}
-                    </span>
-                  )}
+                  <UserAvatar
+                    src={requester.profilePhoto}
+                    firstName={requester.firstName}
+                    lastName={requester.lastName}
+                    username={requester.username}
+                    size={40}
+                    className={styles.userListAvatar}
+                  />
 
                   <div className={styles.requestMeta}>
                     <Link

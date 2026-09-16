@@ -1,16 +1,12 @@
 "use client";
 
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useState } from "react";
 import SegmentedTabs, {
   type SegmentedTabOption,
 } from "@/components/SegmentedTabs";
-import { usePlanetPreference } from "@/components/space/PlanetPreferenceProvider";
 import { useActionFeedback } from "@/components/feedback/ActionFeedbackProvider";
 import { useLogout } from "@/components/layout/useLogout";
-import {
-  SELECTABLE_PLANETS,
-  type PlanetTheme,
-} from "@/components/space/modelsRegistry";
+import { useCurrentUser } from "@/features/auth/context/CurrentUserContext";
 import {
   getMyProfile,
   updateMyProfileAvatar,
@@ -24,41 +20,29 @@ import ProfileAvatarForm from "@/features/profile/components/ProfileAvatarForm";
 import ProfileDetailsForm from "@/features/profile/components/ProfileDetailsForm";
 import ProfilePrivacy from "@/features/profile/components/ProfilePrivacy";
 import type { Profile } from "@/features/profile/types/profile";
+import AppearanceSettings from "./AppearanceSettings";
+import PasswordForm from "./PasswordForm";
 import styles from "./SettingsPage.module.css";
 
-type OptionStyle = CSSProperties & {
-  "--option-accent": string;
-  "--option-accent-hover": string;
-  "--option-glow": string;
-};
-
-type SettingsView = "profile" | "privacy" | "appearance" | "session";
+type SettingsView =
+  | "profile"
+  | "privacy"
+  | "security"
+  | "appearance"
+  | "session";
 
 const SETTINGS_VIEWS: readonly SegmentedTabOption<SettingsView>[] = [
   { value: "profile", label: "Profile" },
   { value: "privacy", label: "Privacy" },
+  { value: "security", label: "Security" },
   { value: "appearance", label: "Appearance" },
   { value: "session", label: "Session" },
 ];
 
-function createOptionStyle(theme: PlanetTheme): OptionStyle {
-  return {
-    "--option-accent": theme.accent,
-    "--option-accent-hover": theme.accentHover,
-    "--option-glow": theme.glow,
-  };
-}
-
 export default function SettingsPage() {
-  const {
-    selectedPlanetId,
-    selectedPlanet,
-    planetModelEnabled,
-    selectPlanet,
-    setPlanetModelEnabled,
-  } = usePlanetPreference();
   const { notify } = useActionFeedback();
   const { logout, loggingOut, error: logoutError } = useLogout();
+  const { updateCurrentUser } = useCurrentUser();
   const [activeView, setActiveView] = useState<SettingsView>("profile");
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
@@ -80,13 +64,16 @@ export default function SettingsPage() {
       .catch((error) => {
         if (!cancelled) {
           setProfileLoadError(
-            error instanceof Error ? error.message : "Unable to load account settings.",
+            error instanceof Error
+              ? error.message
+              : "Unable to load account settings.",
           );
         }
       })
       .finally(() => {
         if (!cancelled) setLoadingProfile(false);
       });
+
     return () => {
       cancelled = true;
     };
@@ -100,12 +87,18 @@ export default function SettingsPage() {
 
   function publishProfile(nextProfile: Profile) {
     setProfile(nextProfile);
+    updateCurrentUser({
+      first_name: nextProfile.firstName,
+      last_name: nextProfile.lastName,
+      profile_photo: nextProfile.profilePhoto,
+    });
     window.dispatchEvent(
       new CustomEvent<Profile>("profile-updated", { detail: nextProfile }),
     );
   }
 
   async function handleDetailsSave(input: UpdateProfileDetailsInput) {
+    if (detailsUpdating) return;
     setDetailsUpdating(true);
     setDetailsError(null);
     try {
@@ -114,7 +107,9 @@ export default function SettingsPage() {
       notify("Profile details updated.");
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "Unable to update profile details.";
+        error instanceof Error
+          ? error.message
+          : "Unable to update profile details.";
       setDetailsError(message);
       notify(message, "error");
     } finally {
@@ -123,6 +118,7 @@ export default function SettingsPage() {
   }
 
   async function handleAvatarSave(input: UpdateProfileAvatarInput) {
+    if (avatarUpdating) return;
     setAvatarUpdating(true);
     setAvatarError(null);
     try {
@@ -131,7 +127,9 @@ export default function SettingsPage() {
       notify("Profile photo updated.");
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "Unable to update profile photo.";
+        error instanceof Error
+          ? error.message
+          : "Unable to update profile photo.";
       setAvatarError(message);
       notify(message, "error");
       throw error;
@@ -141,7 +139,7 @@ export default function SettingsPage() {
   }
 
   async function handlePrivacyToggle() {
-    if (!profile) return;
+    if (!profile || privacyUpdating) return;
     setPrivacyUpdating(true);
     setPrivacyError(null);
     try {
@@ -151,7 +149,9 @@ export default function SettingsPage() {
       notify(`Profile is now ${isPrivate ? "private" : "public"}.`);
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "Unable to update profile privacy.";
+        error instanceof Error
+          ? error.message
+          : "Unable to update profile privacy.";
       setPrivacyError(message);
       notify(message, "error");
     } finally {
@@ -159,8 +159,32 @@ export default function SettingsPage() {
     }
   }
 
+  function renderProfileState(label: string) {
+    if (loadingProfile) {
+      return (
+        <div className={styles.profileState} role="status">
+          {label}
+        </div>
+      );
+    }
+    if (profileLoadError || !profile) {
+      return (
+        <div className={styles.profileError} role="alert">
+          <span>{profileLoadError ?? "Profile settings are unavailable."}</span>
+          <button type="button" onClick={retryProfileLoad}>
+            Try again
+          </button>
+        </div>
+      );
+    }
+    return null;
+  }
+
   return (
-    <main className="settings-page space-shell" aria-labelledby="app-page-title">
+    <main
+      className={`${styles.settingsPage} settings-page space-shell`}
+      aria-labelledby="app-page-title"
+    >
       <div className={styles.container}>
         <SegmentedTabs
           value={activeView}
@@ -179,27 +203,12 @@ export default function SettingsPage() {
           aria-labelledby="settings-tab-profile"
           hidden={activeView !== "profile"}
         >
-          <div className={styles.accountHeader}>
-            <div>
-              <h2 id="account-heading">Profile and account</h2>
-              <p>Manage the information people see and your profile photo.</p>
-            </div>
-          </div>
-
-          {loadingProfile && (
-            <div className={styles.profileState} role="status">
-              Loading account settings…
-            </div>
-          )}
-          {!loadingProfile && profileLoadError && (
-            <div className={styles.profileError} role="alert">
-              <span>{profileLoadError}</span>
-              <button type="button" onClick={retryProfileLoad}>
-                Try again
-              </button>
-            </div>
-          )}
-          {profile && !loadingProfile && (
+          <SectionHeader
+            title="Profile and account"
+            description="Manage the information people see and your profile photo."
+          />
+          {renderProfileState("Loading account settings…")}
+          {profile && !loadingProfile && !profileLoadError && (
             <div className={styles.accountGrid}>
               <ProfileDetailsForm
                 key={`${profile.id}:${profile.updatedAt}:details`}
@@ -229,27 +238,12 @@ export default function SettingsPage() {
           aria-labelledby="settings-tab-privacy"
           hidden={activeView !== "privacy"}
         >
-          <div className={styles.accountHeader}>
-            <div>
-              <h2>Privacy</h2>
-              <p>Control who can view your profile and personal activity.</p>
-            </div>
-          </div>
-
-          {loadingProfile && (
-            <div className={styles.profileState} role="status">
-              Loading privacy settings…
-            </div>
-          )}
-          {!loadingProfile && profileLoadError && (
-            <div className={styles.profileError} role="alert">
-              <span>{profileLoadError}</span>
-              <button type="button" onClick={retryProfileLoad}>
-                Try again
-              </button>
-            </div>
-          )}
-          {profile && !loadingProfile && (
+          <SectionHeader
+            title="Privacy"
+            description="Control who can view your profile and personal activity."
+          />
+          {renderProfileState("Loading privacy settings…")}
+          {profile && !loadingProfile && !profileLoadError && (
             <div className={styles.privacyContent}>
               <ProfilePrivacy
                 isPrivate={profile.isPrivate}
@@ -262,116 +256,92 @@ export default function SettingsPage() {
         </section>
 
         <section
+          id="settings-panel-security"
+          className={styles.panel}
+          role="tabpanel"
+          aria-labelledby="settings-tab-security"
+          hidden={activeView !== "security"}
+        >
+          <SectionHeader
+            title="Security"
+            description="Update the password used to access your account."
+          />
+          <section className={styles.card} aria-labelledby="password-heading">
+            <div className={styles.cardHeader}>
+              <div>
+                <h3 id="password-heading" className={styles.cardTitle}>
+                  Change Password
+                </h3>
+                <p className={styles.cardDescription}>
+                  Confirm your current password before choosing a new one.
+                </p>
+              </div>
+            </div>
+            <PasswordForm />
+          </section>
+        </section>
+
+        <section
           id="settings-panel-appearance"
-          className={`${styles.panel} ${styles.section}`}
+          className={styles.panel}
           role="tabpanel"
           aria-labelledby="settings-tab-appearance"
           hidden={activeView !== "appearance"}
         >
-          <div className={styles.sectionHeader}>
-            <div>
-              <h2 id="planet-heading" className={styles.sectionTitle}>
-                Planet
-              </h2>
-              <p id="planet-hint" className={styles.sectionHint}>
-                Choose the celestial theme used across your space, with or
-                without its 3D model.
-              </p>
-            </div>
-            <span className={styles.currentPlanet} aria-live="polite">
-              {selectedPlanet.label} theme · 3D{" "}
-              {planetModelEnabled ? "on" : "off"}
-            </span>
-          </div>
-
-          <label
-            className={styles.modelToggle}
-            data-enabled={planetModelEnabled}
-          >
-            <span className={styles.toggleText}>
-              <strong>Show 3D model</strong>
-              <span id="model-toggle-hint">
-                {planetModelEnabled
-                  ? `Display the ${selectedPlanet.label} model.`
-                  : `Keep the ${selectedPlanet.label} theme without WebGL rendering.`}
-              </span>
-            </span>
-            <input
-              className={styles.modelCheckbox}
-              type="checkbox"
-              checked={planetModelEnabled}
-              aria-describedby="model-toggle-hint"
-              onChange={(event) => setPlanetModelEnabled(event.target.checked)}
-            />
-          </label>
-
-          <fieldset
-            className={styles.planetFieldset}
-            aria-describedby="planet-hint"
-          >
-            <legend className={styles.srOnly}>Planet appearance</legend>
-            <div className={styles.planetGrid}>
-              {SELECTABLE_PLANETS.map((planet) => {
-                const selected = planet.id === selectedPlanetId;
-                return (
-                  <label
-                    key={planet.id}
-                    className={styles.planetOption}
-                    style={createOptionStyle(planet.theme)}
-                  >
-                    <input
-                      className={styles.planetRadio}
-                      type="radio"
-                      name="active-planet"
-                      value={planet.id}
-                      checked={selected}
-                      onChange={() => selectPlanet(planet.id)}
-                    />
-                    <span className={styles.optionCard}>
-                      <span className={styles.planetOrb} aria-hidden="true" />
-                      <span className={styles.optionText}>
-                        <strong>{planet.label}</strong>
-                        <span>{selected ? "Selected" : "Select"}</span>
-                      </span>
-                      <span className={styles.checkmark} aria-hidden="true">
-                        ✓
-                      </span>
-                    </span>
-                  </label>
-                );
-              })}
-            </div>
-          </fieldset>
+          <SectionHeader
+            title="Appearance"
+            description="Choose your celestial theme and background behavior."
+          />
+          <AppearanceSettings />
         </section>
 
         <section
           id="settings-panel-session"
-          className={`${styles.panel} ${styles.section} ${styles.sessionSection}`}
+          className={styles.panel}
           role="tabpanel"
           aria-labelledby="settings-tab-session"
           hidden={activeView !== "session"}
         >
-          <div>
-            <h2 id="session-heading" className={styles.sectionTitle}>
-              Session
-            </h2>
-            <p className={styles.sectionHint}>
-              Sign out of this browser. Your profile and account data will stay intact.
-            </p>
-          </div>
-          <div className={styles.sessionAction}>
-            <button
-              type="button"
-              className={styles.signOutButton}
-              disabled={loggingOut}
-              onClick={logout}
-            >
-              {loggingOut ? "Signing out…" : "Sign out"}
-            </button>
-            {logoutError && <p role="alert">{logoutError}</p>}
+          <SectionHeader
+            title="Session"
+            description="Manage your current browser session."
+          />
+          <div className={`${styles.card} ${styles.sessionSection}`}>
+            <div>
+              <h3 className={styles.cardTitle}>Sign out</h3>
+              <p className={styles.cardDescription}>
+                Your profile and account data will stay intact.
+              </p>
+            </div>
+            <div className={styles.sessionAction}>
+              <button
+                type="button"
+                className={styles.signOutButton}
+                disabled={loggingOut}
+                onClick={logout}
+              >
+                {loggingOut ? "Signing out…" : "Sign out"}
+              </button>
+              {logoutError && <p role="alert">{logoutError}</p>}
+            </div>
           </div>
         </section>
       </div>
     </main>
+  );
+}
+
+function SectionHeader({
+  title,
+  description,
+}: {
+  title: string;
+  description: string;
+}) {
+  return (
+    <header className={styles.accountHeader}>
+      <h2>{title}</h2>
+      <p>{description}</p>
+    </header>
   );
 }

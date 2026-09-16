@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from "react";
 import { formatDateTime } from "@/lib/utils";
-import CreateEventModal from "../events/CreateEventModal";
 import { useGroupEvents } from "../../hooks/useGroupData";
 import { GroupLoadError } from "../GroupPanels";
 
@@ -22,7 +21,6 @@ export default function GroupEventsPreview({
   onSeeAll,
 }: GroupEventsPreviewProps) {
   const events = useGroupEvents(groupId);
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [now] = useState(Date.now);
 
   const upcoming = useMemo(() => {
@@ -62,7 +60,7 @@ export default function GroupEventsPreview({
         <button
           type="button"
           className="group-see-all"
-          onClick={() => setIsCreateOpen(true)}
+          onClick={onSeeAll}
         >
           Create Event
         </button>
@@ -83,7 +81,7 @@ export default function GroupEventsPreview({
           <button
             type="button"
             className="group-button secondary"
-            onClick={() => setIsCreateOpen(true)}
+            onClick={onSeeAll}
           >
             + Create Event
           </button>
@@ -108,13 +106,6 @@ export default function GroupEventsPreview({
             View all events →
           </button>
         </>
-      )}
-
-      {isCreateOpen && (
-        <CreateEventModal
-          groupId={groupId}
-          onClose={() => setIsCreateOpen(false)}
-        />
       )}
     </section>
   );

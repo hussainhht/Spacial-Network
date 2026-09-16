@@ -25,11 +25,9 @@ type Response struct {
 type ShareResponse struct {
 	PostID int    `json:"post_id"`
 	Target string `json:"target"`
-	// Link is the relative in-site path that was messaged.
-	Link string `json:"link"`
+	Link   string `json:"link"`
 }
 
-// NewHandler creates a new Handler instance with the provided dependencies.
 func NewHandler(service *Service) *Handler {
 	return &Handler{
 		service: service,

@@ -27,7 +27,6 @@
     background 0.2s ease;
 }
 
-/* ================= Left Section (Page Context) ================= */
 .contextSection {
   display: flex;
   align-items: center;
@@ -76,7 +75,6 @@
   line-height: 1.2;
 }
 
-/* ================= Center Section (Search Bar) ================= */
 .searchSection {
   width: 100%;
   max-width: 440px;
@@ -157,7 +155,6 @@
   outline: none;
 }
 
-/* ================= Right Section (Actions) ================= */
 .actionsSection {
   display: flex;
   align-items: center;
@@ -166,7 +163,6 @@
   flex-shrink: 0;
 }
 
-/* New Post Button */
 .newPostButton {
   display: inline-flex;
   align-items: center;
@@ -219,7 +215,6 @@
   height: 14px;
 }
 
-/* Notification Button */
 .bellWrapper {
   position: relative;
   display: inline-flex;
@@ -300,7 +295,6 @@
   }
 }
 
-/* User Area & Dropdown */
 .userWrapper {
   position: relative;
   display: inline-flex;
@@ -384,7 +378,6 @@
   transform: rotate(180deg);
 }
 
-/* User Dropdown Menu */
 .userDropdown {
   position: absolute;
   top: calc(100% + 8px);
@@ -472,7 +465,6 @@
   color: var(--space-error-text, #fca5a5);
 }
 
-/* ================= Responsive Design ================= */
 @media (max-width: 900px) {
   .contextEyebrow,
   .userName {

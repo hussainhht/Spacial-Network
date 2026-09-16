@@ -3,6 +3,8 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { getCurrentUser } from "../api/getCurrentUser";
+import { CurrentUserProvider } from "../context/CurrentUserContext";
+import type { CurrentUser } from "../types/auth";
 
 interface AuthGuardProps {
   children: ReactNode;
@@ -10,7 +12,7 @@ interface AuthGuardProps {
 
 export default function AuthGuard({ children }: AuthGuardProps) {
   const router = useRouter();
-  const [authenticated, setAuthenticated] = useState(false);
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -26,7 +28,7 @@ export default function AuthGuard({ children }: AuthGuardProps) {
         return;
       }
 
-      setAuthenticated(true);
+      setCurrentUser(user);
     }
 
     checkSession();
@@ -36,9 +38,9 @@ export default function AuthGuard({ children }: AuthGuardProps) {
     };
   }, [router]);
 
-  if (!authenticated) {
+  if (!currentUser) {
     return null;
   }
 
-  return children;
+  return <CurrentUserProvider initialUser={currentUser}>{children}</CurrentUserProvider>;
 }

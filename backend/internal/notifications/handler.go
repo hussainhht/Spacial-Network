@@ -23,7 +23,6 @@ type Response struct {
 	Error   string `json:"error,omitempty"`
 }
 
-
 func (h *Handler) ListNotificationsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -52,7 +51,6 @@ func (h *Handler) ListNotificationsHandler(w http.ResponseWriter, r *http.Reques
 	json.NewEncoder(w).Encode(ListNotificationsResponse{Notifications: list})
 }
 
-// UnreadCountHandler handles GET /notifications/unread-count.
 func (h *Handler) UnreadCountHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -103,7 +101,6 @@ func (h *Handler) MarkAsReadHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(Response{Message: "Notification marked as read"})
 }
 
-// MarkAllAsReadHandler handles PATCH /notifications/read-all.
 func (h *Handler) MarkAllAsReadHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 

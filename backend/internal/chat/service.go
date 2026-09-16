@@ -59,7 +59,6 @@ func NewService(repo *Repository, hub *websocket.Hub, notifier NotificationSende
 	}
 }
 
-// RegisterWSRoutes registers all chat WebSocket event handlers with the given WebSocket router.
 func (s *Service) RegisterWSRoutes(r *websocket.Router) {
 	r.Register(EventPrivateMessage, s.HandlePrivateMessage)
 	r.Register(EventGroupMessage, s.HandleGroupMessage)

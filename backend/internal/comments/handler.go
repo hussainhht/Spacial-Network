@@ -12,6 +12,7 @@ import (
 	"social/internal/posts"
 	"social/internal/requestctx"
 	"social/internal/upload"
+	"social/internal/users"
 )
 
 // maxNewCommentRequestSize bounds the total size of a create-comment
@@ -31,13 +32,14 @@ type Response struct {
 // CommentResponse is the JSON-serializable view of a comment returned to
 // clients.
 type CommentResponse struct {
-	ID        int       `json:"id"`
-	PostID    int       `json:"post_id"`
-	UserID    int       `json:"user_id"`
-	Content   string    `json:"content"`
-	ImageURL  string    `json:"image_url,omitempty"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID        int           `json:"id"`
+	PostID    int           `json:"post_id"`
+	UserID    int           `json:"user_id"`
+	Author    users.Summary `json:"author"`
+	Content   string        `json:"content"`
+	ImageURL  string        `json:"image_url,omitempty"`
+	CreatedAt time.Time     `json:"created_at"`
+	UpdatedAt time.Time     `json:"updated_at"`
 	// IsOwner tells the client whether the requesting user owns this
 	// comment, so it knows whether to offer a delete action.
 	IsOwner bool `json:"is_owner"`
@@ -61,6 +63,7 @@ func (h *Handler) newCommentResponse(c *comment, viewerID int, isModerator bool)
 		ID:        c.ID,
 		PostID:    c.PostID,
 		UserID:    c.UserID,
+		Author:    c.Author,
 		Content:   c.Content,
 		CreatedAt: c.Created_At,
 		UpdatedAt: c.Updated_At,
@@ -73,7 +76,6 @@ func (h *Handler) newCommentResponse(c *comment, viewerID int, isModerator bool)
 	return resp
 }
 
-// NewHandler creates a new Handler instance with the provided dependencies.
 func NewHandler(service *Service, mediaStorage *upload.MediaStorage) *Handler {
 	return &Handler{
 		service:      service,

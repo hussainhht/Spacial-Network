@@ -10,12 +10,10 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// SeedOptions configures the database seeding process.
 type SeedOptions struct {
 	Clean bool
 }
 
-// UserSeed defines seed attributes for a single user account.
 type UserSeed struct {
 	Username    string
 	Email       string
@@ -29,7 +27,6 @@ type UserSeed struct {
 	IsPrivate   int
 }
 
-// GroupSeed defines seed attributes for a group.
 type GroupSeed struct {
 	CreatorUsername string
 	Title           string
@@ -37,7 +34,6 @@ type GroupSeed struct {
 	Privacy         string
 }
 
-// PostSeed defines seed attributes for a post.
 type PostSeed struct {
 	AuthorUsername string
 	Title          string
@@ -48,7 +44,6 @@ type PostSeed struct {
 	CreatedOffset  time.Duration
 }
 
-// CommentSeed defines seed attributes for a comment.
 type CommentSeed struct {
 	AuthorUsername string
 	PostTitle      string
@@ -56,7 +51,6 @@ type CommentSeed struct {
 	CreatedOffset  time.Duration
 }
 
-// EventSeed defines seed attributes for a group event.
 type EventSeed struct {
 	GroupTitle      string
 	CreatorUsername string
@@ -65,7 +59,6 @@ type EventSeed struct {
 	EventOffset     time.Duration // offset from now (positive for future)
 }
 
-// PrivateMessageSeed defines seed attributes for a 1-on-1 direct message.
 type PrivateMessageSeed struct {
 	SenderUsername    string
 	RecipientUsername string
@@ -74,7 +67,6 @@ type PrivateMessageSeed struct {
 	CreatedOffset     time.Duration
 }
 
-// GroupMessageSeed defines seed attributes for a group channel message.
 type GroupMessageSeed struct {
 	GroupTitle     string
 	AuthorUsername string
@@ -93,7 +85,6 @@ func Run(db *sql.DB, opts SeedOptions) error {
 		}
 	}
 
-	// 1. Precompute standard password hash once for performance
 	const defaultPassword = "Password123!"
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(defaultPassword), bcrypt.DefaultCost)
 	if err != nil {
@@ -107,9 +98,6 @@ func Run(db *sql.DB, opts SeedOptions) error {
 	}
 	defer tx.Rollback()
 
-	// -------------------------------------------------------------------------
-	// 2. Insert Users
-	// -------------------------------------------------------------------------
 	users := []UserSeed{
 		{
 			Username:    "alice",
@@ -249,9 +237,6 @@ func Run(db *sql.DB, opts SeedOptions) error {
 	}
 	log.Printf("✅ Inserted %d users (all have password: %s)", len(users), defaultPassword)
 
-	// -------------------------------------------------------------------------
-	// 3. Followers & Follow Requests
-	// -------------------------------------------------------------------------
 	// Mutual follows enable direct messaging between pairs
 	followPairs := [][2]string{
 		{"alice", "bob"},
@@ -266,7 +251,6 @@ func Run(db *sql.DB, opts SeedOptions) error {
 		{"alice", "cosmonaut"},
 		{"cosmonaut", "bob"},
 		{"bob", "cosmonaut"},
-		// One-way follows
 		{"alice", "elena"},
 		{"bob", "diana"},
 		{"elena", "grace"},
@@ -325,9 +309,6 @@ func Run(db *sql.DB, opts SeedOptions) error {
 	}
 	log.Printf("✅ Inserted %d follow requests", len(followRequests))
 
-	// -------------------------------------------------------------------------
-	// 4. Groups & Members
-	// -------------------------------------------------------------------------
 	groups := []GroupSeed{
 		{
 			CreatorUsername: "alice",
@@ -393,27 +374,22 @@ func Run(db *sql.DB, opts SeedOptions) error {
 		Role       string
 	}
 	memberships := []GroupMembership{
-		// Orbital Explorers
 		{"Orbital Explorers Club", "alice", "creator"},
 		{"Orbital Explorers Club", "bob", "member"},
 		{"Orbital Explorers Club", "diana", "member"},
 		{"Orbital Explorers Club", "elena", "member"},
 		{"Orbital Explorers Club", "cosmonaut", "member"},
-		// Quantum Cosmos
 		{"Quantum Cosmos Research", "bob", "creator"},
 		{"Quantum Cosmos Research", "alice", "member"},
 		{"Quantum Cosmos Research", "grace", "member"},
 		{"Quantum Cosmos Research", "elena", "member"},
 		{"Quantum Cosmos Research", "cosmonaut", "member"},
-		// Astro-Photographers
 		{"Astro-Photographers Guild", "charlie", "creator"},
 		{"Astro-Photographers Guild", "alice", "member"},
 		{"Astro-Photographers Guild", "diana", "member"},
-		// Deep Space Pioneers (private)
 		{"Deep Space Pioneers", "diana", "creator"},
 		{"Deep Space Pioneers", "alice", "member"},
 		{"Deep Space Pioneers", "frank", "member"},
-		// Zero-G Habitats
 		{"Zero-G Habitat Architects", "frank", "creator"},
 		{"Zero-G Habitat Architects", "bob", "member"},
 		{"Zero-G Habitat Architects", "grace", "member"},
@@ -493,9 +469,6 @@ func Run(db *sql.DB, opts SeedOptions) error {
 		}
 	}
 
-	// -------------------------------------------------------------------------
-	// 5. Group Events & Responses
-	// -------------------------------------------------------------------------
 	events := []EventSeed{
 		{
 			GroupTitle:      "Orbital Explorers Club",
@@ -593,9 +566,6 @@ func Run(db *sql.DB, opts SeedOptions) error {
 	}
 	log.Printf("✅ Inserted %d event responses", len(eventResponses))
 
-	// -------------------------------------------------------------------------
-	// 6. Posts (Public, Followers, Custom, & Group Posts)
-	// -------------------------------------------------------------------------
 	posts := []PostSeed{
 		{
 			AuthorUsername: "alice",
@@ -731,9 +701,6 @@ func Run(db *sql.DB, opts SeedOptions) error {
 	}
 	log.Printf("✅ Inserted %d posts (including group and custom visibility posts)", len(posts))
 
-	// -------------------------------------------------------------------------
-	// 7. Comments
-	// -------------------------------------------------------------------------
 	comments := []CommentSeed{
 		{
 			AuthorUsername: "bob",
@@ -828,11 +795,7 @@ func Run(db *sql.DB, opts SeedOptions) error {
 	}
 	log.Printf("✅ Inserted %d comments", len(comments))
 
-	// -------------------------------------------------------------------------
-	// 8. Private Messages (Between Mutual Followers)
-	// -------------------------------------------------------------------------
 	privateMessages := []PrivateMessageSeed{
-		// Alice <-> Bob
 		{"bob", "alice", "Hey Alice, did you see the telemetry readout from the Daedalus relay?", true, -2 * 24 * time.Hour},
 		{"alice", "bob", "Hey Bob! Yes, I was just looking at Crater Daedalus. The surface reflectivity is higher than expected.", true, -47 * time.Hour},
 		{"bob", "alice", "That matches our spectroscopy models from last week. Let's compare notes tomorrow.", true, -46 * time.Hour},
@@ -840,23 +803,19 @@ func Run(db *sql.DB, opts SeedOptions) error {
 		{"bob", "alice", "Awesome, talk to you then! 🚀", true, -38 * time.Hour},
 		{"alice", "bob", "See you at the mission briefing.", false, -10 * time.Minute},
 
-		// Alice <-> Diana
 		{"diana", "alice", "Alice, how is the sensor calibration holding up in the orbital lab?", true, -30 * time.Hour},
 		{"alice", "diana", "Calibration is rock solid. The thermal shielding is performing well within margins.", true, -28 * time.Hour},
 		{"diana", "alice", "Wonderful! Let me know when the next spectral run completes.", true, -25 * time.Hour},
 		{"alice", "diana", "Will do Diana! Sending the raw telemetry now.", false, -1 * time.Hour},
 
-		// Bob <-> Elena
 		{"elena", "bob", "Bob, could you share the raw dataset from the solar array telemetry?", true, -20 * time.Hour},
 		{"bob", "elena", "Sending over the parquet files now. Check your frequency relay.", true, -18 * time.Hour},
 		{"elena", "bob", "Received! The solar flux numbers look very promising.", true, -16 * time.Hour},
 
-		// Cosmonaut <-> Alice
 		{"cosmonaut", "alice", "Greetings Alice! Glad to connect on the orbital network.", true, -15 * time.Hour},
 		{"alice", "cosmonaut", "Welcome aboard Cosmonaut! Let me know if you need any help navigating the telemetry frequencies.", true, -14 * time.Hour},
 		{"cosmonaut", "alice", "Will do! Looking forward to the Perseid meteor observation night.", false, -2 * time.Hour},
 
-		// Cosmonaut <-> Bob
 		{"cosmonaut", "bob", "Hey Bob, impressed by the ion propulsion data you posted.", true, -10 * time.Hour},
 		{"bob", "cosmonaut", "Thanks! We've been working on those magnetic cusps for months. Glad the results are panning out.", false, -30 * time.Minute},
 	}
@@ -886,9 +845,6 @@ func Run(db *sql.DB, opts SeedOptions) error {
 	}
 	log.Printf("✅ Inserted %d private direct messages", len(privateMessages))
 
-	// -------------------------------------------------------------------------
-	// 9. Group Messages
-	// -------------------------------------------------------------------------
 	groupMessages := []GroupMessageSeed{
 		{"Orbital Explorers Club", "alice", "Welcome everyone to the orbital frequency channel! 🛰️", -3 * 24 * time.Hour},
 		{"Orbital Explorers Club", "bob", "Excited to be here. Orbit calculations look solid.", -2 * 24 * time.Hour},
@@ -920,9 +876,6 @@ func Run(db *sql.DB, opts SeedOptions) error {
 	}
 	log.Printf("✅ Inserted %d group chat messages", len(groupMessages))
 
-	// -------------------------------------------------------------------------
-	// 10. Notifications
-	// -------------------------------------------------------------------------
 	type NotificationSeed struct {
 		ReceiverUsername string
 		ActorUsername    string

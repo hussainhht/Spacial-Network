@@ -17,7 +17,6 @@ export default function EmptyChat() {
           strokeLinejoin="round"
           aria-hidden="true"
         >
-          {/* Satellite and orbital transmission waves */}
           <path d="M13 7 9 3 5 7l4 4" />
           <path d="m17 11 4 4-4 4-4-4" />
           <path d="m8 12 4 4 6-6-4-4Z" />
@@ -28,7 +27,8 @@ export default function EmptyChat() {
       </div>
       <h2 className={styles.emptyTitle}>Orbital Transmission Relay</h2>
       <p className={styles.emptyDesc}>
-        Select a conversation or choose New Chat to start a transmission. Your next connection is just a message away.
+        Select a conversation or choose New Chat to start a transmission. Your
+        next connection is just a message away.
       </p>
     </div>
   );

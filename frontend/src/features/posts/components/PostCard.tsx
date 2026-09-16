@@ -124,6 +124,7 @@ export default function PostCard({ post, onDeleted, preview = false, detail = fa
         <PostAuthorLink
           author={post.author}
           disabled={preview}
+          prominent={detail}
           meta={
             <>
               <span aria-hidden="true">·</span>
@@ -189,11 +190,11 @@ export default function PostCard({ post, onDeleted, preview = false, detail = fa
 
       <div className={styles.body}>
         {detail ? (
-          <h1 id={titleId} className={styles.title}>{post.title}</h1>
+          <h1 id={titleId} className={styles.title} dir="auto">{post.title}</h1>
         ) : (
-          <h2 id={titleId} className={styles.title}>{post.title}</h2>
+          <h2 id={titleId} className={styles.title} dir="auto">{post.title}</h2>
         )}
-        <p className={styles.content}>{post.content}</p>
+        <p className={styles.content} dir="auto">{post.content}</p>
       </div>
 
       <PostMediaGrid media={postMedia(post)} preview={!detail} />
@@ -211,6 +212,7 @@ export default function PostCard({ post, onDeleted, preview = false, detail = fa
           onComment={() => router.push(detail ? "#comments" : `${postHref}#comments`)}
           onShare={preview ? undefined : () => setSharing(true)}
           preview={preview}
+          detail={detail}
         />
       </footer>
 

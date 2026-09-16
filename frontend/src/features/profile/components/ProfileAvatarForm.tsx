@@ -1,8 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { getBackendBaseUrl } from "@/lib/api";
-import { getInitials } from "@/lib/utils";
+import UserAvatar from "@/components/UserAvatar";
 import type { UpdateProfileAvatarInput } from "../api/profiles";
 import type { Profile } from "../types/profile";
 import styles from "./Profile.module.css";
@@ -19,12 +18,6 @@ interface ProfileAvatarFormProps {
   saving: boolean;
   error?: string | null;
   onSave: (input: UpdateProfileAvatarInput) => Promise<void>;
-}
-
-function getFullPhotoUrl(path: string): string {
-  if (/^https?:\/\//i.test(path)) return path;
-  const cleanPath = path.startsWith("/") ? path : `/${path}`;
-  return `${getBackendBaseUrl()}${cleanPath}`;
 }
 
 export default function ProfileAvatarForm({
@@ -49,16 +42,8 @@ export default function ProfileAvatarForm({
     };
   }, [previewUrl]);
 
-  const currentPhotoUrl =
-    profile.profilePhoto && !removePhoto
-      ? getFullPhotoUrl(profile.profilePhoto)
-      : null;
+  const currentPhotoUrl = profile.profilePhoto && !removePhoto ? profile.profilePhoto : null;
   const displayedPhoto = previewUrl ?? currentPhotoUrl;
-  const initials = getInitials(
-    profile.firstName,
-    profile.lastName,
-    profile.username,
-  );
   const hasChanges = Boolean(profilePhoto) || removePhoto;
   const shownError = localError ?? error;
 
@@ -126,19 +111,15 @@ export default function ProfileAvatarForm({
       <form className={styles.profileForm} onSubmit={handleSubmit}>
         <div className={styles.avatarFormBody}>
           <div className={styles.avatarPreview}>
-            {displayedPhoto ? (
-              // Blob previews cannot be optimized by next/image.
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={displayedPhoto}
-                alt=""
-                className={styles.avatarPreviewImage}
-              />
-            ) : (
-              <span className={styles.avatarPreviewFallback} aria-hidden="true">
-                {initials}
-              </span>
-            )}
+            <UserAvatar
+              src={displayedPhoto}
+              firstName={profile.firstName}
+              lastName={profile.lastName}
+              username={profile.username}
+              size={88}
+              alt="Profile photo preview"
+              className={styles.avatarPreviewImage}
+            />
           </div>
 
           <div className={styles.avatarFormControls}>

@@ -36,9 +36,6 @@ type Handlers struct {
 	Search        *search.Handler
 	Likes         *likes.Handler
 	Share         *share.Handler
-
-	// TODO: Add Chat handler when the chat feature is implemented.
-	// Chat *chat.Handler
 }
 
 type Dependencies struct {
@@ -49,24 +46,14 @@ type Dependencies struct {
 	NotificationsService *notifications.Service
 	FollowersService     *followers.Service
 	RateLimiter          *ratelimit.Limiter
-
-	// Future shared services:
-	PostsService *posts.Service
-	// GroupsService        *groups.Service
-	// PostsService         *posts.Service
+	PostsService         *posts.Service
 }
 
 func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 	hub := websocket.NewHub()
 	wsHandler := websocket.NewHandler(hub)
 
-	// =========================
-	// Rate limiting
-	// =========================
-	// One Limiter is shared across every route: its global bucket is keyed
-	// per-user across all of them, and its endpoint bucket is keyed
-	// per-(user, endpoint) - see internal/ratelimit/README.md.
-
+	// One limiter is shared across all routes: global bucket per user, endpoint bucket per (user, endpoint).
 	rateLimiter := ratelimit.NewLimiter(ratelimit.LimiterConfig{
 		GlobalCapacity:     cfg.RateLimitGlobalCapacity,
 		GlobalRefillRate:   cfg.RateLimitGlobalRefillRate,
@@ -76,39 +63,18 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 		EndpointPenalty:    cfg.RateLimitEndpointPenalty,
 	})
 
-	// =========================
-	// Notifications
-	// =========================
-	// Persists notifications to SQLite and pushes them over the existing
-	// websocket hub. Other features (Chat, Groups, and Followers once it exists)
-	// depend on notificationsService only through their own generic
-	// NotificationSender interface (Notify(...)) - never on this package's
-	// repository or SQL.
-
 	notificationsRepo := notifications.NewRepository(db)
 	notificationsSender := notifications.NewHubSender(hub)
 	notificationsService := notifications.NewService(notificationsRepo, notificationsSender)
 	notificationsHandler := notifications.NewHandler(notificationsService)
 
-	// =========================
-	// Followers
-	// =========================
-
 	followersRepo := followers.NewRepository(db)
 	followersService := followers.NewService(followersRepo, notificationsService, hub)
-
-	// =========================
-	// Users
-	// =========================
 
 	usersRepo := users.NewRepository(db)
 	usersService := users.NewService(usersRepo, followersService)
 
 	followersHandler := followers.NewHandler(followersService, usersService)
-
-	// =========================
-	// Uploads
-	// =========================
 
 	avatarStorage, err := upload.NewAvatarStorage(cfg.UploadsDir, upload.AvatarSubdir, cfg.MaxAvatarSize)
 	if err != nil {
@@ -137,10 +103,6 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 		return nil, err
 	}
 
-	// =========================
-	// Authentication
-	// =========================
-
 	authRepo := auth.NewRepository(db, cfg.SessionLifetime)
 	authService := auth.NewService(authRepo, usersService)
 	authHandler := auth.NewHandler(
@@ -152,28 +114,15 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 		cfg.SessionLifetime,
 	)
 
-	// =========================
-	// Groups
-	// =========================
-	// Constructed before Posts/Comments/Chat, which depend on groupsService for
-	// group-membership checks on group-scoped posts, comments, and messages.
-
+	// Groups is constructed before Posts/Comments/Chat which depend on it for membership checks.
 	groupsRepo := groups.NewRepository(db)
 	groupsService := groups.NewService(groupsRepo, notificationsService, hub)
 	groupsHandler := groups.NewHandler(groupsService, groupPhotoStorage, eventMediaStorage)
 	inviteSearchWSHandler := groups.NewInviteSearchWSHandler(groupsService, hub)
 
-	// =========================
-	// Chat
-	// =========================
-
 	chatRepo := chat.NewRepository(db)
 	chatService := chat.NewService(chatRepo, hub, notificationsService, followersService, groupsService)
 	chatHandler := chat.NewHandler(chatService)
-
-	// =========================
-	// Posts
-	// =========================
 
 	postsRepo := posts.NewRepository(db)
 	postsService := posts.NewService(postsRepo, followersService, groupsService)
@@ -187,39 +136,19 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 		cfg.SessionLifetime,
 	)
 
-	// =========================
-	// Comments
-	// =========================
-
 	commentsRepo := comments.NewRepository(db)
 	commentsService := comments.NewService(commentsRepo, postsService, notificationsService)
 	commentsHandler := comments.NewHandler(commentsService, commentMediaStorage)
-
-	// =========================
-	// Likes
-	// =========================
 
 	likesRepo := likes.NewRepository(db)
 	likesService := likes.NewService(likesRepo, postsService, notificationsService)
 	likesHandler := likes.NewHandler(likesService)
 
-	// =========================
-	// Share
-	// =========================
-	// Shares are delivered as chat messages, so this depends on chatService
-	// through share's own narrow MessageSender interface.
-
+	// Shares are delivered as chat messages.
 	shareService := share.NewService(chatService, postsService)
 	shareHandler := share.NewHandler(shareService)
 
-	// =========================
-	// WebSocket message routing
-	// =========================
-	// Both Chat and Groups handle inbound client messages; Router dispatches
-	// each by its event type to whichever feature registered it, so the Hub
-	// stays a single connection per user regardless of how many features
-	// use it.
-
+	// Both Chat and Groups register inbound WebSocket handlers on a single multiplexed connection per user.
 	wsRouter := websocket.NewRouter()
 	chatService.RegisterWSRoutes(wsRouter)
 	wsRouter.Register(groups.EventInviteUserSearch, inviteSearchWSHandler.HandleInviteUserSearch)
@@ -240,10 +169,6 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 
 		wsRouter.Dispatch(senderID, raw)
 	})
-
-	// =========================
-	// Search
-	// =========================
 
 	searchRepo := search.NewRepository(db)
 	searchService := search.NewService(searchRepo)
@@ -269,8 +194,7 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 		NotificationsService: notificationsService,
 		FollowersService:     followersService,
 		RateLimiter:          rateLimiter,
-
-		// PostsService: postsService,
+		PostsService:         postsService,
 	}, nil
 }
 

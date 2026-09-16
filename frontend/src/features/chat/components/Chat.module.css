@@ -3,9 +3,6 @@
    Floating frosted glass console cards over the 3D celestial planet background
    ========================================================================== */
 
-/* --------------------------------------------------------------------------
-   Layout & Container Architecture
-   -------------------------------------------------------------------------- */
 .chatRoute {
   /* Carry the shell's definite available height through the route wrapper.
      The shell already reserves the navbar and mobile navigation dock. */
@@ -62,9 +59,6 @@
   width: 100%;
 }
 
-/* --------------------------------------------------------------------------
-   Base Floating Glass Card
-   -------------------------------------------------------------------------- */
 .floatingCard {
   display: flex;
   flex-direction: column;
@@ -84,7 +78,6 @@
   -webkit-backdrop-filter: blur(16px);
 }
 
-/* Sidebar Console Card */
 .sidebarCard {
   width: clamp(360px, 27vw, 420px);
   min-height: 0;
@@ -94,7 +87,6 @@
   height: 100%;
 }
 
-/* Chat Transmission Window Card */
 .chatCard {
   flex: 1;
   min-height: 0;
@@ -121,9 +113,6 @@
   }
 }
 
-/* --------------------------------------------------------------------------
-   Conversation Sidebar Components
-   -------------------------------------------------------------------------- */
 .sidebarHeader {
   padding: 22px 20px 18px;
   border-bottom: 1px solid rgba(148, 163, 184, 0.1);
@@ -251,7 +240,6 @@
   color: var(--space-text-heading, #f8fafc);
 }
 
-/* Filter Chips (All / Unread / Online) */
 .filterChips {
   display: flex;
   align-items: center;
@@ -284,7 +272,6 @@
   font-weight: 600;
 }
 
-/* Conversation List Scroll Area */
 .conversationsList {
   flex: 1;
   min-height: 0;
@@ -467,9 +454,6 @@
   box-shadow: 0 0 8px var(--planet-glow, rgba(66, 145, 218, 0.3));
 }
 
-/* --------------------------------------------------------------------------
-   Active Chat Window Components
-   -------------------------------------------------------------------------- */
 .windowHeader {
   display: flex;
   align-items: center;
@@ -640,7 +624,6 @@
   color: var(--planet-accent-hover, #86c3f7);
 }
 
-/* Message Stream Container */
 .messagesContainer {
   flex: 1;
   min-height: 0;
@@ -700,7 +683,6 @@
   cursor: default;
 }
 
-/* Date Separator */
 .dateDivider {
   display: flex;
   align-items: center;
@@ -731,7 +713,6 @@
   letter-spacing: 0.3px;
 }
 
-/* Message Rows & Bubbles */
 .messageRowMine {
   display: flex;
   align-items: flex-end;
@@ -795,12 +776,6 @@
   width: 28px;
   height: 28px;
   flex: 0 0 auto;
-}
-
-.messageAvatarImage {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
 }
 
 .messageContent {
@@ -910,7 +885,6 @@
   filter: brightness(1.1);
 }
 
-/* Composer Bar */
 .composer {
   display: flex;
   align-items: flex-end;
@@ -1019,9 +993,6 @@
   filter: grayscale(0.5);
 }
 
-/* --------------------------------------------------------------------------
-   Empty Chat State ("Orbital Relay")
-   -------------------------------------------------------------------------- */
 .emptyChat {
   flex: 1;
   display: flex;
@@ -1081,9 +1052,6 @@
   transform: translateY(-1px);
 }
 
-/* --------------------------------------------------------------------------
-   New Chat Modal Dialog
-   -------------------------------------------------------------------------- */
 .modalBackdrop {
   position: fixed;
   inset: 0;
@@ -1210,9 +1178,6 @@
   flex-shrink: 0;
 }
 
-/* --------------------------------------------------------------------------
-   Mobile & Responsive Adjustments
-   -------------------------------------------------------------------------- */
 @media (max-width: 1200px) {
   .chatContainer { padding: 16px; }
   .cardsWrapper { gap: 16px; }

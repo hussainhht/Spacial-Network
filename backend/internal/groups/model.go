@@ -30,11 +30,13 @@ type Group struct {
 }
 
 type GroupMember struct {
-	Avatar   string    `json:"avatar,omitempty"`
-	UserID   int       `db:"user_id"`
-	Username string    `db:"username"`
-	Role     string    `db:"role"`
-	JoinedAt time.Time `db:"joined_at"`
+	Avatar    string    `json:"avatar,omitempty"`
+	UserID    int       `db:"user_id"`
+	Username  string    `db:"username"`
+	FirstName string    `db:"first_name"`
+	LastName  string    `db:"last_name"`
+	Role      string    `db:"role"`
+	JoinedAt  time.Time `db:"joined_at"`
 }
 
 type GroupRecommendation struct {
@@ -123,11 +125,13 @@ type GetGroupResponse struct {
 }
 
 type GroupMemberResponse struct {
-	Avatar   string `json:"avatar,omitempty"`
-	UserID   int    `json:"user_id"`
-	Username string `json:"username"`
-	Role     string `json:"role"`
-	JoinedAt string `json:"joined_at"`
+	Avatar    string `json:"avatar,omitempty"`
+	UserID    int    `json:"user_id"`
+	Username  string `json:"username"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+	Role      string `json:"role"`
+	JoinedAt  string `json:"joined_at"`
 }
 
 type GetGroupMembersResponse struct {

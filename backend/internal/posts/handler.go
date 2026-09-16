@@ -204,7 +204,6 @@ func (h *Handler) authorsFor(posts []*post) map[int]users.Summary {
 	return authors
 }
 
-// NewHandler creates a new Handler instance with the provided dependencies.
 func NewHandler(service *Service, usersService *users.Service, groupsService *groups.Service, mediaStorage *upload.MediaStorage, cookieName string, cookieSecure bool, sessionLifetime time.Duration) *Handler {
 	return &Handler{
 		service:         service,
@@ -217,12 +216,7 @@ func NewHandler(service *Service, usersService *users.Service, groupsService *gr
 	}
 }
 
-// NewPostHandler handles the creation of a new post.
-// NewPostHandler expects a multipart/form-data body with "title", "content",
-// and "visibility" ("public", "followers", or "custom") fields, a repeated
-// "viewer_ids" field for each allowed viewer when visibility is "custom",
-// plus up to MaxPostMedia repeated "media" file attachments. The legacy
-// singular "image" field remains accepted for older clients.
+// NewPostHandler creates a post with multipart fields and optional attachments.
 func (h *Handler) NewPostHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		w.WriteHeader(errMethodNotAllowed)
@@ -400,11 +394,7 @@ func (h *Handler) removeMedia(media []postMedia) {
 	}
 }
 
-// GetPostByIDHandler retrieves a post by its ID.
-// It expects the post ID to be provided as a path parameter.
-// The user must be authenticated, and a post is only returned to viewers who
-// can access it under its visibility setting - to anyone else it looks the
-// same as one that doesn't exist.
+// GetPostByIDHandler returns a post if the requesting user has access under its visibility setting.
 func (h *Handler) GetPostByIDHandler(w http.ResponseWriter, r *http.Request) {
 	userID, ok := requestctx.UserID(r.Context())
 	if !ok {

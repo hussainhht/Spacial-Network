@@ -5,21 +5,15 @@ import { usePathname } from "next/navigation";
 import { getNavbarContext } from "./navbarContext";
 import { useEffect, useRef, useState } from "react";
 import AppIcon from "./AppIcon";
+import UserAvatar from "@/components/UserAvatar";
+import { useCurrentUser } from "@/features/auth/context/CurrentUserContext";
+import { getDisplayName } from "@/lib/utils";
 import { useNotifications } from "@/features/notifications/context/NotificationProvider";
 import NotificationDropdown from "@/features/notifications/components/NotificationDropdown";
 import { useSearchModal } from "@/features/search/context/SearchContext";
 import UniversalNavbarSearch from "@/features/search/components/UniversalNavbarSearch";
 import { useLogout } from "./useLogout";
-import { getMyProfile } from "@/features/profile/api/profiles";
-import type { Profile } from "@/features/profile/types/profile";
-import { getBackendBaseUrl } from "@/lib/api";
 import styles from "./TopNavbar.module.css";
-
-function profilePhotoUrl(path?: string) {
-  if (!path) return null;
-  if (/^https?:\/\//i.test(path)) return path;
-  return `${getBackendBaseUrl()}${path.startsWith("/") ? path : `/${path}`}`;
-}
 
 export default function TopNavbar() {
   const pathname = usePathname();
@@ -28,9 +22,10 @@ export default function TopNavbar() {
   // Real notifications context
   const { unreadCount } = useNotifications();
   const { logout, loggingOut, error: logoutError } = useLogout();
+  const { user } = useCurrentUser();
+  const displayName = getDisplayName(user.first_name, user.last_name, user.username);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [menuRoute, setMenuRoute] = useState(pathname);
-  const [currentProfile, setCurrentProfile] = useState<Profile | null>(null);
   const bellRef = useRef<HTMLDivElement>(null);
 
   // Dropdown mockup state
@@ -48,23 +43,13 @@ export default function TopNavbar() {
   }
 
   useEffect(() => {
-    let cancelled = false;
-    getMyProfile()
-      .then((profile) => {
-        if (!cancelled) setCurrentProfile(profile);
-      })
-      .catch(() => undefined);
-
-    function handleProfileUpdated(event: Event) {
-      setCurrentProfile((event as CustomEvent<Profile>).detail);
-    }
-
-    window.addEventListener("profile-updated", handleProfileUpdated);
-    return () => {
-      cancelled = true;
-      window.removeEventListener("profile-updated", handleProfileUpdated);
-    };
-  }, []);
+    if (!isOpen) return;
+    const timeoutId = window.setTimeout(() => {
+      setNotificationsOpen(false);
+      setUserMenuOpen(false);
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [isOpen]);
 
   useEffect(() => {
     if (!userMenuOpen && !notificationsOpen) return;
@@ -104,11 +89,6 @@ export default function TopNavbar() {
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [userMenuOpen, notificationsOpen]);
-
-  const userLabel = currentProfile
-    ? currentProfile.nickname || currentProfile.firstName || currentProfile.username
-    : "Account";
-  const userPhoto = profilePhotoUrl(currentProfile?.profilePhoto);
 
   return (
     <nav className={styles.navbar} aria-label="Top navigation">
@@ -186,16 +166,16 @@ export default function TopNavbar() {
             aria-expanded={userMenuOpen && menuRoute === pathname}
             aria-label="User account options"
           >
-            <span className={styles.userAvatar} aria-hidden="true">
-              {userPhoto ? (
-                // User-uploaded images are served by the Go backend.
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={userPhoto} alt="" className={styles.userAvatarImage} />
-              ) : (
-                <AppIcon name="user" />
-              )}
-            </span>
-            <span className={styles.userName}>{userLabel}</span>
+            <UserAvatar
+              src={user.profile_photo}
+              firstName={user.first_name}
+              lastName={user.last_name}
+              username={user.username}
+              size="xs"
+              alt=""
+              className={styles.userAvatar}
+            />
+            <span className={styles.userName}>{displayName}</span>
             <span className={styles.chevronIcon} aria-hidden="true">
               <AppIcon name="chevronDown" />
             </span>
