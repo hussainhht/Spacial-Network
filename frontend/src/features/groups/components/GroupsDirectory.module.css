@@ -35,19 +35,36 @@
   line-height: 1.7;
 }
 
-.toolbar { display: flex; gap: 16px; align-items: stretch; }
-.toolbar :global(.group-search) { max-width: none; margin: 0; flex: 1; min-width: 0; }
+.toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.toolbar .filters {
+  flex: 0 0 auto;
+  width: fit-content;
+  margin: 0;
+}
+.toolbar :global(.group-search) {
+  flex: 0 1 300px;
+  width: min(100%, 300px);
+  min-width: 220px;
+  max-width: 300px;
+  margin: 0;
+}
 .toolbar :global(.group-search-input) {
-  min-height: 52px;
-  padding: 12px 52px 12px 44px;
-  border-radius: 12px;
+  min-height: 44px;
+  padding: 9px 44px 9px 40px;
+  border-radius: 999px;
   background: var(--groups-surface);
   border-color: var(--space-border-strong);
-  font-size: 0.9375rem;
+  font-size: 0.875rem;
 }
 .toolbar :global(.group-search-input)::placeholder { color: var(--space-text-muted); }
-.toolbar :global(.group-search-icon) { left: 16px; }
-.toolbar :global(.group-search-clear) { width: 44px; height: 44px; right: 4px; }
+.toolbar :global(.group-search-icon) { left: 14px; }
+.toolbar :global(.group-search-clear) { width: 36px; height: 36px; right: 4px; }
 .toolbar :global(.group-search-input):hover { border-color: var(--planet-border-strong); }
 .toolbar :global(.group-search-input):focus {
   background: var(--space-input-bg-focus);
@@ -56,9 +73,8 @@
   outline: 2px solid var(--planet-focus-ring);
   outline-offset: 2px;
 }
-.page .create { gap: 8px; padding-inline: 24px; flex-shrink: 0; border-radius: 12px; }
+.page .create { gap: 8px; padding-inline: 20px; flex-shrink: 0; border-radius: 999px; }
 .page :global(.group-button) { min-height: 44px; font-family: inherit; font-size: 0.875rem; font-weight: 600; line-height: 1.4; transition: background-color 180ms, border-color 180ms; }
-.filters { margin: 24px 0; }
 .page :focus-visible { outline: 2px solid var(--planet-focus-ring); outline-offset: 4px; }
 .container > :global(.group-panel) { margin-bottom: 24px; }
 
@@ -168,8 +184,19 @@
 @media (max-width: 600px) {
   .page { padding-top: 24px; }
   .intro { margin-bottom: 24px; }
-  .toolbar { flex-direction: column; gap: 12px; }
-  .page .create { min-height: 48px; }
+  .toolbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .toolbar .filters {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+  .toolbar :global(.group-search) {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+  }
   .body { padding: 16px 18px 18px; }
   .grid { gap: 16px; }
 }
