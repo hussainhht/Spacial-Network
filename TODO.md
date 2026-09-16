@@ -12,3 +12,5 @@
 * [X] make the useer can remove the request from the group
 * [ ] add notfvation for grop chat and make sure the notfcation for every thing
 * [X] clear all make it in the notfcation group
+* [ ] privet post is not work  there is not selct people so i can add them
+* [ ] remove saction info from the stings
