@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useWebSocket } from "@/providers/WebSocketProvider";
-import { getCurrentUser } from "@/features/auth/api/getCurrentUser";
+import { useCurrentUser } from "@/features/auth/context/CurrentUserContext";
 import { getConversations, getChatHistory, getEligibleContacts } from "@/features/chat/api/chat";
 import { ApiError } from "@/lib/api/errors";
 import type { ConversationSummary, PrivateMessage } from "@/features/chat/types/chat";
@@ -12,6 +12,8 @@ const HISTORY_PAGE_SIZE = 20;
 
 export function useChat() {
   const router = useRouter();
+  const { user } = useCurrentUser();
+  const myUserId = user.user_id;
   const searchParams = useSearchParams();
   const {
     isConnected,
@@ -23,7 +25,6 @@ export function useChat() {
     sendEvent,
   } = useWebSocket();
 
-  const [myUserId, setMyUserId] = useState<number | null>(null);
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [loadingConversations, setLoadingConversations] = useState(true);
   const [isPartnerEligible, setIsPartnerEligible] = useState<boolean>(true);
@@ -49,16 +50,6 @@ export function useChat() {
 
     async function init() {
       try {
-        const user = await getCurrentUser();
-        if (!user) {
-          router.push("/login");
-          return;
-        }
-
-        if (isMounted) {
-          setMyUserId(user.user_id);
-        }
-
         const convos = await getConversations().catch(() => []);
 
         if (isMounted) {

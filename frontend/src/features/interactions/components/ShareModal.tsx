@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import UserAvatar from "@/components/UserAvatar";
 import { getEligibleContacts } from "@/features/chat/api/chat";
 import type { EligibleContact } from "@/features/chat/types/chat";
 import { getMyGroups } from "@/features/groups/api/groups";
@@ -239,8 +240,6 @@ export default function ShareModal({ postId, onClose }: ShareModalProps) {
             !error &&
             contacts.map((contact) => {
               const displayName = getDisplayName(contact.first_name, contact.last_name, contact.username);
-              const initials = getInitials(contact.first_name, contact.last_name, contact.username);
-              const avatarUrl = contact.profile_photo ? getFullPhotoUrl(contact.profile_photo) : "";
               const isSending = sendingId === contact.id;
               const isSent = sentId === contact.id;
 
@@ -253,11 +252,15 @@ export default function ShareModal({ postId, onClose }: ShareModalProps) {
                   className={styles.modalContactItem}
                 >
                   <div className={styles.avatarWrapper}>
-                    {avatarUrl ? (
-                      <img src={avatarUrl} alt={displayName} className={styles.avatarImg} />
-                    ) : (
-                      <div className={styles.avatarFallback}>{initials}</div>
-                    )}
+                    <UserAvatar
+                      src={contact.profile_photo}
+                      firstName={contact.first_name}
+                      lastName={contact.last_name}
+                      username={contact.username}
+                      size={44}
+                      alt={displayName}
+                      className={styles.avatarImg}
+                    />
                   </div>
 
                   <div className={styles.modalContactInfo}>

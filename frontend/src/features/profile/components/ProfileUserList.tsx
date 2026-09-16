@@ -1,7 +1,6 @@
 "use client";
 
-import Image from "next/image";
-import { getBackendBaseUrl } from "@/lib/api";
+import UserAvatar from "@/components/UserAvatar";
 import type { ProfileUserSummary } from "../types/profile";
 import styles from "./Profile.module.css";
 
@@ -9,19 +8,6 @@ interface ProfileUserListProps {
   title: string;
   users: ProfileUserSummary[];
   emptyMessage: string;
-}
-
-function getFullPhotoUrl(path: string) {
-  if (/^https?:\/\//i.test(path)) return path;
-  const cleanPath = path.startsWith("/") ? path : `/${path}`;
-  return `${getBackendBaseUrl()}${cleanPath}`;
-}
-
-function getInitials(firstName: string, lastName: string, username: string) {
-  const initials = `${firstName ? firstName[0] : ""}${lastName ? lastName[0] : ""}`
-    .trim()
-    .toUpperCase();
-  return initials || username.slice(0, 2).toUpperCase();
 }
 
 export default function ProfileUserList({
@@ -39,19 +25,14 @@ export default function ProfileUserList({
         <ul className={styles.userList}>
           {users.map((user) => (
             <li key={user.id} className={styles.userListItem}>
-              {user.profilePhoto ? (
-                <Image
-                  src={getFullPhotoUrl(user.profilePhoto)}
-                  alt={`${user.username}'s avatar`}
-                  width={40}
-                  height={40}
-                  className={styles.userListAvatar}
-                />
-              ) : (
-                <span className={styles.userListAvatarFallback}>
-                  {getInitials(user.firstName, user.lastName, user.username)}
-                </span>
-              )}
+              <UserAvatar
+                src={user.profilePhoto}
+                firstName={user.firstName}
+                lastName={user.lastName}
+                username={user.username}
+                size={40}
+                className={styles.userListAvatar}
+              />
 
               <a
                 href={`/profile/${user.username}`}

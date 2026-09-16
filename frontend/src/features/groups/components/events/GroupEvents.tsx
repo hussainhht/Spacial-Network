@@ -1,12 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import AppIcon from "@/components/layout/AppIcon";
 import { useGroupEvents } from "../../hooks/useGroupData";
 import type { GroupEvent, GroupMember } from "../../types/group";
-import CreateEventModal from "./CreateEventModal";
-import EventCard from "./EventCard";
 import { GroupLoadError } from "../GroupPanels";
-import AppIcon from "@/components/layout/AppIcon";
+import CreateEventPanel from "./CreateEventPanel";
+import EventCard from "./EventCard";
 
 interface GroupEventsProps {
   groupId: number;
@@ -29,13 +29,10 @@ export default function GroupEvents({
           🔒
         </span>
         <h2 id="events-heading">Group events are member-only</h2>
-        <p className="group-muted">
-          Join this group to see upcoming events and activities.
-        </p>
+        <p className="group-muted">Join this group to see upcoming events and activities.</p>
       </section>
     );
   }
-
   return <MemberGroupEvents groupId={groupId} members={members} />;
 }
 
@@ -44,68 +41,99 @@ function MemberGroupEvents({
   members,
 }: Omit<GroupEventsProps, "isMember">) {
   const events = useGroupEvents(groupId);
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [period, setPeriod] = useState<"all" | "upcoming" | "past">("all");
+  const titleInputRef = useRef<HTMLInputElement>(null);
+  const [period, setPeriod] = useState<"upcoming" | "past">("upcoming");
   const [search, setSearch] = useState("");
   const [now] = useState(Date.now);
+  const hasSearch = search.trim().length > 0;
+
   const usernameById = useMemo(() => {
     const map = new Map<number, string>();
     members?.forEach((member) => map.set(member.userId, member.username));
     return map;
   }, [members]);
+
+  const eventGroups = useMemo(() => {
+    const upcoming: GroupEvent[] = [];
+    const past: GroupEvent[] = [];
+    for (const event of events.data ?? []) {
+      const timestamp = new Date(event.eventTime).getTime();
+      if (timestamp >= now) upcoming.push(event);
+      else past.push(event);
+    }
+    upcoming.sort(
+      (left, right) =>
+        new Date(left.eventTime).getTime() - new Date(right.eventTime).getTime(),
+    );
+    past.sort(
+      (left, right) =>
+        new Date(right.eventTime).getTime() - new Date(left.eventTime).getTime(),
+    );
+    return { upcoming, past };
+  }, [events.data, now]);
+
   const filteredEvents = useMemo(() => {
     const query = search.trim().toLowerCase();
-    return (events.data ?? []).filter((event) => {
-      const timestamp = new Date(event.eventTime).getTime();
-      const periodMatches =
-        period === "all" ||
-        (period === "upcoming" ? timestamp >= now : timestamp < now);
-      const searchMatches =
+    return eventGroups[period].filter((event) => {
+      const creator = usernameById.get(event.createdBy)?.toLowerCase() ?? "";
+      return (
         !query ||
         event.title.toLowerCase().includes(query) ||
-        event.description.toLowerCase().includes(query);
-      return periodMatches && searchMatches;
+        event.description.toLowerCase().includes(query) ||
+        creator.includes(query)
+      );
     });
-  }, [events.data, now, period, search]);
+  }, [eventGroups, period, search, usernameById]);
+
+  function focusCreatePanel() {
+    document.getElementById("create-event-panel")?.scrollIntoView({
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "auto"
+        : "smooth",
+      block: "start",
+    });
+    window.setTimeout(() => titleInputRef.current?.focus(), 250);
+  }
 
   return (
-    <section
-      className="group-panel group-events"
-      aria-labelledby="events-heading"
-    >
-      <div className="group-section-heading">
+    <section className="group-panel group-events" aria-labelledby="events-heading">
+      <div className="group-section-heading group-events-header">
         <div className="group-events-heading-copy">
           <span className="group-events-heading-icon">
             <AppIcon name="calendar" />
           </span>
           <div>
             <h2 id="events-heading">Events</h2>
-            <p>Upcoming events and group activities.</p>
+            <p>Bring your community together with events.</p>
           </div>
         </div>
         <button
           type="button"
           className="group-event-create-button"
-          onClick={() => setIsCreateOpen(true)}
+          onClick={focusCreatePanel}
         >
           <AppIcon name="plus" width={16} height={16} /> Create event
         </button>
       </div>
+
       <div className="group-events-toolbar">
-        <div className="group-events-period" aria-label="Event period">
+        <div
+          className="group-events-period"
+          aria-label="Filter events by date"
+        >
           <button
             type="button"
             aria-pressed={period === "upcoming"}
             onClick={() => setPeriod("upcoming")}
           >
-            Upcoming
+            Upcoming <span>{eventGroups.upcoming.length}</span>
           </button>
           <button
             type="button"
             aria-pressed={period === "past"}
             onClick={() => setPeriod("past")}
           >
-            Past
+            Past <span>{eventGroups.past.length}</span>
           </button>
         </div>
         <label className="group-events-search">
@@ -114,66 +142,73 @@ function MemberGroupEvents({
           <input
             type="search"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(event) => setSearch(event.target.value)}
             placeholder="Search events…"
           />
         </label>
       </div>
 
-      {events.loading && !events.data && (
-        <p className="group-muted" role="status">
-          Loading events...
-        </p>
-      )}
+      <div className="group-events-layout">
+        <div className="group-events-main">
+          {events.loading && !events.data && (
+            <p className="group-muted" role="status">
+              Loading events…
+            </p>
+          )}
+          {events.error && (
+            <GroupLoadError error={events.error} retry={events.refresh} />
+          )}
 
-      {events.error && (
-        <GroupLoadError error={events.error} retry={events.refresh} />
-      )}
+          {!events.loading && !events.error && filteredEvents.length === 0 && (
+            <div className="group-empty group-events-empty">
+              <span aria-hidden="true">
+                <AppIcon
+                  name={hasSearch ? "search" : "orbit"}
+                  width={24}
+                  height={24}
+                />
+              </span>
+              <h3>
+                {hasSearch
+                  ? `No events match “${search.trim()}”`
+                  : period === "upcoming"
+                    ? "No upcoming events"
+                    : "No past events yet"}
+              </h3>
+              <p>
+                {hasSearch
+                  ? "Try another search."
+                  : period === "upcoming"
+                    ? "Create the first event and give the group something to look forward to."
+                    : "Completed events will appear here."}
+              </p>
+              {!hasSearch && period === "upcoming" && (
+                <button type="button" onClick={focusCreatePanel}>
+                  Create an event
+                </button>
+              )}
+            </div>
+          )}
 
-      {!events.loading && !events.error && filteredEvents.length === 0 && (
-        <div className="group-empty">
-          <h3>
-            {search
-              ? "No matching events"
-              : period === "all"
-                ? "No events yet"
-                : period === "upcoming"
-                  ? "No upcoming events yet"
-                  : "No past events"}
-          </h3>
-          <p>
-            {search
-              ? "Try a different search."
-              : period === "all"
-                ? "Create an event for your group to get started."
-                : period === "upcoming"
-                  ? "Create an event for your group to get started."
-                  : "Past events will appear here."}
-          </p>
+          {filteredEvents.length > 0 && (
+            <ul className="group-events-list" data-motion-list>
+              {filteredEvents.map((event, index) => (
+                <li key={event.id}>
+                  <EventCard
+                    event={event}
+                    groupId={groupId}
+                    isMember
+                    isNextUp={period === "upcoming" && index === 0}
+                    creatorUsername={usernameById.get(event.createdBy)}
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
-      )}
 
-      {filteredEvents.length > 0 && (
-        <ul className="group-events-list" data-motion-list>
-          {filteredEvents.map((event: GroupEvent) => (
-            <li key={event.id}>
-              <EventCard
-                event={event}
-                groupId={groupId}
-                isMember
-                creatorUsername={usernameById.get(event.createdBy)}
-              />
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {isCreateOpen && (
-        <CreateEventModal
-          groupId={groupId}
-          onClose={() => setIsCreateOpen(false)}
-        />
-      )}
+        <CreateEventPanel groupId={groupId} titleInputRef={titleInputRef} />
+      </div>
     </section>
   );
 }

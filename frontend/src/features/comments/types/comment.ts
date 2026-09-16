@@ -1,7 +1,16 @@
+export interface CommentAuthor {
+  id: number;
+  username: string;
+  first_name: string;
+  last_name: string;
+  profile_photo?: string;
+}
+
 export interface Comment {
   id: number;
   post_id: number;
   user_id: number;
+  author: CommentAuthor;
   content: string;
   image_url?: string;
   created_at: string;

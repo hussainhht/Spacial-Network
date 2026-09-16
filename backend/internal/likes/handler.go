@@ -24,15 +24,11 @@ type Response struct {
 // as seen by the requesting user.
 type LikeStatusResponse struct {
 	PostID int `json:"post_id"`
-	// Count is the post's total number of likes.
-	Count int `json:"count"`
-	// Liked tells the client whether the requesting user has liked this
-	// post, so it knows whether to render the button as active and whether
-	// a tap should like or unlike.
+	Count  int `json:"count"`
+	// Liked tells the client whether the requesting user has liked this post.
 	Liked bool `json:"liked"`
 }
 
-// newLikeStatusResponse builds the response for status.
 func (h *Handler) newLikeStatusResponse(status *LikeStatus) LikeStatusResponse {
 	return LikeStatusResponse{
 		PostID: status.PostID,
@@ -41,7 +37,6 @@ func (h *Handler) newLikeStatusResponse(status *LikeStatus) LikeStatusResponse {
 	}
 }
 
-// NewHandler creates a new Handler instance with the provided dependencies.
 func NewHandler(service *Service) *Handler {
 	return &Handler{
 		service: service,

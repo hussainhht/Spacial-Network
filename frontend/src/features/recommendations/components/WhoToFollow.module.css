@@ -95,17 +95,6 @@
   object-fit: cover;
 }
 
-.avatarFallback {
-  display: grid;
-  width: 100%;
-  height: 100%;
-  place-items: center;
-  color: var(--space-text-heading);
-  background: var(--planet-accent-soft);
-  font-size: 0.7rem;
-  font-weight: 750;
-}
-
 .identity {
   display: grid;
   min-width: 0;

@@ -75,9 +75,9 @@ export default function GroupInviteModal({
       >
         <div className="group-modal-header group-invite-modal-header">
           <div className="group-invite-modal-heading">
-            <h2 id="invite-modal-title">Invite people</h2>
+            <h2 id="invite-modal-title">Invite Members</h2>
             <p id="invite-modal-description">
-              Find people you want to invite to this group
+              Search for people to invite directly to this group
             </p>
           </div>
           <button

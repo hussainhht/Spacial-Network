@@ -1,11 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import UserAvatar from "@/components/UserAvatar";
 import type { ChatSidebarProps } from "../types/chat";
-import { formatConversationDate, getDisplayName, getInitials } from "@/lib/utils";
+import { formatConversationDate, getDisplayName } from "@/lib/utils";
 import { parseSharedPost } from "@/features/interactions/utils/sharedPost";
 import NewChatModal from "./NewChatModal";
-import { getChatAvatarUrl } from "../utils/avatar";
 import styles from "./Chat.module.css";
 
 export default function ChatSidebar({
@@ -146,17 +146,10 @@ export default function ChatSidebar({
               c.partner_last_name,
               c.partner_username
             );
-            const initials = getInitials(
-              c.partner_first_name,
-              c.partner_last_name,
-              c.partner_username
-            );
             const sharedPost = c.last_message ? parseSharedPost(c.last_message) : null;
             const previewText = sharedPost
               ? `${c.last_message_from_me ? "You" : c.partner_username} sent a post`
               : c.last_message || "No messages yet";
-            const avatarUrl = getChatAvatarUrl(c.partner_avatar);
-
             return (
               <div
                 key={c.partner_id}
@@ -175,17 +168,15 @@ export default function ChatSidebar({
                 }}
               >
                 <div className={styles.avatarWrapper}>
-                  {avatarUrl ? (
-                    <img
-                      src={avatarUrl}
-                      alt={displayName}
-                      className={styles.avatarImg}
-                    />
-                  ) : (
-                    <div className={styles.avatarFallback}>
-                      {initials}
-                    </div>
-                  )}
+                  <UserAvatar
+                    src={c.partner_avatar}
+                    firstName={c.partner_first_name}
+                    lastName={c.partner_last_name}
+                    username={c.partner_username}
+                    size={44}
+                    alt={displayName}
+                    className={styles.avatarImg}
+                  />
                   <span
                     className={isOnline ? styles.onlineRing : styles.offlineDot}
                     title={isOnline ? "Online" : "Offline"}

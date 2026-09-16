@@ -9,6 +9,13 @@ import (
 	"social/internal/validation"
 )
 
+var eventCoverTemplates = map[string]struct{}{
+	"/image/templets/earth.png":  {},
+	"/image/templets/mars.png":   {},
+	"/image/templets/moon.png":   {},
+	"/image/templets/saturn.png": {},
+}
+
 // ValidateEventTitle sanitizes and requires the event title.
 func ValidateEventTitle(title string) (string, error) {
 	return validation.SanitizeText(title, validation.TextRules{
@@ -36,6 +43,24 @@ func ValidateEventTime(raw string) (time.Time, error) {
 		return time.Time{}, errors.New("event_time must be a valid RFC3339 date/time")
 	}
 	return t, nil
+}
+
+// ValidateEventCoverTemplate accepts only the curated static assets shipped
+// by the frontend. The stored value is a public URL, never a filesystem path.
+func ValidateEventCoverTemplate(raw string) (string, error) {
+	value := strings.TrimSpace(raw)
+	if value == "" {
+		return "", nil
+	}
+	if _, ok := eventCoverTemplates[value]; !ok {
+		return "", errors.New("cover_template must be an approved event cover")
+	}
+	return value, nil
+}
+
+func isEventCoverTemplate(value string) bool {
+	_, ok := eventCoverTemplates[value]
+	return ok
 }
 
 // ValidateEventID parses and validates an event ID taken from a URL path.

@@ -2,6 +2,7 @@ package comments
 
 import (
 	"database/sql"
+	"strings"
 	"time"
 )
 
@@ -34,22 +35,57 @@ func (r *Repository) CreateComment(c *comment) error {
 	}
 	c.ID = int(id)
 
+	return r.loadCommentAuthor(c)
+}
+
+func (r *Repository) loadCommentAuthor(c *comment) error {
+	var profilePhoto string
+	err := r.db.QueryRow(`
+		SELECT id, username, first_name, last_name, COALESCE(profile_photo, '')
+		FROM users
+		WHERE id = ?
+	`, c.UserID).Scan(
+		&c.Author.ID,
+		&c.Author.Username,
+		&c.Author.FirstName,
+		&c.Author.LastName,
+		&profilePhoto,
+	)
+	if err != nil {
+		return err
+	}
+	if profilePhoto != "" {
+		c.Author.ProfilePhoto = "/uploads/" + strings.TrimPrefix(profilePhoto, "/")
+	}
 	return nil
 }
 
 func (r *Repository) GetCommentByID(id int) (*comment, error) {
 	var c comment
 
+	var profilePhoto string
 	err := r.db.QueryRow(`
-		SELECT id, post_id, user_id, content, image_path, created_at, updated_at
-		FROM comments
-		WHERE id = ?
-	`, id).Scan(&c.ID, &c.PostID, &c.UserID, &c.Content, &c.ImagePath, &c.Created_At, &c.Updated_At)
+		SELECT c.id, c.post_id, c.user_id, c.content, c.image_path,
+		       c.created_at, c.updated_at,
+		       u.id, u.username, u.first_name, u.last_name,
+		       COALESCE(u.profile_photo, '')
+		FROM comments c
+		JOIN users u ON u.id = c.user_id
+		WHERE c.id = ?
+	`, id).Scan(
+		&c.ID, &c.PostID, &c.UserID, &c.Content, &c.ImagePath,
+		&c.Created_At, &c.Updated_At,
+		&c.Author.ID, &c.Author.Username, &c.Author.FirstName,
+		&c.Author.LastName, &profilePhoto,
+	)
 	if err == sql.ErrNoRows {
 		return nil, ErrCommentNotFound
 	}
 	if err != nil {
 		return nil, err
+	}
+	if profilePhoto != "" {
+		c.Author.ProfilePhoto = "/uploads/" + strings.TrimPrefix(profilePhoto, "/")
 	}
 
 	return &c, nil
@@ -58,10 +94,14 @@ func (r *Repository) GetCommentByID(id int) (*comment, error) {
 // ListCommentsByPost returns every comment on postID, oldest first.
 func (r *Repository) ListCommentsByPost(postID int) ([]*comment, error) {
 	rows, err := r.db.Query(`
-		SELECT id, post_id, user_id, content, image_path, created_at, updated_at
-		FROM comments
-		WHERE post_id = ?
-		ORDER BY created_at ASC
+		SELECT c.id, c.post_id, c.user_id, c.content, c.image_path,
+		       c.created_at, c.updated_at,
+		       u.id, u.username, u.first_name, u.last_name,
+		       COALESCE(u.profile_photo, '')
+		FROM comments c
+		JOIN users u ON u.id = c.user_id
+		WHERE c.post_id = ?
+		ORDER BY c.created_at ASC
 	`, postID)
 	if err != nil {
 		return nil, err
@@ -71,8 +111,17 @@ func (r *Repository) ListCommentsByPost(postID int) ([]*comment, error) {
 	comments := []*comment{}
 	for rows.Next() {
 		var c comment
-		if err := rows.Scan(&c.ID, &c.PostID, &c.UserID, &c.Content, &c.ImagePath, &c.Created_At, &c.Updated_At); err != nil {
+		var profilePhoto string
+		if err := rows.Scan(
+			&c.ID, &c.PostID, &c.UserID, &c.Content, &c.ImagePath,
+			&c.Created_At, &c.Updated_At,
+			&c.Author.ID, &c.Author.Username, &c.Author.FirstName,
+			&c.Author.LastName, &profilePhoto,
+		); err != nil {
 			return nil, err
+		}
+		if profilePhoto != "" {
+			c.Author.ProfilePhoto = "/uploads/" + strings.TrimPrefix(profilePhoto, "/")
 		}
 		comments = append(comments, &c)
 	}

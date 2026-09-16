@@ -92,6 +92,40 @@ func (r *Repository) GetCredentials(identifier string) (int, string, error) {
 	return id, hashedPassword, nil
 }
 
+// GetPasswordHashByID returns the stored password hash for an authenticated
+// user. It is intentionally kept inside the users domain and is never exposed
+// through an HTTP response.
+func (r *Repository) GetPasswordHashByID(userID int) (string, error) {
+	var passwordHash string
+	err := r.db.QueryRow(`
+		SELECT password_hash
+		FROM users
+		WHERE id = ?
+	`, userID).Scan(&passwordHash)
+	return passwordHash, err
+}
+
+func (r *Repository) UpdatePasswordHash(userID int, passwordHash string) error {
+	result, err := r.db.Exec(`
+		UPDATE users
+		SET password_hash = ?, updated_at = CURRENT_TIMESTAMP
+		WHERE id = ?
+	`, passwordHash, userID)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return sql.ErrNoRows
+	}
+
+	return nil
+}
+
 func (r *Repository) GetUsernameByID(userID int) (string, error) {
 	var username string
 

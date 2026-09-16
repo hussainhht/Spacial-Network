@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import UserAvatar from "@/components/UserAvatar";
 import { getEligibleContacts } from "../api/chat";
 import type { EligibleContact } from "../types/chat";
-import { getDisplayName, getInitials } from "@/lib/utils";
-import { getChatAvatarUrl } from "../utils/avatar";
+import { getDisplayName } from "@/lib/utils";
 import styles from "./Chat.module.css";
 
 interface NewChatModalProps {
@@ -16,7 +16,9 @@ interface NewChatModalProps {
 }
 
 export default function NewChatModal(props: NewChatModalProps) {
-  return props.isOpen ? createPortal(<NewChatDialog {...props} />, document.body) : null;
+  return props.isOpen
+    ? createPortal(<NewChatDialog {...props} />, document.body)
+    : null;
 }
 
 function NewChatDialog({
@@ -46,7 +48,9 @@ function NewChatDialog({
         })
         .catch((err) => {
           if (isMounted) {
-            setError(err instanceof Error ? err.message : "Failed to load contacts");
+            setError(
+              err instanceof Error ? err.message : "Failed to load contacts",
+            );
           }
         })
         .finally(() => {
@@ -82,11 +86,7 @@ function NewChatDialog({
       role="dialog"
       aria-labelledby="new-chat-title"
     >
-      <div
-        className={styles.modalCard}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
+      <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
           <h2 id="new-chat-title" className={styles.modalTitle}>
             New Transmission
@@ -101,7 +101,6 @@ function NewChatDialog({
           </button>
         </div>
 
-        {/* Search */}
         <div className={styles.modalSearchWrapper}>
           <div className={styles.searchWrapper}>
             <span className={styles.searchIcon}>🔍</span>
@@ -126,16 +125,20 @@ function NewChatDialog({
           </div>
         </div>
 
-        {/* Contacts List */}
         <div className={styles.modalContactList}>
           {loading && contacts.length === 0 && (
             <div className={styles.loadingNotice}>
-              {searchQuery.trim() ? "Searching contacts..." : "Finding eligible contacts..."}
+              {searchQuery.trim()
+                ? "Searching contacts..."
+                : "Finding eligible contacts..."}
             </div>
           )}
 
           {error && !loading && (
-            <div className={styles.emptyNotice} style={{ color: "var(--space-error-text, #fca5a5)" }}>
+            <div
+              className={styles.emptyNotice}
+              style={{ color: "var(--space-error-text, #fca5a5)" }}
+            >
               <p>{error}</p>
               <button
                 type="button"
@@ -144,7 +147,13 @@ function NewChatDialog({
                   setError(null);
                   getEligibleContacts(searchQuery.trim(), 20, 0)
                     .then(setContacts)
-                    .catch((e) => setError(e instanceof Error ? e.message : "Failed to load contacts"))
+                    .catch((e) =>
+                      setError(
+                        e instanceof Error
+                          ? e.message
+                          : "Failed to load contacts",
+                      ),
+                    )
                     .finally(() => setLoading(false));
                 }}
                 style={{
@@ -166,7 +175,13 @@ function NewChatDialog({
             <div className={styles.emptyNotice}>
               {searchQuery.trim() ? (
                 <>
-                  <p style={{ margin: 0, fontWeight: 600, color: "var(--space-text-heading, #f8fafc)" }}>
+                  <p
+                    style={{
+                      margin: 0,
+                      fontWeight: 600,
+                      color: "var(--space-text-heading, #f8fafc)",
+                    }}
+                  >
                     No contacts found
                   </p>
                   <p style={{ margin: "4px 0 0", fontSize: "12px" }}>
@@ -175,11 +190,24 @@ function NewChatDialog({
                 </>
               ) : (
                 <>
-                  <p style={{ margin: 0, fontWeight: 600, color: "var(--space-text-heading, #f8fafc)" }}>
+                  <p
+                    style={{
+                      margin: 0,
+                      fontWeight: 600,
+                      color: "var(--space-text-heading, #f8fafc)",
+                    }}
+                  >
                     No eligible contacts
                   </p>
-                  <p style={{ margin: "4px 0 0", fontSize: "12px", lineHeight: 1.5 }}>
-                    You can only message users you follow or who follow you. Follow people to chat with them!
+                  <p
+                    style={{
+                      margin: "4px 0 0",
+                      fontSize: "12px",
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    You can only message users you follow or who follow you.
+                    Follow people to chat with them!
                   </p>
                 </>
               )}
@@ -193,15 +221,8 @@ function NewChatDialog({
               const displayName = getDisplayName(
                 contact.first_name,
                 contact.last_name,
-                contact.username
+                contact.username,
               );
-              const initials = getInitials(
-                contact.first_name,
-                contact.last_name,
-                contact.username
-              );
-              const avatarUrl = getChatAvatarUrl(contact.profile_photo);
-
               return (
                 <button
                   key={contact.id}
@@ -213,19 +234,19 @@ function NewChatDialog({
                   className={styles.modalContactItem}
                 >
                   <div className={styles.avatarWrapper}>
-                    {avatarUrl ? (
-                      <img
-                        src={avatarUrl}
-                        alt={displayName}
-                        className={styles.avatarImg}
-                      />
-                    ) : (
-                      <div className={styles.avatarFallback}>
-                        {initials}
-                      </div>
-                    )}
+                    <UserAvatar
+                      src={contact.profile_photo}
+                      firstName={contact.first_name}
+                      lastName={contact.last_name}
+                      username={contact.username}
+                      size={44}
+                      alt={displayName}
+                      className={styles.avatarImg}
+                    />
                     <span
-                      className={isOnline ? styles.onlineRing : styles.offlineDot}
+                      className={
+                        isOnline ? styles.onlineRing : styles.offlineDot
+                      }
                       title={isOnline ? "Online" : "Offline"}
                     />
                   </div>
@@ -239,9 +260,7 @@ function NewChatDialog({
                     </span>
                   </div>
 
-                  <span className={styles.mutualBadge}>
-                    Mutual
-                  </span>
+                  <span className={styles.mutualBadge}>Mutual</span>
                 </button>
               );
             })}

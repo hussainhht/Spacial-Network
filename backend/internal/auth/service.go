@@ -41,6 +41,14 @@ func (s *Service) Login(identifier, password string) (int, string, error) {
 	return userID, token, nil
 }
 
+func (s *Service) ChangePassword(userID int, currentPassword, newPassword string) error {
+	err := s.usersService.ChangePassword(userID, currentPassword, newPassword)
+	if errors.Is(err, users.ErrInvalidCredentials) {
+		return ErrInvalidCredentials
+	}
+	return err
+}
+
 // Logout revokes the given session token.
 func (s *Service) Logout(token string) error {
 	return s.repo.RevokeSession(token)

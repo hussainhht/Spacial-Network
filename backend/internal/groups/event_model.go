@@ -28,9 +28,10 @@ type Event struct {
 }
 
 type CreateEventRequest struct {
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	EventTime   string `json:"event_time"`
+	Title         string `json:"title"`
+	Description   string `json:"description"`
+	EventTime     string `json:"event_time"`
+	CoverTemplate string `json:"cover_template"`
 }
 
 type CreateEventResponse struct {

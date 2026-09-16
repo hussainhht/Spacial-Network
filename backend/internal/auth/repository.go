@@ -21,7 +21,6 @@ func (r *Repository) CreateSession(userID int, token string) error {
 	now := time.Now()
 	expiresAt := now.Add(r.sessionLifetime)
 
-	// Check whether this user already has a session
 	const checkQuery = `
 		SELECT 1
 		FROM sessions
@@ -35,7 +34,6 @@ func (r *Repository) CreateSession(userID int, token string) error {
 		return err
 	}
 
-	// Update existing session
 	if err == nil {
 		const updateQuery = `
 			UPDATE sessions
@@ -47,7 +45,6 @@ func (r *Repository) CreateSession(userID int, token string) error {
 		return err
 	}
 
-	// Insert new session
 	const insertQuery = `
 		INSERT INTO sessions (user_id, session_token, created_at, expires_at, revoked_at)
 		VALUES (?, ?, ?, ?, ?)
@@ -101,7 +98,6 @@ func (r *Repository) ValidateSession(token string) (int, error) {
 		AND expires_at > CURRENT_TIMESTAMP
 	`, token).Scan(&userID)
 	if err == sql.ErrNoRows {
-		// token is not valid; attempt to delete the row
 		r.db.Exec(`
 			DELETE FROM sessions
 			WHERE session_token = ?

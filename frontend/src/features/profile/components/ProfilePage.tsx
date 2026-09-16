@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useCurrentUser } from "@/features/auth/context/CurrentUserContext";
 import { useWebSocket } from "@/providers/WebSocketProvider";
 import {
   followUser,
@@ -47,6 +48,7 @@ const emptyFollowStatus: FollowStatus = {
 };
 
 export default function ProfilePage({ username }: ProfilePageProps) {
+  const { updateCurrentUser } = useCurrentUser();
   const { subscribeNotifications, subscribeFollowRemoved } = useWebSocket();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isOwnProfile, setIsOwnProfile] = useState(!username);
@@ -63,9 +65,9 @@ export default function ProfilePage({ username }: ProfilePageProps) {
   );
   const isLocked = Boolean(
     profile &&
-      !isOwnProfile &&
-      effectiveIsPrivate &&
-      !profile.canViewFullProfile,
+    !isOwnProfile &&
+    effectiveIsPrivate &&
+    !profile.canViewFullProfile,
   );
   const [postsLoading, setPostsLoading] = useState(!isLocked);
   const [avatarUpdating, setAvatarUpdating] = useState(false);
@@ -88,9 +90,9 @@ export default function ProfilePage({ username }: ProfilePageProps) {
   const [followError, setFollowError] = useState<string | null>(null);
   const canMessage = Boolean(
     profile &&
-      !isOwnProfile &&
-      (isFollowing ||
-        (messageContactProfileID === profile.id && canMessageByContact)),
+    !isOwnProfile &&
+    (isFollowing ||
+      (messageContactProfileID === profile.id && canMessageByContact)),
   );
 
   // Determine messaging permission (User A follows User B OR User B follows User A)
@@ -121,14 +123,12 @@ export default function ProfilePage({ username }: ProfilePageProps) {
     };
   }, [profile, isOwnProfile, isFollowing]);
 
-  // Load profile data
   useEffect(() => {
     let cancelled = false;
 
     async function load() {
       try {
         if (!username) {
-          // Own profile (/profile)
           const myProfile = await getMyProfile();
           if (!cancelled) {
             setProfile(myProfile);
@@ -136,7 +136,6 @@ export default function ProfilePage({ username }: ProfilePageProps) {
             setError(null);
           }
         } else {
-          // Profile by username (/profile/[username])
           const [targetProfile, viewerProfile] = await Promise.all([
             getProfileByUsername(username),
             getMyProfile().catch(() => null),
@@ -175,7 +174,6 @@ export default function ProfilePage({ username }: ProfilePageProps) {
     };
   }, [username, reloadTrigger]);
 
-  // Load user's posts
   useEffect(() => {
     if (!profile || isLocked) {
       return;
@@ -211,7 +209,6 @@ export default function ProfilePage({ username }: ProfilePageProps) {
     };
   }, [profile, isLocked]);
 
-  // Load followers/following data and current follow status.
   useEffect(() => {
     if (!profile) {
       return;
@@ -447,6 +444,10 @@ export default function ProfilePage({ username }: ProfilePageProps) {
       const updatedProfile = await updateMyProfileDetails(input);
       setProfile(updatedProfile);
       setPrivacyOverride(updatedProfile.isPrivate);
+      updateCurrentUser({
+        first_name: updatedProfile.firstName,
+        last_name: updatedProfile.lastName,
+      });
     } catch (err) {
       setDetailsError(
         err instanceof Error ? err.message : "Failed to update profile details",
@@ -468,6 +469,7 @@ export default function ProfilePage({ username }: ProfilePageProps) {
       const updatedProfile = await updateMyProfileAvatar(input);
       setProfile(updatedProfile);
       setPrivacyOverride(updatedProfile.isPrivate);
+      updateCurrentUser({ profile_photo: updatedProfile.profilePhoto });
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Failed to update profile photo";

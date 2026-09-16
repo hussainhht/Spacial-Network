@@ -1,9 +1,7 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
-import { getInitials } from "@/lib/utils";
-import { avatarUrl } from "../../api/groups";
+import UserAvatar from "@/components/UserAvatar";
 import { useGroupMembers } from "../../hooks/useGroupData";
 import { GroupLoadError } from "../GroupPanels";
 
@@ -48,23 +46,13 @@ export default function GroupMembersPreview({
         <ul className="group-members-preview-list">
           {members.map((member) => (
             <li key={member.userId} className="group-member-item">
-              {member.avatar ? (
-                <Image
-                  unoptimized
-                  src={avatarUrl(member.avatar)!}
-                  alt=""
-                  width={32}
-                  height={32}
-                  className="group-member-avatar"
-                />
-              ) : (
-                <span
-                  className="group-member-avatar fallback"
-                  aria-hidden="true"
-                >
-                  {getInitials("", "", member.username)}
-                </span>
-              )}
+              <UserAvatar
+                src={member.avatar}
+                username={member.username}
+                size={32}
+                alt=""
+                className="group-member-avatar"
+              />
               <Link
                 className="group-member-name"
                 href={`/profile/${encodeURIComponent(member.username)}`}

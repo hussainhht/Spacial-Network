@@ -10,7 +10,7 @@ import {
   useMembership,
   usePendingInvitations,
 } from "../hooks/useGroupData";
-import GroupChatPanel from "./GroupChatPanel";
+import { GroupChatView } from "@/features/group-chat";
 import GroupEvents from "./events/GroupEvents";
 import GroupHeaderCard from "./GroupHeaderCard";
 import GroupPosts from "./GroupPosts";
@@ -195,11 +195,7 @@ function GroupDetails({ groupId }: { groupId: number }) {
               {isCreator && group.data.privacy === "public" && (
                 <JoinRequestsPanel groupId={groupId} compact />
               )}
-              <MembersPanel
-                groupId={groupId}
-                creatorId={group.data.creatorId}
-                heading={isCreator ? "Current Members" : "Members"}
-              />
+              <MembersPanel group={group.data} />
             </div>
           )}
           {activeTab === "chat" && (
@@ -209,7 +205,7 @@ function GroupDetails({ groupId }: { groupId: number }) {
               aria-labelledby="group-tab-chat"
               data-motion-panel
             >
-              <GroupChatPanel
+              <GroupChatView
                 group={group.data}
                 members={members.data ?? []}
                 membersLoading={members.loading}

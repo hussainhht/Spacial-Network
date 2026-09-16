@@ -1,12 +1,11 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import AppIcon from "@/components/layout/AppIcon";
-import { getInitials } from "@/lib/utils";
+import UserAvatar from "@/components/UserAvatar";
 import { createPortal } from "react-dom";
-import { avatarUrl, removeMember } from "../api/groups";
+import { removeMember } from "../api/groups";
 import { useGroupAction } from "../hooks/useGroupAction";
 import {
   useGroupMembers,
@@ -18,7 +17,9 @@ import GroupInviteModal from "./management/GroupInviteModal";
 import GroupJoinButton from "./GroupJoinButton";
 import GroupPrivacyBadge from "./GroupPrivacyBadge";
 import { InvitationActions, JoinRequestActions } from "./GroupResponseActions";
-import type { GroupPrivacy } from "../types/group";
+import type { Group, GroupPrivacy } from "../types/group";
+import { formatDate } from "@/lib/utils/date";
+import { getDisplayName } from "@/lib/utils";
 
 export function GroupLoadError({
   error,
@@ -72,108 +73,158 @@ export function MembershipBadge({
 }
 
 export function MembersPanel({
-  groupId,
-  creatorId,
-  heading = "Members",
+  group,
 }: {
-  groupId: number;
-  creatorId: number;
-  heading?: string;
+  group: Group;
 }) {
+  const groupId = group.id;
   const state = useGroupMembers(groupId);
   // Shares the same cached useMembership resource as other panels on this
   // page, so this does not trigger a second membership request.
   const membership = useMembership(groupId);
   const isCreator = membership.data?.role === "creator";
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [search, setSearch] = useState("");
   const closeInviteModal = useCallback(() => setIsInviteModalOpen(false), []);
   const [removeTarget, setRemoveTarget] = useState<{
     userId: number;
     username: string;
   } | null>(null);
   const closeRemoveDialog = useCallback(() => setRemoveTarget(null), []);
+  const filteredMembers = useMemo(() => {
+    const query = search.trim().toLocaleLowerCase();
+    if (!query) return state.data ?? [];
+    return (state.data ?? []).filter((member) =>
+      [member.firstName, member.lastName, member.username]
+        .join(" ")
+        .toLocaleLowerCase()
+        .includes(query),
+    );
+  }, [search, state.data]);
 
   return (
-    <aside
-      className="group-panel group-members"
-      aria-labelledby="members-heading"
-    >
-      <div className="group-section-heading">
-        <h2 id="members-heading">
-          {heading}{state.data && ` · ${state.data.length}`}
-        </h2>
-        <div className="group-members-header-actions">
-          {state.loading && <span className="group-muted">Loading…</span>}
-          {isCreator && (
+    <div className="group-members-layout">
+      <section
+        className="group-panel group-members group-members-main"
+        aria-labelledby="members-heading"
+      >
+        <div className="group-members-title-row">
+          <div>
+            <p className="group-eyebrow">Community roster</p>
+            <h2 id="members-heading">Members</h2>
+          </div>
+          <span className="group-members-count">
+            {state.data?.length ?? group.memberCount}{" "}
+            {(state.data?.length ?? group.memberCount) === 1 ? "member" : "members"}
+          </span>
+        </div>
+        <label className="group-member-search" htmlFor={`member-search-${groupId}`}>
+          <span className="sr-only">Search members</span>
+          <AppIcon name="search" width={17} height={17} />
+          <input
+            id={`member-search-${groupId}`}
+            type="search"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search members..."
+            autoComplete="off"
+          />
+        </label>
+        {state.error && (
+          <GroupLoadError error={state.error} retry={state.refresh} />
+        )}
+        {state.loading && !state.data && (
+          <div className="group-member-skeletons" role="status" aria-label="Loading members">
+            {[0, 1, 2].map((item) => <span key={item} />)}
+          </div>
+        )}
+        {state.data && filteredMembers.length > 0 && (
+          <ul className="group-members-list" aria-label="Group members">
+            {filteredMembers.map((member) => {
+              const displayName = getDisplayName(
+                member.firstName,
+                member.lastName,
+                member.username,
+              );
+              return (
+                <li key={member.userId} className="group-member-item">
+                  <UserAvatar
+                    src={member.avatar}
+                    firstName={member.firstName}
+                    lastName={member.lastName}
+                    username={member.username}
+                    size="md"
+                    alt=""
+                    className="group-member-avatar"
+                  />
+                  <Link
+                    className="group-member-identity"
+                    href={`/profile/${encodeURIComponent(member.username)}`}
+                  >
+                    <span className="group-member-display-name">{displayName}</span>
+                    <span className="group-member-handle">@{member.username}</span>
+                  </Link>
+                  {member.userId === group.creatorId ? (
+                    <span className="group-member-role">Owner</span>
+                  ) : (
+                    isCreator && (
+                      <button
+                        type="button"
+                        className="group-member-remove"
+                        onClick={() =>
+                          setRemoveTarget({
+                            userId: member.userId,
+                            username: member.username,
+                          })
+                        }
+                      >
+                        Remove
+                      </button>
+                    )
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+        {!state.loading && state.data?.length === 0 && (
+          <div className="group-members-empty">
+            <h3>No members to display</h3>
+            <p>Members will appear here after they join the group.</p>
+          </div>
+        )}
+        {!state.loading && state.data && state.data.length > 0 && filteredMembers.length === 0 && (
+          <div className="group-members-empty">
+            <h3>No matching members</h3>
+            <p>Try another name or username.</p>
+          </div>
+        )}
+      </section>
+
+      <aside className="group-members-sidebar" aria-label="Member tools and group stats">
+        {isCreator && (
+          <section className="group-panel group-members-invite-card" aria-labelledby="invite-members-card-title">
+            <span className="group-side-card-icon" aria-hidden="true">✦</span>
+            <h2 id="invite-members-card-title">Invite Members</h2>
+            <p>Invite people directly to this group.</p>
             <button
               type="button"
-              className="group-button secondary"
+              className="group-button group-invite-people-button"
               onClick={() => setIsInviteModalOpen(true)}
             >
-              + Invite
+              + Invite Members
             </button>
-          )}
-        </div>
-      </div>
-      {state.error && (
-        <GroupLoadError error={state.error} retry={state.refresh} />
-      )}
-      {state.data && (
-        <ul
-          className="group-members-list"
-          tabIndex={0}
-          aria-label="Group members"
-        >
-          {state.data.map((member) => (
-            <li key={member.userId} className="group-member-item">
-              {member.avatar ? (
-                <Image
-                  unoptimized
-                  src={avatarUrl(member.avatar)!}
-                  alt=""
-                  width={36}
-                  height={36}
-                  className="group-member-avatar"
-                />
-              ) : (
-                <span
-                  className="group-member-avatar fallback"
-                  aria-hidden="true"
-                >
-                  {getInitials("", "", member.username)}
-                </span>
-              )}
-              <Link
-                className="group-member-name"
-                href={`/profile/${encodeURIComponent(member.username)}`}
-              >
-                @{member.username}
-              </Link>
-              {member.userId === creatorId ? (
-                <span className="group-member-role">Creator</span>
-              ) : (
-                isCreator && (
-                  <button
-                    type="button"
-                    className="group-member-remove"
-                    onClick={() =>
-                      setRemoveTarget({
-                        userId: member.userId,
-                        username: member.username,
-                      })
-                    }
-                  >
-                    Remove
-                  </button>
-                )
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
-      {!state.loading && state.data?.length === 0 && (
-        <p className="group-muted">No members to display.</p>
-      )}
+          </section>
+        )}
+        <section className="group-panel group-stats-card" aria-labelledby="group-stats-title">
+          <h2 id="group-stats-title">Group Stats</h2>
+          <dl>
+            <div><dt>Members</dt><dd>{state.data?.length ?? group.memberCount}</dd></div>
+            <div><dt>Privacy</dt><dd>{group.privacy === "private" ? "Private" : "Public"}</dd></div>
+            <div><dt>Created</dt><dd>{formatDate(group.createdAt)}</dd></div>
+          </dl>
+        </section>
+      </aside>
       <GroupInviteModal
         groupId={groupId}
         open={isInviteModalOpen}
@@ -184,7 +235,7 @@ export function MembersPanel({
         target={removeTarget}
         onClose={closeRemoveDialog}
       />
-    </aside>
+    </div>
   );
 }
 
@@ -309,9 +360,12 @@ export function JoinRequestsPanel({
         {state.data?.map((request) => (
           <li key={request.id} className="group-attempt-row">
             <div className="group-person">
-              <span className="group-member-avatar fallback" aria-hidden="true">
-                {getInitials("", "", request.username)}
-              </span>
+              <UserAvatar
+                username={request.username}
+                size="sm"
+                alt=""
+                className="group-member-avatar"
+              />
               <span>@{request.username}</span>
             </div>
             <JoinRequestActions groupId={groupId} entityId={request.id} />

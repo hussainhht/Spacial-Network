@@ -102,9 +102,9 @@ func TestPostMediaMigration_BackfillsLegacyImagePath(t *testing.T) {
 	if err := sqlite.MigrateUp(db); err != nil {
 		t.Fatalf("MigrateUp: %v", err)
 	}
-	if err := sqlite.MigrateDown(db); err != nil {
-		t.Fatalf("remove post-media migration: %v", err)
-	}
+	// Remove post-media and every newer migration without relying on how many
+	// migrations have been added since this regression test was written.
+	migrateDownTo(t, db, groupPrivacyMigrationVersion)
 
 	userResult, err := db.Exec(`
 		INSERT INTO users (uuid, username, age, gender, first_name, last_name, email, password_hash)
@@ -142,14 +142,8 @@ func TestGroupPrivacyMigration_BackfillsLegacyGroupsAsPublicAndPreservesMembersh
 	if err := sqlite.MigrateUp(db); err != nil {
 		t.Fatalf("initial MigrateUp: %v", err)
 	}
-	// Roll back the newer post-media migration, then the privacy migration, to
-	// reproduce a group that existed before the privacy column was introduced.
-	if err := sqlite.MigrateDown(db); err != nil {
-		t.Fatalf("MigrateDown post-media migration: %v", err)
-	}
-	if err := sqlite.MigrateDown(db); err != nil {
-		t.Fatalf("MigrateDown privacy migration: %v", err)
-	}
+	// Roll back privacy and every newer migration to reproduce a legacy group.
+	migrateDownTo(t, db, beforeGroupPrivacyMigrationVersion)
 
 	result, err := db.Exec(`
 		INSERT INTO users (uuid, username, age, gender, first_name, last_name, email, password_hash)
@@ -228,12 +222,7 @@ func TestGroupPrivacyMigration_BackfillsLegacyGroupsAsPublicAndPreservesMembersh
 		t.Fatal("expected privacy CHECK constraint to reject hidden")
 	}
 
-	if err := sqlite.MigrateDown(db); err != nil {
-		t.Fatalf("final MigrateDown post-media migration: %v", err)
-	}
-	if err := sqlite.MigrateDown(db); err != nil {
-		t.Fatalf("final MigrateDown privacy migration: %v", err)
-	}
+	migrateDownTo(t, db, beforeGroupPrivacyMigrationVersion)
 	if err := db.QueryRow(`SELECT privacy FROM groups LIMIT 1`).Scan(&privacy); err == nil {
 		t.Fatal("privacy column still exists after down migration")
 	}

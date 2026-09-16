@@ -57,9 +57,11 @@ func toGroupResponse(g *Group) GroupResponse {
 func toGroupMemberResponse(m GroupMember) GroupMemberResponse {
 	return GroupMemberResponse{
 		UserID: m.UserID, Avatar: m.Avatar,
-		Username: m.Username,
-		Role:     m.Role,
-		JoinedAt: m.JoinedAt.Format(time.RFC3339),
+		Username:  m.Username,
+		FirstName: m.FirstName,
+		LastName:  m.LastName,
+		Role:      m.Role,
+		JoinedAt:  m.JoinedAt.Format(time.RFC3339),
 	}
 }
 

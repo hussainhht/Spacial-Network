@@ -34,6 +34,8 @@ export interface GroupMember {
   avatar?: string;
   userId: number;
   username: string;
+  firstName: string;
+  lastName: string;
   role: string;
   joinedAt: string;
 }
@@ -98,6 +100,7 @@ export interface CreateEventInput {
   description: string;
   eventTime: string;
   image?: File | null;
+  coverTemplate?: string | null;
 }
 
 export interface EventResponseUser {
