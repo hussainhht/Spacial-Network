@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { cloneElement, isValidElement, useEffect, useState } from "react";
 import AppIcon from "@/components/layout/AppIcon";
+import ConfirmDialog from "@/components/ConfirmDialog";
+import { useActionFeedback } from "@/components/feedback/ActionFeedbackProvider";
 import { getCommentCount } from "@/features/comments/api/comments";
 import { getLikeStatus, likePost, unlikePost } from "@/features/interactions/api/likes";
 import InteractionsBar from "@/features/interactions/components/InteractionsBar";
@@ -43,6 +45,7 @@ function postMedia(post: Post) {
 export default function PostCard({ post, onDeleted, preview = false, detail = false, children }: PostCardProps) {
   const router = useRouter();
   const [deleting, setDeleting] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [error, setError] = useState("");
   const [likeStatus, setLikeStatus] = useState<LikeStatus | null>(null);
   const [commentCount, setCommentCount] = useState<number | undefined>(undefined);
@@ -50,6 +53,7 @@ export default function PostCard({ post, onDeleted, preview = false, detail = fa
   const postHref = `/posts/${post.id}`;
   const titleId = preview ? undefined : `post-title-${post.id}`;
   const visibility = visibilityPresentation[post.visibility];
+  const { notify } = useActionFeedback();
 
   useEffect(() => {
     if (preview) return;
@@ -91,14 +95,17 @@ export default function PostCard({ post, onDeleted, preview = false, detail = fa
     : children;
 
   async function handleDelete() {
-    if (!window.confirm("Delete this post? This cannot be undone.")) return;
     setError("");
     setDeleting(true);
     try {
       await deletePost(post.id);
+      setDeleteDialogOpen(false);
       onDeleted?.(post.id);
+      notify("Post deleted.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to delete post");
+      const message = err instanceof Error ? err.message : "Failed to delete post";
+      setError(message);
+      notify(message, "error");
       setDeleting(false);
     }
   }
@@ -151,7 +158,14 @@ export default function PostCard({ post, onDeleted, preview = false, detail = fa
             <div className={styles.actionMenu}>
               {post.is_owner && <Link href={`${postHref}/edit`}>Edit post</Link>}
               {post.can_delete && (
-                <button type="button" onClick={handleDelete} disabled={deleting}>
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.currentTarget.closest("details")?.removeAttribute("open");
+                    setDeleteDialogOpen(true);
+                  }}
+                  disabled={deleting}
+                >
                   {deleting ? "Deleting…" : "Delete post"}
                 </button>
               )}
@@ -204,6 +218,16 @@ export default function PostCard({ post, onDeleted, preview = false, detail = fa
 
       {error && <p className={styles.error} role="alert" aria-live="assertive">{error}</p>}
       {sharing && <ShareModal postId={post.id} onClose={() => setSharing(false)} />}
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        title="Delete post?"
+        description="This post and its conversation will be permanently removed."
+        confirmLabel="Delete post"
+        busyLabel="Deleting…"
+        busy={deleting}
+        onCancel={() => setDeleteDialogOpen(false)}
+        onConfirm={handleDelete}
+      />
       {childrenWithCommentSync}
     </article>
   );

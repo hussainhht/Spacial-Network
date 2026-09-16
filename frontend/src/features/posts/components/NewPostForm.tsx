@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import AppIcon, { type AppIconName } from "@/components/layout/AppIcon";
+import { useActionFeedback } from "@/components/feedback/ActionFeedbackProvider";
 import { useCurrentUser } from "@/features/auth/context/CurrentUserContext";
 import { createPost } from "@/features/posts/api/posts";
 import PostCard from "@/features/posts/components/PostCard";
@@ -31,6 +32,7 @@ interface SelectedMedia {
 
 export default function NewPostForm() {
   const router = useRouter();
+  const { notify } = useActionFeedback();
   const { user } = useCurrentUser();
   const inputRef = useRef<HTMLInputElement>(null);
   const mediaRef = useRef<SelectedMedia[]>([]);
@@ -102,9 +104,12 @@ export default function NewPostForm() {
     setLoading(true);
     try {
       await createPost({ title, content, visibility, viewerIds, media: media.map((item) => item.file) });
+      notify("Post published.");
       router.push("/");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create post");
+      const message = err instanceof Error ? err.message : "Failed to create post";
+      setError(message);
+      notify(message, "error");
       setLoading(false);
     }
   }

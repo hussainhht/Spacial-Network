@@ -4,6 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import AppIcon from "@/components/layout/AppIcon";
+import ConfirmDialog from "@/components/ConfirmDialog";
+import { useActionFeedback } from "@/components/feedback/ActionFeedbackProvider";
 import UserAvatar from "@/components/UserAvatar";
 import { deleteComment } from "@/features/comments/api/comments";
 import type { Comment } from "@/features/comments/types/comment";
@@ -83,7 +85,9 @@ function CommentItem({
   showAuthor: boolean;
 }) {
   const [deleting, setDeleting] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [error, setError] = useState("");
+  const { notify } = useActionFeedback();
   const authorName = getDisplayName(
     comment.author.first_name,
     comment.author.last_name,
@@ -91,18 +95,18 @@ function CommentItem({
   );
 
   async function handleDelete() {
-    if (!window.confirm("Delete this comment? This cannot be undone.")) {
-      return;
-    }
-
     setError("");
     setDeleting(true);
 
     try {
       await deleteComment(comment.id);
+      setDeleteDialogOpen(false);
       onDeleted(comment.id);
+      notify("Comment deleted.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to delete comment");
+      const message = err instanceof Error ? err.message : "Failed to delete comment";
+      setError(message);
+      notify(message, "error");
       setDeleting(false);
     }
   }
@@ -148,7 +152,7 @@ function CommentItem({
             <button
               type="button"
               className={styles.deleteBtn}
-              onClick={handleDelete}
+              onClick={() => setDeleteDialogOpen(true)}
               disabled={deleting}
               aria-label="Delete comment"
             >
@@ -177,6 +181,16 @@ function CommentItem({
           </p>
         )}
       </div>
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        title="Delete comment?"
+        description="This comment will be permanently removed from the conversation."
+        confirmLabel="Delete comment"
+        busyLabel="Deleting…"
+        busy={deleting}
+        onCancel={() => setDeleteDialogOpen(false)}
+        onConfirm={handleDelete}
+      />
     </li>
   );
 }

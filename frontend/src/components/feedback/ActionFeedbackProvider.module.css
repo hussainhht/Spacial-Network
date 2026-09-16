@@ -1,0 +1,70 @@
+.toast {
+  position: fixed;
+  right: max(16px, env(safe-area-inset-right, 0px));
+  bottom: max(20px, calc(var(--nav-bottom-height, 64px) + env(safe-area-inset-bottom, 0px) + 16px));
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: min(390px, calc(100vw - 32px));
+  min-height: 52px;
+  padding: 12px 12px 12px 16px;
+  border: 1px solid rgba(74, 222, 128, 0.34);
+  border-radius: 14px;
+  background: rgba(9, 25, 25, 0.96);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.42);
+  color: #dcfce7;
+  font-size: 14px;
+  line-height: 1.45;
+  backdrop-filter: blur(18px);
+  animation: feedback-in 180ms ease-out both;
+}
+
+.toast[data-tone="error"] {
+  border-color: var(--space-error-border);
+  background: rgba(38, 14, 24, 0.96);
+  color: var(--space-error-text);
+}
+
+.toast span {
+  flex: 1;
+  min-width: 0;
+}
+
+.toast button {
+  display: grid;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: currentColor;
+  font: inherit;
+  font-size: 22px;
+  cursor: pointer;
+}
+
+.toast button:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.toast button:focus-visible {
+  outline: 2px solid var(--planet-focus-ring);
+  outline-offset: 2px;
+}
+
+@keyframes feedback-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (min-width: 761px) {
+  .toast { bottom: 24px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast { animation: none; }
+}

@@ -1,7 +1,7 @@
 /* Shared application chrome and scrollable page content. */
 .shell {
   --app-navbar-height: 64px;
-  --orbital-nav-space: clamp(212px, 20vw, 300px);
+  --orbital-nav-space: clamp(164px, 15vw, 210px);
   position: relative;
   height: 100dvh;
   min-height: 100svh;
@@ -68,7 +68,7 @@
 }
 @media (max-width: 760px) {
   .shell {
-    --app-navbar-height: 104px;
+    --app-navbar-height: 124px;
     grid-template-columns: minmax(0, 1fr);
   }
   .sidebar {

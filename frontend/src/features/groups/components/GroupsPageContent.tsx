@@ -45,21 +45,17 @@ export default function GroupsPageContent() {
   return (
     <main className={`space-shell ${styles.page}`} aria-labelledby="groups-heading">
       <div className={styles.container}>
-        <header className={styles.intro} data-motion-section>
-          <p className={styles.eyebrow}>Your communities</p>
-
-        </header>
         <div className={styles.toolbar} data-motion-section>
+          <GroupsFilterTabs
+            activeTab={activeTab}
+            onTabChange={changeTab}
+            className={styles.filters}
+          />
           <GroupSearchInput value={search} onChange={setSearch} />
           <Link href="/groups/create" className={`group-button ${styles.create}`}>
             <AppIcon name="plus" /> Create Group
           </Link>
         </div>
-        <GroupsFilterTabs
-          activeTab={activeTab}
-          onTabChange={changeTab}
-          className={styles.filters}
-        />
         <InvitationsPanel />
         <section
           id={`groups-tabpanel-${activeTab}`}

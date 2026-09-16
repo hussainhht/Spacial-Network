@@ -10,7 +10,11 @@ export default function PageTransition({
   className,
 }: Readonly<{ children: React.ReactNode; className?: string }>) {
   return (
-    <ViewTransition enter="route-page-enter" exit="route-page-exit">
+    <ViewTransition
+      default="none"
+      enter="route-page-enter"
+      exit="route-page-exit"
+    >
       <div className={[styles.page, className].filter(Boolean).join(" ")}>{children}</div>
     </ViewTransition>
   );

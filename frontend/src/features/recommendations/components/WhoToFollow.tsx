@@ -3,13 +3,30 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import AppIcon from "@/components/layout/AppIcon";
-import UserAvatar from "@/components/UserAvatar";
+import { useActionFeedback } from "@/components/feedback/ActionFeedbackProvider";
+import { getBackendBaseUrl } from "@/lib/api";
 import { followUser } from "@/features/profile/api/profiles";
 import {
   getRecommendations,
   type Recommendation,
 } from "../api/recommendations";
 import styles from "./WhoToFollow.module.css";
+
+function getAvatarUrl(path: string): string | null {
+  if (!path) return null;
+  if (/^https?:\/\//i.test(path)) return path;
+  return getBackendBaseUrl() + (path.startsWith("/") ? path : "/" + path);
+}
+
+function initials(name: string, username: string): string {
+  const letters = name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("");
+  return (letters || username.slice(0, 2)).toUpperCase();
+}
 
 function mutualContext(recommendation: Recommendation): string {
   const [first, second] = recommendation.mutualPreview;
@@ -40,6 +57,7 @@ function SuggestionRow({
   onFollow: (recommendation: Recommendation) => void;
   onDismiss: (id: number) => void;
 }) {
+  const avatarUrl = getAvatarUrl(recommendation.avatarUrl);
   const following = recommendation.isFollowing;
 
   return (
@@ -49,14 +67,14 @@ function SuggestionRow({
         className={styles.avatarLink}
         aria-label={"View @" + recommendation.username + "'s profile"}
       >
-        <UserAvatar
-          src={recommendation.avatarUrl}
-          name={recommendation.name}
-          username={recommendation.username}
-          size={38}
-          alt=""
-          className={styles.avatar}
-        />
+        {avatarUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img className={styles.avatar} src={avatarUrl} alt="" />
+        ) : (
+          <span className={styles.avatarFallback} aria-hidden="true">
+            {initials(recommendation.name, recommendation.username)}
+          </span>
+        )}
       </Link>
 
       <div className={styles.identity}>
@@ -111,6 +129,7 @@ function SkeletonRows() {
 }
 
 export default function WhoToFollow({ limit = 3 }: { limit?: 3 | 4 }) {
+  const { notify } = useActionFeedback();
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [dismissedIDs, setDismissedIDs] = useState<Set<number>>(() => new Set());
   const [isLoading, setIsLoading] = useState(true);
@@ -169,6 +188,7 @@ export default function WhoToFollow({ limit = 3 }: { limit?: 3 | 4 }) {
 
     try {
       await followUser(recommendation.username);
+      notify(`You are now following @${recommendation.username}.`);
     } catch (requestError) {
       setRecommendations((current) =>
         current.map((candidate) =>
@@ -177,11 +197,11 @@ export default function WhoToFollow({ limit = 3 }: { limit?: 3 | 4 }) {
             : candidate,
         ),
       );
-      setFollowError(
-        requestError instanceof Error
+      const message = requestError instanceof Error
           ? requestError.message
-          : "Unable to follow this account",
-      );
+          : "Unable to follow this account";
+      setFollowError(message);
+      notify(message, "error");
     }
   };
 

@@ -17,6 +17,11 @@ export function ProfileLoadingState() {
           <div className={styles.identity}>
             <div className={`${styles.skeleton} ${styles.skeletonTitle}`} />
             <div className={`${styles.skeleton} ${styles.skeletonText}`} />
+            <div className={styles.skeletonStats} aria-hidden="true">
+              <div className={styles.skeleton} />
+              <div className={styles.skeleton} />
+              <div className={styles.skeleton} />
+            </div>
             <div className={`${styles.skeleton} ${styles.skeletonButton}`} />
           </div>
         </div>
@@ -31,11 +36,15 @@ export function ProfileLoadingState() {
             <div
               className={`${styles.skeleton} ${styles.skeletonLine} ${styles.skeletonLineShort}`}
             />
+            <div className={styles.skeletonDetails} aria-hidden="true">
+              <div className={styles.skeleton} />
+              <div className={styles.skeleton} />
+            </div>
           </div>
         </div>
       </div>
 
-      <div className={`${styles.skeleton} ${styles.skeletonTabs}`} />
+      <div className={`${styles.skeleton} ${styles.skeletonCard}`} />
     </div>
   );
 }

@@ -134,7 +134,7 @@ export default function InteractionsBar({
         className={styles.action}
         onClick={onShare}
         disabled={preview || !onShare}
-        aria-label="Share to a chat"
+        aria-label="Share post"
       >
         <AppIcon name="share" width={16} height={16} />
         <span className={styles.label}>Share</span>

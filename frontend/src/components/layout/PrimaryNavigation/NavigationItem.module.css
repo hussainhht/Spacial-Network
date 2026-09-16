@@ -42,7 +42,10 @@
   border-color: var(--planet-accent);
   color: var(--planet-accent-hover);
   background: radial-gradient(circle at 35% 25%, var(--planet-accent-soft), var(--nav-node-bg) 75%);
-  box-shadow: 0 0 0 4px var(--planet-surface-tint), 0 0 24px var(--planet-glow);
+  box-shadow:
+    0 0 0 4px var(--planet-surface-tint),
+    0 0 0 6px var(--planet-border),
+    0 0 30px var(--planet-glow);
 }
 .link[aria-current="page"] .node::after {
   content: "";

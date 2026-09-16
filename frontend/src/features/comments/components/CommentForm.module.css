@@ -65,8 +65,9 @@
   flex: 0 0 40px !important;
   width: 40px !important;
   height: 40px !important;
+  aspect-ratio: 1 / 1;
   margin-bottom: 3px;
-  border-radius: 50%;
+  border-radius: 50% !important;
   border: 1px solid var(--planet-border);
   background: var(--planet-accent-soft);
   color: var(--planet-accent-hover);

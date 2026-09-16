@@ -1,5 +1,6 @@
 import PageTransition from "@/components/transitions/PageTransition";
 import ProfilePage from "@/features/profile/components/ProfilePage";
+import styles from "@/features/profile/components/Profile.module.css";
 
 interface ProfilePageProps {
   params: Promise<{
@@ -11,7 +12,7 @@ export default async function Page({ params }: ProfilePageProps) {
   const { username } = await params;
 
   return (
-    <PageTransition>
+    <PageTransition className={styles.transitionPage}>
       <ProfilePage username={username} />
     </PageTransition>
   );
