@@ -85,6 +85,36 @@ func NewRouter(db *sql.DB, cfg config.Config) (http.Handler, error) {
 	)
 
 	apiMux.Handle(
+		"POST /profiles/{username}/follow",
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Followers.FollowUserHandler))),
+	)
+	apiMux.Handle(
+		"DELETE /profiles/{username}/follow",
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Followers.UnfollowUserHandler))),
+	)
+	apiMux.Handle(
+		"GET /profiles/{username}/follow-status",
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Followers.FollowStatusHandler))),
+	)
+	apiMux.Handle(
+		"GET /profiles/{username}/followers",
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Followers.GetFollowersHandler))),
+	)
+	apiMux.Handle(
+		"GET /profiles/{username}/following",
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Followers.GetFollowingHandler))),
+	)
+
+	apiMux.Handle(
+		"GET /follow-requests",
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Followers.GetPendingFollowRequestsHandler))),
+	)
+	apiMux.Handle(
+		"POST /follow-requests/{requestID}/accept",
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Followers.AcceptFollowRequestHandler))),
+	)
+
+	apiMux.Handle(
 		"POST /posts",
 		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Posts.NewPostHandler))),
 	)

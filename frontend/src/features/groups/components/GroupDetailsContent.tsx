@@ -94,13 +94,15 @@ function GroupDetails({ groupId }: { groupId: number }) {
       )}
       {group.data && (
         <>
-          <GroupHeaderCard
-            group={group.data}
-            memberCount={memberCount}
-            isCreator={isCreator}
-            membershipStatus={membershipStatus}
-            onEdit={() => setActiveTab("settings")}
-          />
+          {activeTab !== "chat" && (
+            <GroupHeaderCard
+              group={group.data}
+              memberCount={memberCount}
+              isCreator={isCreator}
+              membershipStatus={membershipStatus}
+              onEdit={() => setActiveTab("settings")}
+            />
+          )}
           <GroupTabs
             activeTab={activeTab}
             onTabChange={setActiveTab}
