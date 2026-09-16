@@ -165,12 +165,18 @@ export async function getMyGroups(
 }
 
 export async function createGroup(input: CreateGroupInput): Promise<Group> {
+  if (input.photo && input.imageTemplateId) {
+    throw new Error("Choose either an uploaded image or a group photo template.");
+  }
+
   const formData = new FormData();
   formData.append("title", input.title);
   formData.append("description", input.description);
   formData.append("privacy", input.privacy);
   if (input.photo) {
     formData.append("groupPhoto", input.photo);
+  } else if (input.imageTemplateId) {
+    formData.append("image_template_id", input.imageTemplateId);
   }
 
   const data = await groupRequest<Envelope & { group_id: number }>(
@@ -366,7 +372,11 @@ export function toInviteCandidate(user: ApiInviteCandidate): InviteCandidate {
 
 export function avatarUrl(photo?: string): string | undefined {
   if (!photo) return undefined;
-  return /^https?:\/\//.test(photo) ? photo : `${getUploadsBaseUrl()}/${photo}`;
+  if (/^https?:\/\//.test(photo)) return photo;
+  if (photo.startsWith("/uploads/")) return `${getBackendBaseUrl()}${photo}`;
+  if (photo.startsWith("/")) return photo;
+  if (photo.startsWith("uploads/")) return `${getBackendBaseUrl()}/${photo}`;
+  return `${getUploadsBaseUrl()}/${photo}`;
 }
 
 export async function getEventResponses(

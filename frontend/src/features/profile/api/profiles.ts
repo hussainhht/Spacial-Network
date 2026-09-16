@@ -132,16 +132,32 @@ function toFollowRequest(request: ApiFollowRequest): FollowRequest {
   };
 }
 
+// The backend only guarantees a JSON body on routes it recognizes - an
+// unmatched path (e.g. a stale/renamed endpoint) falls through to Go's
+// default "404 page not found" plain-text response, and `response.json()`
+// throws a confusing "Unexpected non-whitespace character" error on that.
+// Read as text first and parse leniently so a non-JSON error body still
+// produces a readable Error instead of a parse crash.
+async function readJson<T>(response: Response): Promise<T | null> {
+  const text = await response.text();
+  if (!text) return null;
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    return null;
+  }
+}
+
 export async function getProfileByUsername(username: string): Promise<Profile> {
   const response = await fetch(getApiUrl(`/profiles/${username}`), {
     method: "GET",
     credentials: "include",
   });
 
-  const data: ProfileResponse = await response.json();
+  const data = await readJson<ProfileResponse>(response);
 
-  if (!response.ok || !data.success || !data.profile) {
-    throw new Error(data.message ?? "Failed to load profile");
+  if (!response.ok || !data?.success || !data.profile) {
+    throw new Error(data?.message ?? `Failed to load profile (${response.status})`);
   }
 
   return toProfile(data.profile);
@@ -153,10 +169,10 @@ export async function followUser(username: string): Promise<void> {
     credentials: "include",
   });
 
-  const data: FollowResponse = await response.json();
+  const data = await readJson<FollowResponse>(response);
 
-  if (!response.ok || !data.success) {
-    throw new Error(data.message ?? "Failed to follow user");
+  if (!response.ok || !data?.success) {
+    throw new Error(data?.message ?? `Failed to follow user (${response.status})`);
   }
 }
 
@@ -166,10 +182,10 @@ export async function unfollowUser(username: string): Promise<void> {
     credentials: "include",
   });
 
-  const data: FollowResponse = await response.json();
+  const data = await readJson<FollowResponse>(response);
 
-  if (!response.ok || !data.success) {
-    throw new Error(data.message ?? "Failed to unfollow user");
+  if (!response.ok || !data?.success) {
+    throw new Error(data?.message ?? `Failed to unfollow user (${response.status})`);
   }
 }
 
@@ -182,10 +198,10 @@ export async function getFollowStatus(username: string): Promise<FollowStatus> {
     },
   );
 
-  const data: FollowStatusResponse = await response.json();
+  const data = await readJson<FollowStatusResponse>(response);
 
-  if (!response.ok || !data.success) {
-    throw new Error(data.message ?? "Failed to load follow status");
+  if (!response.ok || !data?.success) {
+    throw new Error(data?.message ?? `Failed to load follow status (${response.status})`);
   }
 
   return {
@@ -205,10 +221,10 @@ export async function getFollowers(
     },
   );
 
-  const data: FollowListResponse = await response.json();
+  const data = await readJson<FollowListResponse>(response);
 
-  if (!response.ok || !data.success) {
-    throw new Error(data.message ?? "Failed to load followers");
+  if (!response.ok || !data?.success) {
+    throw new Error(data?.message ?? `Failed to load followers (${response.status})`);
   }
 
   return data.users.map(toProfileUserSummary);
@@ -225,10 +241,10 @@ export async function getFollowing(
     },
   );
 
-  const data: FollowListResponse = await response.json();
+  const data = await readJson<FollowListResponse>(response);
 
-  if (!response.ok || !data.success) {
-    throw new Error(data.message ?? "Failed to load following");
+  if (!response.ok || !data?.success) {
+    throw new Error(data?.message ?? `Failed to load following (${response.status})`);
   }
 
   return data.users.map(toProfileUserSummary);
@@ -248,10 +264,10 @@ export async function updateMyProfilePrivacy(
     }),
   });
 
-  const data: UpdateProfilePrivacyResponse = await response.json();
+  const data = await readJson<UpdateProfilePrivacyResponse>(response);
 
-  if (!response.ok || !data.success) {
-    throw new Error(data.message ?? "Failed to update profile privacy");
+  if (!response.ok || !data?.success) {
+    throw new Error(data?.message ?? `Failed to update profile privacy (${response.status})`);
   }
 
   return data.is_private;
@@ -280,10 +296,10 @@ export async function updateMyProfileDetails(
     }),
   });
 
-  const data: ProfileResponse = await response.json();
+  const data = await readJson<ProfileResponse>(response);
 
-  if (!response.ok || !data.success || !data.profile) {
-    throw new Error(data.message ?? "Failed to update profile details");
+  if (!response.ok || !data?.success || !data.profile) {
+    throw new Error(data?.message ?? `Failed to update profile details (${response.status})`);
   }
 
   return toProfile(data.profile);
@@ -308,10 +324,10 @@ export async function updateMyProfileAvatar(
     body: formData,
   });
 
-  const data: ProfileResponse = await response.json();
+  const data = await readJson<ProfileResponse>(response);
 
-  if (!response.ok || !data.success || !data.profile) {
-    throw new Error(data.message ?? "Failed to update profile photo");
+  if (!response.ok || !data?.success || !data.profile) {
+    throw new Error(data?.message ?? `Failed to update profile photo (${response.status})`);
   }
 
   return toProfile(data.profile);
@@ -323,10 +339,10 @@ export async function getMyProfile(): Promise<Profile> {
     credentials: "include",
   });
 
-  const data: ProfileResponse = await response.json();
+  const data = await readJson<ProfileResponse>(response);
 
-  if (!response.ok || !data.success || !data.profile) {
-    throw new Error(data.message ?? "Failed to load your profile");
+  if (!response.ok || !data?.success || !data.profile) {
+    throw new Error(data?.message ?? `Failed to load your profile (${response.status})`);
   }
 
   return toProfile(data.profile);
@@ -338,10 +354,10 @@ export async function getPendingFollowRequests(): Promise<FollowRequest[]> {
     credentials: "include",
   });
 
-  const data: FollowRequestsResponse = await response.json();
+  const data = await readJson<FollowRequestsResponse>(response);
 
-  if (!response.ok || !data.success) {
-    throw new Error(data.message ?? "Failed to load follow requests");
+  if (!response.ok || !data?.success) {
+    throw new Error(data?.message ?? `Failed to load follow requests (${response.status})`);
   }
 
   return data.requests.map(toFollowRequest);
@@ -356,10 +372,10 @@ export async function acceptFollowRequest(requestID: number): Promise<void> {
     },
   );
 
-  const data: FollowResponse = await response.json();
+  const data = await readJson<FollowResponse>(response);
 
-  if (!response.ok || !data.success) {
-    throw new Error(data.message ?? "Failed to accept follow request");
+  if (!response.ok || !data?.success) {
+    throw new Error(data?.message ?? `Failed to accept follow request (${response.status})`);
   }
 }
 
@@ -372,9 +388,9 @@ export async function declineFollowRequest(requestID: number): Promise<void> {
     },
   );
 
-  const data: FollowResponse = await response.json();
+  const data = await readJson<FollowResponse>(response);
 
-  if (!response.ok || !data.success) {
-    throw new Error(data.message ?? "Failed to decline follow request");
+  if (!response.ok || !data?.success) {
+    throw new Error(data?.message ?? `Failed to decline follow request (${response.status})`);
   }
 }

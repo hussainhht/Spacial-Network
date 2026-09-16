@@ -8,11 +8,13 @@ package groups_test
 import (
 	"bytes"
 	"database/sql"
+	"encoding/base64"
 	"encoding/json"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
+	"strings"
 	"testing"
 
 	"social/internal/comments"
@@ -107,6 +109,46 @@ func (f fixture) newUser(t *testing.T, username string) int {
 	return testutil.CreateUser(t, f.db, testutil.NewUserOpts{Username: username, Email: username + "@example.com"})
 }
 
+func createGroupThroughHandler(t *testing.T, handler *groups.Handler, userID int, templateID string, photo []byte) *httptest.ResponseRecorder {
+	t.Helper()
+
+	var body bytes.Buffer
+	writer := multipart.NewWriter(&body)
+	if err := writer.WriteField("title", "Template Group"); err != nil {
+		t.Fatalf("write title: %v", err)
+	}
+	if err := writer.WriteField("description", "A group with a selected photo"); err != nil {
+		t.Fatalf("write description: %v", err)
+	}
+	if err := writer.WriteField("privacy", "private"); err != nil {
+		t.Fatalf("write privacy: %v", err)
+	}
+	if templateID != "" {
+		if err := writer.WriteField("image_template_id", templateID); err != nil {
+			t.Fatalf("write template id: %v", err)
+		}
+	}
+	if photo != nil {
+		part, err := writer.CreateFormFile("groupPhoto", "group.png")
+		if err != nil {
+			t.Fatalf("create photo part: %v", err)
+		}
+		if _, err := part.Write(photo); err != nil {
+			t.Fatalf("write photo part: %v", err)
+		}
+	}
+	if err := writer.Close(); err != nil {
+		t.Fatalf("close multipart writer: %v", err)
+	}
+
+	req := httptest.NewRequest(http.MethodPost, "/api/groups", &body)
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	req = req.WithContext(requestctx.WithUserID(req.Context(), userID))
+	rr := httptest.NewRecorder()
+	handler.CreateGroupHandler(rr, req)
+	return rr
+}
+
 func TestCreateGroup_StoresTitleDescriptionAndCreator(t *testing.T) {
 	f := setup(t)
 	creator := f.newUser(t, "groupcreator")
@@ -139,6 +181,84 @@ func TestCreateGroup_StoresTitleDescriptionAndCreator(t *testing.T) {
 	}
 	if !isMember {
 		t.Errorf("expected creator to automatically be a member of the group they created")
+	}
+}
+
+func TestCreateGroupHandler_AcceptsApprovedImageTemplate(t *testing.T) {
+	f := setup(t)
+	creator := f.newUser(t, "templatecreator")
+
+	rr := createGroupThroughHandler(t, f.groupsHandler, creator, "mars", nil)
+	if rr.Code != http.StatusCreated {
+		t.Fatalf("create template group status = %d, body = %s", rr.Code, rr.Body.String())
+	}
+
+	var response groups.CreateGroupResponse
+	if err := json.Unmarshal(rr.Body.Bytes(), &response); err != nil {
+		t.Fatalf("decode create response: %v", err)
+	}
+	group, err := f.groupsSvc.GetGroupByID(int(response.GroupID))
+	if err != nil {
+		t.Fatalf("get created group: %v", err)
+	}
+	if group.GroupPhoto != "/image/templets/mars.png" {
+		t.Fatalf("GroupPhoto = %q, want approved Mars template path", group.GroupPhoto)
+	}
+}
+
+func TestCreateGroupHandler_RejectsUnknownImageTemplate(t *testing.T) {
+	f := setup(t)
+	creator := f.newUser(t, "invalidtemplatecreator")
+
+	rr := createGroupThroughHandler(t, f.groupsHandler, creator, "../../private/file.png", nil)
+	if rr.Code != http.StatusBadRequest {
+		t.Fatalf("invalid template status = %d, want %d; body = %s", rr.Code, http.StatusBadRequest, rr.Body.String())
+	}
+	if !strings.Contains(rr.Body.String(), "approved group photo template") {
+		t.Fatalf("invalid template response = %s", rr.Body.String())
+	}
+}
+
+func TestCreateGroupHandler_RejectsMultiplePhotoSources(t *testing.T) {
+	f := setup(t)
+	creator := f.newUser(t, "twophotocreator")
+
+	rr := createGroupThroughHandler(t, f.groupsHandler, creator, "earth", []byte("not read"))
+	if rr.Code != http.StatusBadRequest {
+		t.Fatalf("multiple photo source status = %d, want %d; body = %s", rr.Code, http.StatusBadRequest, rr.Body.String())
+	}
+	if !strings.Contains(rr.Body.String(), "either an uploaded image or a group photo template") {
+		t.Fatalf("multiple photo source response = %s", rr.Body.String())
+	}
+}
+
+func TestCreateGroupHandler_KeepsUploadedPhotoFlow(t *testing.T) {
+	f := setup(t)
+	creator := f.newUser(t, "uploadphotocreator")
+	storage, err := upload.NewAvatarStorage(t.TempDir(), upload.GroupPhotoSubdir, 5<<20)
+	if err != nil {
+		t.Fatalf("create group photo storage: %v", err)
+	}
+	handler := groups.NewHandler(f.groupsSvc, storage)
+	pngBytes, err := base64.StdEncoding.DecodeString("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=")
+	if err != nil {
+		t.Fatalf("decode PNG fixture: %v", err)
+	}
+
+	rr := createGroupThroughHandler(t, handler, creator, "", pngBytes)
+	if rr.Code != http.StatusCreated {
+		t.Fatalf("create uploaded-photo group status = %d, body = %s", rr.Code, rr.Body.String())
+	}
+	var response groups.CreateGroupResponse
+	if err := json.Unmarshal(rr.Body.Bytes(), &response); err != nil {
+		t.Fatalf("decode create response: %v", err)
+	}
+	group, err := f.groupsSvc.GetGroupByID(int(response.GroupID))
+	if err != nil {
+		t.Fatalf("get created group: %v", err)
+	}
+	if !strings.HasPrefix(group.GroupPhoto, "groups/") {
+		t.Fatalf("GroupPhoto = %q, want stored upload path", group.GroupPhoto)
 	}
 }
 

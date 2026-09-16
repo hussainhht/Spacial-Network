@@ -21,6 +21,7 @@ export interface CreateGroupInput {
   description: string;
   privacy: GroupPrivacy;
   photo?: File | null;
+  imageTemplateId?: string | null;
 }
 
 export interface UpdateGroupInput {
