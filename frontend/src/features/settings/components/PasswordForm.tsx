@@ -156,20 +156,22 @@ export default function PasswordForm() {
 
   return (
     <form className={styles.passwordForm} onSubmit={handleSubmit} noValidate>
-      {(Object.keys(values) as PasswordFieldName[]).map((name) => (
-        <PasswordField
-          key={name}
-          name={name}
-          value={values[name]}
-          visible={visible[name]}
-          error={fieldErrors[name]}
-          disabled={saving}
-          onChange={(value) => setField(name, value)}
-          onToggleVisibility={() =>
-            setVisible((current) => ({ ...current, [name]: !current[name] }))
-          }
-        />
-      ))}
+      <div className={styles.passwordFields}>
+        {(Object.keys(values) as PasswordFieldName[]).map((name) => (
+          <PasswordField
+            key={name}
+            name={name}
+            value={values[name]}
+            visible={visible[name]}
+            error={fieldErrors[name]}
+            disabled={saving}
+            onChange={(value) => setField(name, value)}
+            onToggleVisibility={() =>
+              setVisible((current) => ({ ...current, [name]: !current[name] }))
+            }
+          />
+        ))}
+      </div>
 
       <p className={styles.formHint}>
         Use 8–72 characters. Your current session will stay signed in.
