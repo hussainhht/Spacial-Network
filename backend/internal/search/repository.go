@@ -23,7 +23,7 @@ func normalizePhotoURL(photo string) string {
 	if photo == "" {
 		return ""
 	}
-	if strings.HasPrefix(photo, "/uploads/") || strings.HasPrefix(photo, "http://") || strings.HasPrefix(photo, "https://") {
+	if strings.HasPrefix(photo, "/uploads/") || strings.HasPrefix(photo, "/image/") || strings.HasPrefix(photo, "http://") || strings.HasPrefix(photo, "https://") {
 		return photo
 	}
 	return "/uploads/" + strings.TrimPrefix(photo, "/")

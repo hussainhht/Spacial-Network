@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"math"
+	"net/http"
 	"strconv"
 
 	"social/internal/auth"
@@ -49,6 +50,26 @@ type Dependencies struct {
 	PostsService         *posts.Service
 }
 
+// cheapReadEndpoints are per-post read endpoints the feed fires once per
+// visible post (likes + comment count are not yet included in the feed/post
+// payload itself). The frontend loads up to 20 posts per feed page, so at
+// the default flat cost of 1.0 that single burst alone exceeds the
+// per-endpoint bucket (capacity 10 - see internal/ratelimit/README.md) well
+// before any real abuse. Weighting them down keeps the limiter effective
+// against actual abuse (mutations, auth) without 429-ing normal feed
+// scrolling.
+var cheapReadEndpoints = map[string]bool{
+	"GET /posts/{id}/likes":          true,
+	"GET /posts/{id}/comments/count": true,
+}
+
+func rateLimitRequestCost(r *http.Request) float64 {
+	if cheapReadEndpoints[r.Pattern] {
+		return 0.2
+	}
+	return 1.0
+}
+
 func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 	hub := websocket.NewHub()
 	wsHandler := websocket.NewHandler(hub)
@@ -61,6 +82,7 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 		EndpointCapacity:   cfg.RateLimitEndpointCapacity,
 		EndpointRefillRate: cfg.RateLimitEndpointRefillRate,
 		EndpointPenalty:    cfg.RateLimitEndpointPenalty,
+		RequestCost:        rateLimitRequestCost,
 	})
 
 	notificationsRepo := notifications.NewRepository(db)

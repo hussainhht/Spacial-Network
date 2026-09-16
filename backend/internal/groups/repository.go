@@ -105,7 +105,7 @@ func groupSlug(title string) string {
 
 func normalizeGroupPhotoURL(photo string) string {
 	photo = strings.TrimSpace(photo)
-	if photo == "" || strings.HasPrefix(photo, "/uploads/") || strings.HasPrefix(photo, "http://") || strings.HasPrefix(photo, "https://") {
+	if photo == "" || strings.HasPrefix(photo, "/uploads/") || strings.HasPrefix(photo, "/image/") || strings.HasPrefix(photo, "http://") || strings.HasPrefix(photo, "https://") {
 		return photo
 	}
 	return "/uploads/" + strings.TrimPrefix(photo, "/")
