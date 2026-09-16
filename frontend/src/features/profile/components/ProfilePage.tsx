@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useWebSocket } from "@/providers/WebSocketProvider";
+import { useActionFeedback } from "@/components/feedback/ActionFeedbackProvider";
 import {
   followUser,
   getFollowers,
@@ -47,6 +49,8 @@ const emptyFollowStatus: FollowStatus = {
 };
 
 export default function ProfilePage({ username }: ProfilePageProps) {
+  const router = useRouter();
+  const { notify } = useActionFeedback();
   const { subscribeNotifications, subscribeFollowRemoved } = useWebSocket();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isOwnProfile, setIsOwnProfile] = useState(!username);
@@ -347,6 +351,7 @@ export default function ProfilePage({ username }: ProfilePageProps) {
 
     setFollowError(null);
     setFollowLoading(true);
+    const wasFollowing = isFollowing;
 
     try {
       if (isFollowing) {
@@ -358,6 +363,13 @@ export default function ProfilePage({ username }: ProfilePageProps) {
       const followStatusResult = await getFollowStatus(profile.username);
       setIsFollowing(followStatusResult.isFollowing);
       setHasPendingFollowRequest(followStatusResult.hasPendingRequest);
+      notify(
+        wasFollowing
+          ? `You unfollowed @${profile.username}.`
+          : followStatusResult.hasPendingRequest
+            ? `Follow request sent to @${profile.username}.`
+            : `You are now following @${profile.username}.`,
+      );
 
       if (profile.isPrivate && !followStatusResult.isFollowing) {
         setProfile((current) =>
@@ -378,9 +390,9 @@ export default function ProfilePage({ username }: ProfilePageProps) {
       setFollowers(followersResult);
       setFollowing(followingResult);
     } catch (err) {
-      setFollowError(
-        err instanceof Error ? err.message : "Failed to update follow",
-      );
+      const message = err instanceof Error ? err.message : "Failed to update follow";
+      setFollowError(message);
+      notify(message, "error");
     } finally {
       setFollowLoading(false);
     }
@@ -519,8 +531,7 @@ export default function ProfilePage({ username }: ProfilePageProps) {
   }
 
   function handleEditProfile() {
-    setActiveTab("settings");
-    scrollToSections();
+    router.push("/settings");
   }
 
   function handleViewConnections() {

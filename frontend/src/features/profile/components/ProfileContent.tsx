@@ -3,12 +3,12 @@
 import AppIcon, { type AppIconName } from "@/components/layout/AppIcon";
 import PostCard from "@/features/posts/components/PostCard";
 import type { Post } from "@/features/posts/types/post";
-import { parseDate } from "@/lib/utils";
 import type {
   UpdateProfileAvatarInput,
   UpdateProfileDetailsInput,
 } from "../api/profiles";
 import type { Profile, ProfileTab, ProfileUserSummary } from "../types/profile";
+import ProfileAccountCard from "./ProfileAccountCard";
 import ProfileAvatarForm from "./ProfileAvatarForm";
 import ProfileDetailsForm from "./ProfileDetailsForm";
 import ProfileFollowRequests from "./ProfileFollowRequests";
@@ -170,26 +170,6 @@ function SettingsTab({
   detailsError = null,
   onTabChange,
 }: SettingsTabProps) {
-  const createdDate = parseDate(profile.createdAt);
-  const memberSince = createdDate
-    ? createdDate.toLocaleDateString(undefined, {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      })
-    : "";
-  const accountDetails = [
-    { label: "Email", value: profile.email },
-    { label: "Age", value: profile.age > 0 ? String(profile.age) : "" },
-    {
-      label: "Gender",
-      value: profile.gender
-        ? profile.gender.charAt(0).toUpperCase() + profile.gender.slice(1)
-        : "",
-    },
-    { label: "Joined", value: memberSince },
-  ].filter((detail) => detail.value);
-
   return (
     <div className={styles.tabPanel}>
       <BackToPosts onTabChange={onTabChange} />
@@ -234,25 +214,7 @@ function SettingsTab({
             />
           )}
 
-          {accountDetails.length > 0 && (
-            <section
-              className={styles.card}
-              aria-labelledby="account-details-heading"
-            >
-              <h3 id="account-details-heading" className={styles.cardTitle}>
-                <span>Account</span>
-              </h3>
-
-              <dl className={styles.infoList}>
-                {accountDetails.map((detail) => (
-                  <div key={detail.label} className={styles.infoRow}>
-                    <dt className={styles.infoLabel}>{detail.label}</dt>
-                    <dd className={styles.infoValue}>{detail.value}</dd>
-                  </div>
-                ))}
-              </dl>
-            </section>
-          )}
+          <ProfileAccountCard profile={profile} />
         </div>
       </div>
     </div>

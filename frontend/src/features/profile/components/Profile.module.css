@@ -399,7 +399,7 @@
   align-items: center;
   justify-content: center;
   gap: 0.4rem;
-  min-height: 34px;
+  min-height: 44px;
   padding: 0.4rem 1rem;
   border-radius: 999px;
   font-family: inherit;
@@ -1016,7 +1016,7 @@
 
 .requestActions .btnPrimary,
 .requestActions .btnSecondary {
-  min-height: 36px;
+  min-height: 44px;
   padding: 0.4rem 0.95rem;
 }
 
