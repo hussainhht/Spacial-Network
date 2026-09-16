@@ -1,6 +1,12 @@
 "use client";
 
-import { Fragment, useCallback, useEffect, useRef, useState } from "react";
+import {
+  Fragment,
+  useCallback,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import Link from "next/link";
 import type { ChatWindowProps } from "../types/chat";
 import PostSharePreview from "@/features/interactions/components/PostSharePreview";
@@ -68,16 +74,80 @@ export default function ChatWindow({
 }: ChatWindowProps) {
   const [inputText, setInputText] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const typingTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
+  const shouldStickToBottomRef = useRef(true);
+  const preserveScrollHeightRef = useRef<number | null>(null);
+  const previousMessageStateRef = useRef({ count: 0, firstId: 0, lastId: 0 });
+  const [newMessagesBelow, setNewMessagesBelow] = useState(false);
 
   const charCount = inputText.length;
   const isOverLimit = charCount > MAX_MESSAGE_LENGTH;
   const isNearLimit = charCount >= NEAR_LIMIT_THRESHOLD;
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  }, [messages, isPartnerTyping]);
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+    container.scrollTo({ top: container.scrollHeight, behavior });
+    shouldStickToBottomRef.current = true;
+    setNewMessagesBelow(false);
+  }, []);
+
+  useLayoutEffect(() => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+
+    const firstId = messages[0]?.id ?? 0;
+    const lastMessage = messages[messages.length - 1];
+    const lastId = lastMessage?.id ?? 0;
+    const previous = previousMessageStateRef.current;
+    const prependedHistory =
+      preserveScrollHeightRef.current !== null &&
+      previous.firstId !== 0 &&
+      firstId !== previous.firstId;
+
+    if (prependedHistory && preserveScrollHeightRef.current !== null) {
+      const previousHeight = preserveScrollHeightRef.current;
+      container.scrollTop += container.scrollHeight - previousHeight;
+      preserveScrollHeightRef.current = null;
+    } else {
+      const receivedNewMessage =
+        previous.lastId !== 0 && lastId !== 0 && lastId !== previous.lastId;
+      const sentByCurrentUser = lastMessage?.sender_id === myUserId;
+      if (previous.count === 0 || shouldStickToBottomRef.current || sentByCurrentUser) {
+        scrollToBottom(previous.count === 0 ? "auto" : "smooth");
+      } else if (receivedNewMessage) {
+        setNewMessagesBelow(true);
+      }
+    }
+
+    if (!loadingHistory && preserveScrollHeightRef.current !== null && firstId === previous.firstId) {
+      preserveScrollHeightRef.current = null;
+    }
+
+    previousMessageStateRef.current = {
+      count: messages.length,
+      firstId,
+      lastId,
+    };
+  }, [loadingHistory, messages, myUserId, scrollToBottom]);
+
+  function handleMessagesScroll() {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+    const distanceFromBottom =
+      container.scrollHeight - container.scrollTop - container.clientHeight;
+    const nearBottom = distanceFromBottom < 96;
+    shouldStickToBottomRef.current = nearBottom;
+    if (nearBottom) setNewMessagesBelow(false);
+  }
+
+  function handleLoadOlderMessages() {
+    const container = messagesContainerRef.current;
+    if (container) preserveScrollHeightRef.current = container.scrollHeight;
+    onLoadMore();
+  }
 
   const adjustTextareaHeight = useCallback(() => {
     const textarea = textareaRef.current;
@@ -190,11 +260,15 @@ export default function ChatWindow({
       </header>
 
       {/* Message Stream */}
-      <div className={styles.messagesContainer}>
+      <div
+        ref={messagesContainerRef}
+        className={styles.messagesContainer}
+        onScroll={handleMessagesScroll}
+      >
         {hasMoreHistory && (
           <button
             type="button"
-            onClick={onLoadMore}
+            onClick={handleLoadOlderMessages}
             disabled={loadingHistory}
             className={styles.loadMoreBtn}
           >
@@ -301,6 +375,16 @@ export default function ChatWindow({
         <div ref={messagesEndRef} />
       </div>
 
+      {newMessagesBelow && (
+        <button
+          type="button"
+          className={styles.newMessagesButton}
+          onClick={() => scrollToBottom()}
+        >
+          New messages ↓
+        </button>
+      )}
+
       {/* Restricted Follow Notice or Modern Composer */}
       {!isEligible ? (
         <div className={styles.ineligibleBanner}>
@@ -313,29 +397,35 @@ export default function ChatWindow({
         </div>
       ) : (
         <form onSubmit={handleSubmit} className={styles.composer}>
-          <div className={styles.composerInputWrapper}>
-            <textarea
-              ref={textareaRef}
-              rows={1}
-              placeholder={`Message ${partnerUsername}...`}
-              value={inputText}
-              onChange={handleInputChange}
-              onKeyDown={handleKeyDown}
-              className={styles.composerTextarea}
-            />
-            <span
-              className={`${styles.charCounter} ${
-                isOverLimit
-                  ? styles.charCounterOver
-                  : isNearLimit
-                  ? styles.charCounterNear
-                  : ""
-              }`}
-              aria-live="polite"
-            >
-              {isOverLimit
-                ? `-${charCount - MAX_MESSAGE_LENGTH}`
-                : `${charCount}/${MAX_MESSAGE_LENGTH}`}
+          <div className={styles.composerField}>
+            <div className={styles.composerInputWrapper}>
+              <textarea
+                ref={textareaRef}
+                rows={1}
+                placeholder={`Message ${partnerUsername}...`}
+                value={inputText}
+                onChange={handleInputChange}
+                onKeyDown={handleKeyDown}
+                className={styles.composerTextarea}
+                aria-describedby="message-composer-hint"
+              />
+              <span
+                className={`${styles.charCounter} ${
+                  isOverLimit
+                    ? styles.charCounterOver
+                    : isNearLimit
+                    ? styles.charCounterNear
+                    : ""
+                }`}
+                aria-live="polite"
+              >
+                {isOverLimit
+                  ? `-${charCount - MAX_MESSAGE_LENGTH}`
+                  : `${charCount}/${MAX_MESSAGE_LENGTH}`}
+              </span>
+            </div>
+            <span id="message-composer-hint" className={styles.composerHint}>
+              Enter to send · Shift+Enter for a new line
             </span>
           </div>
 
