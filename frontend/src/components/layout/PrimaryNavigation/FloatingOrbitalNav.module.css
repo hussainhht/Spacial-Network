@@ -6,7 +6,7 @@
   --nav-icon-size: 21px;
   position: relative;
   top: 50%;
-  width: min(190px, 100%);
+  width: min(160px, 100%);
   height: min(460px, calc(100% - 32px));
   margin-inline: auto;
   transform: translateY(-50%);
@@ -99,6 +99,17 @@
   border-color: var(--planet-accent);
   color: var(--planet-accent-hover, #ffffff);
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45), 0 0 16px var(--planet-glow);
+}
+
+.destination[aria-current="page"]::before {
+  content: "";
+  position: absolute;
+  left: -8px;
+  width: 4px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--planet-accent);
+  box-shadow: 0 0 14px var(--planet-accent), 0 0 26px var(--planet-glow);
 }
 
 @media (prefers-reduced-motion: reduce) {

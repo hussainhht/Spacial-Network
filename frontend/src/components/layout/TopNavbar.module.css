@@ -230,8 +230,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   border: 1px solid transparent;
   border-radius: 9px;
   background: transparent;
@@ -317,6 +317,7 @@
   color: var(--space-text-heading, #f8fafc);
   font: inherit;
   cursor: pointer;
+  min-height: 44px;
   transition:
     background 0.15s ease,
     border-color 0.15s ease,
@@ -338,14 +339,21 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
+  overflow: hidden;
   border-radius: 50%;
   border: 1px solid var(--planet-border-strong);
   background:
     linear-gradient(var(--planet-accent-soft), var(--planet-accent-soft)),
     var(--space-bg-elevated);
   color: var(--planet-accent-hover);
+}
+
+.userAvatarImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .userAvatar svg {
@@ -495,7 +503,8 @@
     display: none;
   }
   .userButton {
-    padding: 3px;
+    min-width: 44px;
+    padding: 5px;
   }
   .navbar {
     gap: 10px;
@@ -553,7 +562,7 @@
   .navbar {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-rows: 36px 36px;
+    grid-template-rows: 44px 44px;
     gap: 8px 10px;
     padding-block: 12px;
   }

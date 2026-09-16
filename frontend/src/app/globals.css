@@ -62,6 +62,54 @@ body {
   --nav-node-bg: rgba(8, 17, 34, 0.88);
   --nav-label: #e9efff;
   --nav-label-muted: #9aa8c4;
+
+  --route-motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --route-exit-duration: 140ms;
+  --route-enter-duration: 220ms;
+}
+
+/* Route transitions are the single page-entry animation. Keeping these rules
+   global is required because the browser-owned snapshot pseudo-elements live
+   outside component CSS-module scopes. */
+::view-transition-old(.route-page-exit) {
+  animation: var(--route-exit-duration) ease-in both route-page-out;
+}
+
+::view-transition-new(.route-page-enter) {
+  animation: var(--route-enter-duration) var(--route-motion-ease) both route-page-in;
+}
+
+/* Route pages can have very different document heights (the Home feed is
+   usually much taller than Chat or Settings). Prevent the browser from
+   interpolating the snapshot box between those heights, which visually
+   squashes the incoming page before expanding it. The old/new snapshots
+   still use the opacity and translate animations above. */
+::view-transition-group(.route-page-enter),
+::view-transition-group(.route-page-exit) {
+  animation: none;
+}
+
+::view-transition {
+  pointer-events: none;
+}
+
+@keyframes route-page-out {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(-4px); }
+}
+
+@keyframes route-page-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(*),
+  ::view-transition-new(*),
+  ::view-transition-group(*) {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+  }
 }
 
 /*
@@ -3257,6 +3305,7 @@ main:not(.chat-main):has(> form) form > p {
 }
 
 .notification-mark-all {
+  min-height: 44px;
   padding: 0.5rem 1rem;
   border-radius: var(--space-radius-sm);
   border: 1px solid var(--space-border-strong);
@@ -3277,6 +3326,7 @@ main:not(.chat-main):has(> form) form > p {
 }
 
 .notifications-tabs button {
+  min-height: 44px;
   padding: 0.5rem 1rem;
   border: 1px solid var(--space-border);
   border-radius: 999px;
@@ -3435,7 +3485,7 @@ main:not(.chat-main):has(> form) form > p {
 
 .notification-toast-type {
   color: var(--space-text-label);
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -3459,8 +3509,8 @@ main:not(.chat-main):has(> form) form > p {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 44px;
+  height: 44px;
   margin: 0.6rem 0.6rem 0 0;
   padding: 0;
   border: none;

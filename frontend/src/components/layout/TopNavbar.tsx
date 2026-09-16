@@ -10,7 +10,16 @@ import NotificationDropdown from "@/features/notifications/components/Notificati
 import { useSearchModal } from "@/features/search/context/SearchContext";
 import UniversalNavbarSearch from "@/features/search/components/UniversalNavbarSearch";
 import { useLogout } from "./useLogout";
+import { getMyProfile } from "@/features/profile/api/profiles";
+import type { Profile } from "@/features/profile/types/profile";
+import { getBackendBaseUrl } from "@/lib/api";
 import styles from "./TopNavbar.module.css";
+
+function profilePhotoUrl(path?: string) {
+  if (!path) return null;
+  if (/^https?:\/\//i.test(path)) return path;
+  return `${getBackendBaseUrl()}${path.startsWith("/") ? path : `/${path}`}`;
+}
 
 export default function TopNavbar() {
   const pathname = usePathname();
@@ -21,6 +30,7 @@ export default function TopNavbar() {
   const { logout, loggingOut, error: logoutError } = useLogout();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [menuRoute, setMenuRoute] = useState(pathname);
+  const [currentProfile, setCurrentProfile] = useState<Profile | null>(null);
   const bellRef = useRef<HTMLDivElement>(null);
 
   // Dropdown mockup state
@@ -32,13 +42,29 @@ export default function TopNavbar() {
     setUserMenuOpen(false);
     closeSearch();
   }
+  if (isOpen && (notificationsOpen || userMenuOpen)) {
+    setNotificationsOpen(false);
+    setUserMenuOpen(false);
+  }
 
   useEffect(() => {
-    if (isOpen) {
-      setNotificationsOpen(false);
-      setUserMenuOpen(false);
+    let cancelled = false;
+    getMyProfile()
+      .then((profile) => {
+        if (!cancelled) setCurrentProfile(profile);
+      })
+      .catch(() => undefined);
+
+    function handleProfileUpdated(event: Event) {
+      setCurrentProfile((event as CustomEvent<Profile>).detail);
     }
-  }, [isOpen]);
+
+    window.addEventListener("profile-updated", handleProfileUpdated);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("profile-updated", handleProfileUpdated);
+    };
+  }, []);
 
   useEffect(() => {
     if (!userMenuOpen && !notificationsOpen) return;
@@ -78,6 +104,11 @@ export default function TopNavbar() {
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [userMenuOpen, notificationsOpen]);
+
+  const userLabel = currentProfile
+    ? currentProfile.nickname || currentProfile.firstName || currentProfile.username
+    : "Account";
+  const userPhoto = profilePhotoUrl(currentProfile?.profilePhoto);
 
   return (
     <nav className={styles.navbar} aria-label="Top navigation">
@@ -156,9 +187,15 @@ export default function TopNavbar() {
             aria-label="User account options"
           >
             <span className={styles.userAvatar} aria-hidden="true">
-              <AppIcon name="user" />
+              {userPhoto ? (
+                // User-uploaded images are served by the Go backend.
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={userPhoto} alt="" className={styles.userAvatarImage} />
+              ) : (
+                <AppIcon name="user" />
+              )}
             </span>
-            <span className={styles.userName}>You</span>
+            <span className={styles.userName}>{userLabel}</span>
             <span className={styles.chevronIcon} aria-hidden="true">
               <AppIcon name="chevronDown" />
             </span>
