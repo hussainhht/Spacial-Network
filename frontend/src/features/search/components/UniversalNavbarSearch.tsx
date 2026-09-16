@@ -362,7 +362,11 @@ export default function UniversalNavbarSearch() {
                     role="option"
                     aria-selected={isActive}
                   >
-                    <div className={styles.itemAvatar}>
+                    <div
+                      className={`${styles.itemAvatar} ${
+                        item.type === "user" ? styles.itemAvatarUser : ""
+                      }`}
+                    >
                       {renderItemIcon(item)}
                     </div>
                     <div className={styles.itemInfo}>

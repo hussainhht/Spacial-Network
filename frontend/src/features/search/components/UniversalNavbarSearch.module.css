@@ -421,6 +421,12 @@
   overflow: hidden;
 }
 
+.itemAvatarUser {
+  border-radius: 50% !important;
+  border: none;
+  background: transparent;
+}
+
 .itemAvatar img {
   width: 100%;
   height: 100%;
