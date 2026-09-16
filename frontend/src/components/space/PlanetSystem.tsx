@@ -61,11 +61,15 @@ export default function PlanetSystem({
   viewport,
   reducedMotion,
   scrollRotation,
+  entryFromSide = "right",
 }: {
   config: PlanetConfig;
   viewport: PlanetViewport;
   reducedMotion: boolean;
   scrollRotation: RefObject<number>;
+  /** Which side the body enters from on mount. Defaults to "right",
+   * matching the existing shell-background usage. */
+  entryFromSide?: "left" | "right";
 }) {
   const composition = useMemo(() => {
     const responsive = config.scene.responsive[viewport];
@@ -88,6 +92,7 @@ export default function PlanetSystem({
     <PlanetEntrance
       reducedMotion={reducedMotion}
       offscreenRadius={composition.offscreenRadius}
+      fromSide={entryFromSide}
     >
       <PlanetIdleMotion
         reducedMotion={reducedMotion}

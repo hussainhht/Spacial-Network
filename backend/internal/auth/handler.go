@@ -3,8 +3,8 @@ package auth
 import (
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
-	"strconv"
 	"time"
 
 	"social/internal/requestctx"
@@ -21,13 +21,17 @@ type LoginRequest struct {
 }
 
 type RegisterRequest struct {
-	Username  string `json:"username"`
-	FirstName string `json:"firstName"`
-	LastName  string `json:"lastName"`
-	Email     string `json:"email"`
-	Password  string `json:"password"`
-	Gender    string `json:"gender"`
-	Age       int    `json:"age"`
+	Username    string `json:"username"`
+	FirstName   string `json:"firstName"`
+	LastName    string `json:"lastName"`
+	Email       string `json:"email"`
+	Password    string `json:"password"`
+	Gender      string `json:"gender"`
+	DateOfBirth string `json:"dateOfBirth"`
+	Nickname    string `json:"nickname"`
+	AboutMe     string `json:"aboutMe"`
+	// Age is derived from DateOfBirth during validation, not client-supplied.
+	Age int `json:"-"`
 }
 
 type Response struct {
@@ -208,24 +212,16 @@ func (h *Handler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	age, err := strconv.Atoi(r.FormValue("age"))
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(RegisterResponse{
-			Success: false,
-			Message: "age must be a number",
-		})
-		return
-	}
-
 	payload := RegisterRequest{
-		Username:  r.FormValue("username"),
-		FirstName: r.FormValue("firstName"),
-		LastName:  r.FormValue("lastName"),
-		Email:     r.FormValue("email"),
-		Password:  r.FormValue("password"),
-		Gender:    r.FormValue("gender"),
-		Age:       age,
+		Username:    r.FormValue("username"),
+		FirstName:   r.FormValue("firstName"),
+		LastName:    r.FormValue("lastName"),
+		Email:       r.FormValue("email"),
+		Password:    r.FormValue("password"),
+		Gender:      r.FormValue("gender"),
+		DateOfBirth: r.FormValue("dateOfBirth"),
+		Nickname:    r.FormValue("nickname"),
+		AboutMe:     r.FormValue("aboutMe"),
 	}
 
 	if err := ValidateRegisterRequest(&payload); err != nil {
@@ -302,10 +298,11 @@ func (h *Handler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 
 	userUUID := uuid.New().String()
 
-	err = h.usersService.CreateUser(
+	userID, err := h.usersService.CreateUser(
 		userUUID,
 		payload.Username,
 		payload.Age,
+		payload.DateOfBirth,
 		payload.Gender,
 		payload.FirstName,
 		payload.LastName,
@@ -322,6 +319,22 @@ func (h *Handler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 			Message: "Failed to create user",
 		})
 		return
+	}
+
+	// Nickname/about-me are optional at registration; save them best-effort
+	// through the existing profile-update path rather than failing account
+	// creation over a cosmetic field.
+	if payload.Nickname != "" || payload.AboutMe != "" {
+		nickname, aboutMe, dateOfBirth := payload.Nickname, payload.AboutMe, payload.DateOfBirth
+		if _, err := h.usersService.UpdateProfileDetails(userID, users.UpdateProfileDetailsRequest{
+			FirstName:   payload.FirstName,
+			LastName:    payload.LastName,
+			Nickname:    &nickname,
+			AboutMe:     &aboutMe,
+			DateOfBirth: &dateOfBirth,
+		}); err != nil {
+			log.Printf("register: failed to save optional profile details for user %d: %v", userID, err)
+		}
 	}
 
 	resp := RegisterResponse{

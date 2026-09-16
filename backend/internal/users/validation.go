@@ -116,6 +116,54 @@ func validateOptionalProfileText(field string, value *string, max int, allowMult
 	return &sanitized, nil
 }
 
+// ValidateOptionalNickname validates an optional nickname using the same
+// rules as profile updates, so registration can reuse them.
+func ValidateOptionalNickname(value *string) (*string, error) {
+	return validateOptionalProfileText("nickname", value, MaxNicknameLength, false)
+}
+
+// ValidateOptionalAboutMe validates an optional about-me bio using the same
+// rules as profile updates, so registration can reuse them.
+func ValidateOptionalAboutMe(value *string) (*string, error) {
+	return validateOptionalProfileText("about me", value, MaxAboutMeLength, true)
+}
+
+func computeAge(dob, today time.Time) int {
+	age := today.Year() - dob.Year()
+	if today.Month() < dob.Month() || (today.Month() == dob.Month() && today.Day() < dob.Day()) {
+		age--
+	}
+	return age
+}
+
+// ValidateDateOfBirth validates a required YYYY-MM-DD date of birth and
+// returns the normalized date string together with the person's current
+// age in whole years, reusing ValidateAge's 0-120 bound.
+func ValidateDateOfBirth(value string) (string, int, error) {
+	dateText := strings.TrimSpace(value)
+	if dateText == "" {
+		return "", 0, errors.New("date of birth cannot be empty")
+	}
+
+	dob, err := time.Parse("2006-01-02", dateText)
+	if err != nil {
+		return "", 0, errors.New("date of birth must use YYYY-MM-DD format")
+	}
+
+	now := time.Now()
+	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+	if dob.After(today) {
+		return "", 0, errors.New("date of birth cannot be in the future")
+	}
+
+	age := computeAge(dob, today)
+	if err := ValidateAge(age); err != nil {
+		return "", 0, err
+	}
+
+	return dob.Format("2006-01-02"), age, nil
+}
+
 func validateOptionalDateOfBirth(value *string) (*string, error) {
 	if value == nil {
 		return nil, nil
@@ -126,17 +174,10 @@ func validateOptionalDateOfBirth(value *string) (*string, error) {
 		return nil, nil
 	}
 
-	dateOfBirth, err := time.Parse("2006-01-02", dateText)
+	normalized, _, err := ValidateDateOfBirth(dateText)
 	if err != nil {
-		return nil, errors.New("date of birth must use YYYY-MM-DD format")
+		return nil, err
 	}
 
-	now := time.Now()
-	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
-	if dateOfBirth.After(today) {
-		return nil, errors.New("date of birth cannot be in the future")
-	}
-
-	formatted := dateOfBirth.Format("2006-01-02")
-	return &formatted, nil
+	return &normalized, nil
 }

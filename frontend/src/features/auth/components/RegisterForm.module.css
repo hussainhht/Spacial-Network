@@ -1,0 +1,408 @@
+.card {
+  width: 100%;
+  max-width: 460px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: clamp(24px, 3vw, 36px);
+  background: linear-gradient(var(--planet-surface-tint), var(--planet-surface-tint)),
+    var(--space-card-bg);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--space-border);
+  border-radius: var(--space-radius-lg);
+  box-shadow:
+    0 25px 60px -15px rgba(2, 6, 23, 0.7),
+    0 0 0 1px rgba(255, 255, 255, 0.02) inset,
+    0 0 40px var(--planet-glow);
+  color: var(--space-text-body);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Progress indicator */
+
+.progressWrap {
+  display: flex;
+  flex-direction: column;
+}
+
+.steps {
+  display: flex;
+  align-items: center;
+}
+
+.stepFragment {
+  display: contents;
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  color: var(--space-text-muted);
+  white-space: nowrap;
+}
+
+.stepMarker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 1px solid var(--space-border-strong);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--space-text-muted);
+}
+
+.stepActive {
+  color: var(--space-text-heading);
+}
+
+.stepActive .stepMarker {
+  border-color: var(--planet-border-strong);
+  background: var(--planet-accent-soft);
+  color: var(--planet-accent-hover);
+  box-shadow: 0 0 18px var(--planet-glow);
+}
+
+.stepDone {
+  color: var(--space-text-label);
+}
+
+.stepDone .stepMarker {
+  background: var(--planet-accent-active);
+  border-color: var(--planet-accent-active);
+  color: #fff;
+}
+
+.stepLabel {
+  display: none;
+}
+
+.stepRail {
+  flex: 1;
+  height: 1px;
+  margin: 0 8px;
+  background: var(--space-border);
+}
+
+.stepRailDone {
+  background: var(--planet-accent-active);
+}
+
+.stepCompact {
+  display: none;
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--space-text-muted);
+}
+
+@media (min-width: 480px) {
+  .stepLabel {
+    display: inline;
+  }
+}
+
+/* Form layout */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+  padding: 0;
+  margin: 0;
+  border: none;
+}
+
+.stepHeading {
+  padding: 0;
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: var(--space-text-heading);
+  letter-spacing: -0.01em;
+}
+
+.stepSubheading {
+  margin: -10px 0 0;
+  font-size: 0.9rem;
+  color: var(--space-text-muted);
+}
+
+.fieldRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.label {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--space-text-label);
+}
+
+.control {
+  min-height: 44px;
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--space-input-bg);
+  border: 1px solid var(--space-border);
+  border-radius: var(--space-radius-md);
+  color: var(--space-text-body);
+  font: inherit;
+  font-size: 0.92rem;
+  transition: border-color 150ms ease, background 150ms ease, box-shadow 150ms ease;
+}
+
+.control::placeholder {
+  color: var(--space-text-placeholder);
+}
+
+.control:focus-visible {
+  outline: none;
+  border-color: var(--planet-accent);
+  background: var(--space-input-bg-focus);
+  box-shadow: 0 0 0 3px var(--planet-border), 0 0 20px var(--planet-glow);
+}
+
+.control[aria-invalid="true"] {
+  border-color: var(--space-error-border);
+}
+
+select.control {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Cpath d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 34px;
+}
+
+.textarea {
+  min-height: 110px;
+  resize: vertical;
+}
+
+.passwordControl {
+  position: relative;
+}
+
+.passwordControl .control {
+  padding-right: 64px;
+}
+
+.visibilityButton {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  padding: 6px 10px;
+  border: none;
+  background: transparent;
+  color: var(--space-text-muted);
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: var(--space-radius-sm);
+}
+
+.visibilityButton:hover {
+  color: var(--space-text-label);
+}
+
+.visibilityButton:focus-visible {
+  outline: 2px solid var(--planet-focus-ring);
+  outline-offset: 1px;
+}
+
+.fieldError {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--space-error-text);
+}
+
+.fieldMeta {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--space-text-muted);
+  text-align: right;
+}
+
+.formError {
+  margin: 0;
+  padding: 10px 14px;
+  background: var(--space-error-bg);
+  border: 1px solid var(--space-error-border);
+  border-radius: var(--space-radius-md);
+  color: var(--space-error-text);
+  font-size: 0.85rem;
+}
+
+.formSuccess {
+  margin: 0;
+  padding: 10px 14px;
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.32);
+  border-radius: var(--space-radius-md);
+  color: #86efac;
+  font-size: 0.85rem;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.btnPrimary {
+  flex: 1;
+  min-height: 46px;
+  border: none;
+  border-radius: 12px;
+  background: var(--planet-accent-active);
+  color: #fff;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 150ms ease, filter 150ms ease;
+}
+
+.btnPrimary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.08);
+}
+
+.btnPrimary:focus-visible {
+  outline: 2px solid var(--planet-focus-ring);
+  outline-offset: 2px;
+}
+
+.btnPrimary:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btnSecondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 46px;
+  padding: 0 18px;
+  border: 1px solid var(--space-border);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--space-text-label);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 150ms ease, color 150ms ease;
+}
+
+.btnSecondary:hover:not(:disabled) {
+  border-color: var(--planet-border-strong);
+  color: var(--space-text-heading);
+}
+
+.btnSecondary:focus-visible {
+  outline: 2px solid var(--planet-focus-ring);
+  outline-offset: 2px;
+}
+
+.btnSecondary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.signInLink {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--space-text-muted);
+  text-align: center;
+}
+
+.signInLink a {
+  color: var(--planet-accent-hover);
+  font-weight: 500;
+}
+
+.avatarRow {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.avatarControls {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.avatarButtonRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.fileInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .control,
+  .btnPrimary,
+  .btnSecondary {
+    transition: none;
+  }
+
+  .btnPrimary:hover:not(:disabled) {
+    transform: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .card {
+    max-width: none;
+  }
+
+  .fieldRow {
+    grid-template-columns: 1fr;
+  }
+
+  .steps {
+    display: none;
+  }
+
+  .stepCompact {
+    display: block;
+  }
+}
