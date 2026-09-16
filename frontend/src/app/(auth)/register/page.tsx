@@ -11,6 +11,7 @@ export default function RegisterPage() {
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [gender, setGender] = useState("male");
   const [age, setAge] = useState("");
   const [profilePhoto, setProfilePhoto] = useState<File | null>(null);
@@ -26,6 +27,12 @@ export default function RegisterPage() {
     event.preventDefault();
 
     setError("");
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
     setLoading(true);
 
     const formData = new FormData();
@@ -124,6 +131,17 @@ export default function RegisterPage() {
             type="password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
+            required
+          />
+        </div>
+
+        <div>
+          <label htmlFor="confirmPassword">Confirm Password</label>
+          <input
+            id="confirmPassword"
+            type="password"
+            value={confirmPassword}
+            onChange={(event) => setConfirmPassword(event.target.value)}
             required
           />
         </div>
