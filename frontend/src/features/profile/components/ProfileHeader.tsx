@@ -7,7 +7,7 @@ import { getDisplayName } from "@/lib/utils";
 import type { Profile } from "../types/profile";
 import styles from "./Profile.module.css";
 
-const AVATAR_SIZE = 168;
+const AVATAR_SIZE = 96;
 
 interface ProfileAvatarProps {
   firstName: string;
