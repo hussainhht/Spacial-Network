@@ -49,16 +49,6 @@ export default function ChatPageContent() {
       )}
 
       <div className={styles.cardsWrapper}>
-        <div className={`${styles.sidebarCard} ${activePartnerId ? styles.hideOnMobile : ""}`}>
-          <ChatSidebar
-            conversations={conversations}
-            activeUserId={activePartnerId}
-            onlineUserIDs={onlineUserIDs}
-            loading={loadingConversations}
-            onSelectConversation={selectConversation}
-          />
-        </div>
-
         <div className={`${styles.chatCard} ${!activePartnerId ? styles.hideOnMobile : ""}`}>
           {activePartnerId ? (
             <ChatWindow
@@ -80,6 +70,16 @@ export default function ChatPageContent() {
           ) : (
             <EmptyChat key="empty" />
           )}
+        </div>
+
+        <div className={`${styles.sidebarCard} ${activePartnerId ? styles.hideOnMobile : ""}`}>
+          <ChatSidebar
+            conversations={conversations}
+            activeUserId={activePartnerId}
+            onlineUserIDs={onlineUserIDs}
+            loading={loadingConversations}
+            onSelectConversation={selectConversation}
+          />
         </div>
       </div>
     </main>
