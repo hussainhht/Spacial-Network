@@ -1,0 +1,92 @@
+.stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+  width: 100%;
+  padding: clamp(32px, 5vw, 64px) clamp(20px, 4vw, 48px);
+  text-align: center;
+}
+
+.previewFrame {
+  position: relative;
+  width: min(440px, 80vw);
+  aspect-ratio: 1;
+  pointer-events: none;
+}
+
+.canvasWrapper {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: calc(var(--canvas-scale, 2.6) * 100%);
+  height: calc(var(--canvas-scale, 2.6) * 100%);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+/* react-three-fiber's <Canvas> wraps the actual <canvas> in a container div
+   with an inline pointer-events:auto style, which wins over any inherited
+   "none" from ancestors. Since it's inline, only an !important stylesheet
+   rule can override it - needed here because the oversized, absolutely-
+   positioned canvas (sized well past .previewFrame's box, for the Moon/
+   rings' render margin) would otherwise sit above the login form. */
+.canvasWrapper > div {
+  pointer-events: none !important;
+}
+
+.canvasWrapper canvas {
+  display: block;
+}
+
+.orbFallback {
+  position: absolute;
+  inset: 8%;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 35% 30%, var(--option-accent-hover), transparent 60%),
+    radial-gradient(circle at 60% 70%, var(--option-accent), var(--space-bg-elevated) 75%);
+  box-shadow: 0 0 90px var(--option-glow);
+}
+
+.copy {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 420px;
+}
+
+.tagline {
+  margin: 0;
+  font-size: clamp(1.15rem, 1.6vw, 1.35rem);
+  font-weight: 600;
+  color: var(--space-text-heading);
+  letter-spacing: -0.01em;
+}
+
+.hint {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--space-text-muted);
+}
+
+@media (max-width: 1100px) {
+  .previewFrame {
+    width: min(320px, 70vw);
+  }
+}
+
+@media (max-width: 760px) {
+  .stage {
+    gap: 16px;
+    padding: 24px 16px 8px;
+  }
+
+  .previewFrame {
+    width: min(180px, 45vw);
+  }
+
+  .hint {
+    display: none;
+  }
+}
