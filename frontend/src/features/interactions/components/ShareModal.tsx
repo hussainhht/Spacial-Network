@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import AppIcon from "@/components/layout/AppIcon";
-import UserAvatar from "@/components/UserAvatar";
 import { getEligibleContacts } from "@/features/chat/api/chat";
 import type { EligibleContact } from "@/features/chat/types/chat";
 import { getMyGroups } from "@/features/groups/api/groups";
@@ -151,7 +151,7 @@ export default function ShareModal({ postId, onClose }: ShareModalProps) {
 
   const sharedCount = sentKeys.size;
 
-  return (
+  return createPortal(
     <div
       className={styles.modalBackdrop}
       onClick={onClose}
@@ -318,6 +318,8 @@ export default function ShareModal({ postId, onClose }: ShareModalProps) {
             !loadError &&
             contacts.map((contact) => {
               const displayName = getDisplayName(contact.first_name, contact.last_name, contact.username);
+              const initials = getInitials(contact.first_name, contact.last_name, contact.username);
+              const avatarUrl = contact.profile_photo ? getFullPhotoUrl(contact.profile_photo) : "";
               const key = recipientKey("user", contact.id);
               const isSending = sendingKey === key;
               const isSent = sentKeys.has(key);
@@ -328,15 +330,11 @@ export default function ShareModal({ postId, onClose }: ShareModalProps) {
                   className={styles.modalContactItem}
                 >
                   <div className={styles.avatarWrapper}>
-                    <UserAvatar
-                      src={contact.profile_photo}
-                      firstName={contact.first_name}
-                      lastName={contact.last_name}
-                      username={contact.username}
-                      size={44}
-                      alt={displayName}
-                      className={styles.avatarImg}
-                    />
+                    {avatarUrl ? (
+                      <img src={avatarUrl} alt={displayName} className={styles.avatarImg} />
+                    ) : (
+                      <div className={styles.avatarFallback}>{initials}</div>
+                    )}
                   </div>
 
                   <div className={styles.modalContactInfo}>
@@ -414,6 +412,7 @@ export default function ShareModal({ postId, onClose }: ShareModalProps) {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
