@@ -202,8 +202,9 @@
   z-index: 1;
   width: 100%;
   height: 100%;
+  aspect-ratio: 1 / 1;
   overflow: hidden;
-  border-radius: 50%;
+  border-radius: 50% !important;
   background: var(--space-bg-elevated);
   box-shadow:
     0 0 0 1px var(--planet-border-strong),
@@ -212,9 +213,12 @@
 }
 
 .avatarImage {
-  display: block;
+  display: grid;
+  place-items: center;
   width: 100%;
   height: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 50% !important;
   object-fit: cover;
 }
 
@@ -790,8 +794,9 @@
   justify-content: center;
   width: 88px;
   height: 88px;
+  aspect-ratio: 1 / 1;
   overflow: hidden;
-  border-radius: 50%;
+  border-radius: 50% !important;
   background: linear-gradient(160deg, #141b3c 0%, #0a0e22 100%);
   box-shadow:
     0 0 0 1px var(--planet-border-strong),
@@ -802,6 +807,8 @@
   display: block;
   width: 100%;
   height: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 50% !important;
   object-fit: cover;
 }
 

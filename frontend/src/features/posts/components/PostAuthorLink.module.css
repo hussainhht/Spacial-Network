@@ -16,15 +16,17 @@
 
 .avatarLink {
   flex: 0 0 auto;
-  border-radius: 50%;
+  aspect-ratio: 1 / 1;
+  border-radius: 50% !important;
 }
 
 .avatar {
   display: grid;
   width: 40px;
   height: 40px;
+  aspect-ratio: 1 / 1;
   border: 1px solid rgba(148, 163, 184, 0.16);
-  border-radius: 50%;
+  border-radius: 50% !important;
   object-fit: cover;
 }
 
