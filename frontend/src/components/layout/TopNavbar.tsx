@@ -171,7 +171,7 @@ export default function TopNavbar() {
               firstName={user.first_name}
               lastName={user.last_name}
               username={user.username}
-              size="xs"
+              size={32}
               alt=""
               className={styles.userAvatar}
             />

@@ -65,7 +65,12 @@ export default function UserAvatar({
   return (
     <span
       className={`${styles.avatar} ${className}`.trim()}
-      style={{ "--user-avatar-size": `${pixels}px` } as CSSProperties}
+      style={{
+        "--user-avatar-size": `${pixels}px`,
+        borderRadius: "50%",
+        clipPath: "circle(50% at 50% 50%)",
+        aspectRatio: "1 / 1",
+      } as CSSProperties}
       role={accessibleName ? "img" : undefined}
       aria-label={accessibleName || undefined}
     >
@@ -78,6 +83,12 @@ export default function UserAvatar({
           width={pixels}
           height={pixels}
           className={styles.image}
+          style={{
+            borderRadius: "50%",
+            clipPath: "circle(50% at 50% 50%)",
+            aspectRatio: "1 / 1",
+            objectFit: "cover",
+          }}
           onError={() => setFailedUrl(imageUrl!)}
           priority={priority}
         />

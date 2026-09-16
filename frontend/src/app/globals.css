@@ -1574,7 +1574,8 @@ main:not(.chat-main):has(> form) form > p {
 .group-member-avatar {
   width: 36px;
   height: 36px;
-  border-radius: 50%;
+  aspect-ratio: 1 / 1;
+  border-radius: 50% !important;
   object-fit: cover;
   flex-shrink: 0;
 }
@@ -2038,7 +2039,8 @@ main:not(.chat-main):has(> form) form > p {
   flex-shrink: 0;
   width: 36px;
   height: 36px;
-  border-radius: 50%;
+  aspect-ratio: 1 / 1;
+  border-radius: 50% !important;
   object-fit: cover;
 }
 
@@ -2325,7 +2327,8 @@ main:not(.chat-main):has(> form) form > p {
   place-items: center;
   width: 32px;
   height: 32px;
-  border-radius: 50%;
+  aspect-ratio: 1 / 1;
+  border-radius: 50% !important;
   background: var(--planet-accent-soft);
   color: var(--planet-accent-hover);
   font-size: 1rem;
@@ -2742,7 +2745,8 @@ main:not(.chat-main):has(> form) form > p {
   flex-shrink: 0;
   width: 20px;
   height: 20px;
-  border-radius: 50%;
+  aspect-ratio: 1 / 1;
+  border-radius: 50% !important;
   object-fit: cover;
 }
 
@@ -3835,6 +3839,8 @@ main:not(.chat-main):has(> form) form > p {
 .group-members-main .group-member-avatar {
   width: 42px;
   height: 42px;
+  aspect-ratio: 1 / 1;
+  border-radius: 50% !important;
   border: 1px solid var(--planet-border);
 }
 

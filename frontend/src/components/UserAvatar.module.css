@@ -1,12 +1,16 @@
 .avatar {
+  box-sizing: border-box;
   display: inline-grid;
   place-items: center;
   flex: 0 0 var(--user-avatar-size);
   width: var(--user-avatar-size);
   height: var(--user-avatar-size);
-  overflow: hidden;
+  aspect-ratio: 1 / 1 !important;
+  overflow: hidden !important;
   border: 1px solid var(--planet-border-strong);
-  border-radius: 50%;
+  border-radius: 50% !important;
+  clip-path: circle(50% at 50% 50%) !important;
+  -webkit-mask-image: -webkit-radial-gradient(white, black);
   background:
     linear-gradient(var(--planet-accent-soft), var(--planet-accent-soft)),
     var(--space-bg-elevated);
@@ -16,13 +20,25 @@
 }
 
 .image {
+  box-sizing: border-box;
   display: block;
-  width: 100%;
-  height: 100%;
+  width: 100% !important;
+  height: 100% !important;
+  aspect-ratio: 1 / 1 !important;
+  border-radius: 50% !important;
+  clip-path: circle(50% at 50% 50%) !important;
   object-fit: cover;
 }
 
 .initials {
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: 1 / 1 !important;
+  border-radius: 50% !important;
+  clip-path: circle(50% at 50% 50%) !important;
   font-size: max(10px, calc(var(--user-avatar-size) * 0.31));
   font-weight: 650;
   letter-spacing: 0.015em;

@@ -330,13 +330,21 @@
 }
 
 .userAvatar {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  overflow: hidden;
-  border-radius: 50%;
+  box-sizing: border-box !important;
+  display: inline-grid !important;
+  place-items: center !important;
+  flex: 0 0 32px !important;
+  width: 32px !important;
+  height: 32px !important;
+  min-width: 32px !important;
+  min-height: 32px !important;
+  max-width: 32px !important;
+  max-height: 32px !important;
+  aspect-ratio: 1 / 1 !important;
+  overflow: hidden !important;
+  border-radius: 50% !important;
+  clip-path: circle(50% at 50% 50%) !important;
+  -webkit-mask-image: -webkit-radial-gradient(white, black);
   border: 1px solid var(--planet-border-strong);
   background:
     linear-gradient(var(--planet-accent-soft), var(--planet-accent-soft)),
@@ -344,10 +352,17 @@
   color: var(--planet-accent-hover);
 }
 
+.userAvatar img,
+.userAvatar :global(img),
 .userAvatarImage {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  box-sizing: border-box !important;
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  aspect-ratio: 1 / 1 !important;
+  border-radius: 50% !important;
+  clip-path: circle(50% at 50% 50%) !important;
+  object-fit: cover !important;
 }
 
 .userAvatar svg {
