@@ -21,6 +21,7 @@ export interface CreateGroupInput {
   description: string;
   privacy: GroupPrivacy;
   photo?: File | null;
+  imageTemplateId?: string | null;
 }
 
 export interface UpdateGroupInput {
@@ -34,6 +35,8 @@ export interface GroupMember {
   avatar?: string;
   userId: number;
   username: string;
+  firstName: string;
+  lastName: string;
   role: string;
   joinedAt: string;
 }
@@ -98,6 +101,7 @@ export interface CreateEventInput {
   description: string;
   eventTime: string;
   image?: File | null;
+  coverTemplate?: string | null;
 }
 
 export interface EventResponseUser {

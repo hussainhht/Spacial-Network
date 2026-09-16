@@ -2,8 +2,8 @@
 
 import type { ReactNode } from "react";
 
-import { getDisplayName, getInitials } from "@/lib/utils";
-import { avatarUrl } from "../../api/groups";
+import UserAvatar from "@/components/UserAvatar";
+import { getDisplayName } from "@/lib/utils";
 import { useInviteUserSearch } from "../../hooks/useInviteUserSearch";
 import type { InviteCandidate } from "../../types/group";
 
@@ -93,32 +93,18 @@ export default function InviteUserSearch({
               user.lastName,
               user.username,
             );
-            const initials = getInitials(
-              user.firstName,
-              user.lastName,
-              user.username,
-            );
-            const photo = avatarUrl(user.avatar);
-
             return (
               <li key={user.id} className="group-invite-result">
                 <div className="group-invite-result-info">
-                  {photo ? (
-                    <img
-                      className="group-invite-avatar"
-                      src={photo}
-                      alt=""
-                      width={36}
-                      height={36}
-                    />
-                  ) : (
-                    <span
-                      className="group-invite-avatar-fallback"
-                      aria-hidden="true"
-                    >
-                      {initials}
-                    </span>
-                  )}
+                  <UserAvatar
+                    src={user.avatar}
+                    firstName={user.firstName}
+                    lastName={user.lastName}
+                    username={user.username}
+                    size="sm"
+                    alt=""
+                    className="group-invite-avatar"
+                  />
 
                   <span className="group-invite-result-text">
                     <span className="group-invite-result-name">

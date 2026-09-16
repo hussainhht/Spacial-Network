@@ -1,0 +1,44 @@
+.stack {
+  display: grid;
+  gap: 0.55rem;
+  min-width: 0;
+}
+
+.cards {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.cards > section {
+  background:
+    linear-gradient(var(--planet-surface-tint), var(--planet-surface-tint)),
+    var(--space-card-bg);
+  border: 1px solid var(--space-border);
+  border-radius: 1.5rem;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+}
+
+.inline {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+}
+
+@media (max-width: 620px) {
+  .inline {
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: min(82vw, 300px);
+    justify-content: start;
+    overflow-x: auto;
+    padding: 2px 2px .5rem;
+    scroll-snap-type: x proximity;
+    scrollbar-width: thin;
+  }
+
+  .inline > * {
+    scroll-snap-align: start;
+  }
+}

@@ -5,10 +5,17 @@
 package groups_test
 
 import (
+	"bytes"
+	"encoding/json"
+	"mime/multipart"
+	"net/http"
+	"net/http/httptest"
+	"strconv"
 	"testing"
 	"time"
 
 	"social/internal/groups"
+	"social/internal/requestctx"
 )
 
 func TestCreateEvent_RequiresTitleDescriptionAndTime(t *testing.T) {
@@ -107,6 +114,97 @@ func TestCreateEvent_OptionalImageIsReturnedByListAndDetails(t *testing.T) {
 	}
 	if withoutImage.ImagePath.Valid {
 		t.Fatalf("image path = %q, want NULL", withoutImage.ImagePath.String)
+	}
+}
+
+func TestEventCoverTemplate_AllowlistAndPersistence(t *testing.T) {
+	for _, path := range []string{
+		"/image/templets/earth.png",
+		"/image/templets/mars.png",
+		"/image/templets/moon.png",
+		"/image/templets/saturn.png",
+	} {
+		if got, err := groups.ValidateEventCoverTemplate(path); err != nil || got != path {
+			t.Fatalf("ValidateEventCoverTemplate(%q) = %q, %v", path, got, err)
+		}
+	}
+	if _, err := groups.ValidateEventCoverTemplate("/etc/passwd"); err == nil {
+		t.Fatal("expected unapproved cover template to be rejected")
+	}
+
+	f := setup(t)
+	creator := f.newUser(t, "evtemplatecreator")
+	groupID, err := f.groupsSvc.CreateGroup(creator, "Template Event Group", "", "", groups.GroupPrivacyPrivate)
+	if err != nil {
+		t.Fatalf("CreateGroup: %v", err)
+	}
+	const template = "/image/templets/mars.png"
+	eventID, err := f.groupsSvc.CreateEventWithImage(int(groupID), creator, "Mars meetup", "Template cover", time.Now().Add(24*time.Hour), template)
+	if err != nil {
+		t.Fatalf("CreateEventWithImage: %v", err)
+	}
+	event, err := f.groupsSvc.GetEventDetails(int(groupID), int(eventID), creator)
+	if err != nil {
+		t.Fatalf("GetEventDetails: %v", err)
+	}
+	if !event.ImagePath.Valid || event.ImagePath.String != template {
+		t.Fatalf("image path = %#v, want %q", event.ImagePath, template)
+	}
+}
+
+func TestCreateEventHandler_TemplateCoverUsesExistingCreateFlow(t *testing.T) {
+	f := setup(t)
+	creator := f.newUser(t, "evtemplatehandler")
+	groupID, err := f.groupsSvc.CreateGroup(creator, "Template Handler Group", "", "", groups.GroupPrivacyPrivate)
+	if err != nil {
+		t.Fatalf("CreateGroup: %v", err)
+	}
+
+	submit := func(template string) *httptest.ResponseRecorder {
+		t.Helper()
+		var body bytes.Buffer
+		writer := multipart.NewWriter(&body)
+		_ = writer.WriteField("title", "Template meetup")
+		_ = writer.WriteField("description", "Uses an existing public asset")
+		_ = writer.WriteField("event_time", time.Now().Add(24*time.Hour).Format(time.RFC3339))
+		_ = writer.WriteField("cover_template", template)
+		if err := writer.Close(); err != nil {
+			t.Fatalf("close multipart writer: %v", err)
+		}
+
+		req := httptest.NewRequest(http.MethodPost, "/api/groups/events", &body)
+		req.Header.Set("Content-Type", writer.FormDataContentType())
+		req.SetPathValue("id", strconv.FormatInt(groupID, 10))
+		req = req.WithContext(requestctx.WithUserID(req.Context(), creator))
+		recorder := httptest.NewRecorder()
+		f.groupsHandler.CreateEventHandler(recorder, req)
+		return recorder
+	}
+
+	invalid := submit("/etc/passwd")
+	if invalid.Code != http.StatusBadRequest {
+		t.Fatalf("invalid template status = %d, want %d", invalid.Code, http.StatusBadRequest)
+	}
+
+	const template = "/image/templets/earth.png"
+	created := submit(template)
+	if created.Code != http.StatusCreated {
+		t.Fatalf("create template event status = %d, body = %s", created.Code, created.Body.String())
+	}
+	var response groups.CreateEventResponse
+	if err := json.Unmarshal(created.Body.Bytes(), &response); err != nil {
+		t.Fatalf("unmarshal create response: %v", err)
+	}
+	if response.ImagePath == nil || *response.ImagePath != template {
+		t.Fatalf("response image path = %v, want %q", response.ImagePath, template)
+	}
+
+	events, err := f.groupsSvc.GetGroupEvents(int(groupID), creator)
+	if err != nil {
+		t.Fatalf("GetGroupEvents: %v", err)
+	}
+	if len(events) != 1 || !events[0].ImagePath.Valid || events[0].ImagePath.String != template {
+		t.Fatalf("persisted template path = %#v, want %q", events, template)
 	}
 }
 

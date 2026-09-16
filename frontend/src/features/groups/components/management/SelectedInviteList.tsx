@@ -1,7 +1,7 @@
 "use client";
 
-import { getDisplayName, getInitials } from "@/lib/utils";
-import { avatarUrl } from "../../api/groups";
+import UserAvatar from "@/components/UserAvatar";
+import { getDisplayName } from "@/lib/utils";
 import type { InviteCandidate } from "../../types/group";
 
 interface SelectedInviteListProps {
@@ -27,36 +27,22 @@ export default function SelectedInviteList({
 
       <ul className="group-selected-list">
         {users.map((user) => {
-          const photo = avatarUrl(user.avatar);
           const displayName = getDisplayName(
             user.firstName,
             user.lastName,
             user.username,
           );
-          const initials = getInitials(
-            user.firstName,
-            user.lastName,
-            user.username,
-          );
-
           return (
             <li key={user.id} className="group-selected-chip">
-              {photo ? (
-                <img
-                  src={photo}
-                  alt=""
-                  width={20}
-                  height={20}
-                  className="group-selected-chip-avatar"
-                />
-              ) : (
-                <span
-                  className="group-selected-chip-avatar fallback"
-                  aria-hidden="true"
-                >
-                  {initials}
-                </span>
-              )}
+              <UserAvatar
+                src={user.avatar}
+                firstName={user.firstName}
+                lastName={user.lastName}
+                username={user.username}
+                size={20}
+                alt=""
+                className="group-selected-chip-avatar"
+              />
 
               <span className="group-selected-chip-name">
                 {displayName}

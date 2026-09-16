@@ -1,5 +1,6 @@
 "use client";
 
+import UserAvatar from "@/components/UserAvatar";
 import { useEventResponses } from "../../hooks/useGroupData";
 import type { EventResponseStatus } from "../../types/group";
 import { GroupLoadError } from "../GroupPanels";
@@ -35,7 +36,16 @@ export default function EventAttendees({
       {users && users.length > 0 && (
         <ul>
           {users.map((user) => (
-            <li key={user.userId}>@{user.username}</li>
+            <li key={user.userId} className="group-member-item">
+              <UserAvatar
+                src={user.avatar}
+                username={user.username}
+                size="xs"
+                alt=""
+                className="group-member-avatar"
+              />
+              <span>@{user.username}</span>
+            </li>
           ))}
         </ul>
       )}

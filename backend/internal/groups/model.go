@@ -30,11 +30,24 @@ type Group struct {
 }
 
 type GroupMember struct {
-	Avatar   string    `json:"avatar,omitempty"`
-	UserID   int       `db:"user_id"`
-	Username string    `db:"username"`
-	Role     string    `db:"role"`
-	JoinedAt time.Time `db:"joined_at"`
+	Avatar    string    `json:"avatar,omitempty"`
+	UserID    int       `db:"user_id"`
+	Username  string    `db:"username"`
+	FirstName string    `db:"first_name"`
+	LastName  string    `db:"last_name"`
+	Role      string    `db:"role"`
+	JoinedAt  time.Time `db:"joined_at"`
+}
+
+type GroupRecommendation struct {
+	ID                  int      `json:"id"`
+	Name                string   `json:"name"`
+	Slug                string   `json:"slug"`
+	AvatarURL           string   `json:"avatarUrl"`
+	MemberCount         int      `json:"memberCount"`
+	MutualMemberCount   int      `json:"mutualMemberCount"`
+	MutualMemberPreview []string `json:"mutualMemberPreview"`
+	RequiresApproval    bool     `json:"requiresApproval"`
 }
 
 // Status values shared by group_invitations and group_join_requests.
@@ -112,11 +125,13 @@ type GetGroupResponse struct {
 }
 
 type GroupMemberResponse struct {
-	Avatar   string `json:"avatar,omitempty"`
-	UserID   int    `json:"user_id"`
-	Username string `json:"username"`
-	Role     string `json:"role"`
-	JoinedAt string `json:"joined_at"`
+	Avatar    string `json:"avatar,omitempty"`
+	UserID    int    `json:"user_id"`
+	Username  string `json:"username"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+	Role      string `json:"role"`
+	JoinedAt  string `json:"joined_at"`
 }
 
 type GetGroupMembersResponse struct {

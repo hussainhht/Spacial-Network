@@ -22,8 +22,17 @@ const TYPE_LABELS: Record<SupportedNotificationType, string> = {
   new_follower: "New follower",
   follow_accepted: "Follow accepted",
   group_invitation: "Group invitation",
+  group_invitation_accepted: "Invitation accepted",
+  group_invitation_declined: "Invitation declined",
   group_join_request: "Join request",
+  group_join_accepted: "Join request accepted",
+  group_join_rejected: "Join request declined",
+  group_event: "Group event",
+  event_rsvp: "Event response",
+  group_message: "Group message",
   private_message: "Direct message",
+  post_like: "Post like",
+  post_comment: "New comment",
 };
 
 interface NotificationItemProps {
@@ -61,11 +70,13 @@ export default function NotificationItem({
   const groupData = getGroupNotificationData(notification);
   const followData = getFollowNotificationData(notification);
   const actorUsername = groupData?.actor_username ?? followData?.actor_username;
-  // A private_message notification's message is raw chat content, which for a
-  // shared post is a /posts/<id> link (+ optional note) - never show that
-  // raw link/id, mirror ChatSidebar's "sent a post" convention instead.
+  // A private_message/group_message notification's message is raw chat
+  // content, which for a shared post is a /posts/<id> link (+ optional note)
+  // - never show that raw link/id, mirror ChatSidebar's "sent a post"
+  // convention instead.
   const sharedPost =
-    notification.type === "private_message"
+    notification.type === "private_message" ||
+    notification.type === "group_message"
       ? parseSharedPost(notification.message)
       : null;
   const messageText = sharedPost ? "sent a post" : notification.message;

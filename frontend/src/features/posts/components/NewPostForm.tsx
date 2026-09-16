@@ -4,11 +4,10 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import AppIcon, { type AppIconName } from "@/components/layout/AppIcon";
+import { useCurrentUser } from "@/features/auth/context/CurrentUserContext";
 import { createPost } from "@/features/posts/api/posts";
 import PostCard from "@/features/posts/components/PostCard";
 import type { Post, PostMedia, PostVisibility } from "@/features/posts/types/post";
-import { getMyProfile } from "@/features/profile/api/profiles";
-import type { Profile } from "@/features/profile/types/profile";
 import { ACCEPTED_IMAGE_TYPES, MAX_POST_MEDIA, validateImageFile } from "@/lib/upload";
 import CustomViewerPicker from "./CustomViewerPicker";
 import styles from "./NewPostForm.module.css";
@@ -32,9 +31,9 @@ interface SelectedMedia {
 
 export default function NewPostForm() {
   const router = useRouter();
+  const { user } = useCurrentUser();
   const inputRef = useRef<HTMLInputElement>(null);
   const mediaRef = useRef<SelectedMedia[]>([]);
-  const [profile, setProfile] = useState<Profile | null>(null);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [visibility, setVisibility] = useState<PostVisibility>("public");
@@ -43,10 +42,6 @@ export default function NewPostForm() {
   const [dragging, setDragging] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
-  useEffect(() => {
-    getMyProfile().then(setProfile).catch(() => null);
-  }, []);
 
   useEffect(() => {
     mediaRef.current = media;
@@ -119,13 +114,13 @@ export default function NewPostForm() {
   }));
   const previewPost: Post = {
     id: 0,
-    user_id: profile?.id ?? 0,
+    user_id: user.user_id,
     author: {
-      id: profile?.id ?? 0,
-      username: profile?.username ?? "you",
-      first_name: profile?.firstName ?? "Your",
-      last_name: profile?.lastName ?? "Name",
-      profile_photo: profile?.profilePhoto,
+      id: user.user_id,
+      username: user.username,
+      first_name: user.first_name,
+      last_name: user.last_name,
+      profile_photo: user.profile_photo,
     },
     visibility,
     title: title || "Your post title",

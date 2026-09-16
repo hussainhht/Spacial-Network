@@ -17,6 +17,100 @@ func NewRepository(db *sql.DB) *Repository {
 	}
 }
 
+func (r *Repository) GetRecommendations(userID, limit int) ([]GroupRecommendation, error) {
+	rows, err := r.db.Query(`
+		SELECT
+			g.id,
+			g.title,
+			COALESCE(g.group_photo, ''),
+			(SELECT COUNT(*) FROM group_members all_members WHERE all_members.group_id = g.id) AS member_count,
+			(SELECT COUNT(*)
+			 FROM group_members mutual_members
+			 JOIN followers current_following ON current_following.followed_id = mutual_members.user_id
+			 WHERE mutual_members.group_id = g.id AND current_following.follower_id = ?) AS mutual_count,
+			COALESCE((
+				SELECT GROUP_CONCAT(preview.username, char(31))
+				FROM (
+					SELECT u.username
+					FROM group_members preview_members
+					JOIN followers preview_following ON preview_following.followed_id = preview_members.user_id
+					JOIN users u ON u.id = preview_members.user_id
+					WHERE preview_members.group_id = g.id AND preview_following.follower_id = ?
+					ORDER BY preview_members.joined_at ASC, u.username ASC
+					LIMIT 2
+				) preview
+			), '') AS mutual_handles,
+			(SELECT COUNT(*) FROM posts recent_posts
+			 WHERE recent_posts.group_id = g.id
+			   AND recent_posts.created_at >= datetime('now', '-7 days')) AS recent_post_count
+		FROM groups g
+		WHERE g.privacy = 'public'
+		  AND NOT EXISTS (
+			SELECT 1 FROM group_members membership
+			WHERE membership.group_id = g.id AND membership.user_id = ?
+		  )
+		  AND NOT EXISTS (
+			SELECT 1 FROM group_join_requests request
+			WHERE request.group_id = g.id AND request.user_id = ? AND request.status = 'pending'
+		  )
+		ORDER BY mutual_count DESC, recent_post_count DESC, member_count DESC, g.id DESC
+		LIMIT ?`, userID, userID, userID, userID, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	recommendations := make([]GroupRecommendation, 0, limit)
+	for rows.Next() {
+		var recommendation GroupRecommendation
+		var photo, mutualHandles string
+		var recentPostCount int
+		if err := rows.Scan(
+			&recommendation.ID,
+			&recommendation.Name,
+			&photo,
+			&recommendation.MemberCount,
+			&recommendation.MutualMemberCount,
+			&mutualHandles,
+			&recentPostCount,
+		); err != nil {
+			return nil, err
+		}
+		recommendation.Slug = groupSlug(recommendation.Name)
+		recommendation.AvatarURL = normalizeGroupPhotoURL(photo)
+		recommendation.RequiresApproval = true
+		recommendation.MutualMemberPreview = []string{}
+		if mutualHandles != "" {
+			recommendation.MutualMemberPreview = strings.Split(mutualHandles, string(rune(31)))
+		}
+		recommendations = append(recommendations, recommendation)
+	}
+	return recommendations, rows.Err()
+}
+
+func groupSlug(title string) string {
+	var slug strings.Builder
+	previousDash := false
+	for _, r := range strings.ToLower(strings.TrimSpace(title)) {
+		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') {
+			slug.WriteRune(r)
+			previousDash = false
+		} else if !previousDash && slug.Len() > 0 {
+			slug.WriteByte('-')
+			previousDash = true
+		}
+	}
+	return strings.TrimSuffix(slug.String(), "-")
+}
+
+func normalizeGroupPhotoURL(photo string) string {
+	photo = strings.TrimSpace(photo)
+	if photo == "" || strings.HasPrefix(photo, "/uploads/") || strings.HasPrefix(photo, "/image/") || strings.HasPrefix(photo, "http://") || strings.HasPrefix(photo, "https://") {
+		return photo
+	}
+	return "/uploads/" + strings.TrimPrefix(photo, "/")
+}
+
 func (r *Repository) InsertGroup(creatorID int, title, description, photoPath string, privacy GroupPrivacy) (int64, error) {
 	tx, err := r.db.Begin()
 	if err != nil {
@@ -132,13 +226,13 @@ func (r *Repository) GetMembership(groupID, userID int) (*GroupMember, error) {
 	var m GroupMember
 
 	err := r.db.QueryRow(
-		`SELECT gm.user_id, u.username, gm.role, gm.joined_at, COALESCE(u.profile_photo, '')
+		`SELECT gm.user_id, u.username, u.first_name, u.last_name, gm.role, gm.joined_at, COALESCE(u.profile_photo, '')
 		 FROM group_members gm
 		 JOIN users u ON u.id = gm.user_id
 		 WHERE gm.group_id = ? AND gm.user_id = ?`,
 		groupID,
 		userID,
-	).Scan(&m.UserID, &m.Username, &m.Role, &m.JoinedAt, &m.Avatar)
+	).Scan(&m.UserID, &m.Username, &m.FirstName, &m.LastName, &m.Role, &m.JoinedAt, &m.Avatar)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
@@ -256,7 +350,7 @@ func (r *Repository) DeleteGroup(groupID int) error {
 
 func (r *Repository) GetGroupMembers(groupID int) ([]GroupMember, error) {
 	rows, err := r.db.Query(
-		`SELECT gm.user_id, u.username, gm.role, gm.joined_at, COALESCE(u.profile_photo, '')
+		`SELECT gm.user_id, u.username, u.first_name, u.last_name, gm.role, gm.joined_at, COALESCE(u.profile_photo, '')
 		 FROM group_members gm
 		 JOIN users u ON u.id = gm.user_id
 		 WHERE gm.group_id = ?
@@ -271,7 +365,7 @@ func (r *Repository) GetGroupMembers(groupID int) ([]GroupMember, error) {
 	result := make([]GroupMember, 0)
 	for rows.Next() {
 		var m GroupMember
-		if err := rows.Scan(&m.UserID, &m.Username, &m.Role, &m.JoinedAt, &m.Avatar); err != nil {
+		if err := rows.Scan(&m.UserID, &m.Username, &m.FirstName, &m.LastName, &m.Role, &m.JoinedAt, &m.Avatar); err != nil {
 			return nil, err
 		}
 		result = append(result, m)

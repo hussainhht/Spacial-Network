@@ -10,7 +10,7 @@ import {
   useMembership,
   usePendingInvitations,
 } from "../hooks/useGroupData";
-import GroupChatPanel from "./GroupChatPanel";
+import { GroupChatView } from "@/features/group-chat";
 import GroupEvents from "./events/GroupEvents";
 import GroupHeaderCard from "./GroupHeaderCard";
 import GroupPosts from "./GroupPosts";
@@ -94,13 +94,15 @@ function GroupDetails({ groupId }: { groupId: number }) {
       )}
       {group.data && (
         <>
-          <GroupHeaderCard
-            group={group.data}
-            memberCount={memberCount}
-            isCreator={isCreator}
-            membershipStatus={membershipStatus}
-            onEdit={() => setActiveTab("settings")}
-          />
+          {activeTab !== "chat" && (
+            <GroupHeaderCard
+              group={group.data}
+              memberCount={memberCount}
+              isCreator={isCreator}
+              membershipStatus={membershipStatus}
+              onEdit={() => setActiveTab("settings")}
+            />
+          )}
           <GroupTabs
             activeTab={activeTab}
             onTabChange={setActiveTab}
@@ -170,16 +172,6 @@ function GroupDetails({ groupId }: { groupId: number }) {
               </aside>
             </div>
           )}
-          {activeTab === "posts" && (
-            <div
-              id="group-tabpanel-posts"
-              role="tabpanel"
-              aria-labelledby="group-tab-posts"
-              data-motion-panel
-            >
-              <GroupPosts groupId={groupId} isMember={isMember} />
-            </div>
-          )}
           {activeTab === "events" && (
             <div
               id="group-tabpanel-events"
@@ -205,11 +197,7 @@ function GroupDetails({ groupId }: { groupId: number }) {
               {isCreator && group.data.privacy === "public" && (
                 <JoinRequestsPanel groupId={groupId} compact />
               )}
-              <MembersPanel
-                groupId={groupId}
-                creatorId={group.data.creatorId}
-                heading={isCreator ? "Current Members" : "Members"}
-              />
+              <MembersPanel group={group.data} />
             </div>
           )}
           {activeTab === "chat" && (
@@ -219,7 +207,7 @@ function GroupDetails({ groupId }: { groupId: number }) {
               aria-labelledby="group-tab-chat"
               data-motion-panel
             >
-              <GroupChatPanel
+              <GroupChatView
                 group={group.data}
                 members={members.data ?? []}
                 membersLoading={members.loading}

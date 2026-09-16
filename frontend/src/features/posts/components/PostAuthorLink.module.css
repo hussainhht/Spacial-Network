@@ -19,22 +19,13 @@
   border-radius: 50%;
 }
 
-.avatar,
-.avatarFallback {
+.avatar {
   display: grid;
   width: 40px;
   height: 40px;
   border: 1px solid rgba(148, 163, 184, 0.16);
   border-radius: 50%;
   object-fit: cover;
-}
-
-.avatarFallback {
-  place-items: center;
-  background: var(--planet-accent-soft);
-  color: var(--space-text-heading);
-  font-size: 13px;
-  font-weight: 650;
 }
 
 .text {
@@ -85,10 +76,40 @@
   outline-offset: 3px;
 }
 
+.prominent {
+  gap: 14px;
+}
+
+.prominent .avatar {
+  width: 48px;
+  height: 48px;
+  border-color: var(--planet-border-strong);
+  box-shadow:
+    0 8px 22px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(226, 232, 255, 0.08);
+}
+
+.prominent .text {
+  gap: 3px;
+}
+
+.prominent .name {
+  font-size: 16px;
+}
+
+.prominent .meta {
+  gap: 6px;
+  font-size: 13px;
+}
+
 @media (max-width: 520px) {
-  .avatar,
-  .avatarFallback {
+  .avatar {
     width: 36px;
     height: 36px;
+  }
+
+  .prominent .avatar {
+    width: 44px;
+    height: 44px;
   }
 }

@@ -17,6 +17,9 @@ func toEventResponse(e *Event) EventResponse {
 	var imagePath *string
 	if e.ImagePath.Valid {
 		url := "/uploads/" + e.ImagePath.String
+		if isEventCoverTemplate(e.ImagePath.String) {
+			url = e.ImagePath.String
+		}
 		imagePath = &url
 	}
 	return EventResponse{
@@ -57,10 +60,11 @@ func (h *Handler) CreateEventHandler(w http.ResponseWriter, r *http.Request) {
 
 	var req CreateEventRequest
 	var imagePath string
+	var uploadedImagePath string
 	keepImage := false
 	defer func() {
-		if imagePath != "" && !keepImage && h.eventStorage != nil {
-			_ = h.eventStorage.Remove(imagePath)
+		if uploadedImagePath != "" && !keepImage && h.eventStorage != nil {
+			_ = h.eventStorage.Remove(uploadedImagePath)
 		}
 	}()
 	contentType := r.Header.Get("Content-Type")
@@ -74,7 +78,10 @@ func (h *Handler) CreateEventHandler(w http.ResponseWriter, r *http.Request) {
 		if r.MultipartForm != nil {
 			defer r.MultipartForm.RemoveAll()
 		}
-		req = CreateEventRequest{Title: r.FormValue("title"), Description: r.FormValue("description"), EventTime: r.FormValue("event_time")}
+		req = CreateEventRequest{
+			Title: r.FormValue("title"), Description: r.FormValue("description"),
+			EventTime: r.FormValue("event_time"), CoverTemplate: r.FormValue("cover_template"),
+		}
 		file, header, fileErr := r.FormFile("image")
 		if fileErr == nil {
 			defer file.Close()
@@ -83,7 +90,7 @@ func (h *Handler) CreateEventHandler(w http.ResponseWriter, r *http.Request) {
 				json.NewEncoder(w).Encode(CreateEventResponse{Success: false, Message: "Unable to store event image"})
 				return
 			}
-			imagePath, err = h.eventStorage.Save(file, header)
+			uploadedImagePath, err = h.eventStorage.Save(file, header)
 			if err != nil {
 				status := http.StatusInternalServerError
 				message := "Unable to store event image"
@@ -94,6 +101,7 @@ func (h *Handler) CreateEventHandler(w http.ResponseWriter, r *http.Request) {
 				json.NewEncoder(w).Encode(CreateEventResponse{Success: false, Message: message})
 				return
 			}
+			imagePath = uploadedImagePath
 		} else if !errors.Is(fileErr, http.ErrMissingFile) {
 			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(CreateEventResponse{Success: false, Message: "Invalid event image upload"})
@@ -106,6 +114,21 @@ func (h *Handler) CreateEventHandler(w http.ResponseWriter, r *http.Request) {
 			Message: "Invalid request payload",
 		})
 		return
+	}
+
+	coverTemplate, err := ValidateEventCoverTemplate(req.CoverTemplate)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(CreateEventResponse{Success: false, Message: err.Error()})
+		return
+	}
+	if uploadedImagePath != "" && coverTemplate != "" {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(CreateEventResponse{Success: false, Message: "Choose either an uploaded image or a cover template"})
+		return
+	}
+	if coverTemplate != "" {
+		imagePath = coverTemplate
 	}
 
 	title, err := ValidateEventTitle(req.Title)
@@ -152,6 +175,9 @@ func (h *Handler) CreateEventHandler(w http.ResponseWriter, r *http.Request) {
 	var imageURL *string
 	if imagePath != "" {
 		url := "/uploads/" + imagePath
+		if isEventCoverTemplate(imagePath) {
+			url = imagePath
+		}
 		imageURL = &url
 	}
 

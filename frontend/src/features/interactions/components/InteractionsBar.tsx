@@ -38,6 +38,8 @@ interface InteractionsBarProps {
   onShare?: () => void;
   /** Renders the bar inert, matching PostCard's preview mode. */
   preview?: boolean;
+  /** Gives the post detail view larger, more explicit interaction controls. */
+  detail?: boolean;
 }
 
 export default function InteractionsBar({
@@ -49,6 +51,7 @@ export default function InteractionsBar({
   onComment,
   onShare,
   preview = false,
+  detail = false,
 }: InteractionsBarProps) {
   const [isLiked, setIsLiked] = useState(liked);
   const [count, setCount] = useState(likeCount);
@@ -86,7 +89,7 @@ export default function InteractionsBar({
   const commentIcon = <AppIcon name="chat" width={17} height={17} />;
 
   return (
-    <div className={styles.bar}>
+    <div className={`${styles.bar} ${detail ? styles.detail : ""}`}>
       {onComment || preview ? (
         <button
           type="button"

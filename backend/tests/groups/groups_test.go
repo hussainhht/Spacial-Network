@@ -8,11 +8,13 @@ package groups_test
 import (
 	"bytes"
 	"database/sql"
+	"encoding/base64"
 	"encoding/json"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
+	"strings"
 	"testing"
 
 	"social/internal/comments"
@@ -63,7 +65,7 @@ func setup(t *testing.T) fixture {
 	postsHandler := posts.NewHandler(postsSvc, usersSvc, groupsSvc, mediaStorage, "session_token", false, 0)
 
 	commentsRepo := comments.NewRepository(db)
-	commentsSvc := comments.NewService(commentsRepo, postsSvc)
+	commentsSvc := comments.NewService(commentsRepo, postsSvc, nil)
 
 	return fixture{
 		db: db, groupsSvc: groupsSvc, notificationsSvc: notifSvc,
@@ -107,6 +109,46 @@ func (f fixture) newUser(t *testing.T, username string) int {
 	return testutil.CreateUser(t, f.db, testutil.NewUserOpts{Username: username, Email: username + "@example.com"})
 }
 
+func createGroupThroughHandler(t *testing.T, handler *groups.Handler, userID int, templateID string, photo []byte) *httptest.ResponseRecorder {
+	t.Helper()
+
+	var body bytes.Buffer
+	writer := multipart.NewWriter(&body)
+	if err := writer.WriteField("title", "Template Group"); err != nil {
+		t.Fatalf("write title: %v", err)
+	}
+	if err := writer.WriteField("description", "A group with a selected photo"); err != nil {
+		t.Fatalf("write description: %v", err)
+	}
+	if err := writer.WriteField("privacy", "private"); err != nil {
+		t.Fatalf("write privacy: %v", err)
+	}
+	if templateID != "" {
+		if err := writer.WriteField("image_template_id", templateID); err != nil {
+			t.Fatalf("write template id: %v", err)
+		}
+	}
+	if photo != nil {
+		part, err := writer.CreateFormFile("groupPhoto", "group.png")
+		if err != nil {
+			t.Fatalf("create photo part: %v", err)
+		}
+		if _, err := part.Write(photo); err != nil {
+			t.Fatalf("write photo part: %v", err)
+		}
+	}
+	if err := writer.Close(); err != nil {
+		t.Fatalf("close multipart writer: %v", err)
+	}
+
+	req := httptest.NewRequest(http.MethodPost, "/api/groups", &body)
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	req = req.WithContext(requestctx.WithUserID(req.Context(), userID))
+	rr := httptest.NewRecorder()
+	handler.CreateGroupHandler(rr, req)
+	return rr
+}
+
 func TestCreateGroup_StoresTitleDescriptionAndCreator(t *testing.T) {
 	f := setup(t)
 	creator := f.newUser(t, "groupcreator")
@@ -139,6 +181,84 @@ func TestCreateGroup_StoresTitleDescriptionAndCreator(t *testing.T) {
 	}
 	if !isMember {
 		t.Errorf("expected creator to automatically be a member of the group they created")
+	}
+}
+
+func TestCreateGroupHandler_AcceptsApprovedImageTemplate(t *testing.T) {
+	f := setup(t)
+	creator := f.newUser(t, "templatecreator")
+
+	rr := createGroupThroughHandler(t, f.groupsHandler, creator, "mars", nil)
+	if rr.Code != http.StatusCreated {
+		t.Fatalf("create template group status = %d, body = %s", rr.Code, rr.Body.String())
+	}
+
+	var response groups.CreateGroupResponse
+	if err := json.Unmarshal(rr.Body.Bytes(), &response); err != nil {
+		t.Fatalf("decode create response: %v", err)
+	}
+	group, err := f.groupsSvc.GetGroupByID(int(response.GroupID))
+	if err != nil {
+		t.Fatalf("get created group: %v", err)
+	}
+	if group.GroupPhoto != "/image/templets/mars.png" {
+		t.Fatalf("GroupPhoto = %q, want approved Mars template path", group.GroupPhoto)
+	}
+}
+
+func TestCreateGroupHandler_RejectsUnknownImageTemplate(t *testing.T) {
+	f := setup(t)
+	creator := f.newUser(t, "invalidtemplatecreator")
+
+	rr := createGroupThroughHandler(t, f.groupsHandler, creator, "../../private/file.png", nil)
+	if rr.Code != http.StatusBadRequest {
+		t.Fatalf("invalid template status = %d, want %d; body = %s", rr.Code, http.StatusBadRequest, rr.Body.String())
+	}
+	if !strings.Contains(rr.Body.String(), "approved group photo template") {
+		t.Fatalf("invalid template response = %s", rr.Body.String())
+	}
+}
+
+func TestCreateGroupHandler_RejectsMultiplePhotoSources(t *testing.T) {
+	f := setup(t)
+	creator := f.newUser(t, "twophotocreator")
+
+	rr := createGroupThroughHandler(t, f.groupsHandler, creator, "earth", []byte("not read"))
+	if rr.Code != http.StatusBadRequest {
+		t.Fatalf("multiple photo source status = %d, want %d; body = %s", rr.Code, http.StatusBadRequest, rr.Body.String())
+	}
+	if !strings.Contains(rr.Body.String(), "either an uploaded image or a group photo template") {
+		t.Fatalf("multiple photo source response = %s", rr.Body.String())
+	}
+}
+
+func TestCreateGroupHandler_KeepsUploadedPhotoFlow(t *testing.T) {
+	f := setup(t)
+	creator := f.newUser(t, "uploadphotocreator")
+	storage, err := upload.NewAvatarStorage(t.TempDir(), upload.GroupPhotoSubdir, 5<<20)
+	if err != nil {
+		t.Fatalf("create group photo storage: %v", err)
+	}
+	handler := groups.NewHandler(f.groupsSvc, storage)
+	pngBytes, err := base64.StdEncoding.DecodeString("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=")
+	if err != nil {
+		t.Fatalf("decode PNG fixture: %v", err)
+	}
+
+	rr := createGroupThroughHandler(t, handler, creator, "", pngBytes)
+	if rr.Code != http.StatusCreated {
+		t.Fatalf("create uploaded-photo group status = %d, body = %s", rr.Code, rr.Body.String())
+	}
+	var response groups.CreateGroupResponse
+	if err := json.Unmarshal(rr.Body.Bytes(), &response); err != nil {
+		t.Fatalf("decode create response: %v", err)
+	}
+	group, err := f.groupsSvc.GetGroupByID(int(response.GroupID))
+	if err != nil {
+		t.Fatalf("get created group: %v", err)
+	}
+	if !strings.HasPrefix(group.GroupPhoto, "groups/") {
+		t.Fatalf("GroupPhoto = %q, want stored upload path", group.GroupPhoto)
 	}
 }
 
@@ -236,6 +356,72 @@ func TestGroupDiscovery_ReturnsOnlyPublicGroups(t *testing.T) {
 	}
 	if !seenPrivate {
 		t.Fatal("My Groups must retain private groups for their members")
+	}
+}
+
+func TestGroupRecommendations_FilterAndRankEligiblePublicGroups(t *testing.T) {
+	f := setup(t)
+	viewer := f.newUser(t, "recommendviewer")
+	friend := f.newUser(t, "orbitfriend")
+	creator := f.newUser(t, "recommendcreator")
+
+	mutualID, err := f.groupsSvc.CreateGroup(creator, "Orbital Dynamics", "", "groups/orbit.png", groups.GroupPrivacyPublic)
+	if err != nil {
+		t.Fatalf("create mutual group: %v", err)
+	}
+	if err := f.groupsSvc.AddMember(int(mutualID), friend); err != nil {
+		t.Fatalf("add mutual member: %v", err)
+	}
+	if _, err := followers.NewRepository(f.db).FollowUser(viewer, friend); err != nil {
+		t.Fatalf("follow friend: %v", err)
+	}
+
+	activeID, err := f.groupsSvc.CreateGroup(creator, "Active Explorers", "", "", groups.GroupPrivacyPublic)
+	if err != nil {
+		t.Fatalf("create active group: %v", err)
+	}
+	if _, err := f.db.Exec(`INSERT INTO posts (user_id, title, content, group_id) VALUES (?, 'Recent', 'Activity', ?)`, creator, activeID); err != nil {
+		t.Fatalf("create recent group post: %v", err)
+	}
+	inactiveID, err := f.groupsSvc.CreateGroup(creator, "Quiet Explorers", "", "", groups.GroupPrivacyPublic)
+	if err != nil {
+		t.Fatalf("create inactive group: %v", err)
+	}
+
+	joinedID, _ := f.groupsSvc.CreateGroup(creator, "Already Joined", "", "", groups.GroupPrivacyPublic)
+	if err := f.groupsSvc.AddMember(int(joinedID), viewer); err != nil {
+		t.Fatalf("join excluded group: %v", err)
+	}
+	pendingID, _ := f.groupsSvc.CreateGroup(creator, "Already Requested", "", "", groups.GroupPrivacyPublic)
+	if err := f.groupsSvc.RequestToJoin(int(pendingID), viewer); err != nil {
+		t.Fatalf("request excluded group: %v", err)
+	}
+	privateID, _ := f.groupsSvc.CreateGroup(creator, "Secret Orbit", "", "", groups.GroupPrivacyPrivate)
+
+	recommendations, err := f.groupsSvc.GetRecommendations(viewer, 99)
+	if err != nil {
+		t.Fatalf("GetRecommendations: %v", err)
+	}
+	if len(recommendations) != 3 {
+		t.Fatalf("recommendation count = %d, want 3", len(recommendations))
+	}
+	if recommendations[0].ID != int(mutualID) {
+		t.Fatalf("first recommendation = %d, want mutual group %d", recommendations[0].ID, mutualID)
+	}
+	if recommendations[1].ID != int(activeID) || recommendations[2].ID != int(inactiveID) {
+		t.Fatalf("fallback order = [%d, %d], want active then inactive [%d, %d]", recommendations[1].ID, recommendations[2].ID, activeID, inactiveID)
+	}
+	first := recommendations[0]
+	if first.MutualMemberCount != 1 || len(first.MutualMemberPreview) != 1 || first.MutualMemberPreview[0] != "orbitfriend" {
+		t.Fatalf("mutual context = count %d preview %#v", first.MutualMemberCount, first.MutualMemberPreview)
+	}
+	if first.Slug != "orbital-dynamics" || first.AvatarURL != "/uploads/groups/orbit.png" || !first.RequiresApproval {
+		t.Fatalf("recommendation contract = %#v", first)
+	}
+	for _, recommendation := range recommendations {
+		if recommendation.ID == int(joinedID) || recommendation.ID == int(pendingID) || recommendation.ID == int(privateID) {
+			t.Fatalf("ineligible group %d appeared in recommendations", recommendation.ID)
+		}
 	}
 }
 

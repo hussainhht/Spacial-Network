@@ -40,10 +40,10 @@ try:
         page = browser.new_page(viewport={"width": 1024, "height": 768})
         page.goto(f"http://127.0.0.1:{PORT}/3d/.tmp/viewer/index.html")
         page.evaluate("window.setupScene()")
-        
+
         page.evaluate('window.loadModel("/final/saturn-final.glb")')
         page.wait_for_function('document.getElementById("status").innerText === "ready"', timeout=30000)
-        
+
         views = ["front", "back", "top", "bottom", "closeup", "normal"]
         for view in views:
             page.evaluate(f'window.setCameraView("{view}")')
@@ -56,4 +56,3 @@ try:
     print("Multi-angle visual validation complete!")
 finally:
     server.shutdown()
-

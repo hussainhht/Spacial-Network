@@ -18,6 +18,7 @@ import (
 	"social/internal/followers"
 	"social/internal/groups"
 	"social/internal/likes"
+	"social/internal/notifications"
 	"social/internal/posts"
 	"social/internal/requestctx"
 	"social/internal/upload"
@@ -31,6 +32,7 @@ type fixture struct {
 	postsHandler *posts.Handler
 	groupsSvc    *groups.Service
 	likesHandler *likes.Handler
+	notifSvc     *notifications.Service
 }
 
 func setup(t *testing.T) fixture {
@@ -55,11 +57,14 @@ func setup(t *testing.T) fixture {
 	}
 	postsHandler := posts.NewHandler(postsSvc, usersSvc, groupsSvc, postMedia, "session_token", false, 0)
 
+	notifRepo := notifications.NewRepository(db)
+	notifSvc := notifications.NewService(notifRepo, nil)
+
 	likesRepo := likes.NewRepository(db)
-	likesSvc := likes.NewService(likesRepo, postsSvc)
+	likesSvc := likes.NewService(likesRepo, postsSvc, notifSvc)
 	likesHandler := likes.NewHandler(likesSvc)
 
-	return fixture{db: db, postsHandler: postsHandler, groupsSvc: groupsSvc, likesHandler: likesHandler}
+	return fixture{db: db, postsHandler: postsHandler, groupsSvc: groupsSvc, likesHandler: likesHandler, notifSvc: notifSvc}
 }
 
 func (f fixture) newUser(t *testing.T, username string) int {
@@ -301,6 +306,50 @@ func TestLikePost_GroupPost_RequiresMembership(t *testing.T) {
 	f.likesHandler.LikePostHandler(rr, likeRequest(t, http.MethodPost, creator, postID))
 	if rr.Code != http.StatusOK {
 		t.Fatalf("creator like: status = %d, want %d; body=%s", rr.Code, http.StatusOK, rr.Body.String())
+	}
+}
+
+func TestLikePost_NotifiesAuthor(t *testing.T) {
+	f := setup(t)
+	author := f.newUser(t, "notifypostauthor")
+	liker := f.newUser(t, "notifyliker")
+	postID := f.newPublicPost(t, author)
+
+	rr := httptest.NewRecorder()
+	f.likesHandler.LikePostHandler(rr, likeRequest(t, http.MethodPost, liker, postID))
+	if rr.Code != http.StatusOK {
+		t.Fatalf("like: status = %d, body=%s", rr.Code, rr.Body.String())
+	}
+
+	notifs, err := f.notifSvc.GetForUser(author, 10, 0)
+	if err != nil {
+		t.Fatalf("GetForUser(author): %v", err)
+	}
+	if len(notifs) != 1 {
+		t.Fatalf("expected 1 notification for the author, got %d", len(notifs))
+	}
+	if notifs[0].Type != notifications.NotificationPostLike {
+		t.Errorf("notification type = %q, want %q", notifs[0].Type, notifications.NotificationPostLike)
+	}
+}
+
+func TestLikePost_SelfLike_NoNotification(t *testing.T) {
+	f := setup(t)
+	author := f.newUser(t, "selflikeauthor")
+	postID := f.newPublicPost(t, author)
+
+	rr := httptest.NewRecorder()
+	f.likesHandler.LikePostHandler(rr, likeRequest(t, http.MethodPost, author, postID))
+	if rr.Code != http.StatusOK {
+		t.Fatalf("like: status = %d, body=%s", rr.Code, rr.Body.String())
+	}
+
+	notifs, err := f.notifSvc.GetForUser(author, 10, 0)
+	if err != nil {
+		t.Fatalf("GetForUser(author): %v", err)
+	}
+	if len(notifs) != 0 {
+		t.Fatalf("expected no self-notification for liking your own post, got %d", len(notifs))
 	}
 }
 

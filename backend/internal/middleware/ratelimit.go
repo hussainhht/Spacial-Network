@@ -66,16 +66,7 @@ type rateLimitErrorResponse struct {
 	RetryAfter float64 `json:"retry_after_seconds"`
 }
 
-// RateLimit returns stdlib http.Handler middleware backed by a
-// social/internal/ratelimit.Limiter - the service that owns the actual
-// bucket/timeout state and decides each request via Limiter.Check.
-// identity and endpoint may be nil to use
-// DefaultRateLimitIdentity/DefaultRateLimitEndpoint. It composes the same
-// way as SessionMiddleware:
-//
-//	rl := ratelimit.NewLimiter(cfg)
-//	rateLimit := middleware.RateLimit(rl, nil, nil)
-//	apiMux.Handle("POST /posts", sessionMiddleware(rateLimit(http.HandlerFunc(h.NewPostHandler))))
+// RateLimit returns HTTP middleware enforcing global and per-endpoint limits.
 func RateLimit(limiter *ratelimit.Limiter, identity RateLimitIdentityFunc, endpoint RateLimitEndpointFunc) func(http.Handler) http.Handler {
 	if identity == nil {
 		identity = DefaultRateLimitIdentity

@@ -5,6 +5,9 @@ import { usePathname } from "next/navigation";
 import { getNavbarContext } from "./navbarContext";
 import { useEffect, useRef, useState } from "react";
 import AppIcon from "./AppIcon";
+import UserAvatar from "@/components/UserAvatar";
+import { useCurrentUser } from "@/features/auth/context/CurrentUserContext";
+import { getDisplayName } from "@/lib/utils";
 import { useNotifications } from "@/features/notifications/context/NotificationProvider";
 import NotificationDropdown from "@/features/notifications/components/NotificationDropdown";
 import { useSearchModal } from "@/features/search/context/SearchContext";
@@ -19,6 +22,8 @@ export default function TopNavbar() {
   // Real notifications context
   const { unreadCount } = useNotifications();
   const { logout, loggingOut, error: logoutError } = useLogout();
+  const { user } = useCurrentUser();
+  const displayName = getDisplayName(user.first_name, user.last_name, user.username);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [menuRoute, setMenuRoute] = useState(pathname);
   const bellRef = useRef<HTMLDivElement>(null);
@@ -34,10 +39,12 @@ export default function TopNavbar() {
   }
 
   useEffect(() => {
-    if (isOpen) {
+    if (!isOpen) return;
+    const timeoutId = window.setTimeout(() => {
       setNotificationsOpen(false);
       setUserMenuOpen(false);
-    }
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
   }, [isOpen]);
 
   useEffect(() => {
@@ -155,10 +162,16 @@ export default function TopNavbar() {
             aria-expanded={userMenuOpen && menuRoute === pathname}
             aria-label="User account options"
           >
-            <span className={styles.userAvatar} aria-hidden="true">
-              <AppIcon name="user" />
-            </span>
-            <span className={styles.userName}>You</span>
+            <UserAvatar
+              src={user.profile_photo}
+              firstName={user.first_name}
+              lastName={user.last_name}
+              username={user.username}
+              size="xs"
+              alt=""
+              className={styles.userAvatar}
+            />
+            <span className={styles.userName}>{displayName}</span>
             <span className={styles.chevronIcon} aria-hidden="true">
               <AppIcon name="chevronDown" />
             </span>

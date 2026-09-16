@@ -14,12 +14,16 @@ export interface ListPostsOptions {
   // the backend if omitted); post visibility rules always still apply.
   feed?: FeedScope;
   limit?: number;
+  before?: string;
+  beforeId?: number;
 }
 
 export function listPosts(options?: ListPostsOptions): Promise<Post[]> {
   const params = new URLSearchParams();
   if (options?.feed) params.set("feed", options.feed);
   if (options?.limit != null) params.set("limit", String(options.limit));
+  if (options?.before) params.set("before", options.before);
+  if (options?.beforeId != null) params.set("before_id", String(options.beforeId));
 
   const query = params.toString();
   return apiRequest<Post[]>(`/posts${query ? `?${query}` : ""}`);

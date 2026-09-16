@@ -1,11 +1,9 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
 import AppIcon from "@/components/layout/AppIcon";
-import { getBackendBaseUrl } from "@/lib/api";
-import { getDisplayName, getInitials } from "@/lib/utils";
+import UserAvatar from "@/components/UserAvatar";
+import { getDisplayName } from "@/lib/utils";
 import type { Profile } from "../types/profile";
 import styles from "./Profile.module.css";
 
@@ -24,19 +22,6 @@ function ProfileAvatar({
   username,
   profilePhoto,
 }: ProfileAvatarProps) {
-  const [failedPhotoUrl, setFailedPhotoUrl] = useState<string | null>(null);
-
-  const initials = getInitials(firstName, lastName, username);
-
-  const getFullPhotoUrl = (path: string) => {
-    if (/^https?:\/\//i.test(path)) return path;
-    const cleanPath = path.startsWith("/") ? path : `/${path}`;
-    return `${getBackendBaseUrl()}${cleanPath}`;
-  };
-
-  const photoUrl = profilePhoto ? getFullPhotoUrl(profilePhoto) : "";
-  const hasPhoto = Boolean(photoUrl) && failedPhotoUrl !== photoUrl;
-
   return (
     <div className={styles.avatarOrbit}>
       <span className={styles.avatarHalo} aria-hidden="true" />
@@ -45,25 +30,16 @@ function ProfileAvatar({
       </span>
 
       <div className={styles.avatar}>
-        {hasPhoto ? (
-          <Image
-            src={photoUrl}
-            alt={`${username}'s avatar`}
-            width={AVATAR_SIZE}
-            height={AVATAR_SIZE}
-            className={styles.avatarImage}
-            onError={() => setFailedPhotoUrl(photoUrl)}
-            preload
-          />
-        ) : (
-          <div
-            className={styles.avatarFallback}
-            role="img"
-            aria-label={getDisplayName(firstName, lastName, username)}
-          >
-            {initials}
-          </div>
-        )}
+        <UserAvatar
+          src={profilePhoto}
+          firstName={firstName}
+          lastName={lastName}
+          username={username}
+          size={AVATAR_SIZE}
+          alt={`${getDisplayName(firstName, lastName, username)}'s avatar`}
+          className={styles.avatarImage}
+          priority
+        />
       </div>
     </div>
   );

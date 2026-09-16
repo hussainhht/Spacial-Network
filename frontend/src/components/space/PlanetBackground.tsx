@@ -6,9 +6,11 @@ import {
   memo,
   useCallback,
   useEffect,
+  useRef,
   useState,
   useSyncExternalStore,
   type ReactNode,
+  type RefObject,
 } from "react";
 import { useGLTF } from "@react-three/drei";
 import { Canvas, useThree } from "@react-three/fiber";
@@ -29,6 +31,8 @@ import styles from "./PlanetBackground.module.css";
 // Saturn's rings have transparent room at the edge. Moving the camera back by
 // the same factor preserves the established apparent size.
 const CANVAS_SCALE = 2.6;
+const SCROLL_ROTATION_RADIANS_PER_PIXEL = 0.0018;
+const SCROLL_RESET_DURATION_MS = 180;
 
 const CAMERA = {
   position: [0, 0, 4 * CANVAS_SCALE] as [number, number, number],
@@ -175,10 +179,12 @@ function PlanetScene({
   config,
   viewport,
   reducedMotion,
+  scrollRotation,
 }: {
   config: PlanetConfig;
   viewport: PlanetViewport;
   reducedMotion: boolean;
+  scrollRotation: RefObject<number>;
 }) {
   return (
     <Canvas
@@ -202,6 +208,7 @@ function PlanetScene({
             config={config}
             viewport={viewport}
             reducedMotion={reducedMotion}
+            scrollRotation={scrollRotation}
           />
         </Suspense>
       </SceneBoundary>
@@ -210,7 +217,11 @@ function PlanetScene({
 }
 
 function PlanetBackground() {
-  const { selectedPlanetId, selectedPlanet } = usePlanetPreference();
+  const {
+    selectedPlanetId,
+    selectedPlanet,
+    planetScrollFollowEnabled,
+  } = usePlanetPreference();
   const reducedMotion = useReducedMotion();
   const viewport = usePlanetViewport();
   const clientReady = useSyncExternalStore(
@@ -220,6 +231,64 @@ function PlanetBackground() {
   );
   const [displayedPlanetId, setDisplayedPlanetId] =
     useState<PlanetId>(selectedPlanetId);
+  const scrollRotation = useRef(0);
+
+  useEffect(() => {
+    if (reducedMotion || !planetScrollFollowEnabled) {
+      if (scrollRotation.current === 0) return;
+
+      if (reducedMotion) {
+        scrollRotation.current = 0;
+        return;
+      }
+
+      // Equivalent angles render identically; normalize first so a long page
+      // does not rewind through several full turns while settling.
+      const initialRotation = Math.atan2(
+        Math.sin(scrollRotation.current),
+        Math.cos(scrollRotation.current),
+      );
+      scrollRotation.current = initialRotation;
+      const startedAt = performance.now();
+      let resetFrame = 0;
+
+      const resetScrollRotation = (now: number) => {
+        const progress = Math.min(
+          (now - startedAt) / SCROLL_RESET_DURATION_MS,
+          1,
+        );
+        const easedProgress = 1 - Math.pow(1 - progress, 3);
+        scrollRotation.current = initialRotation * (1 - easedProgress);
+
+        if (progress < 1) {
+          resetFrame = window.requestAnimationFrame(resetScrollRotation);
+        } else {
+          scrollRotation.current = 0;
+        }
+      };
+
+      resetFrame = window.requestAnimationFrame(resetScrollRotation);
+      return () => window.cancelAnimationFrame(resetFrame);
+    }
+
+    // Enabling starts from the stable resting orientation at the current page
+    // position, so an old offset cannot reappear after repeated toggles.
+    scrollRotation.current = 0;
+    const scrollPane = document.getElementById("page-content");
+    if (!scrollPane) return;
+
+    let previousScrollTop = scrollPane.scrollTop;
+    const handleScroll = () => {
+      const nextScrollTop = scrollPane.scrollTop;
+      const scrollDelta = nextScrollTop - previousScrollTop;
+      previousScrollTop = nextScrollTop;
+      scrollRotation.current +=
+        scrollDelta * SCROLL_ROTATION_RADIANS_PER_PIXEL;
+    };
+
+    scrollPane.addEventListener("scroll", handleScroll, { passive: true });
+    return () => scrollPane.removeEventListener("scroll", handleScroll);
+  }, [planetScrollFollowEnabled, reducedMotion]);
 
   const handleAssetReady = useCallback(
     (planetId: PlanetId) => {
@@ -254,6 +323,7 @@ function PlanetBackground() {
             config={displayedPlanet}
             viewport={viewport}
             reducedMotion={reducedMotion}
+            scrollRotation={scrollRotation}
           />
         </div>
       </div>

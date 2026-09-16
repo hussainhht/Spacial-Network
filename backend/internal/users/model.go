@@ -15,7 +15,7 @@ type User struct {
 	LastName     string         `db:"last_name"`
 	Email        string         `db:"email"`
 	PasswordHash string         `db:"password_hash"`
-	ProfilePhoto sql.NullString `db:"profile_photo"` //* sql.NullString is Go’s way to represent a database column that can contain either a string or a NULL
+	ProfilePhoto sql.NullString `db:"profile_photo"`
 	CreatedAt    time.Time      `db:"created_at"`
 	UpdatedAt    time.Time      `db:"updated_at"`
 	IsPrivate    bool           `db:"is_private"`

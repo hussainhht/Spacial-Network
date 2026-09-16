@@ -5,66 +5,24 @@ import (
 	"net/http"
 )
 
-// ErrGroupNotFound is returned when a group with the given ID does not exist.
-var ErrInviteeNotFound = errors.New("invited user not found")
-
-var ErrGroupNotFound = errors.New("group not found")
-
-// ErrAlreadyMember is returned when trying to add a user to a group they
-// are already a member of.
-var ErrAlreadyMember = errors.New("user is already a member of this group")
-
-// ErrInvitationNotFound is returned when a group invitation with the given
-// ID does not exist.
-var ErrInvitationNotFound = errors.New("group invitation not found")
-
-// ErrJoinRequestNotFound is returned when a group join request with the
-// given ID does not exist.
-var ErrJoinRequestNotFound = errors.New("group join request not found")
-
-// ErrNotGroupCreator is returned when a non-creator attempts an action
-// reserved for the group's creator.
-var ErrNotGroupCreator = errors.New("user is not the creator of this group")
-
-// ErrNotGroupMember is returned when a non-member attempts an action
-// reserved for group members.
-var ErrNotGroupMember = errors.New("user is not a member of this group")
-
-// ErrCannotInviteSelf is returned when a user attempts to invite themself
-// to a group.
-var ErrCannotInviteSelf = errors.New("cannot invite yourself to a group")
-
-// ErrJoinRequestAlreadyPending is returned when a user already has a
-// pending join request for the group.
-var ErrJoinRequestAlreadyPending = errors.New("a pending join request already exists")
-
-// ErrJoinRequestNotAllowed is returned when a user attempts to request
-// membership in a private, invite-only group.
-var ErrJoinRequestNotAllowed = errors.New("join requests are not allowed for this group")
-
-// ErrJoinRequestNotPending is returned when trying to accept or reject a
-// join request that has already been resolved.
-var ErrJoinRequestNotPending = errors.New("join request is not pending")
-
-// ErrInvitationAlreadyPending is returned when a user already has a
-// pending invitation to the group.
-var ErrInvitationAlreadyPending = errors.New("a pending invitation already exists")
-
-// ErrInvitationNotPending is returned when trying to accept or decline an
-// invitation that has already been resolved.
-var ErrInvitationNotPending = errors.New("invitation is not pending")
-
-// ErrInvalidSearchQuery is returned when the invite-candidate search query
-// fails validation (e.g. empty or too long).
-var ErrInvalidSearchQuery = errors.New("search query is invalid")
-
-// ErrMemberNotFound is returned when the target user of a member-removal
-// request is not currently a member of the group.
-var ErrMemberNotFound = errors.New("member not found in this group")
-
-// ErrCannotRemoveCreator is returned when a removal request targets the
-// group's creator, who can never be removed via this operation.
-var ErrCannotRemoveCreator = errors.New("cannot remove group creator")
+var (
+	ErrInviteeNotFound           = errors.New("invited user not found")
+	ErrGroupNotFound             = errors.New("group not found")
+	ErrAlreadyMember             = errors.New("user is already a member of this group")
+	ErrInvitationNotFound        = errors.New("group invitation not found")
+	ErrJoinRequestNotFound       = errors.New("group join request not found")
+	ErrNotGroupCreator           = errors.New("user is not the creator of this group")
+	ErrNotGroupMember            = errors.New("user is not a member of this group")
+	ErrCannotInviteSelf          = errors.New("cannot invite yourself to a group")
+	ErrJoinRequestAlreadyPending = errors.New("a pending join request already exists")
+	ErrJoinRequestNotAllowed     = errors.New("join requests are not allowed for this group")
+	ErrJoinRequestNotPending     = errors.New("join request is not pending")
+	ErrInvitationAlreadyPending  = errors.New("a pending invitation already exists")
+	ErrInvitationNotPending      = errors.New("invitation is not pending")
+	ErrInvalidSearchQuery        = errors.New("search query is invalid")
+	ErrMemberNotFound            = errors.New("member not found in this group")
+	ErrCannotRemoveCreator       = errors.New("cannot remove group creator")
+)
 
 // joinRequestErrorResponse maps a group join request service error to an
 // HTTP status code and a user-facing message.

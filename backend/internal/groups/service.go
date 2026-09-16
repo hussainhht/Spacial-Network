@@ -56,28 +56,27 @@ func (s *Service) CreateGroup(creatorID int, title, description, photoPath strin
 	return s.repo.InsertGroup(creatorID, title, description, photoPath, privacy)
 }
 
-// GetAllGroups returns a page of groups, most recently created first.
-// search, when non-empty, filters to groups whose title or description
-// contains it (case-insensitive).
 func (s *Service) GetAllGroups(limit, offset, userID int, search string) ([]Group, error) {
 	return s.repo.GetAllGroups(limit, offset, userID, search)
 }
 
-// GetUserGroups returns a page of groups the given user actually belongs to
-// (creator or member), most recently created first. search, when non-empty,
-// filters to groups whose title or description contains it
-// (case-insensitive).
+func (s *Service) GetRecommendations(userID, limit int) ([]GroupRecommendation, error) {
+	if limit < 1 {
+		limit = 3
+	} else if limit > 3 {
+		limit = 3
+	}
+	return s.repo.GetRecommendations(userID, limit)
+}
+
 func (s *Service) GetUserGroups(userID, limit, offset int, search string) ([]Group, error) {
 	return s.repo.GetGroupsForUser(userID, limit, offset, search)
 }
 
-// GetGroupByID returns the group with the given ID.
 func (s *Service) GetGroupByID(id int) (*Group, error) {
 	return s.repo.GetGroupByID(id)
 }
 
-// GetGroupForUser returns public group metadata to any authenticated user,
-// while hiding private groups from everyone except their creator or members.
 func (s *Service) GetGroupForUser(groupID, userID int) (*Group, error) {
 	group, err := s.repo.GetGroupByID(groupID)
 	if err != nil {
@@ -106,8 +105,6 @@ func (s *Service) ensureCanViewGroup(group *Group, userID int) error {
 		}
 	}
 
-	// Use the existing hidden-resource convention so private group existence is
-	// not disclosed to unrelated users.
 	return ErrGroupNotFound
 }
 
@@ -299,10 +296,26 @@ func (s *Service) GetPendingJoinRequests(groupID, creatorID int) ([]GroupJoinReq
 }
 
 func (s *Service) AcceptJoinRequest(groupID, requestID, creatorID int) error {
-	return s.repo.RespondToJoinRequest(groupID, requestID, creatorID, StatusAccepted)
+	jr, err := s.repo.GetGroupJoinRequestByID(requestID)
+	if err != nil {
+		return err
+	}
+	if err := s.repo.RespondToJoinRequest(groupID, requestID, creatorID, StatusAccepted); err != nil {
+		return err
+	}
+	s.notify(jr.UserID, creatorID, notifications.NotificationGroupJoinAccepted, notifications.EntityGroupJoinRequest, requestID, "accepted your request to join the group")
+	return nil
 }
 func (s *Service) RejectJoinRequest(groupID, requestID, creatorID int) error {
-	return s.repo.RespondToJoinRequest(groupID, requestID, creatorID, StatusDeclined)
+	jr, err := s.repo.GetGroupJoinRequestByID(requestID)
+	if err != nil {
+		return err
+	}
+	if err := s.repo.RespondToJoinRequest(groupID, requestID, creatorID, StatusDeclined); err != nil {
+		return err
+	}
+	s.notify(jr.UserID, creatorID, notifications.NotificationGroupJoinRejected, notifications.EntityGroupJoinRequest, requestID, "declined your request to join the group")
+	return nil
 }
 func (s *Service) HasPendingJoinRequest(groupID, userID int) (bool, error) {
 	return s.repo.HasPendingJoinRequest(groupID, userID)
@@ -379,10 +392,26 @@ func (s *Service) GetPendingInvitations(userID int) ([]GroupInvitation, error) {
 }
 
 func (s *Service) AcceptGroupInvitation(invitationID, userID int) error {
-	return s.repo.RespondToInvitation(invitationID, userID, StatusAccepted)
+	inv, err := s.repo.GetGroupInvitationByID(invitationID)
+	if err != nil {
+		return err
+	}
+	if err := s.repo.RespondToInvitation(invitationID, userID, StatusAccepted); err != nil {
+		return err
+	}
+	s.notify(inv.InvitedBy, userID, notifications.NotificationGroupInvitationAccepted, notifications.EntityGroupInvitation, invitationID, "accepted your group invitation")
+	return nil
 }
 func (s *Service) DeclineGroupInvitation(invitationID, userID int) error {
-	return s.repo.RespondToInvitation(invitationID, userID, StatusDeclined)
+	inv, err := s.repo.GetGroupInvitationByID(invitationID)
+	if err != nil {
+		return err
+	}
+	if err := s.repo.RespondToInvitation(invitationID, userID, StatusDeclined); err != nil {
+		return err
+	}
+	s.notify(inv.InvitedBy, userID, notifications.NotificationGroupInvitationDeclined, notifications.EntityGroupInvitation, invitationID, "declined your group invitation")
+	return nil
 }
 
 func (s *Service) SearchInviteCandidates(groupID, currentUserID int, rawQuery string, limit int) ([]InviteCandidate, error) {

@@ -177,6 +177,13 @@ func (s *Service) GetFollowing(userID int) ([]UserSummary, error) {
 	return s.repo.GetFollowing(userID)
 }
 
+func (s *Service) GetRecommendations(userID, limit int) ([]Recommendation, error) {
+	if userID <= 0 {
+		return []Recommendation{}, nil
+	}
+	return s.repo.GetRecommendations(userID, limit)
+}
+
 func (s *Service) CanMessage(userA, userB int) (bool, error) {
 	if userA == userB {
 		return false, nil

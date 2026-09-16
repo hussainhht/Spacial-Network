@@ -1,11 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import UserAvatar from "@/components/UserAvatar";
 import { getEligibleContacts } from "@/features/chat/api/chat";
 import type { EligibleContact } from "@/features/chat/types/chat";
-import { getMyGroups } from "@/features/groups/api/groups";
+import {
+  avatarUrl as resolveGroupPhotoUrl,
+  getMyGroups,
+} from "@/features/groups/api/groups";
 import type { Group } from "@/features/groups/types/group";
-import { getBackendBaseUrl } from "@/lib/api";
 import { getDisplayName, getInitials } from "@/lib/utils";
 import { sharePost } from "../api/share";
 // Reuses the chat feature's modal styling so the share picker matches the
@@ -73,12 +76,6 @@ export default function ShareModal({ postId, onClose }: ShareModalProps) {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [onClose]);
-
-  const getFullPhotoUrl = (path: string) => {
-    if (/^https?:\/\//i.test(path)) return path;
-    const cleanPath = path.startsWith("/") ? path : `/${path}`;
-    return `${getBackendBaseUrl()}${cleanPath}`;
-  };
 
   async function handleSend(targetId: number) {
     setSendingId(targetId);
@@ -239,8 +236,6 @@ export default function ShareModal({ postId, onClose }: ShareModalProps) {
             !error &&
             contacts.map((contact) => {
               const displayName = getDisplayName(contact.first_name, contact.last_name, contact.username);
-              const initials = getInitials(contact.first_name, contact.last_name, contact.username);
-              const avatarUrl = contact.profile_photo ? getFullPhotoUrl(contact.profile_photo) : "";
               const isSending = sendingId === contact.id;
               const isSent = sentId === contact.id;
 
@@ -253,11 +248,15 @@ export default function ShareModal({ postId, onClose }: ShareModalProps) {
                   className={styles.modalContactItem}
                 >
                   <div className={styles.avatarWrapper}>
-                    {avatarUrl ? (
-                      <img src={avatarUrl} alt={displayName} className={styles.avatarImg} />
-                    ) : (
-                      <div className={styles.avatarFallback}>{initials}</div>
-                    )}
+                    <UserAvatar
+                      src={contact.profile_photo}
+                      firstName={contact.first_name}
+                      lastName={contact.last_name}
+                      username={contact.username}
+                      size={44}
+                      alt={displayName}
+                      className={styles.avatarImg}
+                    />
                   </div>
 
                   <div className={styles.modalContactInfo}>
@@ -276,7 +275,7 @@ export default function ShareModal({ postId, onClose }: ShareModalProps) {
             !loading &&
             !error &&
             groups.map((group) => {
-              const avatarUrl = group.groupPhoto ? getFullPhotoUrl(group.groupPhoto) : "";
+              const avatarUrl = resolveGroupPhotoUrl(group.groupPhoto) ?? "";
               const initials = getInitials("", "", group.title);
               const isSending = sendingId === group.id;
               const isSent = sentId === group.id;
@@ -291,6 +290,7 @@ export default function ShareModal({ postId, onClose }: ShareModalProps) {
                 >
                   <div className={styles.avatarWrapper}>
                     {avatarUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element -- group photos can come from runtime backend uploads
                       <img src={avatarUrl} alt={group.title} className={styles.avatarImg} />
                     ) : (
                       <div className={styles.avatarFallback}>{initials}</div>

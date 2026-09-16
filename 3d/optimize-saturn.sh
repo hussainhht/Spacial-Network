@@ -58,7 +58,7 @@ const outputPath = process.argv[3];
   const bodyPrim = bodyMesh.listPrimitives()[0];
   const bodyPos = bodyPrim.getAttribute("POSITION");
   const bodyNorm = bodyPrim.getAttribute("NORMAL");
-  
+
   const count = bodyPos.getCount();
   for (let i = 0; i < count; i++) {
     const [x, y, z] = bodyPos.getElement(i, []);
@@ -317,4 +317,3 @@ echo "Produced final model: $OUTPUT"
 NODE_PATH="$DIR/.tools/node_modules" node "$DIR/verify-saturn.cjs" "$OUTPUT"
 
 echo "Optimization pipeline complete!"
-

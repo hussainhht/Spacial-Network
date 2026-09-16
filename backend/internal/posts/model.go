@@ -36,6 +36,13 @@ type post struct {
 	Media      []postMedia
 }
 
+// FeedCursor identifies the last post in a feed page. CreatedAt is paired
+// with ID so pagination remains deterministic when timestamps are equal.
+type FeedCursor struct {
+	CreatedAt time.Time
+	ID        int
+}
+
 type postMedia struct {
 	ID        int
 	PostID    int

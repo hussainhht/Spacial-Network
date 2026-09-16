@@ -29,6 +29,17 @@ interface Envelope {
   message?: string;
 }
 
+export interface GroupRecommendation {
+  id: number;
+  name: string;
+  slug: string;
+  avatarUrl: string;
+  memberCount: number;
+  mutualMemberCount: number;
+  mutualMemberPreview: string[];
+  requiresApproval: boolean;
+}
+
 // Groups uses {success,message}, unlike the shared client's {error} envelope.
 // Keep status and the server's domain message, including conflicts and authorization.
 async function groupRequest<T extends Envelope>(
@@ -122,6 +133,24 @@ export async function getGroups(
   return (data.groups ?? []).map(toGroup);
 }
 
+export async function getGroupRecommendations(
+  limit = 3,
+): Promise<GroupRecommendation[]> {
+  const safeLimit = Math.min(3, Math.max(1, Math.trunc(limit)));
+  const response = await fetch(
+    `${getApiBaseUrl()}/groups/recommendations?limit=${safeLimit}`,
+    { credentials: "include", cache: "no-store" },
+  );
+  const data = (await response.json()) as GroupRecommendation[] | { error?: string };
+  if (!response.ok || !Array.isArray(data)) {
+    throw new ApiError(
+      Array.isArray(data) ? "Unable to load group suggestions" : data.error ?? "Unable to load group suggestions",
+      response.status,
+    );
+  }
+  return data;
+}
+
 // Groups the current session's user actually belongs to (creator or
 // member) - backs the "My Groups" section on /groups.
 export async function getMyGroups(
@@ -136,12 +165,18 @@ export async function getMyGroups(
 }
 
 export async function createGroup(input: CreateGroupInput): Promise<Group> {
+  if (input.photo && input.imageTemplateId) {
+    throw new Error("Choose either an uploaded image or a group photo template.");
+  }
+
   const formData = new FormData();
   formData.append("title", input.title);
   formData.append("description", input.description);
   formData.append("privacy", input.privacy);
   if (input.photo) {
     formData.append("groupPhoto", input.photo);
+  } else if (input.imageTemplateId) {
+    formData.append("image_template_id", input.imageTemplateId);
   }
 
   const data = await groupRequest<Envelope & { group_id: number }>(
@@ -180,6 +215,8 @@ export async function getGroupMembers(groupId: number): Promise<GroupMember[]> {
   return (data.members ?? []).map((m) => ({
     userId: m.user_id,
     username: m.username,
+    firstName: m.first_name,
+    lastName: m.last_name,
     role: m.role,
     joinedAt: m.joined_at,
     avatar: m.avatar,
@@ -250,9 +287,11 @@ function toGroupEvent(e: ApiEvent): GroupEvent {
     goingCount: e.going_count,
     notGoingCount: e.not_going_count,
     imageUrl: e.image_path
-      ? (/^https?:\/\//.test(e.image_path)
-          ? e.image_path
-          : `${getBackendBaseUrl()}${e.image_path.startsWith("/") ? "" : "/"}${e.image_path}`)
+      ? /^https?:\/\//.test(e.image_path)
+        ? e.image_path
+        : e.image_path.startsWith("/uploads/")
+          ? `${getBackendBaseUrl()}${e.image_path}`
+          : e.image_path
       : null,
   };
 }
@@ -273,6 +312,7 @@ export async function createGroupEvent(
 	form.set("description", input.description);
 	form.set("event_time", input.eventTime);
 	if (input.image) form.set("image", input.image);
+  if (input.coverTemplate) form.set("cover_template", input.coverTemplate);
   await groupRequest<Envelope & { event_id?: number }>(
     `/groups/${groupId}/events`,
 	form,
@@ -332,7 +372,11 @@ export function toInviteCandidate(user: ApiInviteCandidate): InviteCandidate {
 
 export function avatarUrl(photo?: string): string | undefined {
   if (!photo) return undefined;
-  return /^https?:\/\//.test(photo) ? photo : `${getUploadsBaseUrl()}/${photo}`;
+  if (/^https?:\/\//.test(photo)) return photo;
+  if (photo.startsWith("/uploads/")) return `${getBackendBaseUrl()}${photo}`;
+  if (photo.startsWith("/")) return photo;
+  if (photo.startsWith("uploads/")) return `${getBackendBaseUrl()}/${photo}`;
+  return `${getUploadsBaseUrl()}/${photo}`;
 }
 
 export async function getEventResponses(

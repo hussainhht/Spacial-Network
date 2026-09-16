@@ -4,11 +4,41 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strconv"
 	"time"
 
 	"social/internal/requestctx"
 	"social/internal/upload"
 )
+
+func (h *Handler) GetRecommendationsHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	userID, ok := requestctx.UserID(r.Context())
+	if !ok || userID <= 0 {
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Unauthorized"})
+		return
+	}
+
+	limit := 3
+	if rawLimit := r.URL.Query().Get("limit"); rawLimit != "" {
+		parsed, err := strconv.Atoi(rawLimit)
+		if err != nil || parsed < 1 {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]string{"error": "limit must be a positive integer"})
+			return
+		}
+		limit = parsed
+	}
+
+	recommendations, err := h.service.GetRecommendations(userID, limit)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to load group recommendations"})
+		return
+	}
+	json.NewEncoder(w).Encode(recommendations)
+}
 
 func toGroupResponse(g *Group) GroupResponse {
 	return GroupResponse{
@@ -27,9 +57,11 @@ func toGroupResponse(g *Group) GroupResponse {
 func toGroupMemberResponse(m GroupMember) GroupMemberResponse {
 	return GroupMemberResponse{
 		UserID: m.UserID, Avatar: m.Avatar,
-		Username: m.Username,
-		Role:     m.Role,
-		JoinedAt: m.JoinedAt.Format(time.RFC3339),
+		Username:  m.Username,
+		FirstName: m.FirstName,
+		LastName:  m.LastName,
+		Role:      m.Role,
+		JoinedAt:  m.JoinedAt.Format(time.RFC3339),
 	}
 }
 
@@ -136,10 +168,23 @@ func (h *Handler) CreateGroupHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Handle the optional group photo upload.
+	templatePath, err := ValidateGroupImageTemplateID(r.FormValue("image_template_id"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(CreateGroupResponse{
+			Success: false,
+			Message: err.Error(),
+		})
+		return
+	}
+
+	// A group can use one photo source only. Template IDs are mapped to a
+	// trusted static URL above; uploaded images retain the existing storage
+	// flow and are cleaned up if group creation fails.
 	var photoPath string
-	file, header, err := r.FormFile("groupPhoto")
-	if err != nil && !errors.Is(err, http.ErrMissingFile) {
+	var uploadedPhotoPath string
+	file, header, fileErr := r.FormFile("groupPhoto")
+	if fileErr != nil && !errors.Is(fileErr, http.ErrMissingFile) {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(CreateGroupResponse{
 			Success: false,
@@ -147,8 +192,17 @@ func (h *Handler) CreateGroupHandler(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-	if err == nil {
-		photoPath, err = h.photoStorage.Save(file, header)
+	if fileErr == nil && templatePath != "" {
+		file.Close()
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(CreateGroupResponse{
+			Success: false,
+			Message: "Choose either an uploaded image or a group photo template",
+		})
+		return
+	}
+	if fileErr == nil {
+		uploadedPhotoPath, err = h.photoStorage.Save(file, header)
 		file.Close()
 		if err != nil {
 			status := http.StatusBadRequest
@@ -162,11 +216,16 @@ func (h *Handler) CreateGroupHandler(w http.ResponseWriter, r *http.Request) {
 			})
 			return
 		}
+		photoPath = uploadedPhotoPath
+	} else {
+		photoPath = templatePath
 	}
 
 	groupID, err := h.service.CreateGroup(userID, title, description, photoPath, privacy)
 	if err != nil {
-		h.photoStorage.Remove(photoPath)
+		if uploadedPhotoPath != "" {
+			h.photoStorage.Remove(uploadedPhotoPath)
+		}
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(CreateGroupResponse{
 			Success: false,
@@ -293,7 +352,7 @@ func (h *Handler) UpdateGroupHandler(w http.ResponseWriter, r *http.Request) {
 
 	// The DB write succeeded and no longer references the old file (if the
 	// photo changed or was removed) - safe to delete it now.
-	if photoPath != nil && oldPhoto != "" && oldPhoto != *photoPath {
+	if photoPath != nil && oldPhoto != "" && oldPhoto != *photoPath && !isGroupImageTemplate(oldPhoto) {
 		h.photoStorage.Remove(oldPhoto)
 	}
 
@@ -342,7 +401,7 @@ func (h *Handler) DeleteGroupHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if photo != "" {
+	if photo != "" && !isGroupImageTemplate(photo) {
 		h.photoStorage.Remove(photo)
 	}
 

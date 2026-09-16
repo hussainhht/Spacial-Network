@@ -32,6 +32,8 @@ const paths = {
     "M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 1 0-7.8 7.8l1.1 1.1L12 21.2l7.7-7.7 1.1-1.1a5.5 5.5 0 0 0 0-7.8Z",
   share:
     "M18 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z M6 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z M18 22a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z M8.6 13.5l6.8 3.9 M15.4 6.6 8.6 10.5",
+  refresh:
+    "M20 11a8.1 8.1 0 0 0-15.5-2.9M4 13a8.1 8.1 0 0 0 15.5 2.9M4 4v4h4M20 20v-4h-4",
 } satisfies Record<string, string>;
 
 export type AppIconName = keyof typeof paths;

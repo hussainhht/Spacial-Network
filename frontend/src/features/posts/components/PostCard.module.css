@@ -26,7 +26,7 @@
 .header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 
 .actions { position: relative; z-index: 3; align-self: flex-start; flex: 0 0 auto; }
-.actions summary { display: grid; place-items: center; width: 38px; height: 38px; border: 1px solid transparent; border-radius: 10px; color: var(--space-text-muted); cursor: pointer; list-style: none; }
+.actions summary { display: grid; place-items: center; width: 38px; height: 38px; border: 1px solid transparent; border-radius: 10px; color: var(--space-text-muted); cursor: pointer; list-style: none; transition: color 180ms ease, border-color 180ms ease, background-color 180ms ease; }
 .actions summary::-webkit-details-marker { display: none; }
 .actions[open] summary, .actions summary:hover { border-color: var(--space-border); background: rgba(148, 163, 184, 0.08); color: var(--space-text-heading); }
 
@@ -53,9 +53,80 @@ a.contextItem:hover { color: var(--space-text-heading); text-decoration: underli
 .card :is(a:not(.cardLink), button, summary):focus-visible { outline: 2px solid var(--planet-focus-ring); outline-offset: 3px; }
 .error { position: relative; z-index: 2; margin: 0; color: var(--space-error-text); font-size: 13px; line-height: 1.5; }
 
-.detail { gap: 18px; padding: clamp(20px, 4vw, 30px); background: radial-gradient(ellipse at top left, var(--planet-surface-tint), transparent 58%), rgba(8, 13, 29, 0.9); }
-.detail .title { overflow: visible; font-size: clamp(22px, 4vw, 30px); line-height: 1.28; }
-.detail .content { max-width: none; overflow: visible; font-size: 16px; line-height: 1.75; white-space: pre-wrap; }
+.detail {
+  gap: clamp(22px, 2.2vw, 30px);
+  min-height: 640px;
+  padding: clamp(26px, 3vw, 36px);
+  border-color: rgba(103, 178, 239, 0.22);
+  border-radius: 26px;
+  background:
+    linear-gradient(180deg, rgba(151, 201, 246, 0.055), transparent 92px),
+    radial-gradient(ellipse at 10% 0%, var(--planet-surface-tint), transparent 54%),
+    rgba(7, 12, 27, 0.9);
+  box-shadow:
+    0 28px 72px rgba(0, 0, 0, 0.34),
+    0 8px 28px rgba(2, 6, 23, 0.24),
+    inset 0 1px 0 rgba(214, 235, 255, 0.1);
+  -webkit-backdrop-filter: blur(12px) saturate(125%);
+  backdrop-filter: blur(12px) saturate(125%);
+}
+
+.detail .header {
+  align-items: flex-start;
+}
+
+.detail .actions summary {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+}
+
+.detail .context {
+  gap: 8px 16px;
+  margin-top: -12px;
+  padding-left: 62px;
+  font-size: 13px;
+}
+
+.detail .contextItem {
+  gap: 7px;
+}
+
+.detail .body {
+  gap: 12px;
+}
+
+.detail .title {
+  overflow: visible;
+  max-width: 28ch;
+  font-size: clamp(27px, 2.2vw, 36px);
+  line-height: 1.22;
+  letter-spacing: -0.025em;
+  overflow-wrap: anywhere;
+  unicode-bidi: plaintext;
+  text-align: start;
+}
+
+.detail .content {
+  max-width: 72ch;
+  overflow: visible;
+  color: #dce4f5;
+  font-size: clamp(16px, 1.25vw, 18px);
+  line-height: 1.78;
+  white-space: pre-wrap;
+  unicode-bidi: plaintext;
+  text-align: start;
+}
+
+.detail .footer {
+  margin-top: 2px;
+}
+
+@media (max-width: 760px) {
+  .detail {
+    min-height: 0;
+  }
+}
 
 @media (hover: hover) {
   .feed:not(.composerPreview):has(.cardLink:hover), .feed:not(.composerPreview):has(.cardLink:focus-visible) { transform: translateY(-1px); border-color: var(--planet-border-strong); background-color: rgba(13, 19, 38, 0.92); box-shadow: 0 16px 38px rgba(0, 0, 0, 0.26), 0 0 24px var(--planet-glow); }
@@ -65,11 +136,21 @@ a.contextItem:hover { color: var(--space-text-heading); text-decoration: underli
   .card { gap: 13px; padding: 15px; border-radius: var(--space-radius-lg); }
   .feed .content { -webkit-line-clamp: 3; }
   .context { gap: 5px 10px; }
-  .detail { padding: 18px 16px; }
+  .detail {
+    gap: 20px;
+    min-height: 0;
+    padding: 22px 18px;
+    border-radius: 21px;
+  }
+  .detail .context {
+    margin-top: -8px;
+    padding-left: 0;
+  }
+  .detail .title { font-size: clamp(24px, 8vw, 30px); }
   .detail .content { font-size: 15px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .card { transition: none; }
+  .card, .actions summary { transition: none; }
   .feed:not(.composerPreview):has(.cardLink:hover) { transform: none; }
 }

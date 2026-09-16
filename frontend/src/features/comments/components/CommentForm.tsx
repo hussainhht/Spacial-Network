@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import AppIcon from "@/components/layout/AppIcon";
+import UserAvatar from "@/components/UserAvatar";
+import { useCurrentUser } from "@/features/auth/context/CurrentUserContext";
 import { validateImageFile } from "@/lib/upload";
 import styles from "./CommentForm.module.css";
 
@@ -10,6 +12,7 @@ interface CommentFormProps {
 }
 
 export default function CommentForm({ onSubmit }: CommentFormProps) {
+  const { user } = useCurrentUser();
   const [content, setContent] = useState("");
   const [image, setImage] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -21,14 +24,12 @@ export default function CommentForm({ onSubmit }: CommentFormProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const menuContainerRef = useRef<HTMLDivElement>(null);
 
-  // Clean up object URL on unmount or when image changes
   useEffect(() => {
     return () => {
       if (preview) URL.revokeObjectURL(preview);
     };
   }, [preview]);
 
-  // Close popover when clicking outside
   useEffect(() => {
     if (!menuOpen) return;
 
@@ -55,7 +56,6 @@ export default function CommentForm({ onSubmit }: CommentFormProps) {
     };
   }, [menuOpen]);
 
-  // Adjust textarea height dynamically
   function adjustTextareaHeight() {
     const el = textareaRef.current;
     if (!el) return;
@@ -140,7 +140,6 @@ export default function CommentForm({ onSubmit }: CommentFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className={styles.composer}>
-      {/* Hidden file input — browser default UI is NEVER visible */}
       <input
         ref={fileInputRef}
         type="file"
@@ -150,7 +149,6 @@ export default function CommentForm({ onSubmit }: CommentFormProps) {
         onChange={handleFileChange}
       />
 
-      {/* Attachment Preview */}
       {preview && (
         <div className={styles.previewContainer}>
           <div className={styles.previewWrapper}>
@@ -173,11 +171,16 @@ export default function CommentForm({ onSubmit }: CommentFormProps) {
         </div>
       )}
 
-      {/* Composer Input Row */}
       <div className={styles.inputRow}>
-        <div className={styles.composerAvatar} aria-hidden="true">
-          <AppIcon name="user" width={16} height={16} />
-        </div>
+        <UserAvatar
+          src={user.profile_photo}
+          firstName={user.first_name}
+          lastName={user.last_name}
+          username={user.username}
+          size={40}
+          alt="Your avatar"
+          className={styles.composerAvatar}
+        />
 
         <div className={styles.inputWrapper}>
           <textarea
@@ -190,11 +193,11 @@ export default function CommentForm({ onSubmit }: CommentFormProps) {
             maxLength={2000}
             className={styles.textarea}
             aria-label="Write a comment"
+            dir="auto"
             required
           />
         </div>
 
-        {/* Plus Button with Dropdown Menu */}
         <div className={styles.attachWrapper} ref={menuContainerRef}>
           <button
             type="button"
@@ -233,14 +236,20 @@ export default function CommentForm({ onSubmit }: CommentFormProps) {
           )}
         </div>
 
-        {/* Send Button */}
         <button
           type="submit"
           disabled={loading || !content.trim()}
           className={styles.sendBtn}
           aria-label="Send comment"
         >
-          {loading ? "…" : "Send"}
+          {loading ? (
+            <span>Sending…</span>
+          ) : (
+            <>
+              <span>Send</span>
+              <AppIcon name="send" width={15} height={15} />
+            </>
+          )}
         </button>
       </div>
 

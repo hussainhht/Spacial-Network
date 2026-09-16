@@ -1,0 +1,320 @@
+.card {
+  padding: 1rem;
+  color: var(--space-text-body);
+  background:
+    linear-gradient(145deg, rgba(31, 41, 71, 0.56), rgba(9, 14, 30, 0.7)),
+    rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1rem;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.header,
+.modalHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.9rem;
+}
+
+.eyebrow {
+  margin: 0 0 0.2rem;
+  color: var(--planet-accent);
+  font-size: 0.67rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.title {
+  margin: 0;
+  color: var(--space-text-heading);
+  font-size: 1rem;
+  font-weight: 720;
+  line-height: 1.25;
+}
+
+.refreshButton,
+.dismissButton {
+  display: inline-grid;
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  place-items: center;
+  color: var(--space-text-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.refreshButton:hover:not(:disabled),
+.dismissButton:hover {
+  color: var(--space-text-heading);
+  background: rgba(148, 163, 184, 0.12);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.refreshButton:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+.rows,
+.skeletonRows {
+  display: grid;
+  gap: 0.72rem;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) auto 24px;
+  align-items: center;
+  gap: 0.56rem;
+  min-width: 0;
+}
+
+.avatarLink {
+  display: inline-grid;
+  width: 38px;
+  height: 38px;
+  overflow: hidden;
+  place-items: center;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 50%;
+}
+
+.avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.identity {
+  display: grid;
+  min-width: 0;
+  gap: 0.02rem;
+}
+
+.name,
+.handle,
+.context {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.name {
+  color: var(--space-text-heading);
+  font-size: 0.82rem;
+  font-weight: 680;
+  line-height: 1.25;
+  text-decoration: none;
+}
+
+.name:hover {
+  color: var(--planet-accent);
+}
+
+.handle {
+  color: var(--space-text-muted);
+  font-size: 0.72rem;
+  line-height: 1.2;
+}
+
+.context {
+  color: color-mix(in srgb, var(--planet-accent) 76%, var(--space-text-body));
+  font-size: 0.67rem;
+  line-height: 1.35;
+}
+
+.followButton,
+.followingButton {
+  min-width: 64px;
+  padding: 0.35rem 0.56rem;
+  color: var(--space-text-heading);
+  border: 1px solid rgba(170, 207, 255, 0.34);
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 0.69rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.followButton {
+  background: var(--planet-accent-soft);
+}
+
+.followButton:hover {
+  background: var(--planet-accent-active);
+}
+
+.followingButton {
+  color: var(--space-text-muted);
+  background: rgba(148, 163, 184, 0.1);
+  cursor: default;
+}
+
+.showMoreButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  gap: 0.35rem;
+  margin-top: 0.95rem;
+  padding: 0.1rem 0;
+  color: var(--planet-accent);
+  background: none;
+  border: 0;
+  font: 700 0.74rem/1.4 inherit;
+  cursor: pointer;
+}
+
+.showMoreButton:hover {
+  color: var(--space-text-heading);
+}
+
+.followError {
+  margin: 0.72rem 0 0;
+  color: var(--space-error-text);
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+
+.state {
+  display: grid;
+  min-height: 112px;
+  padding: 1rem;
+  place-items: center;
+  color: var(--space-text-muted);
+  text-align: center;
+  font-size: 0.79rem;
+}
+
+.state p {
+  margin: 0.45rem 0 0;
+}
+
+.state button {
+  margin-top: 0.55rem;
+  padding: 0.3rem 0.55rem;
+  color: var(--planet-accent);
+  background: transparent;
+  border: 1px solid var(--space-border);
+  border-radius: 0.45rem;
+  font: 700 0.72rem/1 inherit;
+  cursor: pointer;
+}
+
+.emptyIcon {
+  display: grid;
+  place-items: center;
+  color: var(--planet-accent);
+}
+
+.skeletonRow {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) 64px;
+  align-items: center;
+  gap: 0.56rem;
+}
+
+.skeletonAvatar,
+.skeletonCopy > span,
+.skeletonButton {
+  display: block;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.14);
+  animation: suggestionPulse 1.65s ease-in-out infinite;
+}
+
+.skeletonAvatar {
+  width: 38px;
+  height: 38px;
+}
+
+.skeletonCopy {
+  display: grid;
+  gap: 0.36rem;
+}
+
+.skeletonCopy > span:first-child {
+  width: 62%;
+  height: 0.72rem;
+}
+
+.skeletonCopy > span:last-child {
+  width: 82%;
+  height: 0.56rem;
+}
+
+.skeletonButton {
+  width: 64px;
+  height: 1.8rem;
+}
+
+@keyframes suggestionPulse {
+  0%,
+  100% {
+    opacity: 0.42;
+  }
+  50% {
+    opacity: 0.82;
+  }
+}
+
+.modalBackdrop {
+  position: fixed;
+  z-index: 80;
+  inset: 0;
+  display: grid;
+  padding: 1.25rem;
+  place-items: center;
+  background: rgba(2, 6, 23, 0.68);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+}
+
+.modal {
+  width: min(100%, 430px);
+  max-height: min(620px, calc(100dvh - 2.5rem));
+  padding: 1.15rem;
+  overflow-y: auto;
+  color: var(--space-text-body);
+  background: rgba(11, 18, 35, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 1rem;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.46);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeletonAvatar,
+  .skeletonCopy > span,
+  .skeletonButton {
+    animation: none;
+  }
+}
+
+@media (max-width: 390px) {
+  .row {
+    grid-template-columns: 36px minmax(0, 1fr) auto 22px;
+    gap: 0.42rem;
+  }
+
+  .avatarLink {
+    width: 36px;
+    height: 36px;
+  }
+
+  .followButton,
+  .followingButton {
+    min-width: 56px;
+    padding-inline: 0.42rem;
+  }
+}

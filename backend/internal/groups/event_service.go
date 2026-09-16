@@ -2,6 +2,7 @@ package groups
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"time"
 
@@ -117,7 +118,8 @@ func (s *Service) RespondToEvent(groupID, eventID, userID int, response string) 
 		return err
 	}
 	response = validated
-	if _, err := s.GetEventDetails(groupID, eventID, userID); err != nil {
+	event, err := s.GetEventDetails(groupID, eventID, userID)
+	if err != nil {
 		return err
 	}
 
@@ -126,6 +128,10 @@ func (s *Service) RespondToEvent(groupID, eventID, userID int, response string) 
 	}
 
 	s.broadcastEventResponseUpdate(groupID, eventID, userID, response)
+
+	if event.CreatedBy != userID {
+		s.notify(event.CreatedBy, userID, notifications.NotificationEventRSVP, notifications.EntityEvent, eventID, fmt.Sprintf("responded %q to your event", response))
+	}
 
 	return nil
 }

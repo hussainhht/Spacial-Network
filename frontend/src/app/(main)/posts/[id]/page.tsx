@@ -3,12 +3,14 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import AppIcon from "@/components/layout/AppIcon";
 import PageTransition from "@/components/transitions/PageTransition";
 import { getPost } from "@/features/posts/api/posts";
 import { ApiError } from "@/lib/api/errors";
 import type { Post } from "@/features/posts/types/post";
 import CommentsSection from "@/features/comments/components/CommentsSection";
 import PostCard from "@/features/posts/components/PostCard";
+import styles from "./PostDetailPage.module.css";
 
 export default function PostDetailPage() {
   const router = useRouter();
@@ -53,10 +55,11 @@ export default function PostDetailPage() {
 
   return (
     <PageTransition>
-      <main className="posts-page">
-        <div className="posts-container" data-motion-section>
-          <Link href="/" className="back-link">
-            &larr; Back to home
+      <main className={`posts-page ${styles.page}`}>
+        <div className={styles.container} data-motion-section>
+          <Link href="/" className={`back-link ${styles.backLink}`}>
+            <AppIcon name="arrowLeft" width={17} height={17} />
+            <span>Back to home</span>
           </Link>
 
           {!validId && <p className="form-error">Invalid post id</p>}
@@ -65,7 +68,7 @@ export default function PostDetailPage() {
 
           {post && (
             <PostCard post={post} detail onDeleted={() => router.push("/")}>
-              <CommentsSection postId={post.id} />
+              <CommentsSection postId={post.id} showAuthors />
             </PostCard>
           )}
         </div>

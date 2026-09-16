@@ -102,8 +102,8 @@ func TestPostMediaMigration_BackfillsLegacyImagePath(t *testing.T) {
 	if err := sqlite.MigrateUp(db); err != nil {
 		t.Fatalf("MigrateUp: %v", err)
 	}
-	// Roll back everything down to (and including) post-media, so it's
-	// gone regardless of how many migrations now sit on top of it.
+	// Remove post-media and every newer migration without relying on how many
+	// migrations have been added since this regression test was written.
 	migrateDownTo(t, db, groupPrivacyMigrationVersion)
 
 	userResult, err := db.Exec(`
@@ -142,9 +142,7 @@ func TestGroupPrivacyMigration_BackfillsLegacyGroupsAsPublicAndPreservesMembersh
 	if err := sqlite.MigrateUp(db); err != nil {
 		t.Fatalf("initial MigrateUp: %v", err)
 	}
-	// Roll back everything newer than the privacy migration, then the
-	// privacy migration itself, to reproduce a group that existed before
-	// the privacy column was introduced.
+	// Roll back privacy and every newer migration to reproduce a legacy group.
 	migrateDownTo(t, db, beforeGroupPrivacyMigrationVersion)
 
 	result, err := db.Exec(`
