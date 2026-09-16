@@ -1,27 +1,154 @@
 .container {
+  --profile-hairline: rgba(148, 163, 184, 0.12);
+  --profile-surface: rgba(7, 10, 26, 0.7);
+
   position: relative;
   z-index: 1;
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
-  width: min(100%, 880px);
+  width: min(100%, 1120px);
   margin: 0 auto;
+}
+
+.settingsTabs {
+  position: sticky;
+  top: 12px;
+  z-index: 12;
+  align-self: flex-start;
+  margin-block-end: 0;
+}
+
+.panel {
+  width: 100%;
+}
+
+.panel[hidden] {
+  display: none;
+}
+
+.accountSection {
+  min-width: 0;
+}
+
+.accountHeader {
+  margin-bottom: 16px;
+}
+
+.accountHeader h2 {
+  margin: 0;
+  color: var(--space-text-heading);
+  font-size: 20px;
+}
+
+.accountHeader p {
+  margin: 5px 0 0;
+  color: var(--space-text-muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.accountGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.85fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.accountSide {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+
+.privacyContent {
+  width: min(100%, 620px);
+}
+
+.profileState,
+.profileError {
+  min-height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px;
+  border: 1px solid var(--space-border);
+  border-radius: var(--space-radius-lg);
+  background: var(--space-card-bg);
+  color: var(--space-text-muted);
+  font-size: 14px;
+}
+
+.profileError {
+  flex-wrap: wrap;
+  color: var(--space-error-text);
+  border-color: var(--space-error-border);
+}
+
+.profileError button {
+  min-height: 44px;
+  padding: 8px 14px;
+  border: 1px solid var(--space-error-border);
+  border-radius: 10px;
+  background: var(--space-error-bg);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
 }
 
 .section {
   display: flex;
   flex-direction: column;
   gap: 20px;
-  border: 1px solid var(--planet-border);
-  border-radius: var(--space-radius-lg);
+  min-width: 0;
+  padding: clamp(1.25rem, 3vw, 1.75rem);
+  border: 1px solid var(--profile-hairline);
+  border-radius: 20px;
   background:
     linear-gradient(var(--planet-surface-tint), var(--planet-surface-tint)),
-    rgba(13, 17, 38, 0.75);
-  backdrop-filter: blur(20px) saturate(150%);
-  padding: clamp(18px, 3vw, 26px);
-  box-shadow:
-    0 16px 48px rgba(0, 0, 0, 0.45),
-    0 0 32px var(--planet-glow);
+    var(--profile-surface);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  scroll-margin-top: 76px;
+}
+
+.sessionSection {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sessionAction {
+  display: grid;
+  justify-items: end;
+  gap: 8px;
+}
+
+.sessionAction p {
+  margin: 0;
+  color: var(--space-error-text);
+  font-size: 13px;
+}
+
+.signOutButton {
+  min-height: 44px;
+  padding: 9px 18px;
+  border: 1px solid var(--space-error-border);
+  border-radius: 999px;
+  background: var(--space-error-bg);
+  color: var(--space-error-text);
+  font: 650 14px/1 inherit;
+  cursor: pointer;
+}
+
+.signOutButton:hover:not(:disabled) {
+  filter: brightness(1.12);
+}
+
+.signOutButton:disabled {
+  cursor: wait;
+  opacity: 0.65;
 }
 
 .sectionHeader {
@@ -52,7 +179,7 @@
   background: var(--planet-accent-soft);
   padding: 6px 10px;
   color: var(--planet-accent-hover);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 650;
   letter-spacing: 0.02em;
 }
@@ -225,7 +352,7 @@
 
 .optionText span {
   color: var(--space-text-muted);
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .planetRadio:checked + .optionCard .optionText span {
@@ -265,6 +392,22 @@
 }
 
 @media (max-width: 560px) {
+  .settingsTabs {
+    top: 8px;
+    align-self: stretch;
+  }
+
+  .accountGrid { grid-template-columns: 1fr; }
+
+  .sessionSection {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .sessionAction {
+    justify-items: stretch;
+  }
+
   .sectionHeader {
     flex-direction: column;
   }
@@ -288,6 +431,10 @@
     width: 30px;
     height: 30px;
   }
+}
+
+@media (min-width: 561px) and (max-width: 900px) {
+  .accountGrid { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 360px) {
