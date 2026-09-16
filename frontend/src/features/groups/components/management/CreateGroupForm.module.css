@@ -185,6 +185,52 @@
   color: var(--space-error-text);
 }
 
+.photoModes {
+  display: inline-grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-self: flex-start;
+  padding: 3px;
+  border: 1px solid var(--space-border);
+  border-radius: 11px;
+  background: rgba(3, 7, 18, 0.56);
+}
+
+.photoModes button {
+  min-height: 38px;
+  padding: 7px 13px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--space-text-muted);
+  font: inherit;
+  font-size: 0.74rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.photoModes button:hover {
+  color: var(--space-text-heading);
+}
+
+.photoModes button.photoModeActive {
+  background: var(--planet-accent-soft);
+  color: var(--planet-accent-hover);
+  box-shadow: inset 0 0 0 1px var(--planet-border);
+}
+
+.photoModes button:focus-visible {
+  outline: 2px solid var(--planet-focus-ring);
+  outline-offset: 2px;
+}
+
+.photoPanel {
+  min-width: 0;
+}
+
 .photoRow {
   display: flex;
   align-items: center;
@@ -260,6 +306,113 @@
 .photoRow:has(.fileInput:focus-visible) .photoPicker {
   border-color: var(--planet-accent);
   box-shadow: 0 0 0 3px var(--planet-accent-soft);
+}
+
+.templateHeading {
+  margin: 1px 0 8px;
+  color: var(--space-text-muted);
+  font-size: 0.72rem;
+}
+
+.templateGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  min-width: 0;
+}
+
+.templateCard {
+  position: relative;
+  min-width: 0;
+  padding: 0;
+  overflow: hidden;
+  aspect-ratio: 8 / 5;
+  border: 1px solid var(--space-border);
+  border-radius: 10px;
+  background: rgba(3, 7, 18, 0.82);
+  color: var(--space-text-heading);
+  cursor: pointer;
+  isolation: isolate;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.templateCard::after {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  inset: 42% 0 0;
+  background: linear-gradient(transparent, rgba(2, 6, 18, 0.9));
+  pointer-events: none;
+}
+
+.templateCard img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.templateCard:hover {
+  border-color: var(--planet-border-strong);
+  transform: translateY(-1px);
+}
+
+.templateCardSelected {
+  border-color: var(--planet-accent);
+  box-shadow:
+    0 0 0 2px var(--planet-accent-soft),
+    0 8px 22px -16px var(--planet-glow);
+}
+
+.templateCard:focus-visible {
+  outline: 2px solid var(--planet-focus-ring);
+  outline-offset: 3px;
+}
+
+.templateLabel {
+  position: absolute;
+  z-index: 2;
+  bottom: 7px;
+  left: 8px;
+  font-size: 0.66rem;
+  font-weight: 650;
+}
+
+.templateCheck {
+  position: absolute;
+  z-index: 2;
+  top: 6px;
+  right: 6px;
+  display: grid;
+  place-items: center;
+  width: 21px;
+  height: 21px;
+  border: 1px solid rgba(255, 255, 255, 0.38);
+  border-radius: 50%;
+  background: var(--planet-accent-active);
+  color: #fff;
+  font-size: 0.68rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+.photoSelection {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+  color: var(--space-text-muted);
+  font-size: 0.7rem;
+}
+
+.photoSelection > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .removePhoto {
@@ -557,6 +710,10 @@
     grid-template-columns: 1fr;
   }
 
+  .templateGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .privacyOptionContent {
     min-height: 76px;
   }
@@ -628,11 +785,20 @@
     flex-direction: column;
   }
 
+  .photoModes {
+    width: 100%;
+  }
+
+  .photoModes button {
+    min-height: 44px;
+    padding-inline: 8px;
+  }
+
   .photoPicker {
     width: 100%;
   }
 
-  .removePhoto {
+  .photoSelection .removePhoto {
     min-height: 40px;
     padding: 6px;
   }

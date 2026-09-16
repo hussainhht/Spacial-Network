@@ -1,11 +1,16 @@
 "use client";
 
 import { type SubmitEvent, useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import AppIcon from "@/components/layout/AppIcon";
 
 import { createGroup, createGroupInvitation } from "../../api/groups";
+import {
+  GROUP_IMAGE_TEMPLATES,
+  type GroupImageTemplate,
+} from "../../constants/groupImageTemplates";
 import GroupPrivacyBadge from "../GroupPrivacyBadge";
 import InviteUserSearch from "./InviteUserSearch";
 import SelectedInviteList from "./SelectedInviteList";
@@ -24,6 +29,11 @@ const MAX_GROUP_PHOTO_SIZE = 5 * 1024 * 1024;
 const GROUP_PHOTO_TYPES = new Set(["image/jpeg", "image/png", "image/gif"]);
 
 type Step = "details" | "ready" | "invite";
+type PhotoMode = "upload" | "template";
+type GroupPhotoSource =
+  | { type: "upload"; file: File }
+  | { type: "template"; template: GroupImageTemplate }
+  | null;
 
 interface InviteResult {
   total: number;
@@ -49,16 +59,19 @@ export default function CreateGroupForm() {
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [photo, setPhoto] = useState<File | null>(null);
+  const [photoMode, setPhotoMode] = useState<PhotoMode>("upload");
+  const [photoSource, setPhotoSource] = useState<GroupPhotoSource>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [privacy, setPrivacy] = useState<GroupPrivacy>("private");
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
 
+  const uploadedPhoto =
+    photoSource?.type === "upload" ? photoSource.file : null;
   const photoPreview = useMemo(
-    () => (photo ? URL.createObjectURL(photo) : null),
-    [photo],
+    () => (uploadedPhoto ? URL.createObjectURL(uploadedPhoto) : null),
+    [uploadedPhoto],
   );
   useEffect(() => {
     return () => {
@@ -97,7 +110,9 @@ export default function CreateGroupForm() {
         title: trimmedTitle,
         description: description.trim(),
         privacy,
-        photo,
+        photo: photoSource?.type === "upload" ? photoSource.file : null,
+        imageTemplateId:
+          photoSource?.type === "template" ? photoSource.template.id : null,
       });
       setCreatedGroup(group);
       setStep("ready");
@@ -113,25 +128,29 @@ export default function CreateGroupForm() {
   function handlePhotoSelection(file: File | null): boolean {
     setPhotoError(null);
     if (!file) {
-      setPhoto(null);
       return true;
     }
     if (!GROUP_PHOTO_TYPES.has(file.type)) {
-      setPhoto(null);
       setPhotoError("Choose a JPEG, PNG, or GIF image.");
       return false;
     }
     if (file.size > MAX_GROUP_PHOTO_SIZE) {
-      setPhoto(null);
       setPhotoError("Group photo must be 5 MB or smaller.");
       return false;
     }
-    setPhoto(file);
+    setPhotoSource({ type: "upload", file });
     return true;
   }
 
   function clearPhoto() {
-    handlePhotoSelection(null);
+    setPhotoError(null);
+    setPhotoSource(null);
+    if (photoInputRef.current) photoInputRef.current.value = "";
+  }
+
+  function selectTemplate(template: GroupImageTemplate) {
+    setPhotoError(null);
+    setPhotoSource({ type: "template", template });
     if (photoInputRef.current) photoInputRef.current.value = "";
   }
 
@@ -222,39 +241,133 @@ export default function CreateGroupForm() {
 
               <div className={styles.field}>
                 <span className={styles.label}>Group photo</span>
-                <div className={styles.photoRow}>
-                  <label htmlFor="groupPhoto" className={styles.photoPicker}>
-                    <span className={styles.photoIcon} aria-hidden="true">
-                      <AppIcon name="image" width={22} height={22} />
+                <div
+                  className={styles.photoModes}
+                  role="group"
+                  aria-label="Group photo source"
+                >
+                  <button
+                    type="button"
+                    className={photoMode === "upload" ? styles.photoModeActive : ""}
+                    aria-pressed={photoMode === "upload"}
+                    aria-controls="group-photo-upload-panel"
+                    onClick={() => setPhotoMode("upload")}
+                  >
+                    Upload image
+                  </button>
+                  <button
+                    type="button"
+                    className={photoMode === "template" ? styles.photoModeActive : ""}
+                    aria-pressed={photoMode === "template"}
+                    aria-controls="group-photo-template-panel"
+                    onClick={() => setPhotoMode("template")}
+                  >
+                    Choose template
+                  </button>
+                </div>
+
+                {photoMode === "upload" ? (
+                  <div
+                    id="group-photo-upload-panel"
+                    className={styles.photoPanel}
+                  >
+                    <div className={styles.photoRow}>
+                      <label htmlFor="groupPhoto" className={styles.photoPicker}>
+                        <span className={styles.photoIcon} aria-hidden="true">
+                          <AppIcon name="image" width={22} height={22} />
+                        </span>
+                        <span>
+                          <strong>
+                            {photoSource?.type === "upload"
+                              ? "Choose a different image"
+                              : "Upload an image"}
+                          </strong>
+                          <small>JPEG, PNG or GIF · up to 5 MB</small>
+                        </span>
+                      </label>
+                      <input
+                        id="groupPhoto"
+                        ref={photoInputRef}
+                        className={styles.fileInput}
+                        type="file"
+                        accept="image/jpeg,image/png,image/gif"
+                        aria-describedby={
+                          photoError ? "group-photo-error" : undefined
+                        }
+                        onChange={(event) => {
+                          if (
+                            !handlePhotoSelection(
+                              event.target.files?.[0] ?? null,
+                            )
+                          ) {
+                            event.target.value = "";
+                          }
+                        }}
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    id="group-photo-template-panel"
+                    className={styles.photoPanel}
+                  >
+                    <p className={styles.templateHeading}>Choose a template</p>
+                    <div className={styles.templateGrid}>
+                      {GROUP_IMAGE_TEMPLATES.map((template) => {
+                        const selected =
+                          photoSource?.type === "template" &&
+                          photoSource.template.id === template.id;
+                        return (
+                          <button
+                            key={template.id}
+                            type="button"
+                            className={`${styles.templateCard} ${
+                              selected ? styles.templateCardSelected : ""
+                            }`}
+                            aria-pressed={selected}
+                            onClick={() => selectTemplate(template)}
+                          >
+                            <Image
+                              src={template.src}
+                              alt={`${template.label} group photo template`}
+                              width={240}
+                              height={150}
+                              sizes="(max-width: 700px) 42vw, (max-width: 1000px) 20vw, 130px"
+                            />
+                            <span className={styles.templateLabel}>
+                              {template.label}
+                            </span>
+                            {selected && (
+                              <span
+                                className={styles.templateCheck}
+                                aria-hidden="true"
+                              >
+                                ✓
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {photoSource && (
+                  <div className={styles.photoSelection}>
+                    <span role="status">
+                      {photoSource.type === "upload"
+                        ? photoSource.file.name
+                        : `${photoSource.template.label} template selected`}
                     </span>
-                    <span>
-                      <strong>{photo ? "Choose a different image" : "Upload an image"}</strong>
-                      <small>JPEG, PNG or GIF · up to 5 MB</small>
-                    </span>
-                  </label>
-                  {photo && (
                     <button
                       type="button"
                       className={styles.removePhoto}
                       onClick={clearPhoto}
                     >
-                      Remove
+                      Remove image
                     </button>
-                  )}
-                  <input
-                    id="groupPhoto"
-                    ref={photoInputRef}
-                    className={styles.fileInput}
-                    type="file"
-                    accept="image/jpeg,image/png,image/gif"
-                    aria-describedby={photoError ? "group-photo-error" : undefined}
-                    onChange={(event) => {
-                      if (!handlePhotoSelection(event.target.files?.[0] ?? null)) {
-                        event.target.value = "";
-                      }
-                    }}
-                  />
-                </div>
+                  </div>
+                )}
                 {photoError && (
                   <p id="group-photo-error" className={styles.fieldError} role="alert">
                     {photoError}
@@ -338,9 +451,16 @@ export default function CreateGroupForm() {
               </div>
               <div className={styles.previewCard}>
                 <div className={styles.previewCover}>
-                  {photoPreview ? (
+                  {photoSource?.type === "template" ? (
+                    <Image
+                      src={photoSource.template.src}
+                      alt={`${photoSource.template.label} group photo preview`}
+                      fill
+                      sizes="(max-width: 700px) 100vw, 36vw"
+                    />
+                  ) : photoPreview ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={photoPreview} alt="" />
+                    <img src={photoPreview} alt="Uploaded group photo preview" />
                   ) : (
                     <div className={styles.previewPlaceholder} aria-hidden="true">
                       <span>{trimmedTitle.charAt(0).toUpperCase() || "✦"}</span>

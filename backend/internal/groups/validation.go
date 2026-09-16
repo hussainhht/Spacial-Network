@@ -3,9 +3,17 @@ package groups
 import (
 	"errors"
 	"strconv"
+	"strings"
 
 	"social/internal/validation"
 )
+
+var groupImageTemplates = map[string]string{
+	"earth":  "/image/templets/earth.png",
+	"mars":   "/image/templets/mars.png",
+	"moon":   "/image/templets/moon.png",
+	"saturn": "/image/templets/saturn.png",
+}
 
 const (
 	MinTitleLength = 3
@@ -52,6 +60,31 @@ func ValidatePrivacy(privacy string) (GroupPrivacy, error) {
 	default:
 		return "", errors.New("privacy must be public or private")
 	}
+}
+
+// ValidateGroupImageTemplateID maps a client-provided identifier to one of
+// the static image URLs shipped with the frontend. Client-provided paths are
+// never stored directly.
+func ValidateGroupImageTemplateID(raw string) (string, error) {
+	id := strings.TrimSpace(raw)
+	if id == "" {
+		return "", nil
+	}
+
+	path, ok := groupImageTemplates[id]
+	if !ok {
+		return "", errors.New("image_template_id must be an approved group photo template")
+	}
+	return path, nil
+}
+
+func isGroupImageTemplate(value string) bool {
+	for _, path := range groupImageTemplates {
+		if value == path {
+			return true
+		}
+	}
+	return false
 }
 
 // ValidatePagination parses and validates the limit/offset query params for
