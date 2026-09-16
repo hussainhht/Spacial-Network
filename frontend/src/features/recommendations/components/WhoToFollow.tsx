@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import AppIcon from "@/components/layout/AppIcon";
+import { useActionFeedback } from "@/components/feedback/ActionFeedbackProvider";
 import { getBackendBaseUrl } from "@/lib/api";
 import { followUser } from "@/features/profile/api/profiles";
 import {
@@ -128,6 +129,7 @@ function SkeletonRows() {
 }
 
 export default function WhoToFollow({ limit = 3 }: { limit?: 3 | 4 }) {
+  const { notify } = useActionFeedback();
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [dismissedIDs, setDismissedIDs] = useState<Set<number>>(() => new Set());
   const [isLoading, setIsLoading] = useState(true);
@@ -186,6 +188,7 @@ export default function WhoToFollow({ limit = 3 }: { limit?: 3 | 4 }) {
 
     try {
       await followUser(recommendation.username);
+      notify(`You are now following @${recommendation.username}.`);
     } catch (requestError) {
       setRecommendations((current) =>
         current.map((candidate) =>
@@ -194,11 +197,11 @@ export default function WhoToFollow({ limit = 3 }: { limit?: 3 | 4 }) {
             : candidate,
         ),
       );
-      setFollowError(
-        requestError instanceof Error
+      const message = requestError instanceof Error
           ? requestError.message
-          : "Unable to follow this account",
-      );
+          : "Unable to follow this account";
+      setFollowError(message);
+      notify(message, "error");
     }
   };
 

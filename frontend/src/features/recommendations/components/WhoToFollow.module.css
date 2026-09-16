@@ -23,7 +23,7 @@
 .eyebrow {
   margin: 0 0 0.2rem;
   color: var(--planet-accent);
-  font-size: 0.67rem;
+  font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.09em;
   line-height: 1.2;
@@ -42,8 +42,8 @@
 .dismissButton {
   display: inline-grid;
   flex: 0 0 auto;
-  width: 30px;
-  height: 30px;
+  width: 44px;
+  height: 44px;
   padding: 0;
   place-items: center;
   color: var(--space-text-muted);
@@ -73,7 +73,7 @@
 
 .row {
   display: grid;
-  grid-template-columns: 38px minmax(0, 1fr) auto 24px;
+  grid-template-columns: 44px minmax(0, 1fr) auto 44px;
   align-items: center;
   gap: 0.56rem;
   min-width: 0;
@@ -81,8 +81,8 @@
 
 .avatarLink {
   display: inline-grid;
-  width: 38px;
-  height: 38px;
+  width: 44px;
+  height: 44px;
   overflow: hidden;
   place-items: center;
   border: 1px solid rgba(148, 163, 184, 0.18);
@@ -102,7 +102,7 @@
   place-items: center;
   color: var(--space-text-heading);
   background: var(--planet-accent-soft);
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 750;
 }
 
@@ -122,7 +122,7 @@
 
 .name {
   color: var(--space-text-heading);
-  font-size: 0.82rem;
+  font-size: 0.875rem;
   font-weight: 680;
   line-height: 1.25;
   text-decoration: none;
@@ -134,25 +134,26 @@
 
 .handle {
   color: var(--space-text-muted);
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   line-height: 1.2;
 }
 
 .context {
   color: color-mix(in srgb, var(--planet-accent) 76%, var(--space-text-body));
-  font-size: 0.67rem;
+  font-size: 0.75rem;
   line-height: 1.35;
 }
 
 .followButton,
 .followingButton {
   min-width: 64px;
+  min-height: 44px;
   padding: 0.35rem 0.56rem;
   color: var(--space-text-heading);
   border: 1px solid rgba(170, 207, 255, 0.34);
   border-radius: 999px;
   font-family: inherit;
-  font-size: 0.69rem;
+  font-size: 0.75rem;
   font-weight: 700;
   line-height: 1;
   cursor: pointer;
@@ -179,11 +180,12 @@
   width: 100%;
   gap: 0.35rem;
   margin-top: 0.95rem;
-  padding: 0.1rem 0;
+  min-height: 44px;
+  padding: 0.35rem 0;
   color: var(--planet-accent);
   background: none;
   border: 0;
-  font: 700 0.74rem/1.4 inherit;
+  font: 700 0.8rem/1.4 inherit;
   cursor: pointer;
 }
 
@@ -214,6 +216,7 @@
 
 .state button {
   margin-top: 0.55rem;
+  min-height: 44px;
   padding: 0.3rem 0.55rem;
   color: var(--planet-accent);
   background: transparent;
