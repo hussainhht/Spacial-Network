@@ -33,7 +33,9 @@
 - [Technology Stack](#technology-stack)
 - [Project Journey](#project-journey)
 - [Engineering Highlights](#engineering-highlights)
+- [Team and Ownership](#team-and-ownership)
 - [Repository Structure](#repository-structure)
+- [Developer Guides](#developer-guides)
 - [Getting Started](#getting-started)
 - [Testing](#testing)
 - [Documentation](#documentation)
@@ -121,26 +123,9 @@ Saturn, Uranus, or the Sun — is a selectable theme that also recolors the inte
 ## Space Experience
 
 The interface's visual identity is not a static background — it's a small, self-contained rendering system living
-under [`frontend/src/components/space`](frontend/src/components/space).
-
-`SpaceBackground` mounts once in the root layout for every page (including login and registration): batched SVG
-stars and CSS gradients, no WebGL context. Once a user is authenticated, `PlanetBackground` mounts a single
-persistent `<canvas>` inside the shared app shell, so the scene survives client-side navigation instead of
-remounting per route:
-
-```text
-SpaceBackground (root layout, all pages)
-      │
-AppShell (authenticated layout)
-      └── PlanetPreferenceProvider
-            ├── PlanetBackground (unmounted entirely when the 3D toggle is off)
-            │     └── one persistent <canvas>
-            │           └── PlanetSystem (the selected body)
-            │                 ├── PlanetModel      — GLB renderer
-            │                 └── Moon orbit       — Earth only
-            ├── navbar and orbital navigation
-            └── route content / the Settings picker
-```
+under [`frontend/src/components/space`](frontend/src/components/space), mounted once at the root layout for every
+page (a lightweight, WebGL-free starfield) and once more as a persistent 3D canvas across the authenticated app
+that survives client-side navigation instead of remounting per route.
 
 `modelsRegistry.ts` is the single source of truth for the eight selectable bodies — Earth, Mercury, Venus, Mars,
 Jupiter, Saturn, Uranus, and the Sun — each declaring its GLB path, scale, spin speed, lighting, and accent theme.
@@ -162,11 +147,13 @@ as CSS variables, so the same choice reskins buttons, links, and focus rings acr
 Preferences (selected planet, model on/off, scroll-follow) persist in `localStorage` and synchronize across tabs;
 the app waits for stored preferences before ever mounting the 3D layer, so a disabled model never triggers a GLB
 request. In reduced-motion mode every body settles immediately and the canvas switches to demand rendering instead
-of a continuous animation loop.
+of a continuous animation loop. The nine shipped GLB assets (eight bodies plus the Moon) were optimized with
+lossless container operations — deduplication, pruning, welding, and node reordering — deliberately avoiding lossy
+texture recompression or the heavier WASM decoders that Draco/Meshopt geometry compression would have pulled into
+the client bundle.
 
-The nine shipped GLB assets (eight bodies plus the Moon) were optimized with lossless container operations —
-deduplication, pruning, welding, and node reordering — deliberately avoiding lossy texture recompression or the
-heavier WASM decoders that Draco/Meshopt geometry compression would have pulled into the client bundle.
+For the component tree, preference-provider internals, and how to add a new planet model, see the
+[frontend guide's Space and 3D System section](frontend/README.md#space-and-3d-system).
 
 ## Architecture
 
@@ -203,20 +190,16 @@ flowchart LR
     Theme --> GLB
 ```
 
-**Backend.** Every feature package under `backend/internal/` — `auth`, `users`, `followers`, `posts`, `comments`,
-`likes`, `groups`, `chat`, `notifications`, `search`, `upload`, and more — follows the same
+**[Backend](backend/README.md).** Every feature package under `backend/internal/` follows the same
 `Handler → Service → Repository` layering: repositories hold SQL, services hold business rules and authorization,
 and handlers only translate HTTP in and out. Cross-feature calls don't reach into another feature's repository;
 instead a feature declares a small local interface (for example, something that can `Notify(...)`) and the
-dependency's real service satisfies it directly. Everything is wired once, at startup, in
-`internal/router/dependencies.go`.
+dependency's real service satisfies it directly, wired once at startup.
 
-**Frontend.** Routes live under three App Router groups — `(auth)`, `(main)`, and `(group-settings)` — while
-`src/features/` holds one folder per domain (`auth`, `posts`, `comments`, `groups`, `group-chat`, `chat`,
-`notifications`, `profile`, `recommendations`, `search`, `settings`), each typically owning its own `api/`,
-`components/`, `hooks/`, and `context/`. Authenticated pages are wrapped by `AuthenticatedProviders`, which composes
-an `AuthGuard` around `NotificationProvider`, `ActionFeedbackProvider`, and `SearchProvider`; a single
-`WebSocketProvider` is mounted once at the application root and shared by every feature that needs realtime data.
+**[Frontend](frontend/README.md).** Routes live under three App Router groups — `(auth)`, `(main)`, and
+`(group-settings)` — while `src/features/` holds one folder per domain, each typically owning its own `api/`,
+`components/`, and `hooks/`. A single `WebSocketProvider` is mounted once at the application root and shared by
+every feature that needs realtime data.
 
 **Authentication flow.**
 
@@ -280,7 +263,8 @@ sequenceDiagram
 Permissions are re-derived from the database at the moment of each send, history load, or broadcast — not cached
 on the socket — so a change in membership or follow status takes effect immediately, even on an already-open
 connection. Chat and notifications are written to SQLite before delivery, so messages sent while a recipient is
-offline are waiting in their history the next time they connect.
+offline are waiting in their history the next time they connect. Hub design, connection lifecycle, and the full
+event catalog are covered in the [backend guide](backend/README.md#websocket-hub-and-realtime).
 
 ## Database and Migrations
 
@@ -310,21 +294,9 @@ erDiagram
 
 The schema is built from 30 timestamped migration pairs, compiled directly into the backend binary with `embed.FS`.
 Each pair's version is a 14-digit UTC timestamp rather than a sequential number, specifically so migrations
-authored on parallel feature branches never collide. Every up or down migration runs inside its own transaction —
-the schema change and its tracking-table entry commit together or not at all. Pending migrations apply
-automatically every time the server starts; a separate CLI covers the rest:
-
-```bash
-cd backend
-go run ./cmd/migrate up
-go run ./cmd/migrate down
-go run ./cmd/migrate down-all
-go run ./cmd/migrate version
-go run ./cmd/migrate create <name>
-```
-
-A repeat-safe seeder (`go run ./cmd/seed`) populates a full space-themed demo dataset — see
-[Seed data](#seed-data) below.
+authored on parallel feature branches never collide. Every up or down migration runs inside its own transaction,
+and pending migrations apply automatically every time the server starts. The full migration CLI, seed-data
+command, and schema walkthrough live in the [backend guide](backend/README.md#migrations).
 
 ## Technology Stack
 
@@ -396,6 +368,53 @@ and a per-endpoint cap — with a deliberate timeout penalty once either empties
 refill. Cheap, high-frequency reads (like and comment counts) cost a fraction of a token so ordinary feed
 scrolling doesn't trip the limiter meant for abuse.
 
+## Team and Ownership
+
+The project came together through parallel feature ownership, shared interfaces, code review, and repeated
+integration passes across roughly four weeks. Each subsystem depends on work another team member owns, so the
+finished application reflects the team's combined effort rather than four separate feature sets stitched together
+at the end.
+
+Feature ownership was divided by domain so each person could own a full vertical slice — database, backend
+service, API, and frontend UI — for their area, while shared infrastructure and integration were coordinated
+across the whole team.
+
+| Team member | Role | Primary ownership |
+|---|---|---|
+| Hussain Ali (`hussainali7`) | Team Lead | Groups, membership, invitations, join requests, and events; the 3D/space presentation layer; settings; cross-feature integration |
+| Sayed Sharaf (`sayedssharaf`) | Profiles and Followers | Profiles, profile privacy, followers, and follow requests |
+| Bader Alafoo | Realtime and Discovery | WebSocket infrastructure, private and group chat, universal search, and recommendations |
+| Ahmed Hasan (`ahmedhasan1`) | Posts and Interactions | Posts, comments, likes, and post sharing |
+
+This reflects each person's primary contribution area, established from the project's commit history and the
+team's own domain-tracking documents in [`docs/TODO/`](docs/TODO/) — not an even split of every line of code.
+Shared infrastructure (authentication, sessions, CORS, the router, Docker, and the database connection) and
+later integration work crossed these boundaries throughout the project, and notifications in particular is a
+cross-cutting system that every domain triggers rather than one person's feature.
+
+The domains depend on each other in practice, not just in name:
+
+```mermaid
+flowchart LR
+    Lead["Hussain Ali — Team Lead
+Groups & Events"]
+    Posts["Ahmed Hasan
+Posts & Comments"]
+    Profiles["Sayed Sharaf
+Profiles & Followers"]
+    Realtime["Bader Alafoo
+WebSocket & Chat"]
+
+    Posts -->|group membership| Lead
+    Posts -->|follow relationships| Profiles
+    Realtime -->|group membership| Lead
+    Realtime -->|follow relationships| Profiles
+```
+
+Group-scoped posts and group chat both check membership rules owned by Groups; followers-only posts and private
+chat both check follow relationships owned by Profiles/Followers — the same dependency boundaries described in the
+[Privacy Model](#privacy-model) above, enforced across, not within, one person's code.
+
 ## Repository Structure
 
 ```text
@@ -428,6 +447,16 @@ social-network/
 ├── compose.yaml
 └── Makefile
 ```
+
+## Developer Guides
+
+This root README stays high-level and product-facing. For implementation detail, start here:
+
+| Guide | Covers |
+|---|---|
+| [Frontend Guide](frontend/README.md) | App Router structure, feature modules, providers/state, the REST and WebSocket clients, responsive design, and the space/3D system |
+| [Backend Guide](backend/README.md) | Server architecture, the full API route table, authentication, authorization, SQLite, migrations, the WebSocket hub, uploads, rate limiting, and testing |
+| [Project Documentation](docs/) | Database schema, migration guide, and git workflow reference |
 
 ## Getting Started
 
@@ -474,40 +503,29 @@ make test       # go test ./...              — backend test suite
 
 ### Manual setup (two terminals)
 
-**Terminal 1 — backend**
+Run the backend and frontend natively, side by side:
 
 ```bash
-cd backend
-go run ./cmd/server
+# Terminal 1
+cd backend && go run ./cmd/server
+
+# Terminal 2
+cd frontend && npm install && npm run dev
 ```
 
-The server applies any pending migrations automatically on startup. Override the port if needed:
-
-```bash
-SERVER_PORT=8081 go run ./cmd/server
-```
-
-**Terminal 2 — frontend**
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
+The server applies pending migrations automatically on startup. For backend-only setup (port overrides,
+environment, seeding) see the [backend guide](backend/README.md#development-commands); for frontend-only setup
+(lint/typecheck/build) see the [frontend guide](frontend/README.md#development-commands).
 
 ### Seed data
 
 ```bash
-cd backend
-go run ./cmd/seed             # full demo dataset
-go run ./cmd/seed --bulk 100  # add 100 additional repeat-safe feed posts, without touching existing data
+cd backend && go run ./cmd/seed
 ```
 
-The seeder is repeat-safe and populates eight space-themed demo users (an astrophysicist, a quantum engineer, an
-astrophotographer, and others), mutual follows and pending follow requests, five groups (four public, one
-private) with memberships and pending invitations/join requests, four upcoming events with RSVPs, eleven posts
-across public/followers/custom visibility, comments, direct-message threads, group chat messages, and
-notifications. Sample login credentials are printed to the terminal when seeding finishes.
+Populates a repeat-safe, space-themed demo dataset — eight users, five groups, events, posts across all
+visibility tiers, chat threads, and notifications — and prints sample login credentials to the terminal. Full
+details, including the `--bulk` flag, are in the [backend guide](backend/README.md#seed-data).
 
 ### Ports
 
@@ -522,38 +540,21 @@ default `localhost:3000` ↔ `localhost:8080` pairing shown above.
 
 ## Testing
 
-**Backend** (from `backend/`):
-
 ```bash
-go build ./...
-go vet ./...
-go test -count=1 ./...
-go test -race -count=1 ./...
+cd backend && go build ./... && go vet ./... && go test -race -count=1 ./...
+cd frontend && npm run lint && npx tsc --noEmit --incremental false && npm run build -- --webpack
 ```
 
-Sixteen black-box integration packages (`auth`, `chat`, `comments`, `followers`, `groups`, `likes`, `notifications`,
-`posts`, `profile`, `search`, `share`, `upload`, and more) exercise real SQLite and real HTTP handlers, including
-dedicated WebSocket hub concurrency coverage.
-
-**Frontend** (from `frontend/`):
-
-```bash
-npm run lint
-npx tsc --noEmit --incremental false
-npm run build -- --webpack
-```
-
-Frontend verification today is lint, type-checking, and a production build rather than an automated component or
-end-to-end suite.
+Backend verification is a full black-box integration suite (one package per feature) plus the race detector;
+frontend verification today is lint, type-checking, and a production build rather than an automated component or
+end-to-end suite. Full breakdown: [backend guide](backend/README.md#testing) · [frontend guide](frontend/README.md#development-commands).
 
 ## Documentation
 
-Deeper reference material lives alongside the code it describes:
-
 - [Database migration guide](docs/database/database-migration-guide.md) and [schema reference](docs/database/schema.dbml)
 - [Branching strategy](docs/git-docs/BRANCHING_STRATEGY.md) and [Conventional Commits guide](docs/git-docs/CONVENTIONAL_COMMITS.md)
-- [Space/3D rendering system](frontend/src/components/space/README.md)
-- [Rate limiting design](backend/internal/ratelimit/README.md)
+- Domain-specific references (space/3D rendering, rate limiting design) are linked from the
+  [Developer Guides](#developer-guides) above, next to the code they describe.
 
 ## Team Workflow and Conventional Commits
 
