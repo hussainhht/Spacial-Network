@@ -166,6 +166,28 @@ export function formatDateTime(dateStr?: string): string {
 }
 
 /**
+ * Today's date as a "YYYY-MM-DD" string in the client's local timezone,
+ * suitable for an <input type="date"> max attribute (no future dates).
+ */
+export function getTodayInputValue(): string {
+  const now = new Date();
+  const localDate = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+  return localDate.toISOString().slice(0, 10);
+}
+
+/**
+ * The oldest date of birth an <input type="date"> should offer (120 years
+ * ago), matching the backend's own upper age bound so the picker can't
+ * offer a value the server would reject anyway.
+ */
+export function getMinDateOfBirthInputValue(): string {
+  const now = new Date();
+  const localDate = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+  localDate.setFullYear(localDate.getFullYear() - 120);
+  return localDate.toISOString().slice(0, 10);
+}
+
+/**
  * Formats relative time in client's local time (e.g., "just now", "5m ago", "2h ago", "3d ago").
  */
 export function timeAgo(dateStr?: string): string {

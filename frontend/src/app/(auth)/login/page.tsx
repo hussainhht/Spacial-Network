@@ -1,96 +1,33 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { getApiUrl } from "@/lib/api";
+import { PlanetPreferenceProvider, usePlanetPreference } from "@/components/space/PlanetPreferenceProvider";
+import LoginPlanetStage from "@/features/auth/components/LoginPlanetStage";
+import LoginForm from "@/features/auth/components/LoginForm";
+import styles from "./page.module.css";
 
-export default function LoginPage() {
-  const router = useRouter();
-
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  async function handleSubmit(event: React.SubmitEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    setError("");
-    setLoading(true);
-
-    try {
-      const response = await fetch(getApiUrl("/login"), {
-        method: "POST",
-
-        headers: {
-          "Content-Type": "application/json",
-        },
-
-        credentials: "include",
-
-        body: JSON.stringify({
-          username,
-          password,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError(data.error || "Login failed");
-        return;
-      }
-
-      console.log("Login successful");
-      const params = new URLSearchParams(window.location.search);
-      const next = params.get("next") ?? "/";
-      const safeNext = next.startsWith("/") && !next.startsWith("//") ? next : "/";
-
-      router.replace(safeNext);
-    } catch {
-      setError("Could not connect to server");
-    } finally {
-      setLoading(false);
-    }
-  }
+function LoginPageShell() {
+  const { selectedPlanetId, themeStyle } = usePlanetPreference();
 
   return (
-    <main>
-      <h1>Login</h1>
-
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label htmlFor="username">Username or Email</label>
-
-          <input
-            id="username"
-            type="text"
-            value={username}
-            onChange={(event) => setUsername(event.target.value)}
-            required
-          />
+    <main
+      className={styles.page}
+      data-planet={selectedPlanetId}
+      style={themeStyle}
+    >
+      <div className={styles.grid}>
+        <LoginPlanetStage />
+        <div className={styles.formColumn}>
+          <LoginForm />
         </div>
-
-        <div>
-          <label htmlFor="password">Password</label>
-
-          <input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            required
-          />
-        </div>
-
-        {error && <p>{error}</p>}
-
-        <button type="submit" disabled={loading}>
-          {loading ? "Logging in..." : "Login"}
-        </button>
-        <a href="/register">Don’t have an account? Register</a>
-      </form>
+      </div>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <PlanetPreferenceProvider>
+      <LoginPageShell />
+    </PlanetPreferenceProvider>
   );
 }

@@ -21,6 +21,9 @@ interface PlanetEntranceProps {
   duration?: number;
   offscreenRadius?: number;
   edgePadding?: number;
+  /** Which side the body slides in from. Defaults to "right" to preserve
+   * every existing consumer's behavior. */
+  fromSide?: "left" | "right";
 }
 
 /**
@@ -33,13 +36,15 @@ export function PlanetEntrance({
   duration = 2.1,
   offscreenRadius = 1,
   edgePadding = 0.16,
+  fromSide = "right",
 }: PlanetEntranceProps) {
   const root = useRef<Group>(null);
   const elapsed = useRef(0);
   const viewportWidth = useThree((state) => state.viewport.width);
-  const [startX] = useState(
-    () => viewportWidth / 2 + offscreenRadius + edgePadding,
-  );
+  const [startX] = useState(() => {
+    const offset = viewportWidth / 2 + offscreenRadius + edgePadding;
+    return fromSide === "left" ? -offset : offset;
+  });
 
   useFrame((_, delta) => {
     const group = root.current;

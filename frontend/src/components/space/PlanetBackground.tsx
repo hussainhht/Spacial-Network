@@ -30,7 +30,7 @@ import styles from "./PlanetBackground.module.css";
 // The canvas is larger than the body's visible frame so Earth's Moon and
 // Saturn's rings have transparent room at the edge. Moving the camera back by
 // the same factor preserves the established apparent size.
-const CANVAS_SCALE = 2.6;
+export const CANVAS_SCALE = 2.6;
 const SCROLL_ROTATION_RADIANS_PER_PIXEL = 0.0018;
 const SCROLL_RESET_DURATION_MS = 180;
 
@@ -53,7 +53,7 @@ function getServerReadySnapshot() {
   return false;
 }
 
-class SceneBoundary extends Component<
+export class SceneBoundary extends Component<
   { children: ReactNode; label: string },
   { failed: boolean }
 > {
@@ -75,7 +75,7 @@ class SceneBoundary extends Component<
   }
 }
 
-class AssetBoundary extends Component<
+export class AssetBoundary extends Component<
   { children: ReactNode; label: string },
   { failed: boolean }
 > {
@@ -101,7 +101,7 @@ class AssetBoundary extends Component<
  * Loads only the requested source into useGLTF's shared cache. It renders no
  * Three object, so the currently displayed body remains the only active body.
  */
-function PlanetAssetGate({
+export function PlanetAssetGate({
   config,
   onReady,
 }: {
@@ -125,7 +125,7 @@ function PlanetAssetGate({
  * 2. Pauses rendering completely (0 FPS) when tab is hidden or minimized.
  * 3. Renders only a single frame when reducedMotion is enabled.
  */
-function FrameGovernor({
+export function FrameGovernor({
   fps = 50,
   reducedMotion,
 }: {
@@ -175,16 +175,20 @@ function FrameGovernor({
   return null;
 }
 
-function PlanetScene({
+export function PlanetScene({
   config,
   viewport,
   reducedMotion,
   scrollRotation,
+  entryFromSide = "right",
 }: {
   config: PlanetConfig;
   viewport: PlanetViewport;
   reducedMotion: boolean;
   scrollRotation: RefObject<number>;
+  /** Which side a newly displayed body enters from. Defaults to "right",
+   * matching this component's original (and still only in-app-shell) use. */
+  entryFromSide?: "left" | "right";
 }) {
   return (
     <Canvas
@@ -209,6 +213,7 @@ function PlanetScene({
             viewport={viewport}
             reducedMotion={reducedMotion}
             scrollRotation={scrollRotation}
+            entryFromSide={entryFromSide}
           />
         </Suspense>
       </SceneBoundary>

@@ -1,0 +1,210 @@
+.card {
+  width: 100%;
+  max-width: 460px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: clamp(28px, 3vw, 40px);
+  background: linear-gradient(var(--planet-surface-tint), var(--planet-surface-tint)),
+    var(--space-card-bg);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--space-border);
+  border-radius: var(--space-radius-lg);
+  box-shadow:
+    0 25px 60px -15px rgba(2, 6, 23, 0.7),
+    0 0 0 1px rgba(255, 255, 255, 0.02) inset,
+    0 0 40px var(--planet-glow);
+  color: var(--space-text-body);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  animation: card-fade-in 260ms ease;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.heading {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--space-text-heading);
+  letter-spacing: -0.01em;
+}
+
+.subheading {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--space-text-muted);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.label {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--space-text-label);
+}
+
+.control {
+  min-height: 46px;
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--space-input-bg);
+  border: 1px solid var(--space-border);
+  border-radius: var(--space-radius-md);
+  color: var(--space-text-body);
+  font: inherit;
+  font-size: 0.95rem;
+  transition: border-color 150ms ease, background 150ms ease, box-shadow 150ms ease;
+}
+
+.control::placeholder {
+  color: var(--space-text-placeholder);
+}
+
+.control:focus-visible {
+  outline: none;
+  border-color: var(--planet-accent);
+  background: var(--space-input-bg-focus);
+  box-shadow: 0 0 0 3px var(--planet-border), 0 0 20px var(--planet-glow);
+}
+
+.control[aria-invalid="true"] {
+  border-color: var(--space-error-border);
+}
+
+.passwordControl {
+  position: relative;
+}
+
+.passwordControl .control {
+  padding-right: 64px;
+}
+
+.visibilityButton {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  padding: 6px 10px;
+  border: none;
+  background: transparent;
+  color: var(--space-text-muted);
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: var(--space-radius-sm);
+}
+
+.visibilityButton:hover {
+  color: var(--space-text-label);
+}
+
+.visibilityButton:focus-visible {
+  outline: 2px solid var(--planet-focus-ring);
+  outline-offset: 1px;
+}
+
+.formError {
+  margin: 0;
+  padding: 10px 14px;
+  background: var(--space-error-bg);
+  border: 1px solid var(--space-error-border);
+  border-radius: var(--space-radius-md);
+  color: var(--space-error-text);
+  font-size: 0.85rem;
+}
+
+.btnPrimary {
+  width: 100%;
+  min-height: 48px;
+  border: none;
+  border-radius: 12px;
+  background: var(--planet-accent-active);
+  color: #fff;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 150ms ease, filter 150ms ease;
+}
+
+.btnPrimary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.08);
+}
+
+.btnPrimary:active:not(:disabled) {
+  transform: translateY(0);
+  filter: brightness(0.96);
+}
+
+.btnPrimary:focus-visible {
+  outline: 2px solid var(--planet-focus-ring);
+  outline-offset: 2px;
+}
+
+.btnPrimary:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.registerLink {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--space-text-muted);
+  text-align: center;
+}
+
+.registerLink a {
+  color: var(--planet-accent-hover);
+  font-weight: 600;
+}
+
+@keyframes card-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card {
+    animation: none;
+  }
+
+  .control,
+  .btnPrimary {
+    transition: none;
+  }
+
+  .btnPrimary:hover:not(:disabled),
+  .btnPrimary:active:not(:disabled) {
+    transform: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .card {
+    max-width: none;
+  }
+}

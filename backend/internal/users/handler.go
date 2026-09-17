@@ -42,6 +42,9 @@ func toProfileResponse(profile *Profile, canViewFullProfile bool, includePersona
 
 		if profile.DateOfBirth.Valid {
 			resp.DateOfBirth = profile.DateOfBirth.String
+			if dob, err := time.Parse("2006-01-02", profile.DateOfBirth.String); err == nil {
+				resp.Age = computeAge(dob, time.Now())
+			}
 		}
 	}
 

@@ -109,8 +109,33 @@ func ValidateRegisterRequest(register *RegisterRequest) error {
 		return err
 	}
 
-	if err := users.ValidateAge(register.Age); err != nil {
+	register.DateOfBirth, register.Age, err = users.ValidateDateOfBirth(register.DateOfBirth)
+	if err != nil {
 		return err
+	}
+
+	if register.Nickname != "" {
+		nickname := register.Nickname
+		normalized, err := users.ValidateOptionalNickname(&nickname)
+		if err != nil {
+			return err
+		}
+		register.Nickname = ""
+		if normalized != nil {
+			register.Nickname = *normalized
+		}
+	}
+
+	if register.AboutMe != "" {
+		aboutMe := register.AboutMe
+		normalized, err := users.ValidateOptionalAboutMe(&aboutMe)
+		if err != nil {
+			return err
+		}
+		register.AboutMe = ""
+		if normalized != nil {
+			register.AboutMe = *normalized
+		}
 	}
 
 	return nil

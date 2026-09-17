@@ -1,0 +1,151 @@
+.stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+  width: 100%;
+  padding: clamp(32px, 5vw, 64px) clamp(20px, 4vw, 48px);
+  text-align: center;
+}
+
+.copy {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 420px;
+}
+
+.heading {
+  margin: 0;
+  font-size: clamp(1.5rem, 2vw, 1.85rem);
+  font-weight: 600;
+  color: var(--space-text-heading);
+  letter-spacing: -0.01em;
+}
+
+.hint {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--space-text-muted);
+}
+
+.previewFrame {
+  position: relative;
+  width: min(420px, 80vw);
+  aspect-ratio: 1;
+  pointer-events: none;
+}
+
+.canvasWrapper {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: calc(var(--canvas-scale, 2.6) * 100%);
+  height: calc(var(--canvas-scale, 2.6) * 100%);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+/* react-three-fiber's <Canvas> wraps the actual <canvas> in a container div
+   with an inline pointer-events:auto style, which wins over any inherited
+   "none" from ancestors. Since it's inline, only an !important stylesheet
+   rule can override it - needed here because the oversized, absolutely-
+   positioned canvas (sized well past .previewFrame's box, for the Moon/
+   rings' render margin) would otherwise intercept clicks on the selector
+   row below it. */
+.canvasWrapper > div {
+  pointer-events: none !important;
+}
+
+.canvasWrapper canvas {
+  display: block;
+}
+
+.orbFallback {
+  position: absolute;
+  inset: 8%;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 35% 30%, var(--option-accent-hover), transparent 60%),
+    radial-gradient(circle at 60% 70%, var(--option-accent), var(--space-bg-elevated) 75%);
+  box-shadow: 0 0 80px var(--option-glow);
+}
+
+.selectorRow {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  max-width: 460px;
+}
+
+.planetOption {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  border: 1px solid var(--space-border);
+  border-radius: var(--space-radius-md);
+  background: var(--space-input-bg);
+  color: var(--space-text-label);
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: border-color 150ms ease, background 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+}
+
+.planetOption:hover {
+  border-color: var(--option-accent-hover);
+  transform: translateY(-1px);
+}
+
+.planetOption:focus-visible {
+  outline: 2px solid var(--option-accent-hover);
+  outline-offset: 2px;
+}
+
+.planetOption[aria-pressed="true"] {
+  border-color: var(--option-accent);
+  background: var(--planet-surface-tint, var(--space-input-bg-focus));
+  box-shadow: 0 0 16px var(--option-glow);
+  color: var(--space-text-heading);
+}
+
+.planetOrb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, var(--option-accent-hover), var(--option-accent) 70%);
+}
+
+.planetLabel {
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .planetOption {
+    transition: none;
+  }
+
+  .planetOption:hover {
+    transform: none;
+  }
+}
+
+@media (max-width: 1100px) {
+  .previewFrame {
+    width: min(320px, 70vw);
+  }
+}
+
+@media (max-width: 760px) {
+  .stage {
+    gap: 20px;
+    padding: 24px 16px 8px;
+  }
+
+  .previewFrame {
+    width: min(220px, 55vw);
+  }
+}

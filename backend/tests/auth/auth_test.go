@@ -7,6 +7,7 @@ package auth_test
 import (
 	"strings"
 	"testing"
+	"time"
 
 	"social/internal/auth"
 	"social/internal/users"
@@ -18,13 +19,13 @@ import (
 
 func validRegisterRequest() auth.RegisterRequest {
 	return auth.RegisterRequest{
-		Username:  "janedoe",
-		FirstName: "Jane",
-		LastName:  "Doe",
-		Email:     "jane@example.com",
-		Password:  "supersecret1",
-		Gender:    "female",
-		Age:       30,
+		Username:    "janedoe",
+		FirstName:   "Jane",
+		LastName:    "Doe",
+		Email:       "jane@example.com",
+		Password:    "supersecret1",
+		Gender:      "female",
+		DateOfBirth: "1994-06-15",
 	}
 }
 
@@ -43,9 +44,11 @@ func TestValidateRegisterRequest_MissingFields(t *testing.T) {
 		{"missing last name", func(r *auth.RegisterRequest) { r.LastName = "" }, true},
 		{"missing username", func(r *auth.RegisterRequest) { r.Username = "" }, true},
 		{"invalid gender", func(r *auth.RegisterRequest) { r.Gender = "other" }, true},
-		{"age zero (missing DOB-derived age)", func(r *auth.RegisterRequest) { r.Age = 0 }, true},
-		{"age negative", func(r *auth.RegisterRequest) { r.Age = -5 }, true},
-		{"age too large", func(r *auth.RegisterRequest) { r.Age = 200 }, true},
+		{"missing date of birth", func(r *auth.RegisterRequest) { r.DateOfBirth = "" }, true},
+		{"invalid date of birth format", func(r *auth.RegisterRequest) { r.DateOfBirth = "15-06-1994" }, true},
+		{"date of birth in the future", func(r *auth.RegisterRequest) { r.DateOfBirth = "2999-01-01" }, true},
+		{"date of birth yields age too large", func(r *auth.RegisterRequest) { r.DateOfBirth = "1800-01-01" }, true},
+		{"date of birth yields age zero", func(r *auth.RegisterRequest) { r.DateOfBirth = time.Now().Format("2006-01-02") }, true},
 	}
 
 	for _, tt := range tests {
@@ -74,7 +77,7 @@ func TestRegister_ValidInput_PersistsUser(t *testing.T) {
 		t.Fatalf("validate register request: %v", err)
 	}
 
-	if err := svc.CreateUser(uuid.NewString(), req.Username, req.Age, req.Gender, req.FirstName, req.LastName, req.Email, req.Password, ""); err != nil {
+	if _, err := svc.CreateUser(uuid.NewString(), req.Username, req.Age, req.DateOfBirth, req.Gender, req.FirstName, req.LastName, req.Email, req.Password, ""); err != nil {
 		t.Fatalf("CreateUser: %v", err)
 	}
 
@@ -100,7 +103,7 @@ func TestRegister_DuplicateEmail_Rejected(t *testing.T) {
 	repo := users.NewRepository(db)
 	svc := users.NewService(repo, nil)
 
-	if err := svc.CreateUser(uuid.NewString(), "first", 25, "male", "First", "User", "dup@example.com", "password123", ""); err != nil {
+	if _, err := svc.CreateUser(uuid.NewString(), "first", 25, "1998-01-01", "male", "First", "User", "dup@example.com", "password123", ""); err != nil {
 		t.Fatalf("seed first user: %v", err)
 	}
 
@@ -115,7 +118,7 @@ func TestRegister_DuplicateEmail_Rejected(t *testing.T) {
 	// A second CreateUser with the same email must fail at the DB layer
 	// (UNIQUE constraint on users.email), mirroring what the handler guards
 	// against via EmailExists before ever calling CreateUser.
-	err = svc.CreateUser(uuid.NewString(), "second", 25, "male", "Second", "User", "dup@example.com", "password123", "")
+	_, err = svc.CreateUser(uuid.NewString(), "second", 25, "1998-01-01", "male", "Second", "User", "dup@example.com", "password123", "")
 	if err == nil {
 		t.Fatalf("expected duplicate email registration to fail, got nil error")
 	}
@@ -126,7 +129,7 @@ func TestRegister_DuplicateUsername_Rejected(t *testing.T) {
 	repo := users.NewRepository(db)
 	svc := users.NewService(repo, nil)
 
-	if err := svc.CreateUser(uuid.NewString(), "dupname", 25, "male", "First", "User", "a@example.com", "password123", ""); err != nil {
+	if _, err := svc.CreateUser(uuid.NewString(), "dupname", 25, "1998-01-01", "male", "First", "User", "a@example.com", "password123", ""); err != nil {
 		t.Fatalf("seed first user: %v", err)
 	}
 
@@ -138,7 +141,7 @@ func TestRegister_DuplicateUsername_Rejected(t *testing.T) {
 		t.Fatalf("expected UsernameExists to report true for an already-registered username")
 	}
 
-	err = svc.CreateUser(uuid.NewString(), "dupname", 25, "male", "Second", "User", "b@example.com", "password123", "")
+	_, err = svc.CreateUser(uuid.NewString(), "dupname", 25, "1998-01-01", "male", "Second", "User", "b@example.com", "password123", "")
 	if err == nil {
 		t.Fatalf("expected duplicate username registration to fail, got nil error")
 	}
@@ -150,7 +153,7 @@ func TestPasswordHashing_NeverStoredPlaintext(t *testing.T) {
 	svc := users.NewService(repo, nil)
 
 	const plaintext = "supersecret1"
-	if err := svc.CreateUser(uuid.NewString(), "hashcheck", 25, "male", "Hash", "Check", "hash@example.com", plaintext, ""); err != nil {
+	if _, err := svc.CreateUser(uuid.NewString(), "hashcheck", 25, "1998-01-01", "male", "Hash", "Check", "hash@example.com", plaintext, ""); err != nil {
 		t.Fatalf("CreateUser: %v", err)
 	}
 
@@ -175,7 +178,7 @@ func TestCheckCredentials_CorrectAndWrongPassword(t *testing.T) {
 	repo := users.NewRepository(db)
 	svc := users.NewService(repo, nil)
 
-	if err := svc.CreateUser(uuid.NewString(), "credcheck", 25, "male", "Cred", "Check", "cred@example.com", "correctpassword", ""); err != nil {
+	if _, err := svc.CreateUser(uuid.NewString(), "credcheck", 25, "1998-01-01", "male", "Cred", "Check", "cred@example.com", "correctpassword", ""); err != nil {
 		t.Fatalf("CreateUser: %v", err)
 	}
 

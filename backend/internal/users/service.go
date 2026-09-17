@@ -30,13 +30,13 @@ func (s *Service) EmailExists(email string) (bool, error) {
 	return s.repo.EmailExists(email)
 }
 
-func (s *Service) CreateUser(uuid, username string, age int, gender, firstName, lastName, email, password, profilePhoto string) error {
+func (s *Service) CreateUser(uuid, username string, age int, dateOfBirth, gender, firstName, lastName, email, password, profilePhoto string) (int, error) {
 	hashedPassword, err := hashPassword(password)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
-	return s.repo.InsertUser(uuid, username, age, gender, firstName, lastName, email, hashedPassword, profilePhoto)
+	return s.repo.InsertUser(uuid, username, age, dateOfBirth, gender, firstName, lastName, email, hashedPassword, profilePhoto)
 }
 
 // CheckCredentials verifies a username/email and password against the stored hash.

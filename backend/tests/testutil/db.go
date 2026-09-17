@@ -6,6 +6,7 @@ package testutil
 import (
 	"database/sql"
 	"testing"
+	"time"
 
 	"social/internal/users"
 	"social/pkg/db/sqlite"
@@ -75,23 +76,24 @@ func CreateUser(t *testing.T, db *sql.DB, opts NewUserOpts) int {
 	repo := users.NewRepository(db)
 	svc := users.NewService(repo, nil)
 
-	if err := svc.CreateUser(
+	// The service takes a date of birth, not a raw age; derive one that
+	// yields opts.Age so existing test call sites don't need to change.
+	dateOfBirth := time.Now().AddDate(-opts.Age, 0, 0).Format("2006-01-02")
+
+	id, err := svc.CreateUser(
 		uuid.NewString(),
 		opts.Username,
 		opts.Age,
+		dateOfBirth,
 		opts.Gender,
 		opts.FirstName,
 		opts.LastName,
 		opts.Email,
 		opts.Password,
 		"",
-	); err != nil {
-		t.Fatalf("seed user %q: %v", opts.Username, err)
-	}
-
-	id, err := repo.GetUserIDByUsername(opts.Username)
+	)
 	if err != nil {
-		t.Fatalf("look up seeded user %q: %v", opts.Username, err)
+		t.Fatalf("seed user %q: %v", opts.Username, err)
 	}
 
 	if opts.IsPrivate {

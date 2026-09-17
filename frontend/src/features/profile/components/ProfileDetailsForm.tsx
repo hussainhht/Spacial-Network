@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useMemo, useState } from "react";
-import { parseDate } from "@/lib/utils";
+import { getTodayInputValue, parseDate } from "@/lib/utils";
 import type { UpdateProfileDetailsInput } from "../api/profiles";
 import type { Profile } from "../types/profile";
 import styles from "./Profile.module.css";
@@ -37,12 +37,6 @@ function getFormState(profile: Profile): UpdateProfileDetailsInput {
     aboutMe: profile.aboutMe,
     dateOfBirth: toDateInputValue(profile.dateOfBirth),
   };
-}
-
-function getTodayInputValue(): string {
-  const now = new Date();
-  const localDate = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
-  return localDate.toISOString().slice(0, 10);
 }
 
 export default function ProfileDetailsForm({

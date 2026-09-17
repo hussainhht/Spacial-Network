@@ -1,200 +1,33 @@
 "use client";
-import { useRouter } from "next/navigation";
 
-import { useState} from "react";
-import type { SyntheticEvent } from "react";
-import { getApiUrl } from "@/lib/api";
+import { PlanetPreferenceProvider, usePlanetPreference } from "@/components/space/PlanetPreferenceProvider";
+import RegisterPlanetStage from "@/features/auth/components/RegisterPlanetStage";
+import RegisterForm from "@/features/auth/components/RegisterForm";
+import styles from "./page.module.css";
 
-export default function RegisterPage() {
-  const [username, setUsername] = useState("");
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [gender, setGender] = useState("male");
-  const [age, setAge] = useState("");
-  const [profilePhoto, setProfilePhoto] = useState<File | null>(null);
-
-  const router = useRouter();
-
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  async function handleSubmit(
-    event: SyntheticEvent<HTMLFormElement>,
-  ) {
-    event.preventDefault();
-
-    setError("");
-
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
-      return;
-    }
-
-    setLoading(true);
-
-    const formData = new FormData();
-
-    formData.append("username", username);
-    formData.append("firstName", firstName);
-    formData.append("lastName", lastName);
-    formData.append("email", email);
-    formData.append("password", password);
-    formData.append("gender", gender);
-    formData.append("age", age);
-
-    if (profilePhoto) {
-      formData.append("profilePhoto", profilePhoto);
-    }
-
-    try {
-      const response = await fetch(
-        getApiUrl("/register"),
-        {
-          method: "POST",
-          credentials: "include",
-          body: formData,
-        },
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError(data.message || "Registration failed");
-        return;
-      }
-
-      router.push("/login");
-      console.log("Registered:", data);
-    } catch {
-      setError("Could not connect to the server");
-    } finally {
-      setLoading(false);
-    }
-  }
+function RegisterPageShell() {
+  const { selectedPlanetId, themeStyle } = usePlanetPreference();
 
   return (
-    <main>
-      <h1>Create Account</h1>
-
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label htmlFor="username">Username</label>
-          <input
-            id="username"
-            type="text"
-            value={username}
-            onChange={(event) => setUsername(event.target.value)}
-            required
-          />
+    <main
+      className={styles.page}
+      data-planet={selectedPlanetId}
+      style={themeStyle}
+    >
+      <div className={styles.grid}>
+        <RegisterPlanetStage />
+        <div className={styles.formColumn}>
+          <RegisterForm />
         </div>
-
-        <div>
-          <label htmlFor="firstName">First Name</label>
-          <input
-            id="firstName"
-            type="text"
-            value={firstName}
-            onChange={(event) => setFirstName(event.target.value)}
-            required
-          />
-        </div>
-
-        <div>
-          <label htmlFor="lastName">Last Name</label>
-          <input
-            id="lastName"
-            type="text"
-            value={lastName}
-            onChange={(event) => setLastName(event.target.value)}
-            required
-          />
-        </div>
-
-        <div>
-          <label htmlFor="email">Email</label>
-          <input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            required
-          />
-        </div>
-
-        <div>
-          <label htmlFor="password">Password</label>
-          <input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            required
-          />
-        </div>
-
-        <div>
-          <label htmlFor="confirmPassword">Confirm Password</label>
-          <input
-            id="confirmPassword"
-            type="password"
-            value={confirmPassword}
-            onChange={(event) => setConfirmPassword(event.target.value)}
-            required
-          />
-        </div>
-
-        <div>
-          <label htmlFor="age">Age</label>
-          <input
-            id="age"
-            type="number"
-            min="0"
-            max="120"
-            value={age}
-            onChange={(event) => setAge(event.target.value)}
-            required
-          />
-        </div>
-
-        <div>
-          <label htmlFor="gender">Gender</label>
-
-          <select
-            id="gender"
-            value={gender}
-            onChange={(event) => setGender(event.target.value)}
-          >
-            <option value="male">Male</option>
-            <option value="female">Female</option>
-          </select>
-        </div>
-
-        <div>
-          <label htmlFor="profilePhoto">
-            Profile Photo
-          </label>
-
-          <input
-            id="profilePhoto"
-            type="file"
-            accept="image/jpeg,image/png,image/gif"
-            onChange={(event) => {
-              const file = event.target.files?.[0] ?? null;
-              setProfilePhoto(file);
-            }}
-          />
-        </div>
-
-        {error && <p>{error}</p>}
-
-        <button type="submit" disabled={loading}>
-          {loading ? "Creating account..." : "Register"}
-        </button>
-        <a href="/login">Already have an account? Login</a>
-      </form>
+      </div>
     </main>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <PlanetPreferenceProvider>
+      <RegisterPageShell />
+    </PlanetPreferenceProvider>
   );
 }
