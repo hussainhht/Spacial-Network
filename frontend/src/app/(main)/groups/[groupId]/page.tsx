@@ -1,12 +1,5 @@
-import PageTransition from "@/components/transitions/PageTransition";
-import GroupDetailsContent from "@/features/groups/components/GroupDetailsContent";
+import GroupOverviewTab from "@/features/groups/components/tabs/GroupOverviewTab";
 
 export default function GroupDetailsPage() {
-  return (
-    <PageTransition>
-      <main className="group-details-page space-shell">
-        <GroupDetailsContent />
-      </main>
-    </PageTransition>
-  );
+  return <GroupOverviewTab />;
 }

@@ -1,7 +1,5 @@
 .settings { display:flex; flex-direction:column; gap:22px; width:100%; margin:0 auto; }
-.header { display:flex; align-items:flex-end; justify-content:space-between; gap:24px; padding:2px; }
-.header h1 { margin:11px 0 4px; color:var(--space-text-heading); font-size:clamp(1.7rem,3vw,2.25rem); letter-spacing:-.03em; }
-.header p,.sectionHeading p,.previewHeading p { margin:0; color:var(--space-text-muted); font-size:.86rem; line-height:1.55; }
+.sectionHeading p,.previewHeading p { margin:0; color:var(--space-text-muted); font-size:.86rem; line-height:1.55; }
 .back { display:inline-flex; align-items:center; gap:7px; padding:0; border:0; background:none; color:var(--planet-accent-hover); font:inherit; font-size:.8rem; text-decoration:none; cursor:pointer; }
 .back:hover { text-decoration:underline; text-underline-offset:4px; }
 .workspace { display:grid; grid-template-columns:minmax(190px,220px) minmax(0,1fr); gap:24px; align-items:start; }

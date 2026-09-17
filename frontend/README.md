@@ -27,7 +27,7 @@
 ## Overview
 
 The frontend is a Next.js 16 App Router application in TypeScript. Routing is organized by route group
-(`(auth)`, `(main)`, `(group-settings)`); almost everything else — API calls, components, hooks, and local state —
+(`(auth)`, `(main)`); almost everything else — API calls, components, hooks, and local state —
 lives in one `features/<domain>/` folder per product area. There is no Redux/Zustand-style global store: state is
 plain React state and context, plus a small `useSyncExternalStore`-based cache for Groups data that multiple
 components need to share.
@@ -105,8 +105,9 @@ AuthGuard                     — client-side session check; redirects to /login
 | `/` | `(main)` | Home feed |
 | `/profile`, `/profile/[username]` | `(main)` | Own profile / another user's profile |
 | `/posts/new`, `/posts/[id]`, `/posts/[id]/edit` | `(main)` | Post composer, detail, edit |
-| `/groups`, `/groups/create`, `/groups/[groupId]` | `(main)` | Directory, creation, group detail (overview/events/members/chat tabs) |
-| `/groups/[groupId]/settings` | `(group-settings)` | Group settings, own layout/shell |
+| `/groups`, `/groups/create` | `(main)` | Group directory and creation |
+| `/groups/[groupId]`, `/groups/[groupId]/events`, `/groups/[groupId]/members`, `/groups/[groupId]/chat` | `(main)` | Group detail shell and routed content tabs |
+| `/groups/[groupId]/settings` | `(main)` | Group settings inside the shared group shell |
 | `/chat` | `(main)` | Private conversations |
 | `/notifications` | `(main)` | Notification center |
 | `/settings` | `(main)` | Profile, Privacy & Security, Appearance, Session tabs |
@@ -268,7 +269,7 @@ The backend must be running separately on `:8080` — see the [backend guide](..
 ```text
 frontend/
 ├── src/
-│   ├── app/                    # (auth), (main), (group-settings) route groups
+│   ├── app/                    # (auth), (main) route groups
 │   ├── components/
 │   │   ├── layout/              # AppShell, TopNavbar, PrimaryNavigation, AuthenticatedProviders
 │   │   ├── space/                # SpaceBackground, PlanetBackground/System/Model, modelsRegistry

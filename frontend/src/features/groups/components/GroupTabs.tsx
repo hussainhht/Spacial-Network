@@ -9,18 +9,37 @@ export type ActiveGroupTab =
   | "chat"
   | "settings";
 
+const GROUP_TABS = [
+  { value: "overview", label: "Overview", segment: "" },
+  { value: "events", label: "Events", segment: "events" },
+  { value: "members", label: "Members", segment: "members" },
+  { value: "chat", label: "Chat", segment: "chat" },
+  { value: "settings", label: "Settings", segment: "settings" },
+] satisfies ReadonlyArray<{
+  value: ActiveGroupTab;
+  label: string;
+  segment: string;
+}>;
+
+export function getGroupTabHref(groupId: number, tab: ActiveGroupTab) {
+  const segment = GROUP_TABS.find((item) => item.value === tab)?.segment;
+  return `/groups/${groupId}${segment ? `/${segment}` : ""}`;
+}
+
+export function getActiveGroupTab(pathname: string, groupId: number) {
+  const normalizedPath = pathname.replace(/\/+$/, "");
+  return (
+    GROUP_TABS.find(
+      ({ value }) => normalizedPath === getGroupTabHref(groupId, value),
+    )?.value ?? "overview"
+  );
+}
+
 interface GroupTabsProps {
   activeTab: ActiveGroupTab;
   onTabChange: (tab: ActiveGroupTab) => void;
   canEdit?: boolean;
 }
-
-const GROUP_TABS = [
-  { value: "overview", label: "Overview" },
-  { value: "events", label: "Events" },
-  { value: "members", label: "Members" },
-  { value: "chat", label: "Chat" },
-] satisfies ReadonlyArray<{ value: ActiveGroupTab; label: string }>;
 
 export default function GroupTabs({
   activeTab,
@@ -28,8 +47,8 @@ export default function GroupTabs({
   canEdit,
 }: GroupTabsProps) {
   const tabs = canEdit
-    ? [...GROUP_TABS, { value: "settings" as const, label: "Settings" }]
-    : GROUP_TABS;
+    ? GROUP_TABS
+    : GROUP_TABS.filter(({ value }) => value !== "settings");
 
   return (
     <SegmentedTabs
