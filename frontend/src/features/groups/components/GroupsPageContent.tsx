@@ -45,6 +45,7 @@ export default function GroupsPageContent() {
   return (
     <main className={`space-shell ${styles.page}`} aria-labelledby="groups-heading">
       <div className={styles.container}>
+        <h1 id="groups-heading" className="sr-only">Groups</h1>
         <div className={styles.toolbar} data-motion-section>
           <GroupsFilterTabs
             activeTab={activeTab}

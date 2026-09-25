@@ -32,7 +32,7 @@ export default function GroupCard({
             src={photo}
             alt=""
             fill
-            sizes="(max-width: 600px) 100vw, (max-width: 920px) 50vw, 33vw"
+            sizes="(max-width: 600px) 100vw, 450px"
             className={styles.coverImage}
           />
         ) : (

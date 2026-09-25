@@ -12,9 +12,10 @@ const FEEDS = [
 interface FeedFilterProps {
   active: FeedScope;
   onChange: (feed: FeedScope) => void;
+  className?: string;
 }
 
-export default function FeedFilter({ active, onChange }: FeedFilterProps) {
+export default function FeedFilter({ active, onChange, className }: FeedFilterProps) {
   return (
     <SegmentedTabs
       value={active}
@@ -23,6 +24,7 @@ export default function FeedFilter({ active, onChange }: FeedFilterProps) {
       ariaLabel="Feed filter"
       idPrefix="feed"
       panelId="feed-tabpanel"
+      className={className}
     />
   );
 }

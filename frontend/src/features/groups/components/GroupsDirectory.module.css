@@ -1,16 +1,24 @@
 /* Directory-only surfaces; accents inherit the existing planet token layer. */
 .page {
   --groups-surface: color-mix(in srgb, var(--space-bg-soft) 88%, transparent);
-  padding: 40px clamp(16px, 3vw, 48px) 48px;
+  padding: 16px 0 24px !important;
+  min-height: 100%;
+  box-sizing: border-box;
 }
 
 .container {
   container-type: inline-size;
-  width: min(100%, 1320px);
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  width: min(100%, 932px);
   margin-inline: auto;
+  padding-inline: 1rem;
+  box-sizing: border-box;
 }
 
-.intro { margin-bottom: 32px; }
+.intro { margin-bottom: 24px; }
 .eyebrow {
   margin: 0 0 8px;
   color: var(--planet-accent);
@@ -40,7 +48,7 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 12px;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 .toolbar .filters {
   flex: 0 0 auto;
@@ -48,9 +56,9 @@
   margin: 0;
 }
 .toolbar :global(.group-search) {
-  flex: 0 1 300px;
+  flex: 1 1 220px;
   width: min(100%, 300px);
-  min-width: 220px;
+  min-width: 180px;
   max-width: 300px;
   margin: 0;
 }
@@ -73,14 +81,20 @@
   outline: 2px solid var(--planet-focus-ring);
   outline-offset: 2px;
 }
-.page .create { gap: 8px; padding-inline: 20px; flex-shrink: 0; border-radius: 999px; }
+.page .create {
+  gap: 8px;
+  padding-inline: 20px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  margin-left: auto;
+}
 .page :global(.group-button) { min-height: 44px; font-family: inherit; font-size: 0.875rem; font-weight: 600; line-height: 1.4; transition: background-color 180ms, border-color 180ms; }
 .page :focus-visible { outline: 2px solid var(--planet-focus-ring); outline-offset: 4px; }
 .container > :global(.group-panel) { margin-bottom: 24px; }
 
 .grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 20px;
   margin: 0;
   padding: 0;
@@ -92,11 +106,14 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  min-height: 304px;
+  min-height: 420px;
   border: 1px solid var(--space-border);
   border-radius: 18px;
   background: linear-gradient(145deg, var(--planet-surface-tint), transparent 65%), var(--groups-surface);
   overflow: hidden;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(226, 232, 255, 0.03);
+  -webkit-backdrop-filter: blur(16px) saturate(135%);
+  backdrop-filter: blur(16px) saturate(135%);
   transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
 }
 @media (hover: hover) {
@@ -171,7 +188,7 @@
 .page :global(.group-verification-error) { padding: 20px; border: 1px solid var(--space-error-border); border-radius: 12px; background: var(--groups-surface); color: var(--space-error-text); }
 .pagination { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-top: 24px; }
 .pagination p { margin: 0; font-size: 0.8125rem; }
-.skeleton { gap: 14px; padding-bottom: 24px; }
+.skeleton { min-height: 420px; gap: 14px; padding-bottom: 24px; }
 .skeleton .skeletonCover { width: 100%; aspect-ratio: 16 / 9; border-radius: 0; background: var(--space-border); }
 .skeleton span:not(.skeletonCover) { display: block; height: 14px; border-radius: 4px; background: var(--space-border); margin-inline: 24px; }
 .skeleton span:nth-child(2) { width: calc(60% - 48px); height: 20px; margin-top: 4px; }
@@ -179,14 +196,18 @@
 .skeleton span:last-child { margin-top: auto; width: calc(40% - 48px); }
 
 /* Size columns to the actual content pane, including the existing sidebar. */
-@container (min-width: 580px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@container (min-width: 920px) { .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@container (max-width: 580px) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
 @media (max-width: 600px) {
-  .page { padding-top: 24px; }
-  .intro { margin-bottom: 24px; }
+  .page { padding-top: 16px; }
+  .intro { margin-bottom: 20px; }
   .toolbar {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
   }
   .toolbar .filters {
     grid-column: 1 / -1;
@@ -197,8 +218,16 @@
     min-width: 0;
     max-width: none;
   }
+  .page .create {
+    margin-left: 0;
+  }
   .body { padding: 16px 18px 18px; }
   .grid { gap: 16px; }
+}
+@media (max-width: 560px) {
+  .container {
+    padding-inline: 0.75rem;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   .page *, .page *::before, .page *::after { transition: none !important; animation: none !important; }

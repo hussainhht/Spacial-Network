@@ -64,25 +64,53 @@ body {
   --route-enter-duration: 220ms;
 }
 
+:root,
+html,
+body {
+  view-transition-name: none;
+}
+
 /* Route transitions are the single page-entry animation. Keeping these rules
    global is required because the browser-owned snapshot pseudo-elements live
    outside component CSS-module scopes. */
+::view-transition-old(*) {
+  animation: var(--route-exit-duration) ease-in both route-page-out;
+}
+
 ::view-transition-old(.route-page-exit) {
   animation: var(--route-exit-duration) ease-in both route-page-out;
+}
+
+::view-transition-new(*) {
+  animation: var(--route-enter-duration) var(--route-motion-ease) both route-page-in;
 }
 
 ::view-transition-new(.route-page-enter) {
   animation: var(--route-enter-duration) var(--route-motion-ease) both route-page-in;
 }
 
-/* Route pages can have very different document heights (the Home feed is
-   usually much taller than Chat or Settings). Prevent the browser from
-   interpolating the snapshot box between those heights, which visually
-   squashes the incoming page before expanding it. The old/new snapshots
-   still use the opacity and translate animations above. */
-::view-transition-group(.route-page-enter),
+/* Route pages have different document heights. Prevent the browser from
+   interpolating snapshot box geometry/height between pages, which visually
+   squashes the incoming cards and content before abruptly snapping to size. */
+::view-transition-group(*) {
+  animation: none !important;
+}
+
+::view-transition-group(.route-page-enter) {
+  animation: none !important;
+}
+
 ::view-transition-group(.route-page-exit) {
-  animation: none;
+  animation: none !important;
+}
+
+/* Never squish, stretch, or distort snapshot image contents during height differences */
+::view-transition-old(*),
+::view-transition-new(*) {
+  width: 100%;
+  height: 100%;
+  object-fit: none !important;
+  object-position: top center !important;
 }
 
 ::view-transition {
@@ -497,14 +525,16 @@ main:not(.chat-main):has(> form) form > p {
 
 .home-feed-filter-sticky {
   position: sticky;
-  top: 2rem;
-  z-index: 20;
+  top: 12px;
+  z-index: 12;
   width: fit-content;
   max-width: 100%;
-  margin: -0.25rem 0 0;
+  margin: 0 0 1rem 0;
+  align-self: flex-start;
 }
 
 .home-feed-filter-sticky > [data-segmented-tabs] {
+  margin-block-end: 0;
   transition:
     background-color 180ms ease,
     border-color 180ms ease,
@@ -525,7 +555,7 @@ main:not(.chat-main):has(> form) form > p {
 
 @media (max-width: 760px) {
   .home-feed-filter-sticky {
-    top: 0.5rem;
+    top: 8px;
     width: 100%;
   }
 }
@@ -537,11 +567,59 @@ main:not(.chat-main):has(> form) form > p {
 }
 
 .feed-skeleton-card {
-  height: 180px;
+  min-height: 310px;
   width: 100%;
-  border-radius: var(--space-radius-lg);
-  background: rgba(148, 163, 184, 0.12);
+  padding: 20px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  border: 1px solid var(--planet-border);
+  border-radius: calc(var(--space-radius-lg) + 2px);
+  background: radial-gradient(ellipse at top left, var(--planet-surface-tint), transparent 62%), rgba(8, 13, 29, 0.82);
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(226, 232, 255, 0.03);
+  -webkit-backdrop-filter: blur(16px) saturate(135%);
+  backdrop-filter: blur(16px) saturate(135%);
   animation: feedPulseGlow 1.8s ease-in-out infinite;
+}
+
+.feed-skeleton-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.feed-skeleton-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(148, 163, 184, 0.16);
+  flex-shrink: 0;
+}
+
+.feed-skeleton-meta {
+  width: 120px;
+  height: 16px;
+  border-radius: 4px;
+  background: rgba(148, 163, 184, 0.14);
+}
+
+.feed-skeleton-title {
+  width: 65%;
+  height: 20px;
+  border-radius: 4px;
+  background: rgba(148, 163, 184, 0.14);
+}
+
+.feed-skeleton-line {
+  width: 90%;
+  height: 14px;
+  border-radius: 4px;
+  background: rgba(148, 163, 184, 0.1);
+}
+
+.feed-skeleton-short {
+  width: 55%;
 }
 
 @keyframes feedPulseGlow {
@@ -1036,8 +1114,17 @@ main:not(.chat-main):has(> form) form > p {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
-  width: min(100%, 720px);
+  width: min(100%, 932px);
   margin: 0 auto;
+  padding-inline: 1rem;
+  box-sizing: border-box;
+}
+
+.group-details-page,
+.group-create-page {
+  padding: 16px 0 24px !important;
+  min-height: 100%;
+  box-sizing: border-box;
 }
 
 .groups-page-header {
@@ -1075,13 +1162,22 @@ main:not(.chat-main):has(> form) form > p {
 
 /* Community directory and details share the existing space theme. */
 .groups-container {
-  width: min(100%, 1120px);
+  width: min(100%, 932px);
+  margin-inline: auto;
+  padding-inline: 1rem;
+  box-sizing: border-box;
 }
 .group-details-container {
-  width: min(100%, 1200px);
+  width: min(100%, 932px);
+  margin-inline: auto;
+  padding-inline: 1rem;
+  box-sizing: border-box;
 }
 .group-create-container {
-  width: min(100%, 1120px);
+  width: min(100%, 932px);
+  margin-inline: auto;
+  padding-inline: 1rem;
+  box-sizing: border-box;
 }
 .groups-list {
   display: grid;
@@ -1099,6 +1195,9 @@ main:not(.chat-main):has(> form) form > p {
     var(--space-card-bg);
   border: 1px solid var(--planet-border);
   border-radius: var(--space-radius-lg);
+  backdrop-filter: blur(16px) saturate(135%);
+  -webkit-backdrop-filter: blur(16px) saturate(135%);
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(226, 232, 255, 0.03);
 }
 .group-card {
   display: flex;
@@ -1359,8 +1458,8 @@ main:not(.chat-main):has(> form) form > p {
 .overviewGrid {
   display: grid;
   align-items: start;
-  gap: 20px;
-  grid-template-columns: minmax(0, 1.65fr) minmax(280px, 0.95fr);
+  gap: 2rem;
+  grid-template-columns: minmax(0, 620px) minmax(260px, 280px);
 }
 
 .group-overview-column,
@@ -1430,7 +1529,7 @@ main:not(.chat-main):has(> form) form > p {
     max-width: 100%;
     margin: 0 auto;
     height: calc(
-      100dvh - var(--app-navbar-height) - 2 * clamp(1.5rem, 5vw, 3rem)
+      100dvh - var(--app-navbar-height) - 40px
     );
     min-height: 0;
     overflow: hidden;
@@ -1730,24 +1829,26 @@ main:not(.chat-main):has(> form) form > p {
   outline: 2px solid var(--planet-focus-ring);
   outline-offset: 4px;
 }
-@media (max-width: 1100px) {
-  .group-overview-grid,
-  .overviewGrid {
-    grid-template-columns: minmax(0, 1.4fr) minmax(260px, 0.85fr);
-    gap: 18px;
-  }
-}
-@media (max-width: 700px) {
+@media (max-width: 960px) {
   .group-overview-grid,
   .overviewGrid {
     grid-template-columns: 1fr;
-    gap: 16px;
+    gap: 1.25rem;
   }
+}
+@media (max-width: 700px) {
   .group-header-card {
     flex-wrap: wrap;
   }
   .group-header-info-top {
     align-items: center;
+  }
+}
+@media (max-width: 560px) {
+  .groups-container,
+  .group-create-container,
+  .group-details-container {
+    padding-inline: 0.75rem;
   }
 }
 @media (max-width: 600px) {
