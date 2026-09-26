@@ -1,11 +1,20 @@
 .page:global(.home-feed-page) {
-  padding-top: 0.75rem;
+  padding: 16px 0 !important;
+  min-height: 100%;
+  box-sizing: border-box;
 }
 
 .layout {
-  width: min(100%, 640px);
-  margin: 0 auto;
-  padding: clamp(1rem, 3vw, 2rem);
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 620px) minmax(260px, 280px);
+  gap: 2rem;
+  align-items: start;
+  width: min(100%, 932px);
+  margin-inline: auto;
+  padding-inline: 1rem;
+  box-sizing: border-box;
 }
 
 .feed,
@@ -14,40 +23,40 @@
 }
 
 .feed {
-  display: grid;
-  gap: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }
 
 .recommendations {
-  display: none;
+  display: block;
+  position: sticky;
+  top: 12px;
 }
 
 .inlineDiscovery {
-  margin-block: .25rem;
+  display: none;
+  margin-block: 0.25rem;
 }
 
-@media (min-width: 1280px) {
+@media (max-width: 960px) {
   .layout {
-    display: grid;
-    grid-template-columns: minmax(0, 620px) minmax(260px, 280px);
-    align-items: start;
-    width: min(100%, 932px);
-    gap: 2rem;
-    margin-inline: auto;
-    padding-inline: 1rem;
+    grid-template-columns: 1fr;
+    width: min(100%, 640px);
+    gap: 1.25rem;
   }
 
   .recommendations {
-    display: block;
-    position: sticky;
-    top: 2rem;
+    display: none;
   }
 
   .inlineDiscovery {
-    display: none;
+    display: block;
   }
 }
 
 @media (max-width: 560px) {
-  .layout { padding: .75rem; }
+  .layout {
+    padding-inline: 0.75rem;
+  }
 }

@@ -63,7 +63,13 @@ export default function PostDetailPage() {
           </Link>
 
           {!validId && <p className="form-error">Invalid post id</p>}
-          {loading && <p>Loading post...</p>}
+          {loading && (
+            <div
+              className="feed-skeleton-card"
+              style={{ minHeight: "480px" }}
+              aria-label="Loading post..."
+            />
+          )}
           {error && <p className="form-error">{error}</p>}
 
           {post && (

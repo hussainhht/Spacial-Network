@@ -131,9 +131,17 @@ export default function PostFeed({
               Loading posts...
             </p>
             <div className="feed-skeleton" aria-hidden="true">
-              <div className="feed-skeleton-card" />
-              <div className="feed-skeleton-card" />
-              <div className="feed-skeleton-card" />
+              {Array.from({ length: 3 }, (_, index) => (
+                <div className="feed-skeleton-card" key={index}>
+                  <div className="feed-skeleton-header">
+                    <span className="feed-skeleton-avatar" />
+                    <span className="feed-skeleton-meta" />
+                  </div>
+                  <span className="feed-skeleton-title" />
+                  <span className="feed-skeleton-line" />
+                  <span className="feed-skeleton-line feed-skeleton-short" />
+                </div>
+              ))}
             </div>
           </>
         )}

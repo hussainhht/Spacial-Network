@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { GroupsSearchProvider } from "@/features/groups/context/GroupsSearchProvider";
 import PlanetBackground from "@/components/space/PlanetBackground";
 import {
@@ -11,12 +13,20 @@ import PrimaryNavigation from "./PrimaryNavigation/PrimaryNavigation";
 import styles from "./AppShell.module.css";
 
 function PlanetAwareShell({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
   const {
     selectedPlanetId,
     planetModelEnabled,
     preferenceReady,
     themeStyle,
   } = usePlanetPreference();
+
+  useEffect(() => {
+    const pane = document.getElementById("page-content");
+    if (pane) {
+      pane.scrollTop = 0;
+    }
+  }, [pathname]);
 
   return (
     <GroupsSearchProvider>
