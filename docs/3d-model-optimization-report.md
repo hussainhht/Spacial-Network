@@ -15,12 +15,12 @@ whatever container-level waste can be removed safely.
 
 `scripts/optimize-planet-models.mjs` runs four `gltf-transform` operations, in order, on every model:
 
-| Step | Operation | What it can change | What it cannot change |
-|---|---|---|---|
-| 1 | `dedup` | Merges **byte-identical** duplicate accessors/materials/textures/meshes | Never alters a value, only removes redundant copies |
-| 2 | `prune --keep-leaves true --keep-solid-textures true` | Drops nodes/accessors/textures nothing in the scene references | Never touches anything reachable from a scene root; leaf nodes and solid-color textures explicitly protected |
-| 3 | `weld` | Merges **bitwise-identical** duplicate vertices | Triangle count, shape, and every distinct vertex value are unchanged |
-| 4 | `reorder --target size` | Permutes vertex/index buffer order for GPU cache locality and better downstream compressibility | Pure reordering — no value is added, removed, or modified |
+| Step | Operation                                               | What it can change                                                                              | What it cannot change                                                                                        |
+| ---- | ------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| 1    | `dedup`                                               | Merges**byte-identical** duplicate accessors/materials/textures/meshes                    | Never alters a value, only removes redundant copies                                                          |
+| 2    | `prune --keep-leaves true --keep-solid-textures true` | Drops nodes/accessors/textures nothing in the scene references                                  | Never touches anything reachable from a scene root; leaf nodes and solid-color textures explicitly protected |
+| 3    | `weld`                                                | Merges**bitwise-identical** duplicate vertices                                            | Triangle count, shape, and every distinct vertex value are unchanged                                         |
+| 4    | `reorder --target size`                               | Permutes vertex/index buffer order for GPU cache locality and better downstream compressibility | Pure reordering — no value is added, removed, or modified                                                   |
 
 After the chain, the script asserts (and refuses to publish a result unless all of these hold):
 
@@ -44,6 +44,7 @@ If a model's chain output isn't smaller than its input, the pre-existing `*-fina
 **The fix:** `gltf-transform metalrough` converts the material to standard `pbrMetallicRoughness` + `KHR_materials_specular` + `KHR_materials_ior` — both of those extensions are natively supported by this project's `GLTFLoader` (confirmed the same way). This exact conversion is already precedented in this repo (`3d/README.md`'s black-hole pipeline did the same spec/gloss → metal/rough conversion for the same reason).
 
 **What this did and did not change**, verified by a dedicated check (`verifyMetalroughConversion` in the script) before the lossless chain ever ran on the result:
+
 - Triangle/vertex counts: unchanged.
 - `emissiveTexture` and `occlusionTexture`: byte-identical to the source (metalrough doesn't touch them).
 - `diffuseTexture` → `baseColorTexture`: same JPEG bytes, same 2048×1024 resolution, just relocated to the slot name a standard-compliant renderer expects.
@@ -65,25 +66,25 @@ Net effect: `jupiter-final.glb` is 6.88 MB → 9.73 MB (+41.5%), because re-enco
 
 These were **not** re-derived from their original multi-hundred-MB sources — only the lossless container pass above was applied, via a temp file, replacing the existing final file **only if the result was smaller**.
 
-| Model | Before | After | Δ | Triangles | Textures | Status |
-|---|---:|---:|---:|---:|---|---|
-| Black Hole | 1.75 MB (1,747,672 B) | 1.75 MB (1,745,968 B) | −0.10% | 13,357 → 13,357 | 11, byte-identical | Replaced (smaller) |
-| Earth | 6.25 MB (6,247,232 B) | 6.25 MB (6,247,232 B) | 0% | 11,520 → 11,520 | 4, byte-identical | **Unchanged** (no lossless gain found) |
-| Mars | 5.48 MB (5,476,792 B) | 5.48 MB (5,476,792 B) | 0% | 179,989 → 179,989 | 1, byte-identical | **Unchanged** (no lossless gain found) |
-| Moon | 11.45 MB (11,452,860 B) | 11.45 MB (11,452,860 B) | 0% | 179,976 → 179,976 | 1, byte-identical | **Unchanged** (no lossless gain found) |
-| Saturn | 3.18 MB (3,181,752 B) | 3.05 MB (3,046,280 B) | −4.26% | 17,021 → 17,021 | 3, byte-identical | Replaced (smaller) |
+| Model      |                  Before |                   After |      Δ |          Triangles | Textures           | Status                                       |
+| ---------- | ----------------------: | ----------------------: | ------: | -----------------: | ------------------ | -------------------------------------------- |
+| Black Hole |   1.75 MB (1,747,672 B) |   1.75 MB (1,745,968 B) | −0.10% |   13,357 → 13,357 | 11, byte-identical | Replaced (smaller)                           |
+| Earth      |   6.25 MB (6,247,232 B) |   6.25 MB (6,247,232 B) |      0% |   11,520 → 11,520 | 4, byte-identical  | **Unchanged** (no lossless gain found) |
+| Mars       |   5.48 MB (5,476,792 B) |   5.48 MB (5,476,792 B) |      0% | 179,989 → 179,989 | 1, byte-identical  | **Unchanged** (no lossless gain found) |
+| Moon       | 11.45 MB (11,452,860 B) | 11.45 MB (11,452,860 B) |      0% | 179,976 → 179,976 | 1, byte-identical  | **Unchanged** (no lossless gain found) |
+| Saturn     |   3.18 MB (3,181,752 B) |   3.05 MB (3,046,280 B) | −4.26% |   17,021 → 17,021 | 3, byte-identical  | Replaced (smaller)                           |
 
 ### Files newly promoted to `*-final.glb` (raw exporter output before this pass)
 
 Originals (`jupiter.glb`, `mercury.glb`, `sun.glb`, `uranus.glb`, `venus.glb`) are untouched and still present alongside their new `-final` counterparts.
 
-| Model | Before | After | Δ | Triangles | Textures | Status |
-|---|---:|---:|---:|---:|---|---|
-| Jupiter | 6.88 MB (6,877,984 B) | 9.73 MB (9,734,096 B) | **+41.53%** | 3,968 → 3,968 | 3 → 4, see note | Material reliability fix (metalrough), see above |
-| Mercury | 5.91 MB (5,911,124 B) | 5.85 MB (5,852,048 B) | −1.00% | 9,800 → 9,800 | 1, byte-identical | Created |
-| Sun | 2.12 MB (2,116,612 B) | 2.06 MB (2,064,004 B) | −2.49% | 7,936 → 7,936 | 3, byte-identical | Created |
-| Uranus | 6.50 MB (6,495,344 B) | 6.44 MB (6,444,852 B) | −0.78% | 8,072 → 8,072 | 7, byte-identical | Created |
-| Venus | 7.04 MB (7,035,944 B) | 6.38 MB (6,378,988 B) | −9.34% | 65,024 → 65,024 | 7, byte-identical | Created |
+| Model   |                Before |                 After |                Δ |        Triangles | Textures          | Status                                           |
+| ------- | --------------------: | --------------------: | ----------------: | ---------------: | ----------------- | ------------------------------------------------ |
+| Jupiter | 6.88 MB (6,877,984 B) | 9.73 MB (9,734,096 B) | **+41.53%** |   3,968 → 3,968 | 3 → 4, see note  | Material reliability fix (metalrough), see above |
+| Mercury | 5.91 MB (5,911,124 B) | 5.85 MB (5,852,048 B) |           −1.00% |   9,800 → 9,800 | 1, byte-identical | Created                                          |
+| Sun     | 2.12 MB (2,116,612 B) | 2.06 MB (2,064,004 B) |           −2.49% |   7,936 → 7,936 | 3, byte-identical | Created                                          |
+| Uranus  | 6.50 MB (6,495,344 B) | 6.44 MB (6,444,852 B) |           −0.78% |   8,072 → 8,072 | 7, byte-identical | Created                                          |
+| Venus   | 7.04 MB (7,035,944 B) | 6.38 MB (6,378,988 B) |           −9.34% | 65,024 → 65,024 | 7, byte-identical | Created                                          |
 
 ### Totals
 
@@ -97,17 +98,17 @@ The modest percentages on the already-`*-final` files are expected and correct: 
 
 All of the following were checked per model, automatically, by `scripts/optimize-planet-models.mjs` (not just spot-checked):
 
-- [x] GLB parses (magic, version, chunk headers, JSON well-formed) for all 10.
-- [x] No missing buffers/images — every referenced `bufferView` resolves and every image decodes (verified via the same manual GLB parser used for hashing, plus the Khronos validator).
-- [x] No invalid material references — every material's texture slot set preserved 1:1.
-- [x] No missing UVs — `POSITION`/`NORMAL` presence checked on every primitive; genuinely-unused UV channels (e.g. Venus's unreferenced `TEXCOORD_1`/`TEXCOORD_2`) were pruned, which is a size win with no rendering effect since nothing samples them.
-- [x] No invalid indices / NaN transforms — would surface as Khronos validator errors (0 across all 10 outputs).
-- [x] No broken animations — Sun's and Uranus's animation channel counts and target node names checked explicitly (both unchanged: Sun 1 animation/2 channels, Uranus 1 animation/4 channels).
-- [x] No skinning/morph targets in any of these 10 models (none present in source).
-- [x] No unexpected scale/rotation/origin changes — none of the four operations touch node transforms at all.
-- [x] Triangle count not intentionally reduced — asserted equal, not just "close," for every model.
-- [x] Texture resolution unchanged — confirmed via SHA-256 (strictly stronger than a dimension check) for 9 models; Jupiter's touched textures confirmed same-resolution re-encode.
-- [x] Three.js `GLTFLoader` (the actual loader the app uses) parses every output with no "Unknown extension" warning.
+- [X] GLB parses (magic, version, chunk headers, JSON well-formed) for all 10.
+- [X] No missing buffers/images — every referenced `bufferView` resolves and every image decodes (verified via the same manual GLB parser used for hashing, plus the Khronos validator).
+- [X] No invalid material references — every material's texture slot set preserved 1:1.
+- [X] No missing UVs — `POSITION`/`NORMAL` presence checked on every primitive; genuinely-unused UV channels (e.g. Venus's unreferenced `TEXCOORD_1`/`TEXCOORD_2`) were pruned, which is a size win with no rendering effect since nothing samples them.
+- [X] No invalid indices / NaN transforms — would surface as Khronos validator errors (0 across all 10 outputs).
+- [X] No broken animations — Sun's and Uranus's animation channel counts and target node names checked explicitly (both unchanged: Sun 1 animation/2 channels, Uranus 1 animation/4 channels).
+- [X] No skinning/morph targets in any of these 10 models (none present in source).
+- [X] No unexpected scale/rotation/origin changes — none of the four operations touch node transforms at all.
+- [X] Triangle count not intentionally reduced — asserted equal, not just "close," for every model.
+- [X] Texture resolution unchanged — confirmed via SHA-256 (strictly stronger than a dimension check) for 9 models; Jupiter's touched textures confirmed same-resolution re-encode.
+- [X] Three.js `GLTFLoader` (the actual loader the app uses) parses every output with no "Unknown extension" warning.
 
 One pre-existing, unrelated note: `earth-final.glb` (left untouched by this pass) has one Khronos validator warning — `KHR_MATERIALS_EMISSIVE_STRENGTH_ZERO_FACTOR` ("emissive strength has no effect when the emissive factor is zero"), from the prior optimization session. Cosmetic, not introduced or touched here.
 
@@ -115,13 +116,13 @@ One pre-existing, unrelated note: `earth-final.glb` (left untouched by this pass
 
 `frontend/src/components/space/modelsRegistry.ts` was the only place in `frontend/src` referencing the pre-`-final` filenames (confirmed by repo-wide grep before editing). Updated 5 entries:
 
-| Model | Old path | New path |
-|---|---|---|
+| Model   | Old path                        | New path                              |
+| ------- | ------------------------------- | ------------------------------------- |
 | Jupiter | `/models/planets/jupiter.glb` | `/models/planets/jupiter-final.glb` |
 | Mercury | `/models/planets/mercury.glb` | `/models/planets/mercury-final.glb` |
-| Sun | `/models/planets/sun.glb` | `/models/planets/sun-final.glb` |
-| Uranus | `/models/planets/uranus.glb` | `/models/planets/uranus-final.glb` |
-| Venus | `/models/planets/venus.glb` | `/models/planets/venus-final.glb` |
+| Sun     | `/models/planets/sun.glb`     | `/models/planets/sun-final.glb`     |
+| Uranus  | `/models/planets/uranus.glb`  | `/models/planets/uranus-final.glb`  |
+| Venus   | `/models/planets/venus.glb`   | `/models/planets/venus-final.glb`   |
 
 `frontend/src/app/(main)/dev/3d/modelsRegistry.ts` just re-exports the file above, so no separate edit was needed there. No other file references any planet model path.
 

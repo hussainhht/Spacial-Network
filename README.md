@@ -1,23 +1,6 @@
 <div align="center">
   <img src="docs/assets/readme/hero.svg" alt="Social Network — orbiting planets and a connected social graph over a dark space background" width="100%" />
 
-  # Social Network
-
-  ### A full-stack social network with a solar system built in.
-
-  Follow, post, and message in realtime behind privacy rules enforced on the backend. Join groups, RSVP to events,
-  and get notified the moment something happens — all rendered over a WebGL planet that also drives the app's live color theme.
-
-  [![Next.js](https://img.shields.io/badge/Next.js-16-000000?style=flat&logo=nextdotjs&logoColor=white)](frontend/package.json)
-  [![React](https://img.shields.io/badge/React-19-149ECA?style=flat&logo=react&logoColor=white)](frontend/package.json)
-  [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=flat&logo=typescript&logoColor=white)](frontend/package.json)
-  [![Go](https://img.shields.io/badge/Go-1.26-00ADD8?style=flat&logo=go&logoColor=white)](backend/go.mod)
-  [![SQLite](https://img.shields.io/badge/SQLite-embedded-07405E?style=flat&logo=sqlite&logoColor=white)](docs/database/database-migration-guide.md)
-  [![WebSocket](https://img.shields.io/badge/WebSocket-realtime-4B32C3?style=flat)](#realtime-system)
-  [![Three.js](https://img.shields.io/badge/Three.js-3D-black?style=flat&logo=threedotjs&logoColor=white)](frontend/src/components/space)
-  [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=flat&logo=docker&logoColor=white)](compose.yaml)
-</div>
-
 <br />
 
 ## Contents
@@ -91,6 +74,7 @@ Saturn, Uranus, or the Sun — is a selectable theme that also recolors the inte
 ## Core Features
 
 ### Identity and Privacy
+
 - Multi-step registration with required identity fields and an optional avatar, nickname, and biography.
 - Username-or-email login backed by bcrypt password hashing and cookie-based sessions with a 24-hour sliding expiry.
 - Editable profiles with a public/private toggle; private profiles limit biography and social-list visibility to
@@ -98,6 +82,7 @@ Saturn, Uranus, or the Sun — is a selectable theme that also recolors the inte
 - Direct follows for public profiles; approval-based follow requests for private ones.
 
 ### Social Feed
+
 - Text and image posts (up to four images per post) with public, followers-only, and selected-follower visibility.
 - Comments with optional image/GIF attachments that inherit the parent post's access rules.
 - Likes, cursor-based feed pagination, and `All` / `Following` / `Friends` filters.
@@ -105,17 +90,20 @@ Saturn, Uranus, or the Sun — is a selectable theme that also recolors the inte
 - In-app post sharing into eligible private or group conversations, rendered as a preview card in the chat thread.
 
 ### Communities
+
 - Public groups (discoverable, join-by-request) and private groups (hidden from discovery, invite-only).
 - Creator-managed invitations, join-request review, member-only posts/comments, and member removal.
 - Group events with future-date validation and changeable `going` / `not_going` RSVPs.
 
 ### Realtime
+
 - One authenticated WebSocket connection multiplexes private chat, group chat, typing indicators, and read receipts.
 - Persisted, realtime-pushed notifications with unread counts and toasts.
 - Online/offline presence and immediate authorization changes (for example, a removed group member stops
   receiving that group's messages right away).
 
 ### Ambient Space Theme
+
 - Eight selectable celestial themes plus Earth's Moon, each with its own accent color that reskins the interface.
 - A lightweight starfield for unauthenticated pages and a persistent WebGL scene across the authenticated app.
 - A full off switch, reduced-motion support, and preferences that sync across browser tabs. See [Space Experience](#space-experience) below.
@@ -133,16 +121,16 @@ Earth is the only body with a Moon companion. Selecting a planet writes its acce
 as CSS variables, so the same choice reskins buttons, links, and focus rings across the whole app — not just the
 3D scene:
 
-| Body | Accent |
-|---|---|
+| Body            | Accent      |
+| --------------- | ----------- |
 | Earth (default) | `#69aef0` |
-| Mercury | `#b7c0ca` |
-| Venus | `#dfb46a` |
-| Mars | `#d8794e` |
-| Jupiter | `#c7a27c` |
-| Saturn | `#d8c188` |
-| Uranus | `#6fcfd3` |
-| Sun | `#e5a13c` |
+| Mercury         | `#b7c0ca` |
+| Venus           | `#dfb46a` |
+| Mars            | `#d8794e` |
+| Jupiter         | `#c7a27c` |
+| Saturn          | `#d8c188` |
+| Uranus          | `#6fcfd3` |
+| Sun             | `#e5a13c` |
 
 Preferences (selected planet, model on/off, scroll-follow) persist in `localStorage` and synchronize across tabs;
 the app waits for stored preferences before ever mounting the 3D layer, so a disabled model never triggers a GLB
@@ -153,7 +141,7 @@ texture recompression or the heavier WASM decoders that Draco/Meshopt geometry c
 the client bundle.
 
 For the component tree, preference-provider internals, and how to add a new planet model, see the
-[frontend guide's Space and 3D System section](frontend/README.md#space-and-3d-system).
+[frontend guide&#39;s Space and 3D System section](frontend/README.md#space-and-3d-system).
 
 ## Architecture
 
@@ -216,16 +204,16 @@ logout
 
 ## Privacy Model
 
-| Area | Rule |
-|---|---|
-| Profiles | Private profiles limit biography and social lists to the owner and approved followers. Email, date of birth, age, and internal ID are never exposed to other users. |
-| Posts | `public` posts are visible to any authenticated user; `followers` posts require an approved follow; `custom` posts are limited to selected, already-approved followers. |
-| Comments | Access is derived from the parent post's visibility, including group membership where the post belongs to a group. |
-| Public groups | Discoverable; joining goes through a request the creator approves or rejects. |
-| Private groups | Hidden from group discovery and outsider reads; entry is by creator-issued invitation only. |
-| Group content | Posts, comments, events, RSVPs, and chat history all require current group membership. |
-| Private chat | Available when either participant follows the other; the server rechecks this on every message. |
-| Group chat | Current membership is checked when loading history, sending, and resolving who receives a broadcast. |
+| Area           | Rule                                                                                                                                                                          |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Profiles       | Private profiles limit biography and social lists to the owner and approved followers. Email, date of birth, age, and internal ID are never exposed to other users.           |
+| Posts          | `public` posts are visible to any authenticated user; `followers` posts require an approved follow; `custom` posts are limited to selected, already-approved followers. |
+| Comments       | Access is derived from the parent post's visibility, including group membership where the post belongs to a group.                                                            |
+| Public groups  | Discoverable; joining goes through a request the creator approves or rejects.                                                                                                 |
+| Private groups | Hidden from group discovery and outsider reads; entry is by creator-issued invitation only.                                                                                   |
+| Group content  | Posts, comments, events, RSVPs, and chat history all require current group membership.                                                                                        |
+| Private chat   | Available when either participant follows the other; the server rechecks this on every message.                                                                               |
+| Group chat     | Current membership is checked when loading history, sending, and resolving who receives a broadcast.                                                                          |
 
 Privacy rules are enforced on the backend — at the query and service layer, not just hidden in the UI.
 
@@ -300,34 +288,34 @@ command, and schema walkthrough live in the [backend guide](backend/README.md#mi
 
 ## Technology Stack
 
-| Layer | Technology | Role |
-|---|---|---|
-| Frontend framework | Next.js 16, App Router | Routing and application shell |
-| UI runtime | React 19 | Component rendering and client state |
-| Frontend language | TypeScript 5.9 | Typed frontend implementation |
-| Styling | Tailwind CSS 4 + scoped/global CSS | Layout, responsive UI, theme variables |
-| 3D rendering | Three.js, React Three Fiber, Drei | GLB planet rendering and scene composition |
-| Backend language | Go 1.26 | HTTP, domain services, concurrency, CLIs |
-| HTTP stack | Go standard library `net/http` | Routing and middleware, no web framework |
-| Realtime transport | Gorilla WebSocket | One multiplexed connection at `/api/ws` |
-| Database | SQLite (`mattn/go-sqlite3`) | Relational persistence, foreign keys, WAL |
-| Auth crypto | `golang.org/x/crypto` bcrypt | Password hashing and verification |
-| Identifiers | `google/uuid` | Upload filenames and public identifiers |
-| Containers | Docker + Docker Compose | Local two-service development topology |
+| Layer              | Technology                         | Role                                       |
+| ------------------ | ---------------------------------- | ------------------------------------------ |
+| Frontend framework | Next.js 16, App Router             | Routing and application shell              |
+| UI runtime         | React 19                           | Component rendering and client state       |
+| Frontend language  | TypeScript 5.9                     | Typed frontend implementation              |
+| Styling            | Tailwind CSS 4 + scoped/global CSS | Layout, responsive UI, theme variables     |
+| 3D rendering       | Three.js, React Three Fiber, Drei  | GLB planet rendering and scene composition |
+| Backend language   | Go 1.26                            | HTTP, domain services, concurrency, CLIs   |
+| HTTP stack         | Go standard library`net/http`    | Routing and middleware, no web framework   |
+| Realtime transport | Gorilla WebSocket                  | One multiplexed connection at`/api/ws`   |
+| Database           | SQLite (`mattn/go-sqlite3`)      | Relational persistence, foreign keys, WAL  |
+| Auth crypto        | `golang.org/x/crypto` bcrypt     | Password hashing and verification          |
+| Identifiers        | `google/uuid`                    | Upload filenames and public identifiers    |
+| Containers         | Docker + Docker Compose            | Local two-service development topology     |
 
 ## Project Journey
 
 Built over roughly four weeks by a four-person team working in domain-owned feature branches, integrated through
 more than 70 reviewed pull requests into `main`.
 
-| Phase | What changed |
-|---|---|
-| Foundations | Go/SQLite backend, migration runner, authentication, sessions, and the Next.js scaffold |
-| Realtime primitives | A multiplexed WebSocket hub, plus initial private-message and group persistence |
-| Parallel feature development | Posts, comments, notifications, followers, group membership, and events |
-| Privacy convergence | Private profiles, follow requests, three-tier post visibility, unified group posts |
-| Hardening and simplification | Token-bucket rate limiting, group privacy, 3D asset work, and a major visual-architecture simplification |
-| Integration and polish | Likes, post sharing through chat, recommendations, infinite feed, notification toasts, eight-planet theming |
+| Phase                        | What changed                                                                                                |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Foundations                  | Go/SQLite backend, migration runner, authentication, sessions, and the Next.js scaffold                     |
+| Realtime primitives          | A multiplexed WebSocket hub, plus initial private-message and group persistence                             |
+| Parallel feature development | Posts, comments, notifications, followers, group membership, and events                                     |
+| Privacy convergence          | Private profiles, follow requests, three-tier post visibility, unified group posts                          |
+| Hardening and simplification | Token-bucket rate limiting, group privacy, 3D asset work, and a major visual-architecture simplification    |
+| Integration and polish       | Likes, post sharing through chat, recommendations, infinite feed, notification toasts, eight-planet theming |
 
 The most consequential turning point was the 3D redesign. An early concept let a solar-system canvas intercept
 page navigation itself — clicking a nav item triggered a camera fly-through that blocked normal rendering until it
@@ -379,12 +367,12 @@ Feature ownership was divided by domain so each person could own a full vertical
 service, API, and frontend UI — for their area, while shared infrastructure and integration were coordinated
 across the whole team.
 
-| Team member | Role | Primary ownership |
-|---|---|---|
-| Hussain Ali (`hussainali7`) | Team Lead | Groups, membership, invitations, join requests, and events; the 3D/space presentation layer; settings; cross-feature integration |
-| Sayed Sharaf (`sayedssharaf`) | Profiles and Followers | Profiles, profile privacy, followers, and follow requests |
-| Bader Alafoo | Realtime and Discovery | WebSocket infrastructure, private and group chat, universal search, and recommendations |
-| Ahmed Hasan (`ahmedhasan1`) | Posts and Interactions | Posts, comments, likes, and post sharing |
+| Team member                            | Role                   | Primary ownership                                                                                                                |
+| -------------------------------------- | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| Hussain Ali (`hussainali7`)          | Team Lead              | Groups, membership, invitations, join requests, and events; the 3D/space presentation layer; settings; cross-feature integration |
+| Sayed Salman Sharaf (`sayedssharaf`) | Profiles and Followers | Profiles, profile privacy, followers, and follow requests                                                                        |
+| Bader Alafoo                           | Realtime and Discovery | WebSocket infrastructure, private and group chat, universal search, and recommendations                                          |
+| Ahmed Hasan (`ahmedhasan1`)          | Posts and Interactions | Posts, comments, likes, and post sharing                                                                                         |
 
 This reflects each person's primary contribution area, established from the project's commit history and the
 team's own domain-tracking documents in [`docs/TODO/`](docs/TODO/) — not an even split of every line of code.
@@ -452,11 +440,11 @@ social-network/
 
 This root README stays high-level and product-facing. For implementation detail, start here:
 
-| Guide | Covers |
-|---|---|
-| [Frontend Guide](frontend/README.md) | App Router structure, feature modules, providers/state, the REST and WebSocket clients, responsive design, and the space/3D system |
-| [Backend Guide](backend/README.md) | Server architecture, the full API route table, authentication, authorization, SQLite, migrations, the WebSocket hub, uploads, rate limiting, and testing |
-| [Project Documentation](docs/) | Database schema, migration guide, and git workflow reference |
+| Guide                               | Covers                                                                                                                                                   |
+| ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [Frontend Guide](frontend/README.md) | App Router structure, feature modules, providers/state, the REST and WebSocket clients, responsive design, and the space/3D system                       |
+| [Backend Guide](backend/README.md)   | Server architecture, the full API route table, authentication, authorization, SQLite, migrations, the WebSocket hub, uploads, rate limiting, and testing |
+| [Project Documentation](docs/)       | Database schema, migration guide, and git workflow reference                                                                                             |
 
 ## Getting Started
 
@@ -529,11 +517,11 @@ details, including the `--bulk` flag, are in the [backend guide](backend/README.
 
 ### Ports
 
-| Service | Port | Notes |
-|---|---:|---|
-| Frontend (Next.js) | 3000 | `http://localhost:3000` |
-| Backend REST API | 8080 | `http://localhost:8080/api` |
-| WebSocket | 8080 | `ws://localhost:8080/api/ws` — same backend process |
+| Service            | Port | Notes                                                  |
+| ------------------ | ---: | ------------------------------------------------------ |
+| Frontend (Next.js) | 3000 | `http://localhost:3000`                              |
+| Backend REST API   | 8080 | `http://localhost:8080/api`                          |
+| WebSocket          | 8080 | `ws://localhost:8080/api/ws` — same backend process |
 
 `SERVER_PORT` is the backend's only environment override; both the native and Docker workflows otherwise use the
 default `localhost:3000` ↔ `localhost:8080` pairing shown above.
