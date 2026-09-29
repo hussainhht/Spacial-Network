@@ -44,7 +44,6 @@ No `.env` file, host Go installation, host Node installation, or manual SQLite i
    ```
 
    If you already cloned it elsewhere, enter that checkout's directory containing `compose.yaml`.
-
 2. Build both images and start both services in the background:
 
    ```bash
@@ -52,7 +51,6 @@ No `.env` file, host Go installation, host Node installation, or manual SQLite i
    ```
 
    Compose creates the `backend-data` volume on first start. The backend opens SQLite and applies pending migrations automatically before it starts accepting HTTP requests. The frontend build uses the Dockerfile's `npm ci`, `npm run build -- --webpack`, and production `npm run start` commands.
-
 3. Check startup:
 
    ```bash
@@ -62,7 +60,6 @@ No `.env` file, host Go installation, host Node installation, or manual SQLite i
    ```
 
    Both services should show as running. The backend log should show `Server running on http://localhost:8080`; the frontend should report that it is ready on port 3000. There are no Compose health checks: `depends_on` starts the backend first but does not wait for its migrations or HTTP readiness. If a request fails immediately, wait for startup and retry.
-
 4. Open **http://localhost:3000** in a browser. For a minimal HTTP check from the Docker host:
 
    ```bash
@@ -76,18 +73,18 @@ No `.env` file, host Go installation, host Node installation, or manual SQLite i
 
 Run these from the repository root:
 
-| Task | Command |
-|---|---|
-| Start existing images in the background | `docker compose up -d` |
-| Build and start after a fresh clone or source change | `docker compose up --build -d` |
-| Start with logs attached (Ctrl+C stops this foreground stack) | `docker compose up --build` |
-| Stop containers but retain them and their data | `docker compose stop` |
-| See service state and published ports | `docker compose ps` |
-| Show recent logs from both services | `docker compose logs --tail=100` |
-| Follow one service's logs | `docker compose logs -f backend` or `docker compose logs -f frontend` |
-| Restart one running service | `docker compose restart backend` or `docker compose restart frontend` |
-| Rebuild changed images and recreate services as needed | `docker compose up --build -d` |
-| Remove this stack's containers and network, retaining its data volume | `docker compose down` |
+| Task                                                                  | Command                                                                   |
+| --------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| Start existing images in the background                               | `docker compose up -d`                                                  |
+| Build and start after a fresh clone or source change                  | `docker compose up --build -d`                                          |
+| Start with logs attached (Ctrl+C stops this foreground stack)         | `docker compose up --build`                                             |
+| Stop containers but retain them and their data                        | `docker compose stop`                                                   |
+| See service state and published ports                                 | `docker compose ps`                                                     |
+| Show recent logs from both services                                   | `docker compose logs --tail=100`                                        |
+| Follow one service's logs                                             | `docker compose logs -f backend` or `docker compose logs -f frontend` |
+| Restart one running service                                           | `docker compose restart backend` or `docker compose restart frontend` |
+| Rebuild changed images and recreate services as needed                | `docker compose up --build -d`                                          |
+| Remove this stack's containers and network, retaining its data volume | `docker compose down`                                                   |
 
 The Compose setup runs a production build of Next.js and a compiled Go binary. It does not mount source directories or provide live reload. Source or frontend build-argument changes need an image rebuild; `docker compose restart` alone keeps the old image. `docker compose down` followed by `docker compose up -d` is safe for the named data volume, but a new clone needs `--build`.
 
@@ -95,12 +92,12 @@ The Compose setup runs a production build of Next.js and a compiled Go binary. I
 
 The checked-in values in `compose.yaml` are the working single-host setup. Changing them requires understanding the hardcoded browser and CORS values below.
 
-| Setting | Configured in | Purpose and current value | Applied when |
-|---|---|---|---|
-| `SERVER_PORT` | `compose.yaml` backend `environment` | Go HTTP listen port: `8080`. The backend config also defaults to `8080`. The Compose port mapping is separately fixed at `8080:8080`. | Backend runtime |
-| `NEXT_PUBLIC_BACKEND_ORIGIN` | `compose.yaml` frontend build arg | `http://localhost:8080`; configures the allowed backend upload image origin in `frontend/next.config.ts`. The browser API helper currently ignores it. | Frontend build; also copied into the image runtime environment, but not used by the client URL helper |
-| `NEXT_PUBLIC_BACKEND_WS_ORIGIN` | `compose.yaml` frontend build arg | `ws://localhost:8080`; currently ignored by the browser WebSocket URL helper. | Frontend build; also copied into the image runtime environment, but not used by the client URL helper |
-| `NEXT_IMAGE_UNOPTIMIZED` | `compose.yaml` frontend build arg | `true`; disables Next image optimization for this image. | Frontend build |
+| Setting                           | Configured in                            | Purpose and current value                                                                                                                                  | Applied when                                                                                          |
+| --------------------------------- | ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `SERVER_PORT`                   | `compose.yaml` backend `environment` | Go HTTP listen port:`8080`. The backend config also defaults to `8080`. The Compose port mapping is separately fixed at `8080:8080`.                 | Backend runtime                                                                                       |
+| `NEXT_PUBLIC_BACKEND_ORIGIN`    | `compose.yaml` frontend build arg      | `http://localhost:8080`; configures the allowed backend upload image origin in `frontend/next.config.ts`. The browser API helper currently ignores it. | Frontend build; also copied into the image runtime environment, but not used by the client URL helper |
+| `NEXT_PUBLIC_BACKEND_WS_ORIGIN` | `compose.yaml` frontend build arg      | `ws://localhost:8080`; currently ignored by the browser WebSocket URL helper.                                                                            | Frontend build; also copied into the image runtime environment, but not used by the client URL helper |
+| `NEXT_IMAGE_UNOPTIMIZED`        | `compose.yaml` frontend build arg      | `true`; disables Next image optimization for this image.                                                                                                 | Frontend build                                                                                        |
 
 `NEXT_PUBLIC_*` values are browser-exposed when used in Next.js client code. They must be valid **browser** addresses, not Compose-only names such as `backend`. Next.js embeds client-used public values during the image build; changing a container's runtime environment would not replace built client JavaScript. In this repository, the API and WebSocket helper currently returns literal `http://localhost:8080` and `ws://localhost:8080` instead.
 
@@ -118,17 +115,17 @@ The server applies pending embedded SQL migrations on every startup, before list
 
 Start with `docker compose ps` and `docker compose logs --tail=100 backend frontend` from the repository root.
 
-| Symptom | Likely cause | Safe next step |
-|---|---|---|
-| `docker info` cannot reach the daemon, or permission is denied | Docker is stopped or your account cannot use its socket | Start Docker Desktop/Engine; use your platform's documented Docker access setup, then rerun `docker info`. |
-| Bind error for port 3000 or 8080 | Another process owns a fixed host port | Check `docker compose ps` and your other local services; stop the conflicting process only if it is yours. Both the browser URLs and backend CORS assume the current ports. |
-| Frontend build fails during `npm ci` | `package.json` and `package-lock.json` disagree, or dependency download failed | Read the failing build step. The Dockerfile uses npm and the npm lockfile, even though a pnpm lockfile also exists. Repair the lockfile mismatch in the normal development workflow, then rebuild; do not switch package managers in the Compose command. |
-| Backend exits with `database:` or `migrations:` | Volume access problem, SQLite error, or failed embedded migration | Read `docker compose logs backend`. Check volume existence with `docker volume ls`; fix the reported permission/schema issue without deleting the volume. Rebuild if new migration SQL was added. |
-| Page loads but API calls fail | Browser cannot reach `localhost:8080`, or page origin differs from the fixed CORS origin | Confirm `docker compose ps`, then try `curl -i http://localhost:8080/api/users/me` on the Docker host. Open exactly `http://localhost:3000` and inspect the browser Network panel. |
-| Login does not persist | Cookie blocked or credentialed CORS request rejected | Use `http://localhost:3000`; inspect the login response, cookie, and subsequent request in browser developer tools. The backend allows only that origin and sets a Lax, HTTP localhost cookie. |
-| WebSocket fails | Backend not ready, missing session, or wrong scheme/host | Log in first and inspect the request to `ws://localhost:8080/api/ws`. An anonymous request is rejected; an HTTPS page would require `wss://` and code/config changes. |
-| New schema or code does not appear | Running image predates source changes | Run `docker compose up --build -d`; `restart` does not compile changed Go, SQL, or Next.js files. |
-| Changed environment value has no effect | Compose value is overridden by hardcoded client URL or Go constant, or frontend image was not rebuilt | Compare `compose.yaml` with `frontend/src/lib/api.ts`, `frontend/next.config.ts`, and `backend/internal/middleware/cors.go`. Rebuild for supported frontend build settings; the hardcoded URLs/CORS require code changes. |
+| Symptom                                                          | Likely cause                                                                                          | Safe next step                                                                                                                                                                                                                                            |
+| ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `docker info` cannot reach the daemon, or permission is denied | Docker is stopped or your account cannot use its socket                                               | Start Docker Desktop/Engine; use your platform's documented Docker access setup, then rerun`docker info`.                                                                                                                                               |
+| Bind error for port 3000 or 8080                                 | Another process owns a fixed host port                                                                | Check`docker compose ps` and your other local services; stop the conflicting process only if it is yours. Both the browser URLs and backend CORS assume the current ports.                                                                              |
+| Frontend build fails during`npm ci`                            | `package.json` and `package-lock.json` disagree, or dependency download failed                    | Read the failing build step. The Dockerfile uses npm and the npm lockfile, even though a pnpm lockfile also exists. Repair the lockfile mismatch in the normal development workflow, then rebuild; do not switch package managers in the Compose command. |
+| Backend exits with`database:` or `migrations:`               | Volume access problem, SQLite error, or failed embedded migration                                     | Read`docker compose logs backend`. Check volume existence with `docker volume ls`; fix the reported permission/schema issue without deleting the volume. Rebuild if new migration SQL was added.                                                      |
+| Page loads but API calls fail                                    | Browser cannot reach`localhost:8080`, or page origin differs from the fixed CORS origin             | Confirm`docker compose ps`, then try `curl -i http://localhost:8080/api/users/me` on the Docker host. Open exactly `http://localhost:3000` and inspect the browser Network panel.                                                                   |
+| Login does not persist                                           | Cookie blocked or credentialed CORS request rejected                                                  | Use`http://localhost:3000`; inspect the login response, cookie, and subsequent request in browser developer tools. The backend allows only that origin and sets a Lax, HTTP localhost cookie.                                                           |
+| WebSocket fails                                                  | Backend not ready, missing session, or wrong scheme/host                                              | Log in first and inspect the request to`ws://localhost:8080/api/ws`. An anonymous request is rejected; an HTTPS page would require `wss://` and code/config changes.                                                                                  |
+| New schema or code does not appear                               | Running image predates source changes                                                                 | Run`docker compose up --build -d`; `restart` does not compile changed Go, SQL, or Next.js files.                                                                                                                                                      |
+| Changed environment value has no effect                          | Compose value is overridden by hardcoded client URL or Go constant, or frontend image was not rebuilt | Compare`compose.yaml` with `frontend/src/lib/api.ts`, `frontend/next.config.ts`, and `backend/internal/middleware/cors.go`. Rebuild for supported frontend build settings; the hardcoded URLs/CORS require code changes.                          |
 
 There is no dedicated health endpoint or Compose health check, so use status, logs, and the HTTP checks above to diagnose readiness.
 

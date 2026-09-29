@@ -82,11 +82,13 @@ body {
 }
 
 ::view-transition-new(*) {
-  animation: var(--route-enter-duration) var(--route-motion-ease) both route-page-in;
+  animation: var(--route-enter-duration) var(--route-motion-ease) both
+    route-page-in;
 }
 
 ::view-transition-new(.route-page-enter) {
-  animation: var(--route-enter-duration) var(--route-motion-ease) both route-page-in;
+  animation: var(--route-enter-duration) var(--route-motion-ease) both
+    route-page-in;
 }
 
 /* Route pages have different document heights. Prevent the browser from
@@ -118,13 +120,25 @@ body {
 }
 
 @keyframes route-page-out {
-  from { opacity: 1; transform: translateY(0); }
-  to { opacity: 0; transform: translateY(-4px); }
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
 }
 
 @keyframes route-page-in {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -576,8 +590,16 @@ main:not(.chat-main):has(> form) form > p {
   gap: 15px;
   border: 1px solid var(--planet-border);
   border-radius: calc(var(--space-radius-lg) + 2px);
-  background: radial-gradient(ellipse at top left, var(--planet-surface-tint), transparent 62%), rgba(8, 13, 29, 0.82);
-  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(226, 232, 255, 0.03);
+  background:
+    radial-gradient(
+      ellipse at top left,
+      var(--planet-surface-tint),
+      transparent 62%
+    ),
+    rgba(8, 13, 29, 0.82);
+  box-shadow:
+    0 12px 34px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(226, 232, 255, 0.03);
   -webkit-backdrop-filter: blur(16px) saturate(135%);
   backdrop-filter: blur(16px) saturate(135%);
   animation: feedPulseGlow 1.8s ease-in-out infinite;
@@ -1197,7 +1219,9 @@ main:not(.chat-main):has(> form) form > p {
   border-radius: var(--space-radius-lg);
   backdrop-filter: blur(16px) saturate(135%);
   -webkit-backdrop-filter: blur(16px) saturate(135%);
-  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(226, 232, 255, 0.03);
+  box-shadow:
+    0 12px 34px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(226, 232, 255, 0.03);
 }
 .group-card {
   display: flex;
@@ -1528,9 +1552,7 @@ main:not(.chat-main):has(> form) form > p {
     width: min(100cqw, 1500px);
     max-width: 100%;
     margin: 0 auto;
-    height: calc(
-      100dvh - var(--app-navbar-height) - 40px
-    );
+    height: calc(100dvh - var(--app-navbar-height) - 40px);
     min-height: 0;
     overflow: hidden;
   }
@@ -3869,7 +3891,11 @@ main:not(.chat-main):has(> form) form > p {
 .group-members-main {
   padding: clamp(1.25rem, 2.4vw, 1.8rem);
   background:
-    radial-gradient(circle at 92% 0%, var(--planet-accent-soft), transparent 32%),
+    radial-gradient(
+      circle at 92% 0%,
+      var(--planet-accent-soft),
+      transparent 32%
+    ),
     linear-gradient(var(--planet-surface-tint), var(--planet-surface-tint)),
     var(--space-card-bg);
 }
@@ -3939,7 +3965,9 @@ main:not(.chat-main):has(> form) form > p {
   color: var(--space-text-heading);
   font: inherit;
   font-size: 0.9rem;
-  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+  transition:
+    border-color 0.16s ease,
+    box-shadow 0.16s ease;
 }
 
 .group-member-search input:focus-visible {
@@ -3959,7 +3987,10 @@ main:not(.chat-main):has(> form) form > p {
   border: 1px solid var(--space-border);
   border-radius: 13px;
   background: rgba(255, 255, 255, 0.025);
-  transition: border-color 0.16s ease, background-color 0.16s ease, transform 0.16s ease;
+  transition:
+    border-color 0.16s ease,
+    background-color 0.16s ease,
+    transform 0.16s ease;
 }
 
 .group-members-main .group-member-item:hover {
@@ -4026,13 +4057,20 @@ main:not(.chat-main):has(> form) form > p {
   height: 66px;
   border: 1px solid var(--space-border);
   border-radius: 13px;
-  background: linear-gradient(100deg, rgba(255, 255, 255, 0.025) 25%, rgba(255, 255, 255, 0.065) 45%, rgba(255, 255, 255, 0.025) 65%);
+  background: linear-gradient(
+    100deg,
+    rgba(255, 255, 255, 0.025) 25%,
+    rgba(255, 255, 255, 0.065) 45%,
+    rgba(255, 255, 255, 0.025) 65%
+  );
   background-size: 220% 100%;
   animation: group-member-shimmer 1.4s ease-in-out infinite;
 }
 
 @keyframes group-member-shimmer {
-  to { background-position: -220% 0; }
+  to {
+    background-position: -220% 0;
+  }
 }
 
 .group-members-empty {
@@ -4114,30 +4152,56 @@ main:not(.chat-main):has(> form) form > p {
   font-size: 0.78rem;
 }
 
-.group-stats-card dt { color: var(--space-text-muted); }
-.group-stats-card dd { margin: 0; color: var(--space-text-heading); text-align: right; }
+.group-stats-card dt {
+  color: var(--space-text-muted);
+}
+.group-stats-card dd {
+  margin: 0;
+  color: var(--space-text-heading);
+  text-align: right;
+}
 
 @media (max-width: 860px) {
-  .group-members-layout { grid-template-columns: minmax(0, 1fr); }
-  .group-members-sidebar { position: static; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .group-members-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .group-members-sidebar {
+    position: static;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 600px) {
-  .group-members-sidebar { grid-template-columns: minmax(0, 1fr); }
-  .group-members-main .group-member-item { padding: 0.65rem; }
-  .group-member-remove { padding-inline: 0.5rem; }
+  .group-members-sidebar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .group-members-main .group-member-item {
+    padding: 0.65rem;
+  }
+  .group-member-remove {
+    padding-inline: 0.5rem;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .group-member-skeletons span { animation: none; }
-  .group-members-main .group-member-item { transition: none; }
+  .group-member-skeletons span {
+    animation: none;
+  }
+  .group-members-main .group-member-item {
+    transition: none;
+  }
 }
 
 /* Group events — in-page list and creator */
 .group-events {
   padding: clamp(1rem, 2vw, 1.5rem);
   background:
-    radial-gradient(circle at 100% 0%, rgba(194, 103, 58, 0.1), transparent 28%),
+    radial-gradient(
+      circle at 100% 0%,
+      rgba(194, 103, 58, 0.1),
+      transparent 28%
+    ),
     linear-gradient(var(--planet-surface-tint), var(--planet-surface-tint)),
     var(--space-card-bg);
 }
@@ -4176,7 +4240,9 @@ main:not(.chat-main):has(> form) form > p {
 
 .group-event-card.is-next-up {
   border-color: rgba(215, 155, 99, 0.32);
-  box-shadow: 0 16px 38px rgba(0, 0, 0, 0.24), inset 3px 0 rgba(202, 113, 63, 0.55);
+  box-shadow:
+    0 16px 38px rgba(0, 0, 0, 0.24),
+    inset 3px 0 rgba(202, 113, 63, 0.55);
 }
 
 .group-event-card-main {
@@ -4347,7 +4413,9 @@ main:not(.chat-main):has(> form) form > p {
 }
 
 .group-events-period button[aria-pressed="true"] {
-  box-shadow: inset 0 -2px #d98a53, inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+  box-shadow:
+    inset 0 -2px #d98a53,
+    inset 0 0 0 1px rgba(255, 255, 255, 0.06);
 }
 
 .group-events-empty {
@@ -4398,7 +4466,11 @@ main:not(.chat-main):has(> form) form > p {
   border: 1px solid rgba(215, 201, 158, 0.14);
   border-radius: 18px;
   background:
-    radial-gradient(circle at 100% 0%, rgba(194, 103, 58, 0.11), transparent 34%),
+    radial-gradient(
+      circle at 100% 0%,
+      rgba(194, 103, 58, 0.11),
+      transparent 34%
+    ),
     rgba(3, 7, 18, 0.63);
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.2);
   backdrop-filter: blur(16px) saturate(135%);
@@ -4615,7 +4687,9 @@ main:not(.chat-main):has(> form) form > p {
   background: rgba(255, 255, 255, 0.02);
   color: var(--space-text-muted);
   cursor: pointer;
-  transition: border-color 0.15s ease, background-color 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
 }
 
 .event-cover-upload:hover,
