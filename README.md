@@ -1,6 +1,23 @@
 <div align="center">
   <img src="docs/assets/readme/hero.svg" alt="Social Network — orbiting planets and a connected social graph over a dark space background" width="100%" />
 
+  # Social Network
+
+  ### A full-stack social network with a solar system built in.
+
+  Follow, post, and message in realtime behind privacy rules enforced on the backend. Join groups, RSVP to events,
+  and get notified the moment something happens — all rendered over a WebGL planet that also drives the app's live color theme.
+
+  [![Next.js](https://img.shields.io/badge/Next.js-16-000000?style=flat&logo=nextdotjs&logoColor=white)](frontend/package.json)
+  [![React](https://img.shields.io/badge/React-19-149ECA?style=flat&logo=react&logoColor=white)](frontend/package.json)
+  [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=flat&logo=typescript&logoColor=white)](frontend/package.json)
+  [![Go](https://img.shields.io/badge/Go-1.26-00ADD8?style=flat&logo=go&logoColor=white)](backend/go.mod)
+  [![SQLite](https://img.shields.io/badge/SQLite-embedded-07405E?style=flat&logo=sqlite&logoColor=white)](docs/database/database-migration-guide.md)
+  [![WebSocket](https://img.shields.io/badge/WebSocket-realtime-4B32C3?style=flat)](#realtime-system)
+  [![Three.js](https://img.shields.io/badge/Three.js-3D-black?style=flat&logo=threedotjs&logoColor=white)](frontend/src/components/space)
+  [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=flat&logo=docker&logoColor=white)](compose.yaml)
+</div>
+
 <br />
 
 ## Contents
