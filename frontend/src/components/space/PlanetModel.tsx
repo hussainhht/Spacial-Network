@@ -25,6 +25,62 @@ import { EARTH_MODEL_PATH, type SpaceModel } from "./modelsRegistry";
 // with the equator running horizontally, poles at top/bottom.
 const EARTH_TILT = new Quaternion().setFromEuler(new Euler(Math.PI / 2, 0, 0));
 
+// Restrained per-material tuning for the Black Hole GLB, keyed by the
+// authored Sketchfab material names. The `ring`/`ring2` disk shells keep
+// their authored gold/tan textures untouched and only gain a blue-violet
+// emissive glow. The `light1`/`light2`/`light3` halo meshes authored a
+// literal rainbow gradient-ramp texture on both their base color and
+// emissive maps (an inner-glow palette never meant for direct PBR display),
+// which reads as cartoonish banding once lit; those three drop their maps
+// in favor of flat, restrained colors stepping from a warm inner glow to a
+// cool outer one. Intensities are tuned for high contrast (premium/
+// cinematic tier: dark core, bright disk) rather than a subtle look.
+// Geometry is never touched here — see optimize-black-hole-premium.sh for
+// the dedicated high-detail geometry/texture pass this model uses.
+const BLACK_HOLE_MATERIAL_STYLE: Record<
+  string,
+  {
+    color?: readonly [number, number, number];
+    emissive?: readonly [number, number, number];
+    emissiveIntensity?: number;
+    opacity?: number;
+    doubleSide?: boolean;
+    clearMaps?: boolean;
+  }
+> = {
+  black_hole_center: { opacity: 1 },
+  black_hole_light1: {
+    color: [0.78, 0.54, 0.32],
+    emissive: [1, 0.74, 0.4],
+    emissiveIntensity: 1.75,
+    clearMaps: true,
+  },
+  black_hole_light2: {
+    color: [0.52, 0.58, 0.82],
+    emissive: [0.68, 0.76, 1],
+    emissiveIntensity: 1.3,
+    clearMaps: true,
+  },
+  black_hole_light3: {
+    color: [0.32, 0.42, 0.88],
+    emissive: [0.4, 0.56, 1],
+    emissiveIntensity: 1.05,
+    clearMaps: true,
+  },
+  ring: {
+    color: [0.92, 0.94, 1],
+    emissive: [0.24, 0.2, 0.5],
+    emissiveIntensity: 0.9,
+    doubleSide: true,
+  },
+  ring2: {
+    color: [0.9, 0.93, 1],
+    emissive: [0.22, 0.24, 0.52],
+    emissiveIntensity: 0.65,
+    doubleSide: true,
+  },
+};
+
 /**
  * Isolated Earth model component preserving custom shaders and atmospheric
  * scattering. Surface and clouds render their own baked source textures;
@@ -163,6 +219,8 @@ function GenericPlanetModel({ modelConfig }: { modelConfig: SpaceModel }) {
       const shouldAdjust = sourceMaterials.some(
         (material) =>
           (modelConfig.id === "saturn" && material.name === "rings") ||
+          (modelConfig.id === "black-hole" &&
+            material.name in BLACK_HOLE_MATERIAL_STYLE) ||
           (modelConfig.material?.emissiveIntensity !== undefined &&
             material instanceof MeshStandardMaterial),
       );
@@ -174,6 +232,26 @@ function GenericPlanetModel({ modelConfig }: { modelConfig: SpaceModel }) {
           material.side = DoubleSide;
           material.transparent = true;
           material.depthWrite = false;
+        }
+        if (modelConfig.id === "black-hole") {
+          const style = BLACK_HOLE_MATERIAL_STYLE[material.name];
+          if (style && material instanceof MeshStandardMaterial) {
+            if (style.clearMaps) {
+              material.map = null;
+              material.emissiveMap = null;
+              material.needsUpdate = true;
+            }
+            if (style.color) material.color.setRGB(...style.color);
+            if (style.emissive) material.emissive.setRGB(...style.emissive);
+            if (style.emissiveIntensity !== undefined) {
+              material.emissiveIntensity = style.emissiveIntensity;
+            }
+            if (style.opacity !== undefined) material.opacity = style.opacity;
+            if (style.doubleSide) {
+              material.side = DoubleSide;
+              material.depthWrite = false;
+            }
+          }
         }
         if (
           material instanceof MeshStandardMaterial &&

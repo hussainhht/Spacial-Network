@@ -6,7 +6,8 @@ export type PlanetId =
   | "jupiter"
   | "saturn"
   | "uranus"
-  | "sun";
+  | "sun"
+  | "black-hole";
 
 export type CompanionId = "moon";
 export type SceneVector = readonly [number, number, number];
@@ -70,6 +71,18 @@ const EARTH_THEME: PlanetTheme = {
   glow: "rgba(66, 145, 218, 0.14)",
   surfaceTint: "rgba(50, 114, 178, 0.045)",
   focusRing: "#78b6ef",
+};
+
+const BLACK_HOLE_THEME: PlanetTheme = {
+  accent: "#9a86f2",
+  accentHover: "#bcaefb",
+  accentActive: "#4a3792",
+  accentSoft: "rgba(154, 134, 242, 0.1)",
+  border: "rgba(154, 134, 242, 0.18)",
+  borderStrong: "rgba(188, 174, 251, 0.34)",
+  glow: "rgba(122, 96, 224, 0.16)",
+  surfaceTint: "rgba(122, 96, 224, 0.045)",
+  focusRing: "#b09ff8",
 };
 
 export const PLANET_REGISTRY: Record<PlanetId, PlanetConfig> = {
@@ -313,6 +326,37 @@ export const PLANET_REGISTRY: Record<PlanetId, PlanetConfig> = {
       focusRing: "#edb252",
     },
   },
+  // Premium selectable model: intentionally heavier than the other bodies
+  // (see /3d/optimize-black-hole-premium.sh — 372k tris / 17MB vs. the
+  // lightweight tier's 13k tris / 1.7MB) and scaled up to read as a
+  // dominant, cinematic centerpiece rather than a background body. Kept at
+  // position z 0 like every other planet — CANVAS_SCALE's back-off math in
+  // PlanetBackground.tsx only compensates apparent size for bodies at z 0,
+  // so a bigger look comes from bodyScale alone rather than pulling the
+  // body toward the camera, which is why offscreenRadius/responsive
+  // offsets are tuned separately from the other planets instead of reusing
+  // their proportions.
+  "black-hole": {
+    id: "black-hole",
+    label: "Black Hole",
+    modelPath: "/models/planets/black-hole-premium.glb",
+    companion: null,
+    scene: {
+      bodyScale: 2.6,
+      position: [-0.55, 0, 0],
+      rotation: [0.44, 0.32, 0.04],
+      offscreenRadius: 2.7,
+      spinRadiansPerSecond: 0.012,
+      idleAmplitude: 0.011,
+      responsive: {
+        desktop: { scaleMultiplier: 1, positionOffset: [0, 0, 0] },
+        tablet: { scaleMultiplier: 0.84, positionOffset: [-0.04, 0, 0] },
+        mobile: { scaleMultiplier: 0.66, positionOffset: [-0.11, 0.02, 0] },
+      },
+    },
+    lighting: { ambientIntensity: 0.06, directionalIntensity: 3 },
+    theme: BLACK_HOLE_THEME,
+  },
 };
 
 export const SELECTABLE_PLANETS: readonly PlanetConfig[] = [
@@ -324,6 +368,7 @@ export const SELECTABLE_PLANETS: readonly PlanetConfig[] = [
   PLANET_REGISTRY.saturn,
   PLANET_REGISTRY.uranus,
   PLANET_REGISTRY.sun,
+  PLANET_REGISTRY["black-hole"],
 ];
 
 export const MOON_MODEL: SpaceModel = {
