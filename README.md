@@ -477,7 +477,7 @@ cd social-network
 
 ### Quickstart with Docker
 
-From the repository root:
+From the repository root. For prerequisites, verification, data persistence, and troubleshooting, see the [Docker setup guide](docs/DOCKER_SETUP.md).
 
 ```bash
 docker compose up --build
