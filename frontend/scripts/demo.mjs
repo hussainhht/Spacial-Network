@@ -2,8 +2,15 @@ import { spawn } from "node:child_process";
 import { writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { normalizeExport } from "./normalize-export.mjs";
+import { validateDemoAssets } from "./validate-demo-assets.mjs";
 const require = createRequire(import.meta.url);
 const command = process.argv[2] ?? "dev";
+try {
+  await validateDemoAssets();
+} catch (error) {
+  console.error(error.message);
+  process.exit(1);
+}
 const child = spawn(
   process.execPath,
   [
@@ -26,6 +33,7 @@ child.on("exit", async (code) => {
   if (code === 0 && command === "build") {
     try {
       await normalizeExport();
+      await validateDemoAssets("out");
       writeFileSync("out/.nojekyll", "");
     } catch (error) {
       console.error(error);
