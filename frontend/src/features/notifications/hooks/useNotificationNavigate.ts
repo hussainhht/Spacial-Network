@@ -1,5 +1,7 @@
 "use client";
 
+import { groupHref, postHref } from "@/demo/config";
+
 import { useCallback } from "react";
 import { useRouter } from "next/navigation";
 
@@ -18,7 +20,7 @@ export function useNotificationNavigate() {
         case "group_join_request": {
           const groupData = getGroupNotificationData(notification);
           if (groupData) {
-            router.push(`/groups/${groupData.group_id}#join-requests`);
+            router.push(groupHref(groupData.group_id) + "#join-requests");
           } else {
             router.push("/groups");
           }
@@ -28,7 +30,7 @@ export function useNotificationNavigate() {
         case "group_invitation": {
           const groupData = getGroupNotificationData(notification);
           if (groupData) {
-            router.push(`/groups/${groupData.group_id}#invitations`);
+            router.push(groupHref(groupData.group_id) + "#invitations");
           } else {
             router.push("/groups");
           }
@@ -43,7 +45,7 @@ export function useNotificationNavigate() {
         case "event_rsvp": {
           const groupData = getGroupNotificationData(notification);
           if (groupData) {
-            router.push(`/groups/${groupData.group_id}`);
+            router.push(groupHref(groupData.group_id));
           } else {
             router.push("/groups");
           }
@@ -53,7 +55,7 @@ export function useNotificationNavigate() {
         case "group_message": {
           const groupData = getGroupNotificationData(notification);
           if (groupData) {
-            router.push(`/groups/${groupData.group_id}#chat`);
+            router.push(groupHref(groupData.group_id) + "#chat");
           } else {
             router.push("/groups");
           }
@@ -88,7 +90,7 @@ export function useNotificationNavigate() {
         case "post_like":
         case "post_comment":
           if (notification.entityId) {
-            router.push(`/posts/${notification.entityId}`);
+            router.push(postHref(notification.entityId));
           } else {
             router.push("/");
           }

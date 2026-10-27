@@ -1,5 +1,7 @@
 "use client";
 
+import { requestFetch } from "@/demo/api";
+
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { getApiUrl } from "@/lib/api";
@@ -22,7 +24,7 @@ export default function LoginForm() {
     setLoading(true);
 
     try {
-      const response = await fetch(getApiUrl("/login"), {
+      const response = await requestFetch(getApiUrl("/login"), {
         method: "POST",
 
         headers: {

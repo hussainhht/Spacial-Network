@@ -3,10 +3,13 @@
 
 import { ApiError } from "./errors";
 import { getApiUrl, getApiBaseUrl } from "../api";
+import { DEMO_MODE } from "@/demo/config";
+import { demoRequest } from "@/demo/api";
 
 export { getApiUrl, getApiBaseUrl };
 
 export async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
+  if (DEMO_MODE) return demoRequest(path, init) as Promise<T>;
   let response: Response;
 
   // Let the browser set Content-Type (with boundary) for FormData bodies -

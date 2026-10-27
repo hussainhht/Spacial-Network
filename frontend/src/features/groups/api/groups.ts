@@ -1,3 +1,4 @@
+import { requestFetch } from "@/demo/api";
 import { getApiBaseUrl, getBackendBaseUrl, getUploadsBaseUrl } from "@/lib/api";
 import { ApiError } from "@/lib/api/errors";
 import type {
@@ -49,7 +50,7 @@ async function groupRequest<T extends Envelope>(
 ): Promise<T> {
   let response: Response;
   try {
-    response = await fetch(`${getApiBaseUrl()}${path}`, {
+    response = await requestFetch(`${getApiBaseUrl()}${path}`, {
       method,
       credentials: "include",
       cache: "no-store",
@@ -137,7 +138,7 @@ export async function getGroupRecommendations(
   limit = 3,
 ): Promise<GroupRecommendation[]> {
   const safeLimit = Math.min(3, Math.max(1, Math.trunc(limit)));
-  const response = await fetch(
+  const response = await requestFetch(
     `${getApiBaseUrl()}/groups/recommendations?limit=${safeLimit}`,
     { credentials: "include", cache: "no-store" },
   );
@@ -372,7 +373,7 @@ export function toInviteCandidate(user: ApiInviteCandidate): InviteCandidate {
 
 export function avatarUrl(photo?: string): string | undefined {
   if (!photo) return undefined;
-  if (/^https?:\/\//.test(photo)) return photo;
+  if (/^(?:https?:|data:|blob:)/.test(photo)) return photo;
   if (photo.startsWith("/uploads/")) return `${getBackendBaseUrl()}${photo}`;
   if (photo.startsWith("/")) return photo;
   if (photo.startsWith("uploads/")) return `${getBackendBaseUrl()}/${photo}`;

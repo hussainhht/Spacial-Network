@@ -5,7 +5,8 @@ import Link from "next/link";
 import AppIcon from "@/components/layout/AppIcon";
 import { useActionFeedback } from "@/components/feedback/ActionFeedbackProvider";
 import { getBackendBaseUrl } from "@/lib/api";
-import { followUser } from "@/features/profile/api/profiles";
+import { followUser, getFollowStatus } from "@/features/profile/api/profiles";
+import { DEMO_MODE } from "@/demo/config";
 import {
   getRecommendations,
   type Recommendation,
@@ -59,6 +60,7 @@ function SuggestionRow({
 }) {
   const avatarUrl = getAvatarUrl(recommendation.avatarUrl);
   const following = recommendation.isFollowing;
+  const requested = Boolean(recommendation.hasPendingRequest);
 
   return (
     <article className={styles.row}>
@@ -92,10 +94,10 @@ function SuggestionRow({
         type="button"
         className={following ? styles.followingButton : styles.followButton}
         onClick={() => onFollow(recommendation)}
-        disabled={following}
+        disabled={following || requested}
         aria-pressed={following}
       >
-        {following ? "Following" : "Follow"}
+        {requested ? "Requested" : following ? "Following" : "Follow"}
       </button>
 
       <button
@@ -175,7 +177,7 @@ export default function WhoToFollow({ limit = 3 }: { limit?: 3 | 4 }) {
   };
 
   const handleFollow = async (recommendation: Recommendation) => {
-    if (recommendation.isFollowing) return;
+    if (recommendation.isFollowing || recommendation.hasPendingRequest) return;
 
     setFollowError(null);
     setRecommendations((current) =>
@@ -188,6 +190,16 @@ export default function WhoToFollow({ limit = 3 }: { limit?: 3 | 4 }) {
 
     try {
       await followUser(recommendation.username);
+      if (DEMO_MODE) {
+        const status = await getFollowStatus(recommendation.username);
+        setRecommendations(current => current.map(candidate => candidate.id === recommendation.id
+          ? {...candidate, isFollowing: status.isFollowing, hasPendingRequest: status.hasPendingRequest}
+          : candidate));
+        if (status.hasPendingRequest) {
+          notify(`Follow request sent to @${recommendation.username}.`);
+          return;
+        }
+      }
       notify(`You are now following @${recommendation.username}.`);
     } catch (requestError) {
       setRecommendations((current) =>

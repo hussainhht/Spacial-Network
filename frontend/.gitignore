@@ -42,3 +42,8 @@ next-env.d.ts
 
 # Keep the development lab route despite the repository-wide dev/ ignore rule.
 !/src/app/(main)/dev/
+# Local browser QA artifacts
+/test-results/
+/playwright-report/
+/demo-*.png
+/audit-demo.json

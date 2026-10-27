@@ -394,6 +394,9 @@
 }
 
 .userDropdown {
+  max-width: calc(100vw - 24px);
+  max-height: calc(100dvh - 140px);
+  overflow-y: auto;
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
@@ -605,5 +608,19 @@
   .bellWrapper :global(.notification-dropdown),
   .contextText {
     animation: none;
+  }
+}
+.demoPill { display: none; }
+@media (max-width: 760px) {
+  .demoPill {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 2px 6px;
+    border: 1px solid var(--planet-border);
+    border-radius: 12px;
+    color: var(--planet-accent);
+    font-size: 9px;
+    font-weight: 600;
+    vertical-align: middle;
   }
 }

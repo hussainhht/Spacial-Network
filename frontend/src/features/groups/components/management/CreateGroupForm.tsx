@@ -1,5 +1,7 @@
 "use client";
 
+import { groupHref } from "@/demo/config";
+
 import { type SubmitEvent, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -165,7 +167,7 @@ export default function CreateGroupForm() {
   }
 
   function goToGroup(group: Group) {
-    router.push(`/groups/${group.id}`);
+    router.push(groupHref(group.id));
   }
 
   async function handleSendInvitations() {

@@ -3,6 +3,8 @@
 import { PlanetPreferenceProvider, usePlanetPreference } from "@/components/space/PlanetPreferenceProvider";
 import RegisterPlanetStage from "@/features/auth/components/RegisterPlanetStage";
 import RegisterForm from "@/features/auth/components/RegisterForm";
+import { DEMO_MODE } from "@/demo/config";
+import DemoEntry from "@/demo/DemoEntry";
 import styles from "./page.module.css";
 
 function RegisterPageShell() {
@@ -17,7 +19,7 @@ function RegisterPageShell() {
       <div className={styles.grid}>
         <RegisterPlanetStage />
         <div className={styles.formColumn}>
-          <RegisterForm />
+          {DEMO_MODE ? <DemoEntry /> : <RegisterForm />}
         </div>
       </div>
     </main>

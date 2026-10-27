@@ -1,5 +1,7 @@
 "use client";
 
+import { assetPath } from "@/demo/config";
+
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import AppIcon from "@/components/layout/AppIcon";
@@ -10,10 +12,10 @@ import {
 } from "@/lib/upload";
 
 export const EVENT_COVER_TEMPLATES = [
-  { name: "Earth", path: "/image/templets/earth.png" },
-  { name: "Mars", path: "/image/templets/mars.png" },
-  { name: "Moon", path: "/image/templets/moon.png" },
-  { name: "Saturn", path: "/image/templets/saturn.png" },
+  { name: "Earth", path: assetPath("/image/templets/earth.png") },
+  { name: "Mars", path: assetPath("/image/templets/mars.png") },
+  { name: "Moon", path: assetPath("/image/templets/moon.png") },
+  { name: "Saturn", path: assetPath("/image/templets/saturn.png") },
 ] as const;
 
 interface EventCoverPickerProps {

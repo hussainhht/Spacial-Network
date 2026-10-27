@@ -1,5 +1,7 @@
 "use client";
 
+import { groupHref, postHref } from "@/demo/config";
+
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { fetchSearchResults } from "../api/search";
@@ -225,7 +227,7 @@ export function useUniversalSearch(onClose?: () => void) {
           type: "group",
           title: g.title,
           subtitle: g.description,
-          href: `/groups/${g.id}`,
+          href: groupHref(g.id),
           badge:
             g.membership_role === "creator"
               ? "Creator"
@@ -244,7 +246,7 @@ export function useUniversalSearch(onClose?: () => void) {
           type: "post",
           title: p.title || p.content_snippet,
           subtitle: `by @${p.author_username}${p.group_title ? ` in ${p.group_title}` : ""}`,
-          href: `/posts/${p.id}`,
+          href: postHref(p.id),
           badge: p.group_title ? p.group_title : "Post",
           data: p,
         });
@@ -258,7 +260,7 @@ export function useUniversalSearch(onClose?: () => void) {
           type: "event",
           title: e.title,
           subtitle: e.group_title ? `Group: ${e.group_title}` : e.description,
-          href: `/groups/${e.group_id}`,
+          href: groupHref(e.group_id),
           badge: "Event",
           data: e,
         });

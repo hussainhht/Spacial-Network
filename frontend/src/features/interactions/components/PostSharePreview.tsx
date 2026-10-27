@@ -1,6 +1,9 @@
 "use client";
 
+import { postHref } from "@/demo/config";
+
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import AppIcon from "@/components/layout/AppIcon";
 import { getPost } from "@/features/posts/api/posts";
@@ -53,9 +56,9 @@ export default function PostSharePreview({ postId }: PostSharePreviewProps) {
   const thumb = thumbnailUrl(post);
 
   return (
-    <Link href={`/posts/${postId}`} className={styles.card}>
+    <Link href={postHref(postId)} className={styles.card}>
       {thumb ? (
-        <img src={thumb} alt="" className={styles.thumb} />
+        <Image src={thumb} alt="" width={64} height={64} className={styles.thumb} unoptimized />
       ) : (
         <div className={styles.thumbFallback}>
           <AppIcon name="posts" width={20} height={20} />

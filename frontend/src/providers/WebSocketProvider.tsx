@@ -10,6 +10,8 @@ import React, {
   useMemo,
 } from "react";
 import { getWebSocketUrl } from "@/lib/api";
+import { DEMO_MODE } from "@/demo/config";
+import { sendDemoEvent, subscribeDemo } from "@/demo/api";
 import type {
   EventType,
   MessagePayload,
@@ -31,7 +33,7 @@ const WebSocketContext = createContext<WebSocketContextType | undefined>(
 );
 
 export function WebSocketProvider({ children }: { children: React.ReactNode }) {
-  const [isConnected, setIsConnected] = useState(false);
+  const [isConnected, setIsConnected] = useState(DEMO_MODE);
   const [onlineUserIDs, setOnlineUserIDs] = useState<number[]>([]);
   const [typingStatus, setTypingStatus] = useState<TypingPayload | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -91,7 +93,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   const pendingQueueRef = useRef<Array<{ type: EventType; payload: unknown }>>([]);
 
   const connect = useCallback(function connectSocket() {
-    if (typeof window === "undefined") return;
+    if (DEMO_MODE || typeof window === "undefined") return;
 
     if (
       socketRef.current &&
@@ -230,6 +232,17 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    if (DEMO_MODE) return subscribeDemo(({type, payload}) => {
+      switch (type) {
+        case "private_message": messageListeners.current.forEach(fn=>fn(payload as MessagePayload)); break;
+        case "group_message": groupMessageListeners.current.forEach(fn=>fn(payload as GroupMessagePayload)); break;
+        case "messages_read": readReceiptListeners.current.forEach(fn=>fn(payload as MessagesReadPayload)); break;
+        case "invite_user_search_results": setInviteSearchResults(payload as InviteUserSearchResultsPayload); break;
+        case "notification": notificationListeners.current.forEach(fn=>fn(payload as NotificationEventPayload)); break;
+        case "group_event_response_updated": eventResponseListeners.current.forEach(fn=>fn(payload as GroupEventResponseUpdatedPayload)); break;
+        case "error": setErrorMessage((payload as ErrorPayload).message); break;
+      }
+    });
     connect();
     return () => {
       if (reconnectTimeoutRef.current)
@@ -253,6 +266,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   // (like a debounced search) would spuriously re-fire on every message.
   const sendEvent = useCallback(
     (type: EventType, payload: unknown) => {
+      if (DEMO_MODE) { setErrorMessage(null); sendDemoEvent(type, payload); return; }
       const eventItem = { type, payload };
 
       if (!socketRef.current || socketRef.current.readyState !== WebSocket.OPEN) {

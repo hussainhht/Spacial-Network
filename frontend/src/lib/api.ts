@@ -4,18 +4,14 @@
  * environments can override these with NEXT_PUBLIC_BACKEND_ORIGIN and
  * NEXT_PUBLIC_BACKEND_WS_ORIGIN.
  */
+import { DEMO_MODE } from "@/demo/config";
 
 export const BACKEND_PORT = 8080;
-const DEFAULT_BACKEND_ORIGIN = "http://localhost:8080";
-
-function cleanOrigin(origin: string): string {
-  return origin.replace(/\/+$/, "");
-}
-
 /**
  * Returns the backend hostname.
  */
 export function getBackendHost(): string {
+  if (DEMO_MODE) return "demo.invalid";
   return new URL(getBackendBaseUrl()).hostname;
 }
 
@@ -23,6 +19,7 @@ export function getBackendHost(): string {
  * Returns the backend HTTP base URL.
  */
 export function getBackendBaseUrl(): string {
+  if (DEMO_MODE) return "";
   return `http://localhost:${BACKEND_PORT}`;
 }
 

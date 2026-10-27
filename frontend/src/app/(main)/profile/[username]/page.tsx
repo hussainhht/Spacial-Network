@@ -1,3 +1,5 @@
+import { DEMO_MODE } from "@/demo/config";
+import { DEMO_USERS } from "@/demo/seed";
 import PageTransition from "@/components/transitions/PageTransition";
 import ProfilePage from "@/features/profile/components/ProfilePage";
 import styles from "@/features/profile/components/Profile.module.css";
@@ -17,3 +19,5 @@ export default async function Page({ params }: ProfilePageProps) {
     </PageTransition>
   );
 }
+
+export function generateStaticParams() { return DEMO_MODE ? DEMO_USERS.map(u=>({username:u.username})) : []; }

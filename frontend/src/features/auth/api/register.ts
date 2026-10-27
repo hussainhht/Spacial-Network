@@ -1,3 +1,4 @@
+import { requestFetch } from "@/demo/api";
 import { getApiBaseUrl } from "@/lib/api";
 import { ApiError } from "@/lib/api/errors";
 
@@ -46,7 +47,7 @@ export async function register(input: RegisterInput): Promise<RegisterResult> {
 
   let response: Response;
   try {
-    response = await fetch(`${getApiBaseUrl()}/register`, {
+    response = await requestFetch(`${getApiBaseUrl()}/register`, {
       method: "POST",
       credentials: "include",
       body: formData,

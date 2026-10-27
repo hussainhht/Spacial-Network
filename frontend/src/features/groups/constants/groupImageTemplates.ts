@@ -1,22 +1,23 @@
+import { assetPath } from "@/demo/config";
 export const GROUP_IMAGE_TEMPLATES = [
   {
     id: "earth",
-    src: "/image/templets/earth.png",
+    src: assetPath("/image/templets/earth.png"),
     label: "Earth",
   },
   {
     id: "mars",
-    src: "/image/templets/mars.png",
+    src: assetPath("/image/templets/mars.png"),
     label: "Mars",
   },
   {
     id: "moon",
-    src: "/image/templets/moon.png",
+    src: assetPath("/image/templets/moon.png"),
     label: "Moon",
   },
   {
     id: "saturn",
-    src: "/image/templets/saturn.png",
+    src: assetPath("/image/templets/saturn.png"),
     label: "Saturn",
   },
 ] as const;

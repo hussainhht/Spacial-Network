@@ -1,5 +1,7 @@
 "use client";
 
+import { requestFetch } from "@/demo/api";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { getApiUrl } from "@/lib/api";
@@ -13,7 +15,7 @@ export function useLogout() {
     setError("");
     setLoggingOut(true);
     try {
-      const response = await fetch(getApiUrl("/logout"), {
+      const response = await requestFetch(getApiUrl("/logout"), {
         method: "POST",
         credentials: "include",
       });

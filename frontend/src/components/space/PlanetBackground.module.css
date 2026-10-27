@@ -66,3 +66,11 @@
     opacity: 0.58;
   }
 }
+.webglFallback {
+  width: 38%;
+  aspect-ratio: 1;
+  margin: 25% auto;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, var(--planet-accent, #69aef0), #101a2d 65%);
+  box-shadow: 0 0 65px var(--planet-glow, #69aef033);
+}

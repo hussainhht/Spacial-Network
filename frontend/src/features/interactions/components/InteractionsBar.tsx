@@ -1,5 +1,7 @@
 "use client";
 
+import { postHref } from "@/demo/config";
+
 import Link from "next/link";
 import { useState } from "react";
 import AppIcon from "@/components/layout/AppIcon";
@@ -104,7 +106,7 @@ export default function InteractionsBar({
       ) : (
         <Link
           className={styles.action}
-          href={`/posts/${postId}`}
+          href={postHref(postId)}
           aria-label="Comments"
         >
           {commentIcon}
