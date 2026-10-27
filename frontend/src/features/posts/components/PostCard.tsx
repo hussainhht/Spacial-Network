@@ -1,5 +1,7 @@
 "use client";
 
+import { groupHref, postHref as demoPostHref } from "@/demo/config";
+
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
@@ -50,7 +52,7 @@ export default function PostCard({ post, onDeleted, preview = false, detail = fa
   const [likeStatus, setLikeStatus] = useState<LikeStatus | null>(null);
   const [commentCount, setCommentCount] = useState<number | undefined>(undefined);
   const [sharing, setSharing] = useState(false);
-  const postHref = `/posts/${post.id}`;
+  const postHref = demoPostHref(post.id);
   const titleId = preview ? undefined : `post-title-${post.id}`;
   const visibility = visibilityPresentation[post.visibility];
   const { notify } = useActionFeedback();
@@ -156,7 +158,7 @@ export default function PostCard({ post, onDeleted, preview = false, detail = fa
               <AppIcon name="dots" width={19} height={19} />
             </summary>
             <div className={styles.actionMenu}>
-              {post.is_owner && <Link href={`${postHref}/edit`}>Edit post</Link>}
+              {post.is_owner && <Link href={demoPostHref(post.id, true)}>Edit post</Link>}
               {post.can_delete && (
                 <button
                   type="button"
@@ -176,7 +178,7 @@ export default function PostCard({ post, onDeleted, preview = false, detail = fa
 
       <div className={styles.context} aria-label="Post context">
         {post.group_id != null && (
-          <Link href={`/groups/${post.group_id}`} className={styles.contextItem}>
+          <Link href={groupHref(post.group_id)} className={styles.contextItem}>
             <AppIcon name="groups" width={14} height={14} />
             <span>Posted in {post.group_title || "group"}</span>
           </Link>

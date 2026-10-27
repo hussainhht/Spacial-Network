@@ -8,6 +8,7 @@ export interface Recommendation {
   mutualCount: number;
   mutualPreview: string[];
   isFollowing: boolean;
+  hasPendingRequest?: boolean;
 }
 
 export async function getRecommendations(

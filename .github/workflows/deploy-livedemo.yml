@@ -1,0 +1,48 @@
+name: Deploy interactive demo to GitHub Pages
+on:
+  push:
+    branches: [livedemo]
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: spacial-demo-pages
+  cancel-in-progress: false
+jobs:
+  build:
+    if: github.ref == 'refs/heads/livedemo'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - uses: actions/configure-pages@v5
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run test:demo
+      - run: npm run build:demo
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:demo:browser
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: frontend/out
+  deploy:
+    if: github.ref == 'refs/heads/livedemo'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy static demo
+        id: deployment
+        uses: actions/deploy-pages@v4

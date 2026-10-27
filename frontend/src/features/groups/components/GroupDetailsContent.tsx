@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
-import { useState } from "react";
+import { useParams, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import { DEMO_MODE } from "@/demo/config";
 import AppIcon from "@/components/layout/AppIcon";
 import {
   useGroup,
@@ -29,7 +30,9 @@ import GroupMembersPreview from "./overview/GroupMembersPreview";
 import EditGroupForm from "./management/EditGroupForm";
 
 export default function GroupDetailsContent() {
-  const { groupId } = useParams<{ groupId: string }>();
+  const params = useParams<{ groupId: string }>();
+  const query = useSearchParams();
+  const groupId = params.groupId === "demo" ? query.get("groupId") ?? "" : params.groupId;
   const id = Number(groupId);
 
   if (!/^[1-9]\d*$/.test(groupId) || !Number.isSafeInteger(id))
@@ -56,6 +59,21 @@ function GroupDetails({ groupId }: { groupId: number }) {
   const membership = useMembership(groupId);
   const invitations = usePendingInvitations();
   const [activeTab, setActiveTab] = useState<ActiveGroupTab>("overview");
+  useEffect(() => {
+    if (!DEMO_MODE) return;
+    const selectLinkedTab = () => {
+      const hash = window.location.hash;
+      if (hash === "#join-requests" || hash === "#members") setActiveTab("members");
+      else if (hash === "#chat") setActiveTab("chat");
+      else if (hash === "#events") setActiveTab("events");
+    };
+    const pending = window.setTimeout(selectLinkedTab, 0);
+    window.addEventListener("hashchange", selectLinkedTab);
+    return () => {
+      window.clearTimeout(pending);
+      window.removeEventListener("hashchange", selectLinkedTab);
+    };
+  }, []);
   const isCreator = membership.data?.role === "creator";
   const isMember = Boolean(membership.data?.isMember);
   const memberCount = members.data?.length ?? group.data?.memberCount ?? 0;

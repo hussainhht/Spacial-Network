@@ -1,3 +1,5 @@
+
+import { groupHref } from "@/demo/config";
 import Image from "next/image";
 import Link from "next/link";
 import AppIcon from "@/components/layout/AppIcon";
@@ -47,7 +49,7 @@ export default function GroupCard({
       <div className={styles.body}>
         <h2 className={styles.title}>
           {interactive ? (
-            <Link href={`/groups/${group.id}`} className={styles.titleLink}>
+            <Link href={groupHref(group.id)} className={styles.titleLink}>
               {group.title}
             </Link>
           ) : (
@@ -74,7 +76,7 @@ export default function GroupCard({
                 </span>
               ) : null
             ) : group.membershipRole === "creator" ? (
-              <Link href={`/groups/${group.id}`} className="group-button">
+              <Link href={groupHref(group.id)} className="group-button">
                 Manage
               </Link>
             ) : group.membershipRole ? (
@@ -93,7 +95,7 @@ export default function GroupCard({
       </div>
       {interactive && (
         <Link
-          href={`/groups/${group.id}`}
+          href={groupHref(group.id)}
           className={styles.cardStretch}
           aria-hidden="true"
           tabIndex={-1}

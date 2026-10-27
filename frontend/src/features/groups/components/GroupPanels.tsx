@@ -1,5 +1,7 @@
 "use client";
 
+import { groupHref } from "@/demo/config";
+
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import AppIcon from "@/components/layout/AppIcon";
@@ -406,7 +408,7 @@ export function InvitationsPanel() {
               {invitation.groupPrivacy === "public" ? (
                 <Link
                   className="group-title-link"
-                  href={`/groups/${invitation.groupId}#invitations`}
+                  href={groupHref(invitation.groupId) + "#invitations"}
                 >
                   {invitation.groupTitle}
                 </Link>

@@ -43,6 +43,10 @@
 
 ## Overview
 
+### Interactive Live Demo
+
+The `livedemo` branch prepares the existing frontend for a backend-free GitHub Pages showcase with fictional local data. See [LIVE_DEMO.md](LIVE_DEMO.md) for running, testing, resetting, and publishing it. Intended deployment address: [Spacial Network demo](https://hussainhht.github.io/Spacial-Network/) (publication requires owner approval).
+
 Social Network is a privacy-aware social platform: profiles and follow relationships, posts and comments with
 tiered visibility, public and private groups with events, private and group chat, and realtime notifications —
 all wrapped in an ambient 3D presentation of the solar system that themes the interface.

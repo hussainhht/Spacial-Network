@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { DEMO_MODE } from "@/demo/config";
+import DemoControls from "@/demo/DemoControls";
 import { usePathname } from "next/navigation";
 import { getNavbarContext } from "./navbarContext";
 import { useEffect, useRef, useState } from "react";
@@ -97,9 +99,10 @@ export default function TopNavbar() {
         {/* Remounted per context so the section name crossfades with the route
             rather than swapping under the reader's eye. */}
         <div key={context.title} className={styles.contextText}>
-          <span className={styles.contextEyebrow}>{context.eyebrow}</span>
+          <span className={styles.contextEyebrow}>{DEMO_MODE ? "Interactive Demo · Sample data" : context.eyebrow}</span>
           <h1 id="app-page-title" tabIndex={-1} className={styles.contextTitle}>
             {context.title}
+            {DEMO_MODE && <span className={styles.demoPill}>Demo</span>}
           </h1>
         </div>
       </div>
@@ -211,8 +214,9 @@ export default function TopNavbar() {
                 onClick={logout}
                 disabled={loggingOut}
               >
-                {loggingOut ? "Logging out…" : "Logout"}
+                {DEMO_MODE ? "Demo entry" : loggingOut ? "Logging out…" : "Logout"}
               </button>
+              {DEMO_MODE && <DemoControls />}
               {logoutError && (
                 <p className={styles.dropdownError} role="alert">
                   {logoutError}

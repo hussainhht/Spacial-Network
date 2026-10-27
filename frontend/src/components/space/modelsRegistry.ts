@@ -1,3 +1,4 @@
+import { assetPath } from "@/demo/config";
 export type PlanetId =
   | "earth"
   | "mercury"
@@ -58,7 +59,7 @@ export interface PlanetConfig extends SpaceModel {
 }
 
 export const DEFAULT_PLANET_ID: PlanetId = "earth";
-export const EARTH_MODEL_PATH = "/models/planets/earth-final.glb";
+export const EARTH_MODEL_PATH = assetPath("/models/planets/earth-final.glb");
 
 const EARTH_THEME: PlanetTheme = {
   accent: "#69aef0",
@@ -97,7 +98,7 @@ export const PLANET_REGISTRY: Record<PlanetId, PlanetConfig> = {
   mercury: {
     id: "mercury",
     label: "Mercury",
-    modelPath: "/models/planets/mercury-final.glb",
+    modelPath: assetPath("/models/planets/mercury-final.glb"),
     companion: null,
     scene: {
       bodyScale: 1.48,
@@ -128,7 +129,7 @@ export const PLANET_REGISTRY: Record<PlanetId, PlanetConfig> = {
   venus: {
     id: "venus",
     label: "Venus",
-    modelPath: "/models/planets/venus-final.glb",
+    modelPath: assetPath("/models/planets/venus-final.glb"),
     companion: null,
     scene: {
       bodyScale: 1.38,
@@ -159,7 +160,7 @@ export const PLANET_REGISTRY: Record<PlanetId, PlanetConfig> = {
   mars: {
     id: "mars",
     label: "Mars",
-    modelPath: "/models/planets/mars-final.glb",
+    modelPath: assetPath("/models/planets/mars-final.glb"),
     companion: null,
     scene: {
       bodyScale: 1.42,
@@ -190,7 +191,7 @@ export const PLANET_REGISTRY: Record<PlanetId, PlanetConfig> = {
   jupiter: {
     id: "jupiter",
     label: "Jupiter",
-    modelPath: "/models/planets/jupiter-final.glb",
+    modelPath: assetPath("/models/planets/jupiter-final.glb"),
     companion: null,
     material: { emissiveIntensity: 0.24 },
     scene: {
@@ -222,7 +223,7 @@ export const PLANET_REGISTRY: Record<PlanetId, PlanetConfig> = {
   saturn: {
     id: "saturn",
     label: "Saturn",
-    modelPath: "/models/planets/saturn-final.glb",
+    modelPath: assetPath("/models/planets/saturn-final.glb"),
     companion: null,
     scene: {
       bodyScale: 1.54,
@@ -253,7 +254,7 @@ export const PLANET_REGISTRY: Record<PlanetId, PlanetConfig> = {
   uranus: {
     id: "uranus",
     label: "Uranus",
-    modelPath: "/models/planets/uranus-final.glb",
+    modelPath: assetPath("/models/planets/uranus-final.glb"),
     companion: null,
     scene: {
       bodyScale: 1.34,
@@ -284,7 +285,7 @@ export const PLANET_REGISTRY: Record<PlanetId, PlanetConfig> = {
   sun: {
     id: "sun",
     label: "Sun",
-    modelPath: "/models/planets/sun-final.glb",
+    modelPath: assetPath("/models/planets/sun-final.glb"),
     companion: null,
     material: { emissiveIntensity: 0.34 },
     scene: {
@@ -329,7 +330,7 @@ export const SELECTABLE_PLANETS: readonly PlanetConfig[] = [
 export const MOON_MODEL: SpaceModel = {
   id: "moon",
   label: "Moon",
-  modelPath: "/models/planets/moon-final.glb",
+  modelPath: assetPath("/models/planets/moon-final.glb"),
 };
 
 export const MOON_COMPANION = {

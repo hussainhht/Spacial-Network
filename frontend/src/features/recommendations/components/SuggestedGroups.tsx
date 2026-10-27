@@ -1,5 +1,7 @@
 "use client";
 
+import { groupHref } from "@/demo/config";
+
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import AppIcon from "@/components/layout/AppIcon";
@@ -93,7 +95,7 @@ export default function SuggestedGroups({ limit = 3 }: { limit?: 2 | 3 }) {
             const groupContext = context(group);
             const label = state === "pending" ? "Pending Request" : state === "joined" ? "Joined" : "Join";
             return <article className={styles.row} key={group.id}>
-              <Link href={`/groups/${group.id}`} className={styles.avatar} aria-label={`View ${group.name}`}>
+              <Link href={groupHref(group.id)} className={styles.avatar} aria-label={`View ${group.name}`}>
                 {avatar ? (
                   // Group photos are user uploads served by the Go backend.
                   // eslint-disable-next-line @next/next/no-img-element
@@ -101,7 +103,7 @@ export default function SuggestedGroups({ limit = 3 }: { limit?: 2 | 3 }) {
                 ) : <span aria-hidden="true">{group.name.slice(0, 2).toUpperCase()}</span>}
               </Link>
               <div className={styles.details}>
-                <Link href={`/groups/${group.id}`} className={styles.name} title={group.name}>{group.name}</Link>
+                <Link href={groupHref(group.id)} className={styles.name} title={group.name}>{group.name}</Link>
                 {groupContext ? <span className={styles.context}>{groupContext}</span> : null}
               </div>
               <button

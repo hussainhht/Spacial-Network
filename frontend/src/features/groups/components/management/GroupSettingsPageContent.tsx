@@ -1,7 +1,9 @@
 "use client";
 
+import { groupHref } from "@/demo/config";
+
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import AppIcon from "@/components/layout/AppIcon";
 import { useGroup, useMembership } from "../../hooks/useGroupData";
 import { GroupLoadError } from "../GroupPanels";
@@ -9,7 +11,9 @@ import EditGroupForm from "./EditGroupForm";
 import styles from "./GroupSettings.module.css";
 
 export default function GroupSettingsPageContent() {
-  const { groupId } = useParams<{ groupId: string }>();
+  const params = useParams<{ groupId: string }>();
+  const query = useSearchParams();
+  const groupId = params.groupId === "demo" ? query.get("groupId") ?? "" : params.groupId;
   const id = Number(groupId);
 
   if (!/^[1-9]\d*$/.test(groupId) || !Number.isSafeInteger(id)) {
@@ -37,11 +41,14 @@ function LoadedSettings({ groupId }: { groupId: number }) {
   if (!group.data || membership.data?.role !== "creator") {
     return (
       <div className={styles.settings}>
-        <Link href={`/groups/${groupId}`} className={styles.back}><AppIcon name="arrowLeft" width={15} height={15} /> Back to Group</Link>
+        <Link href={groupHref(groupId)} className={styles.back}><AppIcon name="arrowLeft" width={15} height={15} /> Back to Group</Link>
         <p className="form-error" role="alert">Only the group creator can manage these settings.</p>
       </div>
     );
   }
 
-  return <EditGroupForm group={group.data} />;
+  return <>
+    <Link href={groupHref(groupId)} className={styles.back}><AppIcon name="arrowLeft" width={15} height={15} /> Back to Group</Link>
+    <EditGroupForm group={group.data} />
+  </>;
 }

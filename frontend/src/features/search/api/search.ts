@@ -1,3 +1,4 @@
+import { requestFetch } from "@/demo/api";
 import { getApiUrl } from "@/lib/api";
 import type { SearchCategory, SearchResults } from "../types/search";
 
@@ -26,7 +27,7 @@ export async function fetchSearchResults(
     limit: limit.toString(),
   });
 
-  const response = await fetch(`${getApiUrl("/search")}?${params.toString()}`, {
+  const response = await requestFetch(`${getApiUrl("/search")}?${params.toString()}`, {
     method: "GET",
     credentials: "include",
     cache: "no-store",

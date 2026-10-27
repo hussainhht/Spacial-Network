@@ -23,6 +23,7 @@ import UserAvatar from "@/components/UserAvatar";
 import AppIcon from "@/components/layout/AppIcon";
 import AppearanceSettings from "./AppearanceSettings";
 import PasswordForm from "./PasswordForm";
+import { DEMO_MODE } from "@/demo/config";
 import styles from "./SettingsPage.module.css";
 
 type SettingsView =
@@ -308,7 +309,7 @@ export default function SettingsPage() {
                   </div>
                 </div>
                 <div className={styles.cardBody}>
-                  <PasswordForm />
+                  {DEMO_MODE ? <p>Demo identities have no passwords. The full-stack application supports account credentials and secure password changes.</p> : <PasswordForm />}
                 </div>
               </section>
             </div>

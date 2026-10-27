@@ -53,6 +53,18 @@ function getServerReadySnapshot() {
   return false;
 }
 
+let webGLAvailable: boolean | undefined;
+function getWebGLSnapshot() {
+  if (webGLAvailable !== undefined) return webGLAvailable;
+  try {
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("webgl2");
+    webGLAvailable = Boolean(context);
+    context?.getExtension("WEBGL_lose_context")?.loseContext();
+  } catch { webGLAvailable = false; }
+  return webGLAvailable;
+}
+
 export class SceneBoundary extends Component<
   { children: ReactNode; label: string },
   { failed: boolean }
@@ -234,6 +246,11 @@ function PlanetBackground() {
     getClientReadySnapshot,
     getServerReadySnapshot,
   );
+  const supportsWebGL = useSyncExternalStore(
+    subscribeToClientReady,
+    getWebGLSnapshot,
+    getServerReadySnapshot,
+  );
   const [displayedPlanetId, setDisplayedPlanetId] =
     useState<PlanetId>(selectedPlanetId);
   const scrollRotation = useRef(0);
@@ -312,7 +329,7 @@ function PlanetBackground() {
       className={styles.planetLayer}
       aria-hidden="true"
     >
-      {clientReady ? (
+      {clientReady && supportsWebGL ? (
         <AssetBoundary key={selectedPlanetId} label={selectedPlanet.label}>
           <Suspense fallback={null}>
             <PlanetAssetGate
@@ -324,12 +341,12 @@ function PlanetBackground() {
       ) : null}
       <div className={styles.planetFrame}>
         <div className={styles.planetCanvasWrapper}>
-          <PlanetScene
+          {supportsWebGL ? <PlanetScene
             config={displayedPlanet}
             viewport={viewport}
             reducedMotion={reducedMotion}
             scrollRotation={scrollRotation}
-          />
+          /> : <div data-webgl-fallback className={styles.webglFallback} />}
         </div>
       </div>
     </div>
