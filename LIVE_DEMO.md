@@ -1,6 +1,6 @@
 # Spacial Network interactive demo
 
-The `livedemo` branch runs the existing Next.js frontend with a browser-only data service. It preserves AppShell, navigation, CSS Modules, feature components, notifications, messaging, and the real Three.js planet system. The Go backend and `main` branch are unchanged.
+The demo runs the existing Next.js frontend with a browser-only data service. It preserves AppShell, navigation, CSS Modules, feature components, notifications, messaging, and the real Three.js planet system. The Go backend is unchanged, and ordinary frontend commands retain full-stack mode. Deployment workflows support the approved `main` and `livedemo` branches.
 
 The intended GitHub Pages address is **https://hussainhht.github.io/Spacial-Network/**. This document describes a prepared deployment; it does not assert that the site has been published.
 
@@ -103,10 +103,10 @@ Demo builds conditionally enable `output: "export"`, `/Spacial-Network`, trailin
 
 Next 16.3's Windows export can emit nested folders for dotted route-segment filenames. The postbuild normalization copies equivalent dotted filenames into the artifact. It is a no-op on platforms already producing dotted files. The static server does not conceal this issue with rewrites.
 
-`.github/workflows/deploy-livedemo.yml`:
+`.github/workflows/nextjs.yml` handles pushes to `main` and manual runs. It calls the shared `.github/workflows/deploy-livedemo.yml` pipeline, which also handles pushes to `livedemo` directly:
 
-1. Runs on pushes to `livedemo` and supports `workflow_dispatch` when GitHub makes the workflow available.
-2. Rejects publishing from any other ref through job conditions.
+1. Supports `workflow_dispatch` and `workflow_call` in addition to the direct `livedemo` push trigger. The `main` entry calls this same pipeline, so each push starts one deployment.
+2. Allows publishing only from `main` and `livedemo` through job conditions.
 3. Installs with `npm ci` under `frontend/`, checks TypeScript, lint and local data tests, builds, and runs browser tests against the static export.
 4. Uploads `frontend/out/` with `actions/upload-pages-artifact` and deploys with `actions/deploy-pages` to the `github-pages` environment.
 
@@ -115,14 +115,14 @@ It grants `contents: read`, `pages: write`, and `id-token: write`. See [GitHub's
 After reviewing and approving publication:
 
 1. In repository **Settings → Pages → Build and deployment**, select **GitHub Actions**.
-2. In **Settings → Environments → github-pages**, allow deployment from `livedemo` only. Ensure an existing branch rule does not allow only `main`.
+2. In **Settings → Environments → github-pages**, allow the branch you are publishing from: `main`, `livedemo`, or both approved branches.
 3. Ensure Actions are enabled and can use the official actions referenced by the workflow.
-4. Commit the reviewed changes on `livedemo` and push that branch. No merge into `main` is needed.
+4. Commit the reviewed changes and push the approved branch. A push to `main` runs `nextjs.yml`; a push to `livedemo` runs `deploy-livedemo.yml`. Both build the frontend in demo mode and publish the static output only.
 5. Inspect the build/deploy run, then verify the URL reported by its deployment job. Check a direct profile/group/post link and a model request at the published subpath.
 
-GitHub may only expose manual dispatch in the UI when a workflow is registered on the default branch. The push trigger on `livedemo` is the intended deployment path; do not modify `main` just to expose a manual button. This workflow has not been executed remotely as part of local preparation.
+GitHub may only expose manual dispatch in the UI when a workflow is registered on the default branch. In **Actions → Deploy Next.js site to Pages → Run workflow**, choose `main` or `livedemo` with the corrected files committed on that branch.
 
-If GitHub Pages setup has added its generic `nextjs.yml` template on `main`, that template looks for a root `package.json` and fails because this app lives in `frontend/`. The `livedemo` branch includes a replacement `nextjs.yml` manual entry that calls the shared `deploy-livedemo.yml` workflow. In **Actions → Deploy Next.js site to Pages → Run workflow**, select **Branch: livedemo** to use this corrected entry. Re-running an old failed run on `main` uses its old template again. Pushing a reviewed fix to `livedemo` also starts the demo pipeline automatically; the manual entry has no push trigger, so it does not create a second deployment.
+GitHub's generic Next.js template checks for a root `package.json`, invokes a plain build, and uploads root `out/`. Those assumptions do not match this repository. The replacement `nextjs.yml` delegates to the shared pipeline, which uses `frontend/`, `npm run build:demo`, and `frontend/out/`. Re-running a failed run from an older commit still uses that commit's old workflow. Publish the fix in a new commit and start a new run to use the corrected configuration.
 
 ## Limitations and troubleshooting
 
@@ -133,7 +133,7 @@ If GitHub Pages setup has added its generic `nextjs.yml` template on `main`, tha
 - The original nine models total approximately 52 MiB. They load on demand; Moon adds to Earth's first load. Disable 3D in Appearance on constrained devices.
 - If navigation logs missing `__next.*.txt` files on Windows, use `npm run build:demo` so its postbuild normalization runs. Upload all of `out/`, including underscore files and `.nojekyll`.
 - If a GLB/image requests `/models/...` at the origin root, check the demo base-path environment and rebuild. Do not prepend the prefix to Next `Link` destinations.
-- If deployment is rejected, check Pages source, the environment's branch policy, Actions permissions, and that the workflow ref is `livedemo`.
+- If deployment is rejected, check Pages source, the environment's branch policy, Actions permissions, and that the workflow ref is one of the approved `main` or `livedemo` branches.
 - The inherited dependency audit reports six advisories (five high, one critical), including Next.js. The requested Next.js 16.3.2 version is retained; no blanket `npm audit fix` or framework upgrade is applied. No Next server is deployed, but dependency remediation should be reviewed separately before broader full-stack production use. Run `npm audit` to inspect the current advisory details.
 
 ## Verification record

@@ -13,7 +13,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   build:
-    if: github.ref == 'refs/heads/livedemo'
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/livedemo'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -37,7 +37,7 @@ jobs:
         with:
           path: frontend/out
   deploy:
-    if: github.ref == 'refs/heads/livedemo'
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/livedemo'
     needs: build
     runs-on: ubuntu-latest
     environment:
