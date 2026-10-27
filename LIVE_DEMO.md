@@ -122,6 +122,8 @@ After reviewing and approving publication:
 
 GitHub may only expose manual dispatch in the UI when a workflow is registered on the default branch. The push trigger on `livedemo` is the intended deployment path; do not modify `main` just to expose a manual button. This workflow has not been executed remotely as part of local preparation.
 
+If GitHub Pages setup has added its generic `nextjs.yml` template on `main`, that template looks for a root `package.json` and fails because this app lives in `frontend/`. The `livedemo` branch includes a replacement `nextjs.yml` manual entry that calls the shared `deploy-livedemo.yml` workflow. In **Actions → Deploy Next.js site to Pages → Run workflow**, select **Branch: livedemo** to use this corrected entry. Re-running an old failed run on `main` uses its old template again. Pushing a reviewed fix to `livedemo` also starts the demo pipeline automatically; the manual entry has no push trigger, so it does not create a second deployment.
+
 ## Limitations and troubleshooting
 
 - Messaging is a local simulation; presence remains offline, and no remote recipients or automatic AI replies are involved. Stored incoming messages/read indicators are sample history.
