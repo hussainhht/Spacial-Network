@@ -6,9 +6,10 @@ The intended GitHub Pages address is **https://hussainhht.github.io/Spacial-Netw
 
 ## Run without Go or SQLite
 
-Use Node.js 22 and the npm lockfile. From the repository root:
+Use Node.js 22, Git LFS, and the npm lockfile. From the repository root:
 
 ```sh
+git lfs pull --include="frontend/public/models/planets/*.glb" --exclude=""
 cd frontend
 npm ci
 npm run dev:demo
@@ -22,6 +23,7 @@ The development server is useful for editing. Verify the actual static artifact 
 npm run typecheck
 npm run lint
 npm run test:demo
+npm run check:demo:assets
 npm run build:demo
 npm run serve:demo
 ```
@@ -103,6 +105,8 @@ Demo builds conditionally enable `output: "export"`, `/Spacial-Network`, trailin
 
 Next 16.3's Windows export can emit nested folders for dotted route-segment filenames. The postbuild normalization copies equivalent dotted filenames into the artifact. It is a no-op on platforms already producing dotted files. The static server does not conceal this issue with rewrites.
 
+The `.glb` files are tracked by Git LFS. A regular CI checkout can contain small text pointers beginning with `version https://git-lfs.github.com/spec/v1` instead of model binaries. The shared deployment workflow explicitly runs `git lfs pull` for `frontend/public/models/planets/*.glb`; it fetches only the nine shipped models and leaves the larger source assets under `3d/` alone. It then verifies each model's `glTF` header, GLB version, and byte length before installing dependencies or building. `build:demo` checks both the source files and the exported models. Pointer, missing, or truncated files stop the build with a download command; the browser checks remain enabled.
+
 `.github/workflows/nextjs.yml` handles pushes to `main` and manual runs. It calls the shared `.github/workflows/deploy-livedemo.yml` pipeline, which also handles pushes to `livedemo` directly:
 
 1. Supports `workflow_dispatch` and `workflow_call` in addition to the direct `livedemo` push trigger. The `main` entry calls this same pipeline, so each push starts one deployment.
@@ -133,6 +137,7 @@ GitHub's generic Next.js template checks for a root `package.json`, invokes a pl
 - The original nine models total approximately 52 MiB. They load on demand; Moon adds to Earth's first load. Disable 3D in Appearance on constrained devices.
 - If navigation logs missing `__next.*.txt` files on Windows, use `npm run build:demo` so its postbuild normalization runs. Upload all of `out/`, including underscore files and `.nojekyll`.
 - If a GLB/image requests `/models/...` at the origin root, check the demo base-path environment and rebuild. Do not prepend the prefix to Next `Link` destinations.
+- If a model reports `Unexpected token 'v'` or the asset test receives `vers` instead of `glTF`, Git LFS pointers were published. From the repository root run `git lfs pull --include="frontend/public/models/planets/*.glb" --exclude=""`, then rebuild. On CI, the model-download step must precede the build; if LFS reports unavailable objects or quota errors, resolve that download error before retrying. Do not skip the model tests.
 - If deployment is rejected, check Pages source, the environment's branch policy, Actions permissions, and that the workflow ref is one of the approved `main` or `livedemo` branches.
 - The inherited dependency audit reports six advisories (five high, one critical), including Next.js. The requested Next.js 16.3.2 version is retained; no blanket `npm audit fix` or framework upgrade is applied. No Next server is deployed, but dependency remediation should be reviewed separately before broader full-stack production use. Run `npm audit` to inspect the current advisory details.
 

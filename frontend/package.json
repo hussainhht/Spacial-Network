@@ -12,8 +12,9 @@
     "build:demo": "node scripts/demo.mjs build",
     "serve:demo": "node scripts/serve-demo.mjs",
     "typecheck": "next typegen && tsc --noEmit --incremental false",
-    "test:demo": "node --import ./tests/register.mjs --test tests/demo.test.mjs",
-    "test:demo:browser": "playwright test"
+    "test:demo": "node --import ./tests/register.mjs --test tests/demo.test.mjs tests/validate-demo-assets.test.mjs",
+    "test:demo:browser": "playwright test",
+    "check:demo:assets": "node scripts/validate-demo-assets.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.8",
