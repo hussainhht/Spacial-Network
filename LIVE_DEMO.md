@@ -2,7 +2,7 @@
 
 The demo runs the existing Next.js frontend with a browser-only data service. It preserves AppShell, navigation, CSS Modules, feature components, notifications, messaging, and the real Three.js planet system. The Go backend is unchanged, and ordinary frontend commands retain full-stack mode. Deployment workflows support the approved `main` and `livedemo` branches.
 
-The intended GitHub Pages address is **https://hussainhht.github.io/Spacial-Network/**. This document describes a prepared deployment; it does not assert that the site has been published.
+The live demo is **https://hussainhht.github.io/Spacial-Network/**. The full application, live planet binaries, group navigation, and profile deep-link refresh were verified on 27 October 2026 after [deployment 40549382908](https://github.com/hussainhht/Spacial-Network/actions/runs/40549382908) succeeded.
 
 ## Run without Go or SQLite
 

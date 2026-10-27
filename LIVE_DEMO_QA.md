@@ -1,5 +1,17 @@
 # Live demo verification
 
+## Git LFS deployment fix — 27 October 2026
+
+The first remote browser failures exposed Git LFS pointer text in place of GLB binaries. The shared workflow now downloads only the nine shipped model files before building. A source/export preflight checks the `glTF` magic bytes, GLB version 2, and declared file length, and reports unresolved LFS pointers explicitly.
+
+A fresh isolated checkout reproduced the pointer failure. Running the same targeted `git lfs pull` command as CI downloaded exactly nine objects totaling 54,195,556 bytes; all nine then passed binary validation. The temporary checkout was removed after verification.
+
+Current local validation passed: TypeScript, ESLint, Actions lint, the production static export, all nine source/export models, and **13 unit tests**, including four new binary-validation regression cases. No browser checks were disabled.
+
+[GitHub run 40549382908](https://github.com/hussainhht/Spacial-Network/actions/runs/40549382908) completed with successful build and deployment jobs, including the full browser suite. The public URL now serves the Next.js application. Live Chromium verification confirmed the populated feed, rendered Earth and Moon assets, navigation to Groups, a direct profile URL and refresh, and no console errors. Direct public Earth/Moon requests returned real GLB headers, not pointer text. The public screenshot is saved locally at `frontend/test-results/live-demo-home.png`.
+
+The original local preparation record below is retained as historical verification.
+
 Verified locally on **27 October 2026**, on `livedemo`. No commit, push, GitHub settings change, or deployment was performed.
 
 ## Environment and results
