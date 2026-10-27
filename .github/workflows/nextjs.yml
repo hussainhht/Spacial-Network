@@ -1,0 +1,16 @@
+# GitHub's Pages setup registers this filename on the default branch.
+# Run this entry from livedemo to use the frontend-specific demo pipeline.
+name: Deploy Next.js site to Pages
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  demo:
+    if: github.ref == 'refs/heads/livedemo'
+    uses: ./.github/workflows/deploy-livedemo.yml
