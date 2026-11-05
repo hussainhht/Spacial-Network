@@ -1,5 +1,6 @@
 import { requestFetch } from "@/demo/api";
 import type {
+  BirthdayVisibility,
   FollowRequest,
   FollowStatus,
   Profile,
@@ -24,6 +25,7 @@ interface ApiProfile {
   nickname?: string;
   about_me?: string;
   date_of_birth?: string;
+  birthday_visibility?: string;
 }
 
 interface ProfileResponse {
@@ -70,6 +72,7 @@ export interface UpdateProfileDetailsInput {
   nickname: string;
   aboutMe: string;
   dateOfBirth: string;
+  birthdayVisibility: BirthdayVisibility;
 }
 
 export interface UpdateProfileAvatarInput {
@@ -110,6 +113,9 @@ function toProfile(profile: ApiProfile): Profile {
     nickname: profile.nickname ?? "",
     aboutMe: profile.about_me ?? "",
     dateOfBirth: profile.date_of_birth ?? "",
+    // Anything other than an explicit "public" stays private.
+    birthdayVisibility:
+      profile.birthday_visibility === "public" ? "public" : "private",
   };
 }
 
@@ -294,6 +300,7 @@ export async function updateMyProfileDetails(
       nickname: optionalValue(input.nickname),
       about_me: optionalValue(input.aboutMe),
       date_of_birth: optionalValue(input.dateOfBirth),
+      birthday_visibility: input.birthdayVisibility,
     }),
   });
 

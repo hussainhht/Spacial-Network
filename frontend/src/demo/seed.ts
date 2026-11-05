@@ -19,6 +19,7 @@ export interface DemoUser {
   about_me: string;
   nickname: string;
   date_of_birth: string;
+  birthday_visibility?: "public" | "private";
   email: string;
 }
 const identities = [
@@ -75,6 +76,7 @@ export const DEMO_USERS: DemoUser[] = identities.map(
     is_private: i === 4 || i === 10,
     nickname: first_name,
     date_of_birth: "2002-04-12",
+    birthday_visibility: i % 3 === 1 ? "public" : "private",
     email: `${username}@example.invalid`,
   }),
 );

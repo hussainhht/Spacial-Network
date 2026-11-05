@@ -86,11 +86,17 @@ func ValidateUpdateProfileDetailsRequest(req *UpdateProfileDetailsRequest) error
 		return err
 	}
 
+	birthdayVisibility, err := validateBirthdayVisibility(req.BirthdayVisibility)
+	if err != nil {
+		return err
+	}
+
 	req.FirstName = firstName
 	req.LastName = lastName
 	req.Nickname = nickname
 	req.AboutMe = aboutMe
 	req.DateOfBirth = dateOfBirth
+	req.BirthdayVisibility = birthdayVisibility
 
 	return nil
 }
@@ -180,4 +186,24 @@ func validateOptionalDateOfBirth(value *string) (*string, error) {
 	}
 
 	return &normalized, nil
+}
+
+const (
+	BirthdayVisibilityPublic  = "public"
+	BirthdayVisibilityPrivate = "private"
+)
+
+// validateBirthdayVisibility accepts "public" or "private"; nil means the
+// request does not change the saved preference.
+func validateBirthdayVisibility(value *string) (*string, error) {
+	if value == nil {
+		return nil, nil
+	}
+
+	switch *value {
+	case BirthdayVisibilityPublic, BirthdayVisibilityPrivate:
+		return value, nil
+	default:
+		return nil, errors.New("birthday visibility must be public or private")
+	}
 }

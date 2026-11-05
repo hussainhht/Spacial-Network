@@ -32,7 +32,14 @@ func toProfileResponse(profile *Profile, canViewFullProfile bool, includePersona
 		resp.ProfilePhoto = "/uploads/" + profile.ProfilePhoto.String
 	}
 
+	// The birth date is shared when the owner makes it public, independent of
+	// the profile's follower-only privacy; otherwise only the owner receives it.
+	if profile.DateOfBirth.Valid && (includePersonalInfo || profile.BirthdayVisibility == BirthdayVisibilityPublic) {
+		resp.DateOfBirth = profile.DateOfBirth.String
+	}
+
 	if includePersonalInfo {
+		resp.BirthdayVisibility = profile.BirthdayVisibility
 		resp.UUID = profile.UUID
 		resp.Age = profile.Age
 		resp.Gender = profile.Gender
@@ -41,7 +48,6 @@ func toProfileResponse(profile *Profile, canViewFullProfile bool, includePersona
 		resp.UpdatedAt = profile.UpdatedAt.Format(time.RFC3339)
 
 		if profile.DateOfBirth.Valid {
-			resp.DateOfBirth = profile.DateOfBirth.String
 			if dob, err := time.Parse("2006-01-02", profile.DateOfBirth.String); err == nil {
 				resp.Age = computeAge(dob, time.Now())
 			}

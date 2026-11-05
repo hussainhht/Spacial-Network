@@ -1,9 +1,9 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, ReactNode, useMemo, useState } from "react";
 import { getTodayInputValue, parseDate } from "@/lib/utils";
 import type { UpdateProfileDetailsInput } from "../api/profiles";
-import type { Profile } from "../types/profile";
+import type { BirthdayVisibility, Profile } from "../types/profile";
 import styles from "./Profile.module.css";
 
 interface ProfileDetailsFormProps {
@@ -29,6 +29,48 @@ function toDateInputValue(value: string): string {
   return `${year}-${month}-${day}`;
 }
 
+const iconProps = {
+  width: 18,
+  height: 18,
+  viewBox: "0 0 24 24",
+  fill: "none",
+  stroke: "currentColor",
+  strokeWidth: 1.6,
+  strokeLinecap: "round",
+  strokeLinejoin: "round",
+  "aria-hidden": true,
+} as const;
+
+const BIRTHDAY_VISIBILITY_OPTIONS: {
+  value: BirthdayVisibility;
+  label: string;
+  hint: string;
+  icon: ReactNode;
+}[] = [
+  {
+    value: "public",
+    label: "Public",
+    hint: "Anyone viewing your profile can see it",
+    icon: (
+      <svg {...iconProps}>
+        <circle cx="12" cy="12" r="9" />
+        <path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" />
+      </svg>
+    ),
+  },
+  {
+    value: "private",
+    label: "Only me",
+    hint: "Only you can see it",
+    icon: (
+      <svg {...iconProps}>
+        <rect x="5" y="11" width="14" height="9" rx="2" />
+        <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+      </svg>
+    ),
+  },
+];
+
 function getFormState(profile: Profile): UpdateProfileDetailsInput {
   return {
     firstName: profile.firstName,
@@ -36,6 +78,7 @@ function getFormState(profile: Profile): UpdateProfileDetailsInput {
     nickname: profile.nickname,
     aboutMe: profile.aboutMe,
     dateOfBirth: toDateInputValue(profile.dateOfBirth),
+    birthdayVisibility: profile.birthdayVisibility,
   };
 }
 
@@ -55,7 +98,8 @@ export default function ProfileDetailsForm({
       formState.lastName !== original.lastName ||
       formState.nickname !== original.nickname ||
       formState.aboutMe !== original.aboutMe ||
-      formState.dateOfBirth !== original.dateOfBirth
+      formState.dateOfBirth !== original.dateOfBirth ||
+      formState.birthdayVisibility !== original.birthdayVisibility
     );
   }, [formState, profile]);
 
@@ -68,6 +112,7 @@ export default function ProfileDetailsForm({
       nickname: formState.nickname.trim(),
       aboutMe: formState.aboutMe.trim(),
       dateOfBirth: formState.dateOfBirth.trim(),
+      birthdayVisibility: formState.birthdayVisibility,
     };
 
     if (!nextInput.firstName || !nextInput.lastName) {
@@ -80,13 +125,17 @@ export default function ProfileDetailsForm({
   }
 
   function updateField(
-    field: keyof UpdateProfileDetailsInput,
+    field: Exclude<keyof UpdateProfileDetailsInput, "birthdayVisibility">,
     value: string,
   ) {
     setFormState((current) => ({
       ...current,
       [field]: value,
     }));
+  }
+
+  function updateBirthdayVisibility(value: BirthdayVisibility) {
+    setFormState((current) => ({ ...current, birthdayVisibility: value }));
   }
 
   function resetForm() {
@@ -181,6 +230,47 @@ export default function ProfileDetailsForm({
               max={getTodayInputValue()}
               disabled={saving}
             />
+          </div>
+
+          <div
+            className={`${styles.profileFormField} ${styles.profileFormFieldFull}`}
+          >
+            <span
+              className={styles.profileFormLabel}
+              id="profile-birthday-visibility-label"
+            >
+              Birthday Visibility
+            </span>
+            <div
+              className={styles.visibilityGroup}
+              role="radiogroup"
+              aria-labelledby="profile-birthday-visibility-label"
+            >
+              {BIRTHDAY_VISIBILITY_OPTIONS.map((option) => (
+                <label
+                  key={option.value}
+                  className={styles.visibilityOption}
+                  data-checked={formState.birthdayVisibility === option.value}
+                >
+                  <input
+                    type="radio"
+                    name="birthday-visibility"
+                    value={option.value}
+                    checked={formState.birthdayVisibility === option.value}
+                    onChange={() => updateBirthdayVisibility(option.value)}
+                    className={styles.visibilityInput}
+                    disabled={saving}
+                  />
+                  {option.icon}
+                  <span className={styles.visibilityText}>
+                    <span className={styles.visibilityTitle}>
+                      {option.label}
+                    </span>
+                    <span className={styles.visibilityHint}>{option.hint}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
           </div>
 
           <div

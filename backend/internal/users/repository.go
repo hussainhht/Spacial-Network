@@ -218,7 +218,7 @@ func (r *Repository) GetProfileByID(userID int) (*Profile, error) {
 	profile := &Profile{}
 
 	err := r.db.QueryRow(`
-		SELECT id, uuid, username, age, gender, first_name, last_name, email, profile_photo, created_at, updated_at, is_private, nickname, about_me, date_of_birth
+		SELECT id, uuid, username, age, gender, first_name, last_name, email, profile_photo, created_at, updated_at, is_private, nickname, about_me, date_of_birth, birthday_visibility
 		FROM users
 		WHERE id = ?
 	`, userID).Scan(
@@ -237,6 +237,7 @@ func (r *Repository) GetProfileByID(userID int) (*Profile, error) {
 		&profile.Nickname,
 		&profile.AboutMe,
 		&profile.DateOfBirth,
+		&profile.BirthdayVisibility,
 	)
 
 	if err != nil {
@@ -251,7 +252,7 @@ func (r *Repository) GetProfileByUsername(username string) (*Profile, error) {
 	profile := &Profile{}
 
 	err := r.db.QueryRow(`
-		SELECT id, uuid, username, age, gender, first_name, last_name, email, profile_photo, created_at, updated_at, is_private, nickname, about_me, date_of_birth
+		SELECT id, uuid, username, age, gender, first_name, last_name, email, profile_photo, created_at, updated_at, is_private, nickname, about_me, date_of_birth, birthday_visibility
 		FROM users
 		WHERE username = ?
 	`, username).Scan(
@@ -270,6 +271,7 @@ func (r *Repository) GetProfileByUsername(username string) (*Profile, error) {
 		&profile.Nickname,
 		&profile.AboutMe,
 		&profile.DateOfBirth,
+		&profile.BirthdayVisibility,
 	)
 
 	if err != nil {
@@ -314,12 +316,14 @@ func (r *Repository) UpdateProfileDetails(
 	nickname sql.NullString,
 	aboutMe sql.NullString,
 	dateOfBirth sql.NullString,
+	birthdayVisibility sql.NullString,
 ) (*Profile, error) {
 	result, err := r.db.Exec(`
 		UPDATE users
-		SET first_name = ?, last_name = ?, nickname = ?, about_me = ?, date_of_birth = ?, updated_at = CURRENT_TIMESTAMP
+		SET first_name = ?, last_name = ?, nickname = ?, about_me = ?, date_of_birth = ?,
+			birthday_visibility = COALESCE(?, birthday_visibility), updated_at = CURRENT_TIMESTAMP
 		WHERE id = ?
-	`, firstName, lastName, nickname, aboutMe, dateOfBirth, userID)
+	`, firstName, lastName, nickname, aboutMe, dateOfBirth, birthdayVisibility, userID)
 	if err != nil {
 		return nil, err
 	}

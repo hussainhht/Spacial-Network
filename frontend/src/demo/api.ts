@@ -106,7 +106,11 @@ function profile(id: number) {
     can_view_full_profile: can,
     about_me: can ? u.about_me : "",
     email: id === me() ? u.email : "",
-    date_of_birth: can ? u.date_of_birth : "",
+    // Mirrors the backend: the owner always sees it, others only when public.
+    date_of_birth:
+      id === me() || u.birthday_visibility === "public" ? u.date_of_birth : "",
+    birthday_visibility:
+      id === me() ? (u.birthday_visibility ?? "private") : undefined,
     created_at: SEED_DATE,
     updated_at: SEED_DATE,
   };
@@ -223,6 +227,12 @@ export async function demoRequest(
           "date_of_birth",
         ] as const)
           u[key] = String(b[key] ?? "");
+      if (p.endsWith("/profile") && b.birthday_visibility !== undefined) {
+        const visibility = b.birthday_visibility;
+        if (visibility === "public" || visibility === "private")
+          u.birthday_visibility = visibility;
+        else fail("birthday visibility must be public or private", 400);
+      }
       if (p.endsWith("/avatar"))
         u.profile_photo = b.remove_photo
           ? ""

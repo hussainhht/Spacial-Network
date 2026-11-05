@@ -144,6 +144,7 @@ func (s *Service) UpdateProfileDetails(userID int, req UpdateProfileDetailsReque
 		nullableProfileString(req.Nickname),
 		nullableProfileString(req.AboutMe),
 		nullableProfileString(req.DateOfBirth),
+		nullableProfileString(req.BirthdayVisibility),
 	)
 }
 

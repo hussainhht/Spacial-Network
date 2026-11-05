@@ -74,7 +74,7 @@ export default function ProfileAbout({
   onEditProfile,
 }: ProfileAboutProps) {
   const aboutMe = profile.aboutMe.trim();
-  // The backend only includes the date of birth for the profile owner.
+  // The backend only sends the date of birth to the owner or when it is public.
   const dateOfBirth = formatDateOfBirth(profile.dateOfBirth);
 
   return (
@@ -121,9 +121,6 @@ export default function ProfileAbout({
                 Born
               </dt>
               <dd className={styles.detailValue}>{dateOfBirth}</dd>
-              {isOwnProfile && (
-                <dd className={styles.detailNote}>Only visible to you</dd>
-              )}
             </div>
           </dl>
         )}

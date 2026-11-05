@@ -587,12 +587,6 @@
   font-weight: 500;
 }
 
-.detailNote {
-  margin: 0;
-  color: var(--space-text-placeholder);
-  font-size: 0.7rem;
-}
-
 .sections {
   display: flex;
   flex-direction: column;
@@ -1357,5 +1351,80 @@
 
   .profileFormActions > * {
     flex: 1 1 auto;
+  }
+}
+
+.visibilityGroup {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+
+.visibilityOption {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  min-width: 0;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--space-border);
+  border-radius: var(--space-radius-md);
+  background: var(--space-input-bg);
+  color: var(--space-text-muted);
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    color 0.15s ease;
+}
+
+.visibilityOption svg {
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+.visibilityOption[data-checked="true"] {
+  border-color: var(--planet-accent);
+  box-shadow: 0 0 0 3px var(--planet-border);
+  color: var(--planet-accent);
+}
+
+.visibilityOption:has(.visibilityInput:focus-visible) {
+  outline: 2px solid var(--planet-accent);
+  outline-offset: 2px;
+}
+
+.visibilityOption:has(.visibilityInput:disabled) {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.visibilityInput {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.visibilityText {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.visibilityTitle {
+  color: var(--space-text-heading);
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.visibilityHint {
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+@media (max-width: 520px) {
+  .visibilityGroup {
+    grid-template-columns: 1fr;
   }
 }

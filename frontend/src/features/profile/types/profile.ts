@@ -1,3 +1,5 @@
+export type BirthdayVisibility = "public" | "private";
+
 export interface Profile {
   id: number;
   uuid: string;
@@ -15,6 +17,7 @@ export interface Profile {
   nickname: string;
   aboutMe: string;
   dateOfBirth: string;
+  birthdayVisibility: BirthdayVisibility;
 }
 
 export type ProfileTab = "posts" | "connections" | "settings";

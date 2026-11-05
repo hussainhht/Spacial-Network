@@ -185,6 +185,7 @@ function SettingsTab({
                 profile.nickname,
                 profile.aboutMe,
                 profile.dateOfBirth,
+                profile.birthdayVisibility,
               ].join(":")}
               profile={profile}
               onSave={onUpdateProfileDetails}
