@@ -5,7 +5,6 @@ import SegmentedTabs, {
   type SegmentedTabOption,
 } from "@/components/SegmentedTabs";
 import { useActionFeedback } from "@/components/feedback/ActionFeedbackProvider";
-import { useLogout } from "@/components/layout/useLogout";
 import { useCurrentUser } from "@/features/auth/context/CurrentUserContext";
 import {
   getMyProfile,
@@ -19,7 +18,6 @@ import ProfileAccountCard from "@/features/profile/components/ProfileAccountCard
 import ProfileAvatarForm from "@/features/profile/components/ProfileAvatarForm";
 import ProfileDetailsForm from "@/features/profile/components/ProfileDetailsForm";
 import type { Profile } from "@/features/profile/types/profile";
-import UserAvatar from "@/components/UserAvatar";
 import AppIcon from "@/components/layout/AppIcon";
 import AppearanceSettings from "./AppearanceSettings";
 import PasswordForm from "./PasswordForm";
@@ -29,20 +27,17 @@ import styles from "./SettingsPage.module.css";
 type SettingsView =
   | "profile"
   | "security"
-  | "appearance"
-  | "session";
+  | "appearance";
 
 const SETTINGS_VIEWS: readonly SegmentedTabOption<SettingsView>[] = [
   { value: "profile", label: "Profile" },
   { value: "security", label: "Privacy & Security" },
   { value: "appearance", label: "Appearance" },
-  { value: "session", label: "Session" },
 ];
 
 export default function SettingsPage() {
   const { notify } = useActionFeedback();
-  const { logout, loggingOut, error: logoutError } = useLogout();
-  const { user, updateCurrentUser } = useCurrentUser();
+  const { updateCurrentUser } = useCurrentUser();
   const [activeView, setActiveView] = useState<SettingsView>("profile");
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
@@ -326,89 +321,6 @@ export default function SettingsPage() {
             description="Choose your celestial theme and background behavior."
           />
           <AppearanceSettings />
-        </section>
-
-        <section
-          id="settings-panel-session"
-          className={styles.panel}
-          role="tabpanel"
-          aria-labelledby="settings-tab-session"
-          hidden={activeView !== "session"}
-        >
-          <SectionHeader
-            title="Session"
-            description="Manage your current browser session."
-          />
-          <div className={styles.settingsMainCol}>
-            <section className={styles.card} aria-labelledby="session-heading">
-              <div className={styles.cardHeader}>
-                <div>
-                  <h3 id="session-heading" className={styles.cardTitle}>
-                    Active Session
-                  </h3>
-                  <p className={styles.cardDescription}>
-                    Your current authenticated browser session.
-                  </p>
-                </div>
-                <span className={styles.activeBadge}>
-                  <span className={styles.activeDot} />
-                  Active now
-                </span>
-              </div>
-
-              <div className={styles.cardBody}>
-                <div className={styles.sessionCardContent}>
-                  <div className={styles.sessionUserRow}>
-                    <UserAvatar
-                      src={user?.profile_photo}
-                      name={`${user?.first_name ?? ""} ${user?.last_name ?? ""}`.trim() || user?.username || "User"}
-                      size={42}
-                    />
-                    <div className={styles.sessionUserMeta}>
-                      <strong>{user?.first_name} {user?.last_name}</strong>
-                      <span>@{user?.username}</span>
-                    </div>
-                  </div>
-
-                  <div className={styles.sessionDetails}>
-                    <div className={styles.sessionDetailItem}>
-                      <span className={styles.sessionDetailLabel}>Device</span>
-                      <span className={styles.sessionDetailValue}>This Web Browser</span>
-                    </div>
-                    <div className={styles.sessionDetailItem}>
-                      <span className={styles.sessionDetailLabel}>Status</span>
-                      <span className={styles.sessionDetailValue}>Connected</span>
-                    </div>
-                  </div>
-
-                  <div className={styles.sessionDivider} />
-
-                  <div className={styles.signOutArea}>
-                    <div className={styles.signOutInfo}>
-                      <h4 className={styles.signOutTitle}>Sign out</h4>
-                      <p className={styles.signOutDescription}>
-                        End this browser session. Your profile, posts, and data remain safe.
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      className={styles.signOutButton}
-                      disabled={loggingOut}
-                      onClick={logout}
-                    >
-                      <AppIcon name="logOut" width={14} height={14} />
-                      {loggingOut ? "Signing out…" : "Sign out"}
-                    </button>
-                  </div>
-                  {logoutError && (
-                    <p className={styles.feedbackError} role="alert">
-                      {logoutError}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </section>
-          </div>
         </section>
       </div>
     </main>

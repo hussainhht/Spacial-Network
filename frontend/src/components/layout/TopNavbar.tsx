@@ -236,13 +236,14 @@ export default function TopNavbar() {
               <div className={styles.dropdownDivider} role="separator" />
               <button
                 type="button"
-                className={`${styles.dropdownItem} ${styles.dropdownItemLogout}`}
+                className={`${styles.dropdownItem} ${DEMO_MODE ? "" : styles.dropdownItemLogout}`}
                 role="menuitem"
                 onClick={logout}
                 disabled={loggingOut}
+                aria-busy={loggingOut}
               >
                 <AppIcon name="logOut" />
-                {DEMO_MODE ? "Demo entry" : loggingOut ? "Logging out…" : "Logout"}
+                {DEMO_MODE ? "Demo entry" : loggingOut ? "Signing out…" : "Sign out"}
               </button>
               {DEMO_MODE && <DemoControls />}
               {logoutError && (

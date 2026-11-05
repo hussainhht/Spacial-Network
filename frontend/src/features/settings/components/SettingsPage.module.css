@@ -73,7 +73,6 @@
   min-width: 0;
 }
 
-
 .profileState,
 .profileError {
   min-height: 120px;
@@ -121,7 +120,6 @@
   -webkit-backdrop-filter: blur(14px);
   scroll-margin-top: 76px;
 }
-
 
 .eyebrow {
   margin: 0 0 0.35rem;
@@ -370,29 +368,6 @@
   gap: 10px;
 }
 
-.activeBadge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 3px 10px;
-  border: 1px solid rgba(74, 222, 128, 0.3);
-  border-radius: 999px;
-  background: rgba(22, 101, 52, 0.2);
-  color: #86efac;
-  font-size: 11px;
-  font-weight: 650;
-  flex-shrink: 0;
-}
-
-.activeDot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #4ade80;
-  box-shadow: 0 0 8px #4ade80;
-  animation: pulseDot 2s ease-in-out infinite;
-}
-
 @keyframes pulseDot {
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.5; transform: scale(0.85); }
@@ -448,148 +423,6 @@
   display: flex;
   align-items: center;
   gap: 12px;
-}
-
-.sessionCardContent {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.sessionUserRow {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 14px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 12px;
-  background: rgba(8, 12, 29, 0.5);
-}
-
-.sessionUserMeta {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-.sessionUserMeta strong {
-  color: var(--space-text-heading);
-  font-size: 14px;
-  font-weight: 650;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.sessionUserMeta span {
-  color: var(--space-text-muted);
-  font-size: 12px;
-}
-
-.sessionDetails {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.sessionDetailItem {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 8px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 10px;
-  background: rgba(8, 12, 29, 0.35);
-}
-
-.sessionDetailLabel {
-  color: var(--space-text-muted);
-  font-size: 11px;
-  font-weight: 550;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.sessionDetailValue {
-  color: var(--space-text-heading);
-  font-size: 12.5px;
-  font-weight: 600;
-}
-
-.sessionDivider {
-  height: 1px;
-  background: var(--space-border, rgba(255, 255, 255, 0.08));
-  margin: 2px 0;
-}
-
-.signOutArea {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 10px 14px;
-  border: 1px solid rgba(248, 113, 113, 0.16);
-  border-radius: 12px;
-  background: rgba(127, 29, 29, 0.08);
-}
-
-.signOutInfo {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-.signOutTitle {
-  margin: 0;
-  color: #fca5a5;
-  font-size: 13.5px;
-  font-weight: 650;
-}
-
-.signOutDescription {
-  margin: 0;
-  color: var(--space-text-muted);
-  font-size: 11.5px;
-  line-height: 1.4;
-}
-
-.signOutButton {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  min-height: 38px;
-  padding: 8px 16px;
-  border: 1px solid rgba(248, 113, 113, 0.35);
-  border-radius: 10px;
-  background: rgba(220, 38, 38, 0.18);
-  color: #fca5a5;
-  font: inherit;
-  font-size: 12.5px;
-  font-weight: 650;
-  cursor: pointer;
-  white-space: nowrap;
-  flex-shrink: 0;
-  transition: all 150ms ease;
-}
-
-.signOutButton:hover:not(:disabled) {
-  background: rgba(220, 38, 38, 0.32);
-  border-color: rgba(248, 113, 113, 0.55);
-  color: #fff;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.25);
-}
-
-.signOutButton:active:not(:disabled) {
-  transform: translateY(0);
-}
-
-.signOutButton:disabled {
-  cursor: wait;
-  opacity: 0.6;
 }
 
 .accountSummary,
@@ -1133,20 +966,6 @@
   }
 
   .accountGrid { grid-template-columns: 1fr; }
-
-  .sessionDetails {
-    grid-template-columns: 1fr;
-  }
-
-  .signOutArea {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 12px;
-  }
-
-  .signOutButton {
-    width: 100%;
-  }
 
   .sectionHeader {
     flex-direction: column;

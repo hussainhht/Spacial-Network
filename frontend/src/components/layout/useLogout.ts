@@ -2,7 +2,7 @@
 
 import { requestFetch } from "@/demo/api";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getApiUrl } from "@/lib/api";
 
@@ -10,8 +10,11 @@ export function useLogout() {
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
   const [error, setError] = useState("");
+  const inFlight = useRef(false);
 
   async function logout() {
+    if (inFlight.current) return;
+    inFlight.current = true;
     setError("");
     setLoggingOut(true);
     try {
@@ -26,6 +29,7 @@ export function useLogout() {
     } catch {
       setError("Could not log out. Please try again.");
     } finally {
+      inFlight.current = false;
       setLoggingOut(false);
     }
   }
