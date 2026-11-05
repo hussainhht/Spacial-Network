@@ -70,7 +70,13 @@ export default function AppearanceSettings() {
                       onChange={() => selectPlanet(planet.id)}
                     />
                     <span className={styles.optionCard}>
-                      <span className={styles.planetOrb} aria-hidden="true" />
+                      <span
+                        className={styles.planetOrb}
+                        data-planet={planet.id}
+                        aria-hidden="true"
+                      >
+                        <span className={styles.planetBody} />
+                      </span>
                       <span className={styles.optionText}>
                         <strong>{planet.label}</strong>
                         <span>{selected ? "Active" : "Select theme"}</span>

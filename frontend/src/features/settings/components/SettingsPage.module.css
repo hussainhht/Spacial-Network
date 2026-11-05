@@ -880,17 +880,169 @@
 }
 
 .planetOrb {
-  flex: 0 0 28px;
+  position: relative;
+  display: grid;
+  flex: 0 0 36px;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  transition: transform 160ms ease;
+}
+
+.planetBody {
+  position: relative;
+  display: block;
   width: 28px;
   height: 28px;
-  border: 1px solid color-mix(in srgb, var(--option-accent-hover) 38%, transparent);
+  overflow: hidden;
   border-radius: 50%;
   background:
-    radial-gradient(circle at 31% 27%, rgba(255, 255, 255, 0.58), transparent 12%),
-    radial-gradient(circle at 34% 32%, var(--option-accent-hover), var(--option-accent) 48%, #111827 100%);
+    radial-gradient(circle at 34% 32%, var(--option-accent-hover), var(--option-accent) 55%, #111827 100%);
+  box-shadow: 0 0 10px var(--option-glow);
+  transition: box-shadow 160ms ease;
+}
+
+/* Terminator shading + specular highlight shared by every planet. */
+.planetBody::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 30% 26%, rgba(255, 255, 255, 0.35), transparent 28%),
+    radial-gradient(circle at 70% 72%, transparent 38%, rgba(0, 0, 0, 0.55) 100%);
+  pointer-events: none;
+}
+
+.planetOption:hover .planetOrb {
+  transform: scale(1.06);
+}
+
+.planetRadio:checked + .optionCard .planetBody {
   box-shadow:
-    inset -5px -4px 10px rgba(0, 0, 0, 0.48),
-    0 0 12px var(--option-glow);
+    0 0 0 2px rgba(8, 12, 29, 0.9),
+    0 0 0 3px var(--option-accent),
+    0 0 14px var(--option-glow);
+}
+
+.planetOrb[data-planet="earth"] .planetBody {
+  background:
+    radial-gradient(ellipse 30% 18% at 38% 34%, #4f9a4f 0 60%, transparent 64%),
+    radial-gradient(ellipse 22% 28% at 66% 58%, #7a8a4a 0 60%, transparent 64%),
+    radial-gradient(ellipse 26% 8% at 30% 66%, rgba(255, 255, 255, 0.55), transparent 70%),
+    radial-gradient(ellipse 28% 8% at 62% 24%, rgba(255, 255, 255, 0.5), transparent 70%),
+    radial-gradient(circle at 34% 32%, #5aa9f0, #1f5fae 60%, #0b2a55 100%);
+}
+
+.planetOrb[data-planet="mercury"] .planetBody {
+  background:
+    radial-gradient(circle at 36% 40%, rgba(0, 0, 0, 0.28) 0 8%, transparent 10%),
+    radial-gradient(circle at 66% 62%, rgba(0, 0, 0, 0.25) 0 10%, transparent 12%),
+    radial-gradient(circle at 60% 28%, rgba(0, 0, 0, 0.2) 0 6%, transparent 8%),
+    radial-gradient(circle at 34% 32%, #b9b5ae, #7d7a76 60%, #3d3b3a 100%);
+}
+
+.planetOrb[data-planet="venus"] .planetBody {
+  background:
+    repeating-linear-gradient(160deg, rgba(255, 244, 205, 0.28) 0 4px, rgba(190, 140, 70, 0.22) 4px 9px),
+    radial-gradient(circle at 34% 32%, #f3dca0, #d4a95a 60%, #7a5524 100%);
+}
+
+.planetOrb[data-planet="mars"] .planetBody {
+  background:
+    radial-gradient(ellipse 30% 14% at 50% 8%, rgba(255, 255, 255, 0.7), transparent 70%),
+    radial-gradient(ellipse 24% 14% at 36% 52%, rgba(90, 30, 15, 0.5), transparent 72%),
+    radial-gradient(ellipse 20% 12% at 66% 66%, rgba(90, 30, 15, 0.4), transparent 72%),
+    radial-gradient(circle at 34% 32%, #e8845a, #b8451f 60%, #4a170a 100%);
+}
+
+.planetOrb[data-planet="jupiter"] .planetBody {
+  background:
+    radial-gradient(ellipse 16% 9% at 64% 62%, #b5532f 0 60%, transparent 68%),
+    linear-gradient(
+      180deg,
+      #d9b98f 0 14%,
+      #a8744a 14% 26%,
+      #e6cfa6 26% 40%,
+      #b98558 40% 54%,
+      #ecd9b4 54% 68%,
+      #a8744a 68% 82%,
+      #d9b98f 82% 100%
+    );
+}
+
+.planetOrb[data-planet="saturn"] .planetBody {
+  background:
+    linear-gradient(
+      180deg,
+      #e8d3a0 0 22%,
+      #cfae6c 22% 38%,
+      #f0e0b4 38% 58%,
+      #c9a461 58% 76%,
+      #e3cc92 76% 100%
+    );
+}
+
+.planetOrb[data-planet="saturn"] .planetBody {
+  width: 22px;
+  height: 22px;
+}
+
+/* Ring: drawn over the body, front half only so the planet appears to sit inside it. */
+.planetOrb[data-planet="saturn"]::before,
+.planetOrb[data-planet="saturn"]::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 36px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid rgba(232, 207, 150, 0.85);
+  box-shadow: 0 0 0 1px rgba(120, 90, 40, 0.5);
+  transform: translate(-50%, -50%) rotate(-18deg);
+  pointer-events: none;
+}
+
+/* Back half of the ring sits behind the planet. */
+.planetOrb[data-planet="saturn"]::before {
+  z-index: 0;
+  border-color: rgba(200, 170, 110, 0.55);
+  box-shadow: none;
+}
+
+.planetOrb[data-planet="saturn"] .planetBody {
+  z-index: 1;
+}
+
+.planetOrb[data-planet="saturn"]::after {
+  z-index: 2;
+  clip-path: inset(50% -2px -2px -2px);
+}
+
+.planetOrb[data-planet="uranus"] .planetBody {
+  background:
+    linear-gradient(180deg, transparent 38%, rgba(255, 255, 255, 0.14) 38% 46%, transparent 46%),
+    radial-gradient(circle at 34% 32%, #d5f6f8, #7fd3dc 55%, #2b7f93 100%);
+}
+
+.planetOrb[data-planet="sun"] .planetBody {
+  background:
+    radial-gradient(circle at 40% 36%, #fff3b0, #ffc93c 45%, #ff8a1f 80%, #d85a0a 100%);
+  box-shadow:
+    0 0 10px rgba(255, 170, 40, 0.7),
+    0 0 20px rgba(255, 120, 20, 0.35);
+}
+
+.planetOrb[data-planet="sun"] .planetBody::after {
+  background: radial-gradient(circle at 30% 26%, rgba(255, 255, 255, 0.3), transparent 30%);
+}
+
+.planetRadio:checked + .optionCard .planetOrb[data-planet="sun"] .planetBody {
+  box-shadow:
+    0 0 0 2px rgba(8, 12, 29, 0.9),
+    0 0 0 3px var(--option-accent),
+    0 0 18px rgba(255, 150, 30, 0.7);
 }
 
 .optionText {
@@ -1108,7 +1260,13 @@
     transition: none;
   }
 
-  .planetOption:hover .optionCard {
+  .planetOrb,
+  .planetBody {
+    transition: none;
+  }
+
+  .planetOption:hover .optionCard,
+  .planetOption:hover .planetOrb {
     transform: none;
   }
 
