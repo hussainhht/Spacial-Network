@@ -2,13 +2,18 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import AppIcon from "@/components/layout/AppIcon";
 import GroupSearchInput from "./GroupSearchInput";
 import styles from "./GroupsDirectory.module.css";
 import { getGroups } from "../api/groups";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
-import { useGroupQuery, useMyGroups } from "../hooks/useGroupData";
-import { InvitationsPanel } from "./GroupPanels";
+import {
+  useGroupQuery,
+  useMyGroups,
+  usePendingInvitations,
+} from "../hooks/useGroupData";
+import InvitationsList from "./InvitationsList";
 import { useGroupsSearch } from "../context/GroupsSearchProvider";
 import GroupsFilterTabs, { type GroupsTab } from "./GroupsFilterTabs";
 import GroupList, { type GroupQueryState } from "./GroupList";
@@ -18,7 +23,11 @@ const PAGE_SIZE = 12;
 const SEARCH_DEBOUNCE_MS = 300;
 
 export default function GroupsPageContent() {
-  const [activeTab, setActiveTab] = useState<GroupsTab>("mine");
+  const router = useRouter();
+  const tabParam = useSearchParams().get("tab");
+  const activeTab: GroupsTab =
+    tabParam === "all" || tabParam === "invitations" ? tabParam : "mine";
+  const invitations = usePendingInvitations();
   const { search, setSearch } = useGroupsSearch();
   const debouncedSearch = useDebouncedValue(search.trim(), SEARCH_DEBOUNCE_MS);
   const [pagination, setPagination] = useState({
@@ -30,7 +39,9 @@ export default function GroupsPageContent() {
   }
   const page = pagination.search === debouncedSearch ? pagination.page : 0;
   function changeTab(tab: GroupsTab) {
-    setActiveTab(tab);
+    router.replace(tab === "mine" ? "/groups" : `/groups?tab=${tab}`, {
+      scroll: false,
+    });
     setPagination({ search: debouncedSearch, page: 0 });
   }
   const collectionProps = {
@@ -50,14 +61,16 @@ export default function GroupsPageContent() {
           <GroupsFilterTabs
             activeTab={activeTab}
             onTabChange={changeTab}
+            invitationCount={invitations.data?.length ?? 0}
             className={styles.filters}
           />
-          <GroupSearchInput value={search} onChange={setSearch} />
+          {activeTab !== "invitations" && (
+            <GroupSearchInput value={search} onChange={setSearch} />
+          )}
           <Link href="/groups/create" className={`group-button ${styles.create}`}>
             <AppIcon name="plus" /> Create Group
           </Link>
         </div>
-        <InvitationsPanel />
         <section
           id={`groups-tabpanel-${activeTab}`}
           role="tabpanel"
@@ -65,7 +78,9 @@ export default function GroupsPageContent() {
           tabIndex={0}
           data-motion-section
         >
-          {activeTab === "mine" ? (
+          {activeTab === "invitations" ? (
+            <InvitationsList />
+          ) : activeTab === "mine" ? (
             <MyGroupsSection {...collectionProps} />
           ) : (
             <AllGroupsSection {...collectionProps} />

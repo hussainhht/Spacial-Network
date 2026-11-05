@@ -1,7 +1,5 @@
 "use client";
 
-import { groupHref } from "@/demo/config";
-
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import AppIcon from "@/components/layout/AppIcon";
@@ -17,7 +15,6 @@ import {
 } from "../hooks/useGroupData";
 import GroupInviteModal from "./management/GroupInviteModal";
 import GroupJoinButton from "./GroupJoinButton";
-import GroupPrivacyBadge from "./GroupPrivacyBadge";
 import { InvitationActions, JoinRequestActions } from "./GroupResponseActions";
 import type { Group, GroupPrivacy } from "../types/group";
 import { formatDate } from "@/lib/utils/date";
@@ -379,56 +376,6 @@ export function JoinRequestsPanel({
           No pending join requests.
         </p>
       )}
-    </section>
-  );
-}
-
-export function InvitationsPanel() {
-  const state = usePendingInvitations();
-  if (!state.loading && !state.error && !state.data?.length) return null;
-  return (
-    <section
-      id="invitations"
-      className="group-panel"
-      aria-labelledby="invitations-heading"
-    >
-      <div className="group-section-heading">
-        <h2 id="invitations-heading">
-          Invitations{state.data && ` · ${state.data.length}`}
-        </h2>
-        {state.loading && <span className="group-muted">Loading…</span>}
-      </div>
-      {state.error && (
-        <GroupLoadError error={state.error} retry={state.refresh} />
-      )}
-      <ul className="group-attempt-list">
-        {state.data?.map((invitation) => (
-          <li key={invitation.id} className="group-attempt-row">
-            <div>
-              {invitation.groupPrivacy === "public" ? (
-                <Link
-                  className="group-title-link"
-                  href={groupHref(invitation.groupId) + "#invitations"}
-                >
-                  {invitation.groupTitle}
-                </Link>
-              ) : (
-                <span className="group-title-link">
-                  {invitation.groupTitle}
-                </span>
-              )}
-              <GroupPrivacyBadge privacy={invitation.groupPrivacy} />
-              <p className="group-muted">
-                Invited by @{invitation.inviterUsername}
-              </p>
-            </div>
-            <InvitationActions
-              groupId={invitation.groupId}
-              entityId={invitation.id}
-            />
-          </li>
-        ))}
-      </ul>
     </section>
   );
 }

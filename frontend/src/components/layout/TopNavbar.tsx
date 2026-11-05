@@ -84,6 +84,13 @@ export default function TopNavbar() {
       }
     }
 
+    // Move focus into the menu when it opens so keyboard users can Tab through it.
+    if (userMenuOpen) {
+      dropdownRef.current
+        ?.querySelector<HTMLElement>('[role="menuitem"]')
+        ?.focus();
+    }
+
     document.addEventListener("mousedown", handleClickOutside);
     document.addEventListener("keydown", handleKeyDown);
     return () => {
@@ -190,13 +197,32 @@ export default function TopNavbar() {
               role="menu"
               aria-label="User options"
             >
+              <div className={styles.dropdownUser}>
+                <UserAvatar
+                  src={user.profile_photo}
+                  firstName={user.first_name}
+                  lastName={user.last_name}
+                  username={user.username}
+                  size={36}
+                  alt=""
+                  className={styles.userAvatar}
+                />
+                <div className={styles.dropdownUserText}>
+                  <span className={styles.dropdownUserName}>{displayName}</span>
+                  <span className={styles.dropdownUserHandle}>
+                    @{user.username}
+                  </span>
+                </div>
+              </div>
+              <div className={styles.dropdownDivider} role="separator" />
               <Link
                 href="/profile"
                 className={styles.dropdownItem}
                 role="menuitem"
                 onClick={() => setUserMenuOpen(false)}
               >
-                Profile
+                <AppIcon name="user" />
+                My Profile
               </Link>
               <Link
                 href="/settings"
@@ -204,6 +230,7 @@ export default function TopNavbar() {
                 role="menuitem"
                 onClick={() => setUserMenuOpen(false)}
               >
+                <AppIcon name="settings" />
                 Settings
               </Link>
               <div className={styles.dropdownDivider} role="separator" />
@@ -214,6 +241,7 @@ export default function TopNavbar() {
                 onClick={logout}
                 disabled={loggingOut}
               >
+                <AppIcon name="logOut" />
                 {DEMO_MODE ? "Demo entry" : loggingOut ? "Logging out…" : "Logout"}
               </button>
               {DEMO_MODE && <DemoControls />}

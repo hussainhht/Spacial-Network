@@ -13,7 +13,7 @@
 .header h2 { margin: 0; color: var(--space-text-heading); font-size: 1rem; font-weight: 720; }
 .headerIcon { display: grid; color: var(--planet-accent); place-items: center; }
 .list { display: grid; gap: .8rem; }
-.row { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; align-items: center; gap: .6rem; min-width: 0; }
+.row { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; align-items: center; gap: .6rem; min-width: 0; }
 .avatar { display: grid; width: 44px; height: 44px; overflow: hidden; place-items: center; color: var(--space-text-heading); background: var(--planet-accent-soft); border: 1px solid rgba(148, 163, 184, .18); border-radius: 50%; font-size: .75rem; font-weight: 750; text-decoration: none; }
 .avatar img { width: 100%; height: 100%; object-fit: cover; }
 .details { display: grid; min-width: 0; gap: .04rem; }
@@ -21,7 +21,7 @@
 .name:hover { color: var(--planet-accent); }
 .members { color: var(--space-text-muted); font-size: .75rem; }
 .context { display: -webkit-box; overflow: hidden; color: color-mix(in srgb, var(--planet-accent) 76%, var(--space-text-body)); font-size: .75rem; line-height: 1.3; overflow-wrap: anywhere; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
-.joinButton, .completeButton { min-width: 64px; min-height: 44px; padding: .35rem .65rem; color: var(--space-text-heading); border: 1px solid rgba(170, 207, 255, .34); border-radius: 999px; font-family: inherit; font-size: .75rem; font-weight: 700; line-height: 1; }
+.joinButton, .completeButton { min-width: 72px; min-height: 36px; padding: .35rem .7rem; white-space: nowrap; color: var(--space-text-heading); border: 1px solid rgba(170, 207, 255, .34); border-radius: 999px; font-family: inherit; font-size: .75rem; font-weight: 700; line-height: 1; }
 .joinButton { color: var(--space-text-heading); background: var(--planet-accent-soft); cursor: pointer; }
 .joinButton:hover { background: var(--planet-accent-active); }
 .completeButton { color: var(--space-text-muted); background: rgba(148, 163, 184, .1); cursor: default; }

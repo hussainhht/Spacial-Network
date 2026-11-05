@@ -81,6 +81,19 @@
   outline: 2px solid var(--planet-focus-ring);
   outline-offset: 2px;
 }
+.tabBadge {
+  display: inline-block;
+  min-width: 18px;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--planet-accent);
+  color: var(--space-bg, #05060f);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  line-height: 1.4;
+  text-align: center;
+}
 .page .create {
   gap: 8px;
   padding-inline: 20px;

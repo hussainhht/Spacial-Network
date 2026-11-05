@@ -1,5 +1,6 @@
 "use client";
 import { useState, useSyncExternalStore } from "react";
+import AppIcon from "@/components/layout/AppIcon";
 import { DEMO_USERS } from "./seed";
 import {
   getDemoState,
@@ -18,12 +19,10 @@ export default function DemoControls() {
   const warning = useSyncExternalStore(subscribe, getStorageWarning, () => "");
   return (
     <div className={styles.controls}>
-      <p>
-        This interactive showcase uses simulated local data. The original
-        project includes Go, SQLite, and realtime WebSockets. Privacy and
-        message delivery are local simulations.
-      </p>
-      <label htmlFor="demo-user">Switch demo identity</label>
+      <div className={styles.header}>
+        <span className={styles.badge}>Demo Mode</span>
+      </div>
+      <label htmlFor="demo-user">Switch account</label>
       <select
         id="demo-user"
         defaultValue={getDemoState().currentUserId}
@@ -42,31 +41,42 @@ export default function DemoControls() {
           </option>
         ))}
       </select>
-      <a
-        href="https://github.com/hussainhht/Spacial-Network"
-        target="_blank"
-        rel="noreferrer"
-      >
-        View full-stack source ↗
-      </a>
       {resetting ? (
-        <div>
-          <p>
-            Restore all sample data and the default identity? Planet preferences
-            are kept.
-          </p>
-          <button type="button" onClick={resetDemo}>
-            Restore sample data
-          </button>
-          <button type="button" onClick={() => setResetting(false)}>
-            Cancel
-          </button>
+        <div className={styles.confirm}>
+          <p>Restore all sample data and the default account?</p>
+          <div className={styles.confirmActions}>
+            <button type="button" onClick={resetDemo}>
+              Restore sample data
+            </button>
+            <button type="button" onClick={() => setResetting(false)}>
+              Cancel
+            </button>
+          </div>
         </div>
       ) : (
-        <button type="button" onClick={() => setResetting(true)}>
+        <button
+          type="button"
+          className={styles.action}
+          onClick={() => setResetting(true)}
+        >
+          <AppIcon name="refresh" width={16} height={16} />
           Reset Demo
         </button>
       )}
+      <details className={styles.about}>
+        <summary>About Demo</summary>
+        <p>
+          Simulated local data. The full app runs on Go, SQLite and realtime
+          WebSockets.
+        </p>
+        <a
+          href="https://github.com/hussainhht/Spacial-Network"
+          target="_blank"
+          rel="noreferrer"
+        >
+          View full-stack source ↗
+        </a>
+      </details>
       {warning && <p role="status">{warning}</p>}
     </div>
   );

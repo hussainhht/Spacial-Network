@@ -45,16 +45,16 @@ Run `build:demo` first. Browser QA targets `/Spacial-Network/`, including refres
 
 The main modules are:
 
-| File | Responsibility |
-| --- | --- |
-| `frontend/src/demo/config.ts` | Explicit demo flag, public asset prefix, static-safe post/group URLs |
-| `frontend/src/demo/seed.ts` | Deterministic fictional identities and connected domain records |
-| `frontend/src/demo/store.ts` | Versioned persistence, stored-data validation, identity selection, reset |
-| `frontend/src/demo/api.ts` | API-compatible local reads/writes, audience rules, permissions, local message events |
-| `frontend/src/demo/DemoControls.tsx` | Identity picker, source link, scoped reset and storage feedback |
-| `frontend/src/lib/api/client.ts` | Selects the local adapter only in demo mode |
-| `frontend/src/providers/WebSocketProvider.tsx` | Uses a local event bus in demo mode; never opens a socket |
-| `frontend/scripts/normalize-export.mjs` | Normalizes Windows route-segment filenames in the artifact |
+| File                                             | Responsibility                                                                       |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------ |
+| `frontend/src/demo/config.ts`                  | Explicit demo flag, public asset prefix, static-safe post/group URLs                 |
+| `frontend/src/demo/seed.ts`                    | Deterministic fictional identities and connected domain records                      |
+| `frontend/src/demo/store.ts`                   | Versioned persistence, stored-data validation, identity selection, reset             |
+| `frontend/src/demo/api.ts`                     | API-compatible local reads/writes, audience rules, permissions, local message events |
+| `frontend/src/demo/DemoControls.tsx`           | Identity picker, source link, scoped reset and storage feedback                      |
+| `frontend/src/lib/api/client.ts`               | Selects the local adapter only in demo mode                                          |
+| `frontend/src/providers/WebSocketProvider.tsx` | Uses a local event bus in demo mode; never opens a socket                            |
+| `frontend/scripts/normalize-export.mjs`        | Normalizes Windows route-segment filenames in the artifact                           |
 
 The feature APIs retain their existing response envelopes and transformations. Profiles, groups, search, login, registration, and logout use `requestFetch`, a service-level adapter returning a `Response`. It delegates to ordinary fetch in full-stack mode. There is no global fetch override, fake token, service worker, backend session, database, or external AI service.
 
@@ -114,7 +114,7 @@ The `.glb` files are tracked by Git LFS. A regular CI checkout can contain small
 3. Installs with `npm ci` under `frontend/`, checks TypeScript, lint and local data tests, builds, and runs browser tests against the static export.
 4. Uploads `frontend/out/` with `actions/upload-pages-artifact` and deploys with `actions/deploy-pages` to the `github-pages` environment.
 
-It grants `contents: read`, `pages: write`, and `id-token: write`. See [GitHub's custom Pages workflow documentation](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages).
+It grants `contents: read`, `pages: write`, and `id-token: write`. See [GitHub&#39;s custom Pages workflow documentation](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages).
 
 After reviewing and approving publication:
 

@@ -14,7 +14,7 @@ async function ready(page: Page, path = "/") {
 }
 async function switchUser(page: Page, id: string) {
   await page.getByRole("button", { name: "User account options" }).click();
-  await page.getByLabel("Switch demo identity").selectOption(id);
+  await page.getByLabel("Switch account").selectOption(id);
   await expect(
     page.getByRole("button", { name: "User account options" }),
   ).toBeVisible();
@@ -397,11 +397,15 @@ test("creator reviews join requests and accepts an invitation", async ({
   await expect(requests.getByText("No pending join requests.")).toBeVisible();
   await page.getByRole("tab", { name: "Members", exact: true }).click();
   await expect(page.getByText("@leo", { exact: true })).toBeVisible();
-  await ready(page, "/groups/");
+  await ready(page, "/groups/?tab=invitations");
+  await expect(
+    page.getByRole("tab", { name: /Invitations/ }),
+  ).toHaveAttribute("aria-selected", "true");
   await page
-    .locator("#invitations")
+    .getByRole("list", { name: "Pending invitations" })
     .getByRole("button", { name: "Accept", exact: true })
     .click();
+  await expect(page.getByText("No pending invitations")).toBeVisible();
   await ready(page, "/groups/7/");
   await expect(
     page.getByRole("tab", { name: "Chat", exact: true }),

@@ -27,15 +27,9 @@ export function useNotificationNavigate() {
           break;
         }
 
-        case "group_invitation": {
-          const groupData = getGroupNotificationData(notification);
-          if (groupData) {
-            router.push(groupHref(groupData.group_id) + "#invitations");
-          } else {
-            router.push("/groups");
-          }
+        case "group_invitation":
+          router.push("/groups?tab=invitations");
           break;
-        }
 
         case "group_invitation_accepted":
         case "group_invitation_declined":
