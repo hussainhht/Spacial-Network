@@ -242,8 +242,7 @@ export default function SettingsPage() {
             title="Privacy & Security"
             description="Manage your profile visibility, data privacy, and account credentials."
           />
-          <div className={styles.settingsTwoColGrid}>
-            <div className={styles.settingsMainCol}>
+          <div className={styles.settingsMainCol}>
               {/* Profile Visibility Card */}
               <section className={styles.card} aria-labelledby="privacy-heading">
                 <div className={styles.cardHeader}>
@@ -312,61 +311,6 @@ export default function SettingsPage() {
                   {DEMO_MODE ? <p>Demo identities have no passwords. The full-stack application supports account credentials and secure password changes.</p> : <PasswordForm />}
                 </div>
               </section>
-            </div>
-
-            {/* Right Column: Tips & Guidelines */}
-            <aside className={styles.card} aria-labelledby="security-tips-heading">
-              <div className={styles.cardHeader}>
-                <div>
-                  <h3 id="security-tips-heading" className={styles.cardTitle}>
-                    Privacy &amp; Security
-                  </h3>
-                  <p className={styles.cardDescription}>
-                    Guidelines for your account.
-                  </p>
-                </div>
-              </div>
-              <div className={styles.cardBody}>
-                <div className={styles.tipsList}>
-                  <div className={styles.tipItem}>
-                    <span className={styles.tipIcon} aria-hidden="true">
-                      <AppIcon name="shield" width={14} height={14} />
-                    </span>
-                    <div>
-                      <strong>Account Visibility</strong>
-                      <p>Private accounts require follow approvals before viewing content.</p>
-                    </div>
-                  </div>
-                  <div className={styles.tipItem}>
-                    <span className={styles.tipIcon} aria-hidden="true">
-                      <AppIcon name="lock" width={14} height={14} />
-                    </span>
-                    <div>
-                      <strong>Password Requirements</strong>
-                      <p>Use at least 8 characters with letters, numbers, or symbols.</p>
-                    </div>
-                  </div>
-                  <div className={styles.tipItem}>
-                    <span className={styles.tipIcon} aria-hidden="true">
-                      <AppIcon name="key" width={14} height={14} />
-                    </span>
-                    <div>
-                      <strong>Credential Safety</strong>
-                      <p>Never share your password or reuse it across external websites.</p>
-                    </div>
-                  </div>
-                  <div className={styles.tipItem}>
-                    <span className={styles.tipIcon} aria-hidden="true">
-                      <AppIcon name="globe" width={14} height={14} />
-                    </span>
-                    <div>
-                      <strong>Active Sessions</strong>
-                      <p>Changing your password keeps your current browser signed in.</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </aside>
           </div>
         </section>
 
@@ -395,7 +339,7 @@ export default function SettingsPage() {
             title="Session"
             description="Manage your current browser session."
           />
-          <div className={styles.settingsTwoColGrid}>
+          <div className={styles.settingsMainCol}>
             <section className={styles.card} aria-labelledby="session-heading">
               <div className={styles.cardHeader}>
                 <div>
@@ -464,50 +408,6 @@ export default function SettingsPage() {
                 </div>
               </div>
             </section>
-
-            <aside className={styles.card} aria-labelledby="session-security-heading">
-              <div className={styles.cardHeader}>
-                <div>
-                  <h3 id="session-security-heading" className={styles.cardTitle}>
-                    Session Info
-                  </h3>
-                  <p className={styles.cardDescription}>
-                    Authentication security.
-                  </p>
-                </div>
-              </div>
-              <div className={styles.cardBody}>
-                <div className={styles.tipsList}>
-                  <div className={styles.tipItem}>
-                    <span className={styles.tipIcon} aria-hidden="true">
-                      <AppIcon name="key" width={14} height={14} />
-                    </span>
-                    <div>
-                      <strong>Secure Cookie</strong>
-                      <p>Session cookies are protected with HTTP-only and strict flags.</p>
-                    </div>
-                  </div>
-                  <div className={styles.tipItem}>
-                    <span className={styles.tipIcon} aria-hidden="true">
-                      <AppIcon name="zap" width={14} height={14} />
-                    </span>
-                    <div>
-                      <strong>Real-time Sync</strong>
-                      <p>Active connections automatically close when you sign out.</p>
-                    </div>
-                  </div>
-                  <div className={styles.tipItem}>
-                    <span className={styles.tipIcon} aria-hidden="true">
-                      <AppIcon name="logOut" width={14} height={14} />
-                    </span>
-                    <div>
-                      <strong>Instant Revocation</strong>
-                      <p>Signing out immediately destroys your session on the server.</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </aside>
           </div>
         </section>
       </div>
