@@ -45,7 +45,7 @@
 
 ### Interactive Live Demo
 
-The `livedemo` branch prepares the existing frontend for a backend-free GitHub Pages showcase with fictional local data. See [LIVE_DEMO.md](LIVE_DEMO.md) for running, testing, resetting, and publishing it. Intended deployment address: [Spacial Network demo](https://hussainhht.github.io/Spacial-Network/) (publication requires owner approval).
+The `livedemo` branch prepares the existing frontend for a backend-free GitHub Pages showcase with fictional local data. See [docs/deployment/LIVE_DEMO.md](docs/deployment/LIVE_DEMO.md) for running, testing, resetting, and publishing it. Intended deployment address: [Spacial Network demo](https://hussainhht.github.io/Spacial-Network/) (publication requires owner approval).
 
 Social Network is a privacy-aware social platform: profiles and follow relationships, posts and comments with
 tiered visibility, public and private groups with events, private and group chat, and realtime notifications —
@@ -486,7 +486,7 @@ cd social-network
 
 ### Quickstart with Docker
 
-From the repository root. For prerequisites, verification, data persistence, and troubleshooting, see the [Docker setup guide](docs/DOCKER_SETUP.md).
+From the repository root. For prerequisites, verification, data persistence, and troubleshooting, see the [Docker setup guide](docs/deployment/DOCKER_SETUP.md).
 
 ```bash
 docker compose up --build

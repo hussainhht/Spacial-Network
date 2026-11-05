@@ -3,7 +3,7 @@
 // message persistence (sender/recipient/content/timestamp, emoji
 // round-tripping), and the permission-check function the WebSocket handler
 // relies on (HandlePrivateMessage). Real-time WebSocket delivery itself is
-// out of scope for a unit test - see TEST_REPORT.md "Known gaps".
+// out of scope for a unit test - see docs/testing/BACKEND_TEST_REPORT.md "Known gaps".
 package chat_test
 
 import (

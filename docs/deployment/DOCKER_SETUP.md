@@ -17,7 +17,7 @@ Browser → http://localhost:3000 (Next.js frontend)
                         backend-data Docker volume
 ```
 
-These URLs are for a browser on the same computer as Docker. Inside the Compose network, a container could reach the backend at `http://backend:8080`; `localhost` inside a container means that same container. The current browser client uses literal `localhost:8080` HTTP and WebSocket URLs in [`frontend/src/lib/api.ts`](../frontend/src/lib/api.ts). The frontend's `NEXT_PUBLIC_*` build arguments do **not** change those client URLs. This setup therefore assumes the browser runs on the Docker host and uses the configured ports.
+These URLs are for a browser on the same computer as Docker. Inside the Compose network, a container could reach the backend at `http://backend:8080`; `localhost` inside a container means that same container. The current browser client uses literal `localhost:8080` HTTP and WebSocket URLs in [`frontend/src/lib/api.ts`](../../frontend/src/lib/api.ts). The frontend's `NEXT_PUBLIC_*` build arguments do **not** change those client URLs. This setup therefore assumes the browser runs on the Docker host and uses the configured ports.
 
 ## Prerequisites
 
@@ -107,7 +107,7 @@ The backend's CORS middleware allows the exact origin `http://localhost:3000` an
 
 The backend Dockerfile sets `WORKDIR /app`. SQLite is opened at **`/app/data/social-network.db`** and uploads are written under **`/app/data/uploads/`**. Compose mounts the named volume `backend-data` at `/app/data`. Docker usually names it `social-network_backend-data` for this project, as shown by `docker compose config`. It is a Docker-managed volume, not `backend/data/` in your checkout.
 
-The server applies pending embedded SQL migrations on every startup, before listening on port 8080. No first-run migration command is needed. If it cannot open the database or a migration fails, the backend exits and its logs show `database:` or `migrations:`. After adding migration source files, rebuild the backend image so the new SQL is embedded, then start it again. For migration details, see the [database migration guide](database/database-migration-guide.md).
+The server applies pending embedded SQL migrations on every startup, before listening on port 8080. No first-run migration command is needed. If it cannot open the database or a migration fails, the backend exits and its logs show `database:` or `migrations:`. After adding migration source files, rebuild the backend image so the new SQL is embedded, then start it again. For migration details, see the [database migration guide](../database/database-migration-guide.md).
 
 `docker compose stop`, `docker compose down`, container recreation, and image rebuilds keep the named volume. **Deleting the `backend-data` volume or running `docker compose down -v` erases the SQLite database and all uploaded files in it.** Check and back up data before any volume-removal command. The Docker build contexts exclude local `data/`, uploads, and `.env` files, so a local backend database is not copied into the image.
 

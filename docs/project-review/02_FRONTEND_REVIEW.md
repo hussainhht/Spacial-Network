@@ -26,7 +26,7 @@ The frontend is **unusually well engineered** for its apparent scale: real `Abor
 
 **Recommended fix:**
 1. Client: block submission (disable submit, show inline error) when `visibility === "custom" && viewerIds.length === 0`, in both `NewPostForm.tsx` and `PostForm.tsx`.
-2. Server: mirror the same rule in `ValidateNewPostRequest`/`ValidateEditPostRequest` as defense in depth (the frontend brief for this project explicitly states business logic must live on the backend — see `docs/BUSINESS_LOGIC.md`).
+2. Server: mirror the same rule in `ValidateNewPostRequest`/`ValidateEditPostRequest` as defense in depth (the frontend brief for this project explicitly states business logic must live on the backend — see `docs/backend_docs/BUSINESS_LOGIC.md`).
 3. UX: make the followers-only scope explicit in the picker/empty-state copy instead of the current bare, unexplained sentence.
 
 **Requirement impact:** this fails the "Almost Private / Private post selects specific followers" requirement from `docs/TODO/02_posts_comments.md` — see `01_REQUIREMENTS_COMPLIANCE.md`.

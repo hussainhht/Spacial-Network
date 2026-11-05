@@ -34,7 +34,7 @@ later requests like `/api/logout`.
 
 ## How It Is Implemented
 
-The CORS logic lives in [`backend/internal/middleware/cors.go`](../backend/internal/middleware/cors.go)
+The CORS logic lives in [`backend/internal/middleware/cors.go`](../../backend/internal/middleware/cors.go)
 as a standard `net/http` middleware:
 
 ```go
@@ -80,7 +80,7 @@ Each header serves a specific purpose:
 
 ### Where It's Applied
 
-`CORS` wraps the whole API mux in [`backend/internal/router/router.go`](../backend/internal/router/router.go):
+`CORS` wraps the whole API mux in [`backend/internal/router/router.go`](../../backend/internal/router/router.go):
 
 ```go
 handler := middleware.CORS(apiMux)

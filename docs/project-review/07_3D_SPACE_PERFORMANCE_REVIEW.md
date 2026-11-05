@@ -1,6 +1,6 @@
 # 07 — 3D/Space System & Performance Review
 
-> Scope: `frontend/src/components/space/`, `frontend/public/models/`, top-level `3d/` (tooling, not shipped), `frontend/MODEL_ASSETS.md`, `docs/3d-model-optimization-report.md`. Method: full reads of every file in `frontend/src/components/space/`, the planet-preference provider, both shells that mount it, both auth-stage consumers, and the relevant `@react-three/drei` source to confirm cache semantics — not assumptions from library familiarity.
+> Scope: `frontend/src/components/space/`, `frontend/public/models/`, top-level `3d/` (tooling, not shipped), `frontend/MODEL_ASSETS.md`, `docs/3d/3d-model-optimization-report.md`. Method: full reads of every file in `frontend/src/components/space/`, the planet-preference provider, both shells that mount it, both auth-stage consumers, and the relevant `@react-three/drei` source to confirm cache semantics — not assumptions from library familiarity.
 
 ## Overall Assessment
 
@@ -36,7 +36,7 @@ The space/3D layer is **materially better engineered than a typical first pass**
 
 **Severity:** Medium · **Confidence:** High
 
-`useGLTF.clear()` exists in the installed drei version but a repo-wide grep for `useGLTF.clear`/`useLoader.clear`/`.preload(` returns **zero hits**. Once a planet's GLB is loaded (e.g. by browsing the Settings planet picker, which mounts a live preview per selection), its decoded geometry and GPU-uploaded textures stay resident in the shared cache for the rest of the session, even though only one planet is ever displayed at a time. This is **bounded** (9 GLBs, ~52MB total — see §7), not unbounded, so it does not rise to "leak," but it is a real, avoidable footprint. `docs/3d-model-optimization-report.md` itself already lists this exact fix ("call `useGLTF.clear()` when navigating away") as an unimplemented recommendation — consistent with what the code shows. **Fix:** call `useGLTF.clear(path)` for the previously-displayed planet once a swap completes.
+`useGLTF.clear()` exists in the installed drei version but a repo-wide grep for `useGLTF.clear`/`useLoader.clear`/`.preload(` returns **zero hits**. Once a planet's GLB is loaded (e.g. by browsing the Settings planet picker, which mounts a live preview per selection), its decoded geometry and GPU-uploaded textures stay resident in the shared cache for the rest of the session, even though only one planet is ever displayed at a time. This is **bounded** (9 GLBs, ~52MB total — see §7), not unbounded, so it does not rise to "leak," but it is a real, avoidable footprint. `docs/3d/3d-model-optimization-report.md` itself already lists this exact fix ("call `useGLTF.clear()` when navigating away") as an unimplemented recommendation — consistent with what the code shows. **Fix:** call `useGLTF.clear(path)` for the previously-displayed planet once a swap completes.
 
 ## 3. Registry Consistency — clean, 1:1, no drift (Info, positive)
 
@@ -68,7 +68,7 @@ Viewport classification (`desktop|tablet|mobile`) correctly uses `matchMedia` + 
 
 **However — a genuine new finding, not a re-confirmation:** the prior audit described `3d/black-hole-final.glb` as tooling output "excluded from the active registry." True of the registry — but `frontend/MODEL_ASSETS.md` currently lists a `public/models/planets/black-hole-final.glb` entry as one of "10 files, 55.74 MiB" of "preserved public models." That file **does not exist** — `frontend/public/models/planets/` has exactly 9 files, not 10. So the asset-inventory doc itself documents a shipped public asset that isn't actually shipped, a distinct drift from the registry question. Likely explanation: an earlier pass copied the file into `public/` and the doc was written against that state; the file was later removed without regenerating the doc. See `DOC-005`.
 
-**Second, related doc-drift finding:** `docs/3d-model-optimization-report.md` references a `frontend/src/app/(main)/dev/3d/` route that does not exist in the current tree — either an undocumented later cleanup, or the report describes a branch/state not reflected in current code. Another instance of a support doc no longer matching the working tree. See `DOC-005`.
+**Second, related doc-drift finding:** `docs/3d/3d-model-optimization-report.md` references a `frontend/src/app/(main)/dev/3d/` route that does not exist in the current tree — either an undocumented later cleanup, or the report describes a branch/state not reflected in current code. Another instance of a support doc no longer matching the working tree. See `DOC-005`.
 
 **Trivial:** `3d/plnt` (not `3d/plant`) is an empty, zero-byte directory alongside the real `3d/plant/` — almost certainly a typo artifact from directory creation. Zero performance impact.
 
@@ -85,7 +85,7 @@ Per-file breakdown of what's actually served: `earth-final.glb` 3.8MB, `jupiter-
 
 **Severity:** Low · **Confidence:** High
 
-Flagged per this audit's explicit threshold, but this is a **known, documented tradeoff**, not an overlooked regression: the Moon is a companion asset that only loads when Earth is selected, loads through the same Suspense/error-boundary-isolated path as everything else (a slow Moon load never blocks Earth), and `docs/3d-model-optimization-report.md` already documents why it's this large (a prior mesh-simplification pass to 179,976 triangles, texture resolution preserved by design) and explicitly lists further mesh-decimation as out of scope. Jupiter (9.3MB) is the runner-up, worth watching if it grows further.
+Flagged per this audit's explicit threshold, but this is a **known, documented tradeoff**, not an overlooked regression: the Moon is a companion asset that only loads when Earth is selected, loads through the same Suspense/error-boundary-isolated path as everything else (a slow Moon load never blocks Earth), and `docs/3d/3d-model-optimization-report.md` already documents why it's this large (a prior mesh-simplification pass to 179,976 triangles, texture resolution preserved by design) and explicitly lists further mesh-decimation as out of scope. Jupiter (9.3MB) is the runner-up, worth watching if it grows further.
 
 ### DOC-005 — Doc-vs-disk size drift on `MODEL_ASSETS.md`
 

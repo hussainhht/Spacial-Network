@@ -141,7 +141,7 @@
 1. **Frontend Hardcodes Localhost:** `frontend/src/lib/api.ts` hardcodes `http://localhost:8080` and `ws://localhost:8080`. Always document the app as accessed via `localhost:3000` connected to `localhost:8080`.
 2. **Backend Hardcodes CORS Origin:** `backend/internal/middleware/cors.go` explicitly allows `http://localhost:3000`. Running the frontend on another port causes CORS errors.
 3. **Missing Smoke Script:** `frontend/package.json` mentions `"test:smoke": "bash tests/run-smoke.sh"`, but `tests/run-smoke.sh` does not exist. Do not list this script in the README.
-4. **Stale Documentation:** Disregard claims in `frontend/README.md` that group chat is disabled or 3D is dormant. Both are fully active in current code. Disregard `docs/TEST_AUDIT_REPORT.md` claims that followers/comments are unbuilt.
+4. **Stale Documentation:** Disregard claims in `frontend/README.md` that group chat is disabled or 3D is dormant. Both are fully active in current code. Disregard `docs/testing/TEST_AUDIT_REPORT.md` claims that followers/comments are unbuilt.
 5. **Entrypoint Path:** The Go server entrypoint is `backend/cmd/server/main.go` (NOT `backend/cmd/main.go`).
 
 ---

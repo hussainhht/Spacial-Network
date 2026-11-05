@@ -12,8 +12,8 @@ The findings below are reconstructed strictly from primary historical sources:
 - **Git Tags & Merges:** 73 pull request merge commits onto `main`.
 - **Master Timeline CSV:** `docs/social_network_master_timeline.csv` (the team's 3-week planning matrix).
 - **Team TODO Checklists:** `docs/TODO/01_leader_groups_events.md` through `04_websocket_chat_notifications.md`.
-- **Architectural Cleanup Reports:** `frontend/CLEANUP_REPORT.md` and `docs/3d-model-optimization-report.md`.
-- **Historical Audit Reports:** `docs/TEST_AUDIT_REPORT.md`.
+- **Architectural Cleanup Reports:** `frontend/CLEANUP_REPORT.md` and `docs/3d/3d-model-optimization-report.md`.
+- **Historical Audit Reports:** `docs/testing/TEST_AUDIT_REPORT.md`.
 
 ---
 

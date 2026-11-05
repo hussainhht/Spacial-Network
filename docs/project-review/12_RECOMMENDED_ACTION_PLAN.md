@@ -186,9 +186,9 @@ Do last, after the fixes above land — otherwise the documentation would need t
 
 - Rewrite root `README.md` from the actual current tree (explicitly out of scope for *this* audit, per its brief — flagged here as the next agent's task).
 - Correct or remove the false claims in `frontend/README.md` (`DOC-002`).
-- Add "stale — verify against current code" banners to (or regenerate/prune) `docs/backend_docs/websocket-system.md` §9/§12, `docs/backend_docs/notifications.md`'s "not yet" rows, and `docs/TEST_AUDIT_REPORT.md` wholesale (`DOC-003`).
+- Add "stale — verify against current code" banners to (or regenerate/prune) `docs/backend_docs/websocket-system.md` §9/§12, `docs/backend_docs/notifications.md`'s "not yet" rows, and `docs/testing/TEST_AUDIT_REPORT.md` wholesale (`DOC-003`).
 - Regenerate or retire `schema.dbml` (`DB-007`, also listed in Phase 4.6 — one task, counted once).
-- Correct `MODEL_ASSETS.md`/`docs/3d-model-optimization-report.md`'s phantom-asset and stale-size claims (`DOC-005`).
+- Correct `MODEL_ASSETS.md`/`docs/3d/3d-model-optimization-report.md`'s phantom-asset and stale-size claims (`DOC-005`).
 - Add a `.env.example` reflecting what `config.Config` actually reads from the environment today (`DOC-004`).
 
 ---

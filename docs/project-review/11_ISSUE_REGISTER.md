@@ -148,7 +148,7 @@
 ## SEC-004 — Group mutation endpoints leak private/hidden group existence via 403-vs-404
 
 **Severity:** Medium · **Confidence:** High · **Status:** Confirmed
-**Area:** Security/Groups · **Requirement affected:** "Private groups... Hidden from directory and search" (`docs/BUSINESS_LOGIC.md`).
+**Area:** Security/Groups · **Requirement affected:** "Private groups... Hidden from directory and search" (`docs/backend_docs/BUSINESS_LOGIC.md`).
 **Evidence:** `backend/internal/groups/service.go` — `UpdateGroup`, `DeleteGroup`, `RemoveMember`, `RequestToJoin`, `CreateGroupInvitation`, `AcceptJoinRequest`/`RejectJoinRequest` all call raw `GetGroupByID` (no privacy gate) before a specific permission check, producing distinct 403/404. Read paths already do this correctly via `ensureCanViewGroup`.
 **Why it matters:** Specifically undermines the "hidden from directory" property private groups are supposed to have — an outsider can confirm a specific private group's existence (never its content) by the status-code difference.
 **Fix:** Apply the same visibility-first check used by read paths to these mutation endpoints. Full detail: `05_AUTH_SECURITY_PRIVACY_REVIEW.md` §7.4.
@@ -272,11 +272,11 @@
 **Evidence:** Claims *"Group chat remains an existing disabled placeholder"* (contradicted by a fully-built 28-file feature) and describes the 3D system as *"intentionally dormant"* (contradicted by the fully-active 8-planet system).
 **Why it matters:** Makes specific, falsifiable, wrong claims rather than merely being stale — actively misleading for onboarding. Full detail: `10_DOCUMENTATION_CONFIG_REVIEW.md` §3.
 
-## DOC-003 — `docs/backend_docs/*` and `docs/TEST_AUDIT_REPORT.md` are systemically stale, in a style that invites false trust
+## DOC-003 — `docs/backend_docs/*` and `docs/testing/TEST_AUDIT_REPORT.md` are systemically stale, in a style that invites false trust
 
 **Severity:** Medium · **Confidence:** High · **Status:** Confirmed
 **Area:** Documentation.
-**Evidence:** `websocket-system.md` §9 asserts chat WS sending "does not work end to end" — verified false against current `dependencies.go`/`chat/service.go`. `notifications.md` claims Follow Requests and Group Events "don't exist" — verified false. `docs/TEST_AUDIT_REPORT.md` (dated 2026-09-06) claims Followers, Comments, Docker, and 5+ other major features are "NOT IMPLEMENTED" — all now implemented.
+**Evidence:** `websocket-system.md` §9 asserts chat WS sending "does not work end to end" — verified false against current `dependencies.go`/`chat/service.go`. `notifications.md` claims Follow Requests and Group Events "don't exist" — verified false. `docs/testing/TEST_AUDIT_REPORT.md` (dated 2026-09-06) claims Followers, Comments, Docker, and 5+ other major features are "NOT IMPLEMENTED" — all now implemented.
 **Why it matters:** These docs are written in a detailed, file:line-citing, "traced this code" style that reads as current and authoritative — a more dangerous form of drift than an obviously-old planning doc, precisely the failure mode this audit was commissioned to catch. **Not flagged by the prior Gemini audit at all** (beyond `TEST_AUDIT_REPORT.md`, which it did catch). Full detail: `10_DOCUMENTATION_CONFIG_REVIEW.md` §4.
 
 ## DOC-006 — Root `README.md` describes an architecture that was never actually built this way
@@ -360,7 +360,7 @@ Full evidence for every item below is in its referenced subsystem file.
 | DB-007 | `schema.dbml` drift: 4 confirmed (prior audit) + 10 additional items found this pass | Info | 04 §4 |
 | WS-007 | `read_at` TS type allows `null`, which the backend (`omitempty`) never actually sends | Info | 06 §4 |
 | DOC-004 | No `.env.example` despite `.gitignore` carving out an exception for one | Info | 10 §5 |
-| DOC-005 | `MODEL_ASSETS.md`/`docs/3d-model-optimization-report.md` reference a phantom asset, a removed dev route, and stale sizes | Info | 10, 07 §6 |
+| DOC-005 | `MODEL_ASSETS.md`/`docs/3d/3d-model-optimization-report.md` reference a phantom asset, a removed dev route, and stale sizes | Info | 10, 07 §6 |
 
 ---
 

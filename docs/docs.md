@@ -19,7 +19,7 @@ Topics that belong here include:
 - API flows
 - Authentication
 - Sessions and cookies
-- [WebSockets (Integration Guide)](WEBSOCKET_INTEGRATION_GUIDE.md)
+- [WebSockets (Integration Guide)](backend_docs/WEBSOCKET_INTEGRATION_GUIDE.md)
 - Docker
 - Git workflows
 - Conventional Commits
@@ -150,3 +150,24 @@ By the end of the project, the documentation in `docs` should help us answer:
 - How did the project evolve during development?
 
 If the docs folder can answer these questions, it has done its job.
+
+---
+
+## Directory Map
+
+| Directory | Contents |
+| --- | --- |
+| `3d/` | 3D model optimization reports |
+| `ai-handoff/` | AI handoff audit, history and evidence |
+| `assets/` | Images used by the root README |
+| `backend_docs/` | Backend architecture, business logic, WebSocket guides |
+| `database/` | Schema, diagrams, migration guide |
+| `deployment/` | Docker setup, live demo guide and QA |
+| `final-state/` | Final project state and issue register |
+| `frontend/` | Frontend architecture, wireframes, setup notes |
+| `git-docs/` | Branching strategy and commit conventions |
+| `meeting/` | Meeting material |
+| `project-review/` | Static project review |
+| `runtime-review/` | Runtime and E2E review |
+| `testing/` | Test audit and backend test reports |
+| `TODO/` | Requirement checklists |

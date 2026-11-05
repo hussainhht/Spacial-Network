@@ -768,5 +768,5 @@ Live headless-browser checks (Section 5/15) did read from the developer's alread
 ```
 Production source modified by audit: NO
 Temporary audit files remaining: NO
-Persistent audit file: docs/TEST_AUDIT_REPORT.md
+Persistent audit file: docs/testing/TEST_AUDIT_REPORT.md
 ```

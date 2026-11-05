@@ -3,7 +3,7 @@
 // social/internal/groups, that a group invitation and a group join request
 // actually generate a notification for the right recipient. A follow
 // request notification is NOT covered here on purpose - see
-// TEST_REPORT.md "Bugs found": social/internal/followers.Service is never
+// docs/testing/BACKEND_TEST_REPORT.md "Bugs found": social/internal/followers.Service is never
 // wired to a notifier, so no follow-request notification is ever created
 // today, despite NotificationFollowRequest existing as a type.
 package notifications_test
