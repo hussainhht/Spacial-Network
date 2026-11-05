@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { DEMO_MODE } from "@/demo/config";
 import DemoControls from "@/demo/DemoControls";
+import AboutDemoModal from "@/demo/AboutDemoModal";
 import { usePathname } from "next/navigation";
 import { getNavbarContext } from "./navbarContext";
 import { useEffect, useRef, useState } from "react";
@@ -33,6 +34,8 @@ export default function TopNavbar() {
   // Dropdown mockup state
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [aboutOpen, setAboutOpen] = useState(false);
+  const demoBadgeRef = useRef<HTMLButtonElement>(null);
   if (menuRoute !== pathname) {
     setMenuRoute(pathname);
     setNotificationsOpen(false);
@@ -106,11 +109,24 @@ export default function TopNavbar() {
         {/* Remounted per context so the section name crossfades with the route
             rather than swapping under the reader's eye. */}
         <div key={context.title} className={styles.contextText}>
-          <span className={styles.contextEyebrow}>{DEMO_MODE ? "Interactive Demo · Sample data" : context.eyebrow}</span>
-          <h1 id="app-page-title" tabIndex={-1} className={styles.contextTitle}>
-            {context.title}
-            {DEMO_MODE && <span className={styles.demoPill}>Demo</span>}
-          </h1>
+          <span className={styles.contextEyebrow}>{context.eyebrow}</span>
+          <div className={styles.titleRow}>
+            <h1 id="app-page-title" tabIndex={-1} className={styles.contextTitle}>
+              {context.title}
+            </h1>
+            {DEMO_MODE && (
+              <button
+                ref={demoBadgeRef}
+                type="button"
+                className={styles.demoPill}
+                onClick={() => setAboutOpen(true)}
+                aria-haspopup="dialog"
+                aria-label="Demo mode. Learn about this demo"
+              >
+                Demo
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -245,7 +261,14 @@ export default function TopNavbar() {
                 <AppIcon name="logOut" />
                 {DEMO_MODE ? "Demo entry" : loggingOut ? "Signing out…" : "Sign out"}
               </button>
-              {DEMO_MODE && <DemoControls />}
+              {DEMO_MODE && (
+                <DemoControls
+                  onAbout={() => {
+                    setUserMenuOpen(false);
+                    setAboutOpen(true);
+                  }}
+                />
+              )}
               {logoutError && (
                 <p className={styles.dropdownError} role="alert">
                   {logoutError}
@@ -255,6 +278,12 @@ export default function TopNavbar() {
           )}
         </div>
       </div>
+      {DEMO_MODE && aboutOpen && (
+        <AboutDemoModal
+          onClose={() => setAboutOpen(false)}
+          fallbackFocus={demoBadgeRef}
+        />
+      )}
     </nav>
   );
 }

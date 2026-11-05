@@ -20,6 +20,7 @@ import { formatDateTime, timeAgo } from "@/lib/utils";
 import styles from "./PostCard.module.css";
 import PostAuthorLink from "./PostAuthorLink";
 import PostMediaGrid from "./PostMediaGrid";
+import ExpandablePostText from "./ExpandablePostText";
 
 interface PostCardProps {
   post: Post;
@@ -196,7 +197,7 @@ export default function PostCard({ post, onDeleted, preview = false, detail = fa
         ) : (
           <h2 id={titleId} className={styles.title} dir="auto">{post.title}</h2>
         )}
-        <p className={styles.content} dir="auto">{post.content}</p>
+        <ExpandablePostText key={post.id} content={post.content} className={styles.content} />
       </div>
 
       <PostMediaGrid media={postMedia(post)} preview={!detail} />

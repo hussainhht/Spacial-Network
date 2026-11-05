@@ -9,6 +9,7 @@ import {
   type NavigableItem,
 } from "../hooks/useUniversalSearch";
 import type { SearchCategory, UserResult } from "../types/search";
+import { useIsApplePlatform } from "../utils/platform";
 import styles from "./UniversalNavbarSearch.module.css";
 
 const CATEGORIES: { id: SearchCategory; label: string }[] = [
@@ -22,6 +23,7 @@ const CATEGORIES: { id: SearchCategory; label: string }[] = [
 
 export default function UniversalNavbarSearch() {
   const { isOpen, openSearch, closeSearch } = useSearchModal();
+  const shortcutLabel = useIsApplePlatform() ? "⌘ K" : "Ctrl K";
   const inputRef = useRef<HTMLInputElement>(null);
   const activeItemRef = useRef<HTMLButtonElement>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
@@ -179,16 +181,15 @@ export default function UniversalNavbarSearch() {
           type="button"
           className={styles.searchTriggerButton}
           onClick={openSearch}
-          aria-label="Open universal search (⌘K)"
-          title="Open universal search (⌘K)"
-        >
+          aria-label={`Open universal search (${shortcutLabel})`}
+          title={`Open universal search (${shortcutLabel})`}        >
           <span className={styles.searchIconWrapper} aria-hidden="true">
             <AppIcon name="search" />
           </span>
           <span className={styles.searchTriggerPlaceholder}>
             Search people, posts, groups...
           </span>
-          <kbd className={styles.kbdBadge}>⌘K</kbd>
+          <kbd className={styles.kbdBadge}>{shortcutLabel}</kbd>
         </button>
       </div>
     );

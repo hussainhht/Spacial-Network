@@ -1,0 +1,32 @@
+.wrapper {
+  position: relative;
+  z-index: 2;
+  min-width: 0;
+  overflow-anchor: none;
+}
+
+.collapsed {
+  max-height: 4lh;
+  overflow: hidden;
+}
+
+.toggle {
+  display: block;
+  margin-top: 4px;
+  padding: 4px 0;
+  border: 0;
+  border-radius: 2px;
+  background: transparent;
+  color: var(--space-text-body);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: start;
+  cursor: pointer;
+}
+
+.toggle:hover {
+  color: var(--space-text-heading);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

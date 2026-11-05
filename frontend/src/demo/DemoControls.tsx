@@ -8,19 +8,20 @@ import {
   resetDemo,
   switchDemoUser,
 } from "./store";
+import { DEMO_SOURCE_URL } from "./AboutDemoModal";
 import styles from "./DemoControls.module.css";
 
 const subscribe = (fn: () => void) => {
   window.addEventListener("spacial-demo:change", fn);
   return () => window.removeEventListener("spacial-demo:change", fn);
 };
-export default function DemoControls() {
+export default function DemoControls({ onAbout }: { onAbout: () => void }) {
   const [resetting, setResetting] = useState(false);
   const warning = useSyncExternalStore(subscribe, getStorageWarning, () => "");
   return (
     <div className={styles.controls}>
       <div className={styles.header}>
-        <span className={styles.badge}>Demo Mode</span>
+        <span className={styles.heading}>Demo tools</span>
       </div>
       <label htmlFor="demo-user">Switch account</label>
       <select
@@ -63,20 +64,23 @@ export default function DemoControls() {
           Reset Demo
         </button>
       )}
-      <details className={styles.about}>
-        <summary>About Demo</summary>
-        <p>
-          Simulated local data. The full app runs on Go, SQLite and realtime
-          WebSockets.
-        </p>
-        <a
-          href="https://github.com/hussainhht/Spacial-Network"
-          target="_blank"
-          rel="noreferrer"
-        >
-          View full-stack source ↗
-        </a>
-      </details>
+      <button
+        type="button"
+        className={styles.action}
+        role="menuitem"
+        onClick={onAbout}
+      >
+        <AppIcon name="info" width={16} height={16} />
+        About Demo
+      </button>
+      <a
+        className={styles.source}
+        href={DEMO_SOURCE_URL}
+        target="_blank"
+        rel="noreferrer"
+      >
+        View full-stack source ↗
+      </a>
       {warning && <p role="status">{warning}</p>}
     </div>
   );
