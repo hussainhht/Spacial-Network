@@ -10,6 +10,7 @@ const sections: Record<string, string> = {
   profile: "Profile",
   notifications: "Notifications",
   settings: "Settings",
+  saved: "Saved Posts",
 };
 
 export function getNavbarContext(pathname: string): NavbarContext {

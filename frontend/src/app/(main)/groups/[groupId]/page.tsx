@@ -1,8 +1,11 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { DEMO_MODE } from "@/demo/config";
 import { DEMO_GROUPS } from "@/demo/seed";
 import PageTransition from "@/components/transitions/PageTransition";
 import GroupDetailsContent from "@/features/groups/components/GroupDetailsContent";
+
+export const metadata: Metadata = { title: "Group" };
 
 export default function GroupDetailsPage() {
   return (

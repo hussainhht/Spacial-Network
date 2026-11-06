@@ -35,7 +35,7 @@ func toProfileResponse(profile *Profile, canViewFullProfile bool, includePersona
 	// The birth date is shared when the owner makes it public, independent of
 	// the profile's follower-only privacy; otherwise only the owner receives it.
 	if profile.DateOfBirth.Valid && (includePersonalInfo || profile.BirthdayVisibility == BirthdayVisibilityPublic) {
-		resp.DateOfBirth = profile.DateOfBirth.String
+		resp.DateOfBirth = dateOnly(profile.DateOfBirth.String)
 	}
 
 	if includePersonalInfo {
@@ -48,7 +48,7 @@ func toProfileResponse(profile *Profile, canViewFullProfile bool, includePersona
 		resp.UpdatedAt = profile.UpdatedAt.Format(time.RFC3339)
 
 		if profile.DateOfBirth.Valid {
-			if dob, err := time.Parse("2006-01-02", profile.DateOfBirth.String); err == nil {
+			if dob, err := time.Parse("2006-01-02", dateOnly(profile.DateOfBirth.String)); err == nil {
 				resp.Age = computeAge(dob, time.Now())
 			}
 		}
@@ -446,4 +446,16 @@ func (h *Handler) UpdateProfilePrivacyHandler(w http.ResponseWriter, r *http.Req
 		Message:   "Profile privacy updated",
 		IsPrivate: *req.IsPrivate,
 	})
+}
+
+// dateOnly trims a stored date to YYYY-MM-DD. The date_of_birth column is
+// declared DATE, so the SQLite driver may hand it back as a timestamp
+// ("1994-07-16T00:00:00Z"); the API contract is the plain date.
+func dateOnly(value string) string {
+	if len(value) > len("2006-01-02") {
+		if _, err := time.Parse("2006-01-02", value[:len("2006-01-02")]); err == nil {
+			return value[:len("2006-01-02")]
+		}
+	}
+	return value
 }

@@ -89,6 +89,9 @@ type PostResponse struct {
 	// this post - true for the owner, and also for the creator of the
 	// group it was posted in.
 	CanDelete bool `json:"can_delete"`
+	// Saved tells the client whether the requesting user has bookmarked this
+	// post. Bookmarks are private, so this only ever reflects the viewer.
+	Saved bool `json:"saved"`
 	// GroupID is set when this post was created within a group.
 	GroupID *int `json:"group_id,omitempty"`
 	// GroupTitle is exposed with group posts so clients can show useful
@@ -111,7 +114,7 @@ type MediaResponse struct {
 	Order int    `json:"order"`
 }
 
-func (h *Handler) newPostResponse(p *post, viewerID int, authors map[int]users.Summary, groupTitles map[int]string) PostResponse {
+func (h *Handler) newPostResponse(p *post, viewerID int, authors map[int]users.Summary, groupTitles map[int]string, saved map[int]bool) PostResponse {
 	isOwner := p.User_ID == viewerID
 
 	canDelete := isOwner
@@ -129,6 +132,7 @@ func (h *Handler) newPostResponse(p *post, viewerID int, authors map[int]users.S
 		UpdatedAt:  p.Updated_At,
 		IsOwner:    isOwner,
 		CanDelete:  canDelete,
+		Saved:      saved[p.ID],
 		Media:      make([]MediaResponse, 0, len(p.Media)),
 	}
 	if author, ok := authors[p.User_ID]; ok {
@@ -278,7 +282,7 @@ func (h *Handler) NewPostHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(h.newPostResponse(p, userID, h.authorsFor([]*post{p}), h.groupTitlesFor([]*post{p})))
+	json.NewEncoder(w).Encode(h.newPostResponse(p, userID, h.authorsFor([]*post{p}), h.groupTitlesFor([]*post{p}), h.savedFor(userID, []*post{p})))
 }
 
 // NewGroupPostHandler creates a post within the group identified by the
@@ -341,7 +345,7 @@ func (h *Handler) NewGroupPostHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(h.newPostResponse(p, userID, h.authorsFor([]*post{p}), h.groupTitlesFor([]*post{p})))
+	json.NewEncoder(w).Encode(h.newPostResponse(p, userID, h.authorsFor([]*post{p}), h.groupTitlesFor([]*post{p}), h.savedFor(userID, []*post{p})))
 }
 
 // saveMediaAttachments validates and stores repeated media fields in request
@@ -429,7 +433,7 @@ func (h *Handler) GetPostByIDHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(h.newPostResponse(p, userID, h.authorsFor([]*post{p}), h.groupTitlesFor([]*post{p})))
+	json.NewEncoder(w).Encode(h.newPostResponse(p, userID, h.authorsFor([]*post{p}), h.groupTitlesFor([]*post{p}), h.savedFor(userID, []*post{p})))
 }
 
 // ListPostsHandler returns up to 50 posts visible to the logged-in user,
@@ -487,9 +491,10 @@ func (h *Handler) ListPostsHandler(w http.ResponseWriter, r *http.Request) {
 
 	authors := h.authorsFor(posts)
 	groupTitles := h.groupTitlesFor(posts)
+	saved := h.savedFor(userID, posts)
 	res := make([]PostResponse, 0, len(posts))
 	for _, p := range posts {
-		res = append(res, h.newPostResponse(p, userID, authors, groupTitles))
+		res = append(res, h.newPostResponse(p, userID, authors, groupTitles, saved))
 	}
 
 	w.WriteHeader(http.StatusOK)
@@ -534,9 +539,10 @@ func (h *Handler) ListGroupPostsHandler(w http.ResponseWriter, r *http.Request) 
 
 	authors := h.authorsFor(posts)
 	groupTitles := h.groupTitlesFor(posts)
+	saved := h.savedFor(userID, posts)
 	res := make([]PostResponse, 0, len(posts))
 	for _, p := range posts {
-		res = append(res, h.newPostResponse(p, userID, authors, groupTitles))
+		res = append(res, h.newPostResponse(p, userID, authors, groupTitles, saved))
 	}
 
 	w.WriteHeader(http.StatusOK)

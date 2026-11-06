@@ -7,9 +7,12 @@ import AppIcon, { type AppIconName } from "@/components/layout/AppIcon";
 import { useActionFeedback } from "@/components/feedback/ActionFeedbackProvider";
 import { useCurrentUser } from "@/features/auth/context/CurrentUserContext";
 import { createPost } from "@/features/posts/api/posts";
+import { usePostDraft } from "@/features/posts/hooks/usePostDraft";
+import { draftStorageKey, formatSavedAgo } from "@/features/posts/lib/postDraft";
 import PostCard from "@/features/posts/components/PostCard";
 import type { Post, PostMedia, PostVisibility } from "@/features/posts/types/post";
 import { ACCEPTED_IMAGE_TYPES, MAX_POST_MEDIA, validateImageFile } from "@/lib/upload";
+import { requestFeedResume } from "@/features/posts/lib/feedSnapshotCache";
 import CustomViewerPicker from "./CustomViewerPicker";
 import styles from "./NewPostForm.module.css";
 
@@ -31,6 +34,12 @@ interface SelectedMedia {
 }
 
 export default function NewPostForm() {
+  const { user } = useCurrentUser();
+  // Keyed so switching accounts remounts the form and never carries one user's text to another.
+  return <NewPostComposer key={draftStorageKey(user.user_id)} />;
+}
+
+function NewPostComposer() {
   const router = useRouter();
   const { notify } = useActionFeedback();
   const { user } = useCurrentUser();
@@ -44,6 +53,20 @@ export default function NewPostForm() {
   const [dragging, setDragging] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [imagesNote, setImagesNote] = useState(false);
+  const draft = usePostDraft(user.user_id, {
+    title, content, visibility, viewerIds, hadImages: media.length > 0 || imagesNote,
+  });
+
+  function continueDraft() {
+    const saved = draft.accept();
+    if (!saved) return;
+    setTitle(saved.title);
+    setContent(saved.content);
+    setVisibility(saved.visibility);
+    setViewerIds(saved.viewerIds);
+    setImagesNote(saved.hadImages);
+  }
 
   useEffect(() => {
     mediaRef.current = media;
@@ -80,6 +103,7 @@ export default function NewPostForm() {
         url: URL.createObjectURL(file),
       });
     }
+    setImagesNote(false);
     setMedia((current) => {
       const next = [...current, ...additions];
       mediaRef.current = next;
@@ -104,6 +128,7 @@ export default function NewPostForm() {
     setLoading(true);
     try {
       await createPost({ title, content, visibility, viewerIds, media: media.map((item) => item.file) });
+      draft.clearAfterPublish();
       notify("Post published.");
       router.push("/");
     } catch (err) {
@@ -140,7 +165,7 @@ export default function NewPostForm() {
 
   return (
     <div className={styles.pageContent}>
-      <Link href="/" className={styles.backLink}>
+      <Link href="/" className={styles.backLink} onClick={requestFeedResume}>
         <AppIcon name="arrowLeft" width={17} height={17} /> Back to home
       </Link>
 
@@ -149,7 +174,23 @@ export default function NewPostForm() {
           <header className={styles.panelHeader}>
             <span className={styles.headerIcon}><AppIcon name="plus" /></span>
             <div><h1>Create a new post</h1><p>Share something with the community.</p></div>
+            {draft.status === "saving" && <span className={styles.draftStatus} aria-hidden="true">Saving…</span>}
+            {draft.status === "saved" && <span className={styles.draftStatus} aria-hidden="true">Draft saved</span>}
+            {draft.status === "error" && <span className={`${styles.draftStatus} ${styles.draftStatusError}`}>Unable to save draft</span>}
+            <span className="sr-only" role="status" aria-live="polite">{draft.status === "error" ? "Unable to save draft" : ""}</span>
           </header>
+
+          {draft.recoverable && <section className={styles.recovery} aria-labelledby="draft-recovery-heading">
+            <div className={styles.recoveryText}>
+              <strong id="draft-recovery-heading">You have an unfinished draft</strong>
+              <span>Last saved {formatSavedAgo(draft.recoverable.savedAt)}</span>
+              <q>{(draft.recoverable.title || draft.recoverable.content).slice(0, 80)}{(draft.recoverable.title || draft.recoverable.content).length > 80 ? "…" : ""}</q>
+            </div>
+            <div className={styles.recoveryActions}>
+              <button type="button" className={styles.recoveryPrimary} onClick={continueDraft}>Continue Draft</button>
+              <button type="button" onClick={draft.discard}>Discard Draft</button>
+            </div>
+          </section>}
 
           <div className={styles.field}>
             <label htmlFor="post-title">Title</label>
@@ -178,6 +219,7 @@ export default function NewPostForm() {
               <strong>Upload images or GIFs</strong>
               <span>Drag and drop or click to browse</span>
             </button>}
+            {imagesNote && media.length === 0 && <p className={styles.imagesNote}>Images are not saved with drafts. Please attach them again.</p>}
             <input
               ref={inputRef}
               className="sr-only"
@@ -220,7 +262,7 @@ export default function NewPostForm() {
             {visibility === "custom" && <div className={styles.audience}><CustomViewerPicker selectedIds={viewerIds} onChange={setViewerIds} /></div>}
 
             <div className={styles.actions}>
-              <Link href="/">Cancel</Link>
+              <Link href="/" onClick={requestFeedResume}>Cancel</Link>
               <button type="submit" form="new-post-form" disabled={loading}>{loading ? "Creating…" : <><AppIcon name="send" width={17} height={17} /> Create post</>}</button>
             </div>
           </div>

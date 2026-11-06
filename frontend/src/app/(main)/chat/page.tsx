@@ -1,7 +1,10 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import PageTransition from "@/components/transitions/PageTransition";
 import ChatPageContent from "@/features/chat/components/ChatPageContent";
 import styles from "@/features/chat/components/Chat.module.css";
+
+export const metadata: Metadata = { title: "Chat" };
 
 export default function ChatPage() {
   return (

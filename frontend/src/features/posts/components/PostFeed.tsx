@@ -6,6 +6,9 @@ import { useFeed } from "@/features/posts/hooks/useFeed";
 import type { FeedScope } from "@/features/posts/types/post";
 import PostCard from "@/features/posts/components/PostCard";
 import FeedFilter from "@/features/posts/components/FeedFilter";
+import { useFeedScrollRestoration } from "@/features/posts/hooks/useFeedScrollRestoration";
+import { endNavigationRestoreWindow } from "@/features/posts/lib/feedSnapshotCache";
+import { useCurrentUser } from "@/features/auth/context/CurrentUserContext";
 
 const FEED_SCOPES: FeedScope[] = ["all", "following", "friends"];
 
@@ -42,8 +45,12 @@ export default function PostFeed({
   const searchParams = useSearchParams();
   const feed = parseFeed(searchParams.get("feed"));
 
+  const { user } = useCurrentUser();
+  const ownerId = user.user_id;
+
   const {
     posts,
+    restored,
     loading,
     error,
     unauthorized,
@@ -53,10 +60,25 @@ export default function PostFeed({
     loadMore,
     retry,
     removePost,
-  } = useFeed(feed);
+  } = useFeed(feed, ownerId);
+  const postsListRef = useRef<HTMLDivElement>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const filterAnchorRef = useRef<HTMLSpanElement>(null);
   const [filtersElevated, setFiltersElevated] = useState(false);
+
+  useFeedScrollRestoration({
+    feed,
+    ownerId,
+    listRef: postsListRef,
+    ready: !loading && !error && posts.length > 0,
+    restored,
+  });
+
+  // The restore decision is made during render; once committed, the Back/Forward
+  // (or "return to feed") navigation is spent, including filter-only history moves.
+  useEffect(() => {
+    endNavigationRestoreWindow();
+  }, [feed]);
 
   useEffect(() => {
     if (unauthorized) router.push("/login");
@@ -163,7 +185,7 @@ export default function PostFeed({
         )}
 
         {!loading && !error && posts.length > 0 && (
-          <div className="posts-list" data-motion-list>
+          <div className="posts-list" data-motion-list ref={postsListRef}>
             {posts.map((post, index) => (
               <Fragment key={post.id}>
                 <PostCard post={post} onDeleted={removePost} />

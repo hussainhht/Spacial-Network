@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { DEMO_MODE } from "@/demo/config";
 import { DEMO_USERS } from "@/demo/seed";
 import PageTransition from "@/components/transitions/PageTransition";
@@ -9,6 +10,8 @@ interface ProfilePageProps {
     username: string;
   }>;
 }
+
+export const metadata: Metadata = { title: "Profile" };
 
 export default async function Page({ params }: ProfilePageProps) {
   const { username } = await params;

@@ -5,6 +5,7 @@ import { requestFetch } from "@/demo/api";
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getApiUrl } from "@/lib/api";
+import { resetSavedPosts } from "@/features/saved/savedPostsStore";
 
 export function useLogout() {
   const router = useRouter();
@@ -25,6 +26,7 @@ export function useLogout() {
       if (!response.ok && response.status !== 401) {
         throw new Error("Could not log out. Please try again.");
       }
+      resetSavedPosts();
       router.replace("/login");
     } catch {
       setError("Could not log out. Please try again.");

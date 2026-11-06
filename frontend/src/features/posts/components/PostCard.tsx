@@ -15,6 +15,8 @@ import InteractionsBar from "@/features/interactions/components/InteractionsBar"
 import ShareModal from "@/features/interactions/components/ShareModal";
 import type { LikeStatus } from "@/features/interactions/types/interactions";
 import { deletePost } from "@/features/posts/api/posts";
+import { forgetPostInFeedCache } from "@/features/posts/lib/feedSnapshotCache";
+import { useSavedPost } from "@/features/saved/savedPostsStore";
 import type { Post, PostVisibility } from "@/features/posts/types/post";
 import { formatDateTime, timeAgo } from "@/lib/utils";
 import styles from "./PostCard.module.css";
@@ -25,6 +27,8 @@ import ExpandablePostText from "./ExpandablePostText";
 interface PostCardProps {
   post: Post;
   onDeleted?: (id: number) => void;
+  // Called after the server confirms a save or unsave of this post.
+  onSavedChange?: (id: number, saved: boolean) => void;
   preview?: boolean;
   detail?: boolean;
   children?: ReactNode;
@@ -45,7 +49,7 @@ function postMedia(post: Post) {
     : []);
 }
 
-export default function PostCard({ post, onDeleted, preview = false, detail = false, children }: PostCardProps) {
+export default function PostCard({ post, onDeleted, onSavedChange, preview = false, detail = false, children }: PostCardProps) {
   const router = useRouter();
   const [deleting, setDeleting] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -57,6 +61,7 @@ export default function PostCard({ post, onDeleted, preview = false, detail = fa
   const titleId = preview ? undefined : `post-title-${post.id}`;
   const visibility = visibilityPresentation[post.visibility];
   const { notify } = useActionFeedback();
+  const { saved, busy: savePending, set: setSaved } = useSavedPost(post);
 
   useEffect(() => {
     if (preview) return;
@@ -102,6 +107,7 @@ export default function PostCard({ post, onDeleted, preview = false, detail = fa
     setDeleting(true);
     try {
       await deletePost(post.id);
+      forgetPostInFeedCache(post.id);
       setDeleteDialogOpen(false);
       onDeleted?.(post.id);
       notify("Post deleted.");
@@ -110,6 +116,20 @@ export default function PostCard({ post, onDeleted, preview = false, detail = fa
       setError(message);
       notify(message, "error");
       setDeleting(false);
+    }
+  }
+
+  async function handleToggleSaved() {
+    try {
+      const confirmed = await setSaved(!saved);
+      if (confirmed === null) return;
+      notify(confirmed ? "Saved to your collection." : "Removed from saved.");
+      onSavedChange?.(post.id, confirmed);
+    } catch (err) {
+      notify(
+        err instanceof Error ? err.message : `Could not ${saved ? "remove" : "save"} this post`,
+        "error",
+      );
     }
   }
 
@@ -142,7 +162,7 @@ export default function PostCard({ post, onDeleted, preview = false, detail = fa
           }
         />
 
-        {!preview && (post.is_owner || post.can_delete) && (
+        {!preview && (
           <details
             className={styles.actions}
             onBlur={(event) => {
@@ -159,6 +179,18 @@ export default function PostCard({ post, onDeleted, preview = false, detail = fa
               <AppIcon name="dots" width={19} height={19} />
             </summary>
             <div className={styles.actionMenu}>
+              <button
+                type="button"
+                className={styles.menuAction}
+                onClick={(event) => {
+                  event.currentTarget.closest("details")?.removeAttribute("open");
+                  void handleToggleSaved();
+                }}
+                disabled={savePending}
+              >
+                <AppIcon name="bookmark" width={15} height={15} fill={saved ? "currentColor" : "none"} />
+                {saved ? "Remove from saved" : "Save post"}
+              </button>
               {post.is_owner && <Link href={demoPostHref(post.id, true)}>Edit post</Link>}
               {post.can_delete && (
                 <button
@@ -200,7 +232,7 @@ export default function PostCard({ post, onDeleted, preview = false, detail = fa
         <ExpandablePostText key={post.id} content={post.content} className={styles.content} />
       </div>
 
-      <PostMediaGrid media={postMedia(post)} preview={!detail} />
+      <PostMediaGrid media={postMedia(post)} preview={!detail} interactive={!preview} />
 
       <footer className={styles.footer}>
         <InteractionsBar

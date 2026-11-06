@@ -242,3 +242,191 @@ test("deleting a community cascades related local records without corrupting per
   assert.ok(!restored.posts.some((p) => p.group_id === 1));
   assert.ok(!restored.groupMessages.some((m) => m.group_id === 1));
 });
+const savedIds = async () =>
+  (await call("/users/me/saved-posts")).posts.map((p) => p.id);
+test("saving is idempotent, removable and ordered newest-saved first", async () => {
+  resetDemo();
+  getDemoState().currentUserId = 1;
+  assert.deepEqual(await savedIds(), []);
+  assert.equal((await call("/posts/2")).saved, false);
+  assert.deepEqual(await call("/posts/2/save", "POST"), {
+    post_id: 2,
+    saved: true,
+  });
+  await call("/posts/3/save", "POST");
+  await call("/posts/1/save", "POST");
+  await call("/posts/3/save", "POST");
+  assert.deepEqual(await savedIds(), [1, 3, 2]);
+  assert.equal((await call("/posts/2")).saved, true);
+  assert.equal(
+    (await call("/posts")).find((p) => p.id === 2).saved,
+    true,
+    "feed responses carry the saved flag",
+  );
+  assert.deepEqual(await call("/posts/2/save", "DELETE"), {
+    post_id: 2,
+    saved: false,
+  });
+  await call("/posts/2/save", "DELETE");
+  await call("/posts/9999/save", "DELETE");
+  assert.deepEqual(await savedIds(), [1, 3]);
+  // Re-saving after removal puts the post back on top.
+  await call("/posts/2/save", "POST");
+  assert.deepEqual(await savedIds(), [2, 1, 3]);
+  await assert.rejects(call("/posts/abc/save", "POST"), /Invalid post id/);
+  await assert.rejects(call("/posts/9999/save", "POST"), /not found/);
+});
+test("saved posts paginate without duplicates or gaps", async () => {
+  resetDemo();
+  const feed = (await call("/posts")).map((p) => p.id);
+  const ids = feed.slice(0, 7);
+  const extra = feed[7];
+  for (const id of ids) await call(`/posts/${id}/save`, "POST");
+  const seen = [];
+  let path = "/users/me/saved-posts?limit=3";
+  for (let pages = 0; pages < 10; pages++) {
+    const page = await call(path);
+    seen.push(...page.posts.map((p) => p.id));
+    if (page.next_cursor === undefined) break;
+    assert.equal(page.posts.length, 3);
+    if (pages === 0) await call(`/posts/${extra}/save`, "POST");
+    path = `/users/me/saved-posts?limit=3&cursor=${page.next_cursor}`;
+  }
+  assert.deepEqual(seen, [...ids].reverse());
+  const exact = await call("/users/me/saved-posts?limit=8");
+  assert.equal(exact.posts.length, 8);
+  assert.equal(exact.next_cursor, undefined);
+  await assert.rejects(call("/users/me/saved-posts?limit=0"), /Invalid limit/);
+  await assert.rejects(
+    call("/users/me/saved-posts?cursor=abc"),
+    /Invalid cursor/,
+  );
+});
+test("bookmarks are isolated per demo identity and survive a reload", async () => {
+  resetDemo();
+  getDemoState().currentUserId = 1;
+  await call("/posts/2/save", "POST");
+  getDemoState().currentUserId = 2;
+  assert.deepEqual(await savedIds(), []);
+  assert.equal((await call("/posts/2")).saved, false);
+  await call("/posts/3/save", "POST");
+  await call("/posts/2/save", "DELETE");
+  assert.deepEqual(await savedIds(), [3]);
+  getDemoState().currentUserId = 1;
+  assert.deepEqual(await savedIds(), [2]);
+  const restored = parseDemoStorage(storage.get(STORAGE_KEY));
+  assert.deepEqual(
+    restored.saved["1"].map((e) => e.post_id),
+    [2],
+  );
+  assert.deepEqual(
+    restored.saved["2"].map((e) => e.post_id),
+    [3],
+  );
+  resetDemo();
+  assert.deepEqual(getDemoState().saved, {});
+  assert.deepEqual(await savedIds(), []);
+});
+test("older stored demo data without bookmarks still loads", () => {
+  const legacy = createSeed();
+  delete legacy.saved;
+  const restored = parseDemoStorage(JSON.stringify(legacy));
+  assert.deepEqual(restored.saved, {});
+  assert.equal(restored.posts.length, legacy.posts.length);
+  const malformed = createSeed();
+  malformed.saved = { 1: [{ id: "x", post_id: 2 }] };
+  assert.deepEqual(parseDemoStorage(JSON.stringify(malformed)).saved, {});
+  const stranger = createSeed();
+  stranger.saved = { 999: [{ id: 5, post_id: 2 }] };
+  assert.deepEqual(parseDemoStorage(JSON.stringify(stranger)).saved, {});
+});
+test("saving respects audience rules and visibility is rechecked on read", async () => {
+  resetDemo();
+  getDemoState().currentUserId = 1;
+  // Post 21 belongs to a private identity user 1 does not follow.
+  await assert.rejects(call("/posts/21/save", "POST"), /not found/);
+  assert.deepEqual(await savedIds(), []);
+  // A post that becomes restricted drops out of the collection...
+  const mine = new FormData();
+  mine.set("title", "Soon private");
+  mine.set("content", "Visible for now");
+  mine.set("visibility", "public");
+  const created = await demoRequest("/posts", { method: "POST", body: mine });
+  getDemoState().currentUserId = 2;
+  await call(`/posts/${created.id}/save`, "POST");
+  assert.deepEqual(await savedIds(), [created.id]);
+  getDemoState().currentUserId = 1;
+  await call(`/posts/${created.id}`, "PUT", {
+    title: "Soon private",
+    content: "Now restricted",
+    visibility: "followers",
+    viewer_ids: [],
+  });
+  getDemoState().currentUserId = 2;
+  getDemoState().follows = getDemoState().follows.filter(
+    (f) => !(f[0] === 2 && f[1] === 1),
+  );
+  assert.deepEqual(await savedIds(), []);
+  // ...but they can still clear a bookmark they can no longer see.
+  await call(`/posts/${created.id}/save`, "DELETE");
+  // Deleted posts disappear from every identity's collection.
+  getDemoState().currentUserId = 1;
+  await call("/posts/2/save", "POST");
+  await call(`/posts/${created.id}`, "DELETE");
+  assert.deepEqual(await savedIds(), [2]);
+  for (const entries of Object.values(getDemoState().saved))
+    assert.ok(entries.every((e) => e.post_id !== created.id));
+});
+test("group posts require current membership to stay saved", async () => {
+  resetDemo();
+  getDemoState().currentUserId = 1;
+  const groupPost = getDemoState().posts.find((p) => p.group_id);
+  const gid = groupPost.group_id;
+  const outsider = getDemoState().users.find(
+    (u) =>
+      !getDemoState().memberships.some(
+        (m) => m.groupId === gid && m.userId === u.id,
+      ),
+  ).id;
+  getDemoState().currentUserId = outsider;
+  await assert.rejects(call(`/posts/${groupPost.id}/save`, "POST"), /not found/);
+  const member = getDemoState().memberships.find(
+    (m) => m.groupId === gid && m.role !== "creator",
+  );
+  getDemoState().currentUserId = member.userId;
+  await call(`/posts/${groupPost.id}/save`, "POST");
+  assert.deepEqual(await savedIds(), [groupPost.id]);
+  getDemoState().memberships = getDemoState().memberships.filter(
+    (m) => !(m.groupId === gid && m.userId === member.userId),
+  );
+  assert.deepEqual(await savedIds(), []);
+  // Deleting the whole community removes the bookmark rows too.
+  getDemoState().memberships.push({
+    groupId: gid,
+    userId: member.userId,
+    role: "member",
+  });
+  assert.deepEqual(await savedIds(), [groupPost.id]);
+  const creator = getDemoState().groups.find((g) => g.id === gid).creator_id;
+  getDemoState().currentUserId = creator;
+  await call(`/groups/${gid}`, "DELETE");
+  assert.deepEqual(getDemoState().saved[member.userId] ?? [], []);
+});
+test("saved store only reports server-confirmed state and dedupes requests", async () => {
+  resetDemo();
+  getDemoState().currentUserId = 1;
+  const { setPostSaved, resetSavedPosts } =
+    await import("../src/features/saved/savedPostsStore.ts");
+  resetSavedPosts();
+  const first = setPostSaved(2, true);
+  // A second request for the same post while one is pending is ignored.
+  assert.equal(await setPostSaved(2, true), null);
+  assert.equal(await first, true);
+  assert.deepEqual(await savedIds(), [2]);
+  assert.equal(await setPostSaved(2, false), false);
+  assert.deepEqual(await savedIds(), []);
+  // Failures reject and do not leave the post stuck as pending.
+  await assert.rejects(setPostSaved(9999, true), /not found/);
+  assert.equal(await setPostSaved(3, true), true);
+  resetSavedPosts();
+});

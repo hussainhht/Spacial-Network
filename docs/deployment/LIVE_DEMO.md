@@ -1,3 +1,42 @@
+# Task: Resolve Remaining Test Failures Before Commit
+
+The Saved Posts implementation is complete, but verification is not fully clean.
+
+## 1. Investigate Birthday Tests
+
+- Inspect the two failing birthday visibility tests.
+- Determine whether they were already failing before the Saved Posts changes.
+- Identify the intended API date format.
+- Fix the mismatch only if appropriate.
+- Do not introduce unrelated behavioral changes.
+- Preserve birthday visibility and privacy functionality.
+
+## 2. Investigate Playwright Failure
+
+- Investigate the Playwright trace-file ENOENT error.
+- Check whether OneDrive synchronization is interfering with test artifacts.
+- If necessary, configure Playwright to use a temporary output directory outside OneDrive.
+- Rerun the failed Saved Posts browser test.
+- Verify the actual feature behavior, not just the test runner.
+
+## 3. Final Verification
+
+- Run the complete Go test suite.
+- Run frontend tests, typecheck, and lint.
+- Run all Saved Posts browser tests.
+- Confirm demo identity isolation.
+- Confirm saving, unsaving, and retrieving bookmarked posts.
+- Confirm privacy and access control behavior.
+
+## Constraints
+
+- Preserve all unrelated uncommitted changes.
+- Avoid unnecessary refactoring.
+- Do not modify the 3D planet system.
+- Do not commit or push automatically.
+
+Provide a final report distinguishing confirmed passes, failures, and untested scenarios.
+
 # Spacial Network interactive demo
 
 The demo runs the existing Next.js frontend with a browser-only data service. It preserves AppShell, navigation, CSS Modules, feature components, notifications, messaging, and the real Three.js planet system. The Go backend is unchanged, and ordinary frontend commands retain full-stack mode. Deployment workflows support the approved `main` and `livedemo` branches.

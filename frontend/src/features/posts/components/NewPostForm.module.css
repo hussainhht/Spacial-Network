@@ -57,7 +57,18 @@
 .preview :global(article) { --post-media-max-height: 360px; }
 .previewControls { display: grid; gap: 18px; padding-top: 2px; }
 .previewControls .actions { padding-top: 18px; }
+.draftStatus { margin-left: auto; color: var(--space-text-muted); font-size: 12px; white-space: nowrap; }
+.draftStatusError { color: var(--space-error-text); }
+.recovery { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border: 1px solid var(--planet-border-strong); border-radius: 13px; background: var(--planet-accent-soft); }
+.recoveryText { display: grid; gap: 2px; min-width: 0; flex: 1 1 220px; font-size: 12px; color: var(--space-text-muted); }
+.recoveryText strong { color: var(--space-text-heading); font-size: 14px; }
+.recoveryText q { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--space-text-label); }
+.recoveryActions { display: flex; gap: 8px; }
+.recoveryActions button { min-height: 36px; padding: 7px 13px; border: 1px solid var(--space-border-strong); border-radius: 10px; background: transparent; color: var(--space-text-label); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+.recoveryActions .recoveryPrimary { border-color: var(--planet-border-strong); background: var(--planet-accent-active); color: #f8fafc; }
+.recoveryActions button:focus-visible { outline: 2px solid var(--planet-focus-ring); outline-offset: 2px; }
+.imagesNote { margin: 0; color: var(--space-text-muted); font-size: 12px; }
 
 @media (max-width: 1050px) { .layout { grid-template-columns: minmax(0, 1fr); } .preview { position: static; } }
-@media (max-width: 620px) { .composer { padding: 19px; gap: 20px; } .privacyGrid { grid-template-columns: 1fr; } .privacyOption { min-height: 58px; } .thumbnails { grid-template-columns: repeat(3, minmax(0, 1fr)); } .preview { padding: 14px; } }
+@media (max-width: 620px) { .composer { padding: 19px; gap: 20px; } .privacyGrid { grid-template-columns: 1fr; } .privacyOption { min-height: 58px; } .recoveryActions { width: 100%; } .recoveryActions button { flex: 1; } .thumbnails { grid-template-columns: repeat(3, minmax(0, 1fr)); } .preview { padding: 14px; } }
 @media (prefers-reduced-motion: reduce) { .dropzone, .privacyOption { transition: none; } .dropzone:hover:not(:disabled) { transform: none; } }

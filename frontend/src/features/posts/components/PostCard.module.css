@@ -30,11 +30,14 @@
 .actions summary::-webkit-details-marker { display: none; }
 .actions[open] summary, .actions summary:hover { border-color: var(--space-border); background: rgba(148, 163, 184, 0.08); color: var(--space-text-heading); }
 
-.actionMenu { position: absolute; top: calc(100% + 6px); right: 0; z-index: 4; display: grid; min-width: 148px; padding: 5px; border: 1px solid var(--space-border-strong); border-radius: 12px; background: var(--space-bg-elevated); box-shadow: 0 10px 28px rgba(0, 0, 0, 0.38); }
+.actionMenu { position: absolute; top: calc(100% + 6px); right: 0; z-index: 4; display: grid; min-width: 176px; padding: 5px; border: 1px solid var(--space-border-strong); border-radius: 12px; background: var(--space-bg-elevated); box-shadow: 0 10px 28px rgba(0, 0, 0, 0.38); }
 .actionMenu a, .actionMenu button { padding: 10px 12px; border: 0; border-radius: 8px; background: transparent; color: var(--space-text-body); font: inherit; font-size: 13px; line-height: 1.4; text-align: left; text-decoration: none; cursor: pointer; }
 .actionMenu a:hover, .actionMenu a:focus-visible { background: rgba(148, 163, 184, 0.09); color: var(--space-text-heading); }
 .actionMenu button:not(:disabled):hover, .actionMenu button:focus-visible { background: var(--space-error-bg); color: var(--space-error-text); }
 .actionMenu button:disabled { opacity: 0.55; cursor: wait; }
+.actionMenu button.menuAction { display: flex; align-items: center; gap: 9px; white-space: nowrap; }
+.actionMenu button.menuAction:not(:disabled):hover, .actionMenu button.menuAction:focus-visible { background: rgba(148, 163, 184, 0.09); color: var(--space-text-heading); }
+.actionMenu button.menuAction svg { flex: 0 0 auto; color: var(--planet-accent); }
 
 .context { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 12px; min-height: 20px; color: var(--space-text-muted); font-size: 12px; }
 .contextItem { display: inline-flex; align-items: center; gap: 5px; color: inherit; line-height: 1.4; text-decoration: none; }

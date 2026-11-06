@@ -7,6 +7,7 @@ import AppIcon from "@/components/layout/AppIcon";
 import PageTransition from "@/components/transitions/PageTransition";
 import { getPost } from "@/features/posts/api/posts";
 import { ApiError } from "@/lib/api/errors";
+import { requestFeedResume } from "@/features/posts/lib/feedSnapshotCache";
 import type { Post } from "@/features/posts/types/post";
 import CommentsSection from "@/features/comments/components/CommentsSection";
 import PostCard from "@/features/posts/components/PostCard";
@@ -58,7 +59,7 @@ export default function PostDetailPage() {
     <PageTransition>
       <main className={`posts-page ${styles.page}`}>
         <div className={styles.container} data-motion-section>
-          <Link href="/" className={`back-link ${styles.backLink}`}>
+          <Link href="/" className={`back-link ${styles.backLink}`} onClick={requestFeedResume}>
             <AppIcon name="arrowLeft" width={17} height={17} />
             <span>Back to home</span>
           </Link>

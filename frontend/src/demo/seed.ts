@@ -282,6 +282,9 @@ export interface DemoState {
   invitations: { id: number; groupId: number; from: number; to: number }[];
   joinRequests: { id: number; groupId: number; userId: number }[];
   likes: Record<string, number[]>;
+  // Private bookmarks per demo identity (keyed by user id), oldest first.
+  // Each entry's id is monotonic, giving the same cursor semantics as the API.
+  saved: Record<string, { id: number; post_id: number }[]>;
   rsvps: Record<string, Record<string, "going" | "not_going">>;
   messages: PrivateMessage[];
   groupMessages: GroupMessagePayload[];
@@ -587,6 +590,7 @@ export function createSeed(): DemoState {
     likes: Object.fromEntries(
       posts.map((p) => [p.id, [2, 3, 7].filter((id) => id !== p.user_id)]),
     ),
+    saved: {},
     rsvps: Object.fromEntries(
       events.map((e) => [
         e.id,

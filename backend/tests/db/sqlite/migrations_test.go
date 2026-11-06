@@ -76,6 +76,7 @@ func TestMigrateUp_AppliesAllMigrations(t *testing.T) {
 		"post_allowed_viewers",
 		"post_media",
 		"likes",
+		"user_saved_posts",
 	}
 	for _, table := range wantTables {
 		var name string

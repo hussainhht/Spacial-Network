@@ -1,6 +1,6 @@
 "use client";
 
-import AppIcon, { type AppIconName } from "@/components/layout/AppIcon";
+import AppIcon from "@/components/layout/AppIcon";
 import { parseSharedPost } from "@/features/interactions/utils/sharedPost";
 import { useNotifications } from "../context/NotificationProvider";
 import { useNotificationNavigate } from "../hooks/useNotificationNavigate";
@@ -8,44 +8,8 @@ import {
   getFollowNotificationData,
   getGroupNotificationData,
   type Notification,
-  type SupportedNotificationType,
 } from "../types/notification";
-
-const TYPE_LABELS: Record<SupportedNotificationType, string> = {
-  follow_request: "Follow request",
-  new_follower: "New follower",
-  follow_accepted: "Follow accepted",
-  group_invitation: "Group invitation",
-  group_invitation_accepted: "Invitation accepted",
-  group_invitation_declined: "Invitation declined",
-  group_join_request: "Join request",
-  group_join_accepted: "Join request accepted",
-  group_join_rejected: "Join request declined",
-  group_event: "Group event",
-  event_rsvp: "Event response",
-  group_message: "Group message",
-  private_message: "Direct message",
-  post_like: "Post like",
-  post_comment: "New comment",
-};
-
-const TYPE_ICONS: Record<SupportedNotificationType, AppIconName> = {
-  follow_request: "user",
-  new_follower: "user",
-  follow_accepted: "user",
-  group_invitation: "groups",
-  group_invitation_accepted: "groups",
-  group_invitation_declined: "groups",
-  group_join_request: "groups",
-  group_join_accepted: "groups",
-  group_join_rejected: "groups",
-  group_event: "calendar",
-  event_rsvp: "calendar",
-  group_message: "chat",
-  private_message: "chat",
-  post_like: "heart",
-  post_comment: "posts",
-};
+import { TYPE_ICONS, TYPE_LABELS } from "../utils/notificationPresentation";
 
 interface NotificationToastProps {
   notification: Notification;

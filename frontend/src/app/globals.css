@@ -3515,11 +3515,17 @@ main:not(.chat-main):has(> form) form > p {
   border-top: 1px solid var(--space-border);
 }
 
+.notification-item-row {
+  display: flex;
+  align-items: stretch;
+}
+
 .notification-item-button {
   display: flex;
   align-items: flex-start;
-  gap: 0.6rem;
-  width: 100%;
+  gap: 0.7rem;
+  flex: 1;
+  min-width: 0;
   padding: 0.75rem 1rem;
   border: none;
   background: none;
@@ -3539,11 +3545,48 @@ main:not(.chat-main):has(> form) form > p {
   opacity: 0.7;
 }
 
+/* Type icon; tinted by category so rows scan at a glance. */
+.notification-item-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--planet-accent-soft);
+  color: var(--planet-accent);
+}
+
+.notification-item-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.notification-item-icon[data-category="social"] {
+  background: rgba(244, 114, 182, 0.12);
+  color: #f9a8d4;
+}
+
+.notification-item-icon[data-category="groups"] {
+  background: rgba(167, 139, 250, 0.14);
+  color: #c4b5fd;
+}
+
+.notification-item-icon[data-category="messages"] {
+  background: rgba(45, 212, 191, 0.12);
+  color: #5eead4;
+}
+
+.notification-item[data-unread="false"] .notification-item-icon {
+  opacity: 0.75;
+}
+
 .notification-item-dot {
   flex-shrink: 0;
   width: 8px;
   height: 8px;
-  margin-top: 6px;
+  margin-top: 11px;
   border-radius: 50%;
   background: transparent;
 }
@@ -3556,23 +3599,21 @@ main:not(.chat-main):has(> form) form > p {
 .notification-item-content {
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
+  gap: 0.2rem;
+  flex: 1;
   min-width: 0;
 }
 
-.notification-item-type {
-  color: var(--space-text-label);
-  font-size: 0.7rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
 .notification-item-message {
-  color: var(--space-text-body);
+  color: var(--space-text-label);
   font-size: 0.85rem;
   line-height: 1.4;
   overflow-wrap: anywhere;
+}
+
+.notification-item-actor {
+  color: var(--space-text-heading);
+  font-weight: 600;
 }
 
 .notification-item[data-unread="true"] .notification-item-message {
@@ -3580,9 +3621,92 @@ main:not(.chat-main):has(> form) form > p {
   font-weight: 500;
 }
 
+.notification-item-preview {
+  overflow: hidden;
+  color: var(--space-text-muted);
+  font-size: 0.82rem;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.notification-item-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.15rem 0.45rem;
+  min-width: 0;
+  color: var(--space-text-muted);
+  font-size: 0.75rem;
+}
+
+.notification-group-title {
+  min-width: 0;
+  color: var(--space-text-label);
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.notification-group-title + .notification-item-time::before {
+  content: "·";
+  margin-right: 0.45rem;
+}
+
 .notification-item-time {
   color: var(--space-text-muted);
   font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.notification-item-mark {
+  flex-shrink: 0;
+  align-self: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  margin-right: 0.6rem;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: var(--space-text-muted);
+  cursor: pointer;
+  opacity: 0;
+  transition:
+    opacity 0.15s ease,
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.notification-item:hover .notification-item-mark,
+.notification-item-mark:focus-visible,
+.notification-item-mark:disabled {
+  opacity: 1;
+}
+
+.notification-item-mark:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--space-text-heading);
+}
+
+.notification-item-mark:disabled {
+  cursor: default;
+}
+
+.notification-item-mark svg {
+  width: 16px;
+  height: 16px;
+}
+
+@media (hover: none) {
+  .notification-item-mark {
+    width: 44px;
+    height: 44px;
+    margin-right: 0.25rem;
+    opacity: 1;
+  }
 }
 
 .notifications-container {
@@ -3590,8 +3714,8 @@ main:not(.chat-main):has(> form) form > p {
   z-index: 1;
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
-  width: min(100%, 720px);
+  gap: 1rem;
+  width: min(100%, 680px);
   margin: 0 auto;
 }
 
@@ -3600,51 +3724,90 @@ main:not(.chat-main):has(> form) form > p {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
+  min-height: 44px;
 }
 
-.notifications-page-header h1 {
+.notifications-summary {
   margin: 0;
+  color: var(--space-text-muted);
+  font-size: 0.9rem;
+}
+
+.notifications-unread-count {
   color: var(--space-text-heading);
-  text-shadow:
-    0 0 18px var(--planet-glow),
-    0 0 40px var(--planet-glow);
+  font-weight: 600;
 }
 
 .notification-mark-all {
-  min-height: 44px;
-  padding: 0.5rem 1rem;
-  border-radius: var(--space-radius-sm);
-  border: 1px solid var(--space-border-strong);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 40px;
+  padding: 0.45rem 0.95rem;
+  border-radius: 999px;
+  border: 1px solid var(--planet-border-strong);
   background: var(--planet-accent-soft);
   color: var(--planet-accent);
   font: inherit;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
+  font-weight: 500;
   cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
 }
 
-.notification-mark-all:hover {
-  text-decoration: underline;
+.notification-mark-all svg {
+  width: 15px;
+  height: 15px;
+}
+
+.notification-mark-all:hover:not(:disabled) {
+  background: rgba(82, 157, 224, 0.18);
+  color: var(--planet-accent-hover);
+}
+
+.notification-mark-all:disabled {
+  cursor: default;
+  opacity: 0.65;
 }
 
 .notifications-tabs {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.4rem;
+  padding: 3px 2px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.notifications-tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .notifications-tabs button {
-  min-height: 44px;
-  padding: 0.5rem 1rem;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 40px;
+  padding: 0.45rem 0.95rem;
   border: 1px solid var(--space-border);
   border-radius: 999px;
-  background: transparent;
+  background: rgba(13, 17, 38, 0.45);
   color: var(--space-text-muted);
   font: inherit;
-  font-size: 0.825rem;
+  font-size: 0.82rem;
+  font-weight: 500;
   cursor: pointer;
   transition:
     background-color 0.15s ease,
     color 0.15s ease,
     border-color 0.15s ease;
+}
+
+.notifications-tabs button:hover {
+  border-color: var(--space-border-strong);
+  color: var(--space-text-label);
 }
 
 .notifications-tabs button[data-active="true"] {
@@ -3653,13 +3816,47 @@ main:not(.chat-main):has(> form) form > p {
   color: var(--space-text-heading);
 }
 
-.notification-list-page {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
+.notifications-tabs button:focus-visible {
+  outline: 2px solid var(--planet-focus-ring);
+  outline-offset: 2px;
 }
 
-.notification-list-page .notification-item {
+.notifications-tab-count {
+  min-width: 1.25rem;
+  padding: 0 0.35rem;
+  border-radius: 999px;
+  background: var(--planet-accent);
+  color: #04101f;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1.25rem;
+  text-align: center;
+}
+
+.notifications-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.notifications-day {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.notifications-day-label {
+  margin: 0;
+  padding: 0 0.25rem;
+  color: var(--space-text-muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.notification-list-page,
+.notification-skeleton {
   background:
     linear-gradient(var(--planet-surface-tint), var(--planet-surface-tint)),
     var(--space-card-bg);
@@ -3668,28 +3865,197 @@ main:not(.chat-main):has(> form) form > p {
   overflow: hidden;
 }
 
-.notification-list-page .notification-item + .notification-item {
-  border-top: none;
+/* The list clips its rounded corners, so focus rings sit inside. */
+.notification-list-page .notification-item :focus-visible {
+  outline-offset: -2px;
+}
+
+.notification-list-page .notification-item[data-unread="true"] {
+  background: var(--planet-accent-soft);
 }
 
 .notification-list-page .notification-item-button {
-  padding: 1rem 1.25rem;
+  gap: 0.8rem;
+  padding: 0.85rem 0.6rem 0.85rem 1rem;
+}
+
+.notification-list-page .notification-item-icon {
+  width: 36px;
+  height: 36px;
+}
+
+.notification-list-page .notification-item-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.notification-list-page .notification-item-message {
+  font-size: 0.9rem;
+}
+
+.notification-list-page .notification-item-dot {
+  margin-top: 14px;
 }
 
 .notification-actions {
-  padding: 0 1rem 1rem 1.75rem;
+  padding: 0 1rem 0.85rem calc(1rem + 30px + 0.7rem);
 }
-.notification-group-title {
-  color: var(--space-text-heading);
-  font-size: 0.9rem;
-  font-weight: 600;
-  overflow-wrap: anywhere;
+
+.notification-list-page .notification-actions {
+  padding: 0 1rem 0.9rem calc(1rem + 36px + 0.8rem);
 }
+
 .notification-actions .group-muted {
   font-size: 0.8rem;
 }
+
 .notification-actions .group-button {
   font-size: 0.8rem;
+}
+
+.notification-item-error {
+  margin: 0 1rem 0.85rem;
+}
+
+.notification-skeleton {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.notification-skeleton li {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.95rem 1rem;
+  animation: feedPulseGlow 1.6s ease-in-out infinite;
+}
+
+.notification-skeleton li + li {
+  border-top: 1px solid var(--space-border);
+}
+
+.notification-skeleton li::before {
+  content: "";
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(148, 163, 184, 0.14);
+}
+
+.notification-skeleton li::after {
+  content: "";
+  width: 55%;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.14);
+  box-shadow: 0 16px 0 -1px rgba(148, 163, 184, 0.08);
+}
+
+.notifications-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 2.5rem 1rem;
+  color: var(--space-text-muted);
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.notifications-empty p {
+  margin: 0;
+}
+
+.notifications-empty-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--planet-accent-soft);
+  color: var(--planet-accent);
+}
+
+.notifications-error {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  padding: 0.75rem 1rem;
+  background: var(--space-error-bg);
+  border: 1px solid var(--space-error-border);
+  border-radius: var(--space-radius-md);
+  color: var(--space-error-text);
+  font-size: 0.875rem;
+}
+
+.notifications-error svg {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+}
+
+.notifications-error span {
+  flex: 1;
+  min-width: 0;
+}
+
+.notifications-more {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.notifications-more-note {
+  margin: 0;
+  color: var(--space-text-muted);
+  font-size: 0.78rem;
+}
+
+@media (max-width: 520px) {
+  .notifications-page-header {
+    gap: 0.75rem;
+  }
+
+  .notifications-tabs {
+    flex-wrap: wrap;
+  }
+
+  .notifications-tabs button {
+    padding-inline: 0.8rem;
+  }
+
+  .notification-list-page .notification-item-button {
+    gap: 0.7rem;
+    padding-left: 0.85rem;
+  }
+
+  .notification-list-page .notification-item-icon {
+    width: 32px;
+    height: 32px;
+  }
+
+  .notification-list-page .notification-actions {
+    padding-left: calc(0.85rem + 32px + 0.7rem);
+  }
+}
+
+@media (pointer: coarse) {
+  .notification-mark-all,
+  .notifications-tabs button {
+    min-height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .notification-skeleton li {
+    animation: none;
+    opacity: 0.6;
+  }
 }
 
 .notification-toast-container {

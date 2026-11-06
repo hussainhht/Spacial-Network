@@ -63,9 +63,16 @@ function post(id: number) {
   if (!visible(p)) fail("This post is restricted to its audience.");
   return p;
 }
+/** Removes every identity's bookmarks of posts that no longer exist. */
+function dropSaved(postIds: Set<number>) {
+  const s = getDemoState();
+  for (const owner of Object.keys(s.saved))
+    s.saved[owner] = s.saved[owner].filter((e) => !postIds.has(e.post_id));
+}
 function viewPost(p: Post): Post {
   return {
     ...p,
+    saved: (getDemoState().saved[me()] ?? []).some((e) => e.post_id === p.id),
     author: user(p.user_id),
     is_owner: p.user_id === me(),
     can_delete:
@@ -214,7 +221,31 @@ export async function demoRequest(
       "Demo identities have no passwords. No credentials are stored or changed.",
       400,
     );
-  else if (p.startsWith("/users/me")) {
+  else if (p === "/users/me/saved-posts") {
+    // Mirrors the API: only the current identity's collection, newest saved
+    // first, with visibility rechecked so restricted posts never surface.
+    const limit = Number(q.get("limit") ?? 50),
+      cursor = q.has("cursor") ? Number(q.get("cursor")) : Infinity;
+    if (!Number.isSafeInteger(limit) || limit <= 0)
+      fail("Invalid limit", 400);
+    if (q.has("cursor") && (!Number.isSafeInteger(cursor) || cursor <= 0))
+      fail("Invalid cursor", 400);
+    const accessible = (s.saved[me()] ?? [])
+      .filter((e) => e.id < cursor)
+      .reverse()
+      .flatMap((e) => {
+        const saved = s.posts.find((x) => x.id === e.post_id);
+        return saved && visible(saved) ? [{ entry: e, post: saved }] : [];
+      });
+    const page = accessible.slice(0, Math.min(limit, 50));
+    result = {
+      posts: page.map((x) => viewPost(x.post)),
+      next_cursor:
+        accessible.length > page.length
+          ? page[page.length - 1].entry.id
+          : undefined,
+    };
+  } else if (p.startsWith("/users/me")) {
     const u = user(me());
     if (method !== "GET") {
       if (p.endsWith("/privacy")) u.is_private = Boolean(b.is_private);
@@ -338,7 +369,22 @@ export async function demoRequest(
           ),
         };
       });
-  else if (
+  else if (parts[0] === "posts" && action === "save") {
+    // Handled before the visibility check so a bookmark can always be removed,
+    // while saving still requires access to the post.
+    if (!Number.isSafeInteger(id) || id <= 0) fail("Invalid post id", 400);
+    const list = (s.saved[me()] ??= []);
+    if (method === "POST") {
+      const target =
+        s.posts.find((x) => x.id === id) ?? fail("Post not found", 404);
+      if (!visible(target)) fail("Post not found", 404);
+      if (!list.some((e) => e.post_id === id))
+        list.push({ id: s.nextId++, post_id: id });
+    } else if (method === "DELETE")
+      s.saved[me()] = list.filter((e) => e.post_id !== id);
+    else fail("Method not allowed", 405);
+    result = { post_id: id, saved: method === "POST" };
+  } else if (
     parts[0] === "posts" ||
     (parts[0] === "groups" && action === "posts")
   ) {
@@ -467,6 +513,7 @@ export async function demoRequest(
         if (!viewPost(item).can_delete) fail("You cannot delete this post.");
         s.posts = s.posts.filter((p) => p.id !== id);
         s.comments = s.comments.filter((c) => c.post_id !== id);
+        dropSaved(new Set([id]));
         result = ok;
       } else result = viewPost(item);
     }
@@ -740,6 +787,7 @@ export async function demoRequest(
         );
         s.posts = s.posts.filter((p) => p.group_id !== id);
         s.comments = s.comments.filter((c) => !deletedPosts.has(c.post_id));
+        dropSaved(deletedPosts);
         s.groupMessages = s.groupMessages.filter((m) => m.group_id !== id);
         s.invitations = s.invitations.filter((i) => i.groupId !== id);
         s.joinRequests = s.joinRequests.filter((r) => r.groupId !== id);

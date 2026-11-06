@@ -241,6 +241,15 @@ export default function TopNavbar() {
                 My Profile
               </Link>
               <Link
+                href="/saved"
+                className={styles.dropdownItem}
+                role="menuitem"
+                onClick={() => setUserMenuOpen(false)}
+              >
+                <AppIcon name="bookmark" />
+                Saved Posts
+              </Link>
+              <Link
                 href="/settings"
                 className={styles.dropdownItem}
                 role="menuitem"

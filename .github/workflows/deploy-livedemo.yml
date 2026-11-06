@@ -36,6 +36,8 @@ jobs:
       - run: npm run lint
       - run: npm run test:demo
       - run: npm run build:demo
+      - name: Verify browser branding and social sharing metadata
+        run: node scripts/verify-branding-export.mjs
       - run: npx playwright install --with-deps chromium
       - run: npm run test:demo:browser
       - uses: actions/upload-pages-artifact@v4

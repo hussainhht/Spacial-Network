@@ -22,7 +22,11 @@ export function getDemoState(): DemoState {
 export function parseDemoStorage(raw: string): DemoState {
   try {
     const candidate: unknown = JSON.parse(raw);
-    if (validState(candidate)) return candidate;
+    if (validState(candidate)) {
+      // Data saved before bookmarks existed has no collection yet.
+      candidate.saved ??= {};
+      return candidate;
+    }
   } catch {
     /* Restore a complete graph when storage is malformed. */
   }
@@ -193,6 +197,18 @@ function validState(value: unknown): value is DemoState {
     )
   )
     return false;
+  // Optional so data saved before bookmarks existed still loads.
+  if (
+    v.saved !== undefined &&
+    (!record(v.saved) ||
+      !Object.entries(v.saved).every(
+        ([owner, entries]) =>
+          userIds.has(Number(owner)) &&
+          Array.isArray(entries) &&
+          entries.every((e) => record(e) && num(e.id) && num(e.post_id)),
+      ))
+  )
+    return false;
   const typed = value as DemoState;
   if (new Set(typed.users.map((u) => u.id)).size !== 16) return false;
   const groups = new Set(typed.groups.map((g) => g.id)),
@@ -264,6 +280,7 @@ function validState(value: unknown): value is DemoState {
     ...typed.followRequests,
     ...typed.invitations,
     ...typed.joinRequests,
+    ...Object.values(typed.saved ?? {}).flat(),
   ].map((item) => item.id);
   if (allIds.some((id) => id >= typed.nextId)) return false;
   return true;

@@ -4,6 +4,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { listPosts } from "@/features/posts/api/posts";
 import { ApiError } from "@/lib/api/errors";
 import type { FeedScope, Post } from "@/features/posts/types/post";
+import {
+  peekRestorableSnapshot,
+  saveFeedPosts,
+} from "@/features/posts/lib/feedSnapshotCache";
 
 interface FeedState {
   feed: FeedScope;
@@ -14,9 +18,26 @@ interface FeedState {
   hasMore: boolean;
   loadingMore: boolean;
   loadMoreError: string;
+  // True when posts/pagination came from the snapshot cache, so the initial
+  // fetch is skipped and the already-loaded pages are kept.
+  restored: boolean;
 }
 
-function initialState(feed: FeedScope): FeedState {
+function initialState(feed: FeedScope, ownerId: number | null): FeedState {
+  const snapshot = peekRestorableSnapshot(ownerId, feed);
+  if (snapshot) {
+    return {
+      feed,
+      posts: snapshot.posts,
+      loading: false,
+      error: "",
+      unauthorized: false,
+      hasMore: snapshot.hasMore,
+      loadingMore: false,
+      loadMoreError: "",
+      restored: true,
+    };
+  }
   return {
     feed,
     posts: [],
@@ -26,6 +47,7 @@ function initialState(feed: FeedScope): FeedState {
     hasMore: true,
     loadingMore: false,
     loadMoreError: "",
+    restored: false,
   };
 }
 
@@ -36,17 +58,26 @@ const PAGE_SIZE = 20;
 // state during render (rather than in an effect - see
 // https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes),
 // so a filter change never briefly shows the previous filter's results.
-export function useFeed(feed: FeedScope) {
-  const [state, setState] = useState<FeedState>(() => initialState(feed));
+export function useFeed(feed: FeedScope, ownerId: number | null = null) {
+  const [state, setState] = useState<FeedState>(() => initialState(feed, ownerId));
   const [attempt, setAttempt] = useState(0);
   const loadMoreInFlight = useRef(false);
 
   if (state.feed !== feed) {
-    setState(initialState(feed));
+    setState(initialState(feed, ownerId));
   }
+
+  const restoredRef = useRef(state.restored);
+  restoredRef.current = state.restored;
+
+  useEffect(() => {
+    if (state.feed !== feed || state.loading || state.error) return;
+    saveFeedPosts(ownerId, feed, state.posts, state.hasMore);
+  }, [feed, ownerId, state.feed, state.loading, state.error, state.posts, state.hasMore]);
 
   useEffect(() => {
     let cancelled = false;
+    if (restoredRef.current && attempt === 0) return;
 
     async function load() {
       try {
@@ -54,6 +85,7 @@ export function useFeed(feed: FeedScope) {
         if (!cancelled) {
           setState((s) => ({
             ...s,
+            restored: false,
             posts: data,
             loading: false,
             hasMore: data.length === PAGE_SIZE,
@@ -144,6 +176,7 @@ export function useFeed(feed: FeedScope) {
 
   return {
     posts: state.posts,
+    restored: state.restored,
     loading: state.loading,
     error: state.error,
     unauthorized: state.unauthorized,

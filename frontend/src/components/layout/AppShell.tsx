@@ -8,6 +8,10 @@ import {
   PlanetPreferenceProvider,
   usePlanetPreference,
 } from "@/components/space/PlanetPreferenceProvider";
+import {
+  consumeFeedRestorePending,
+  endNavigationRestoreWindow,
+} from "@/features/posts/lib/feedSnapshotCache";
 import TopNavbar from "./TopNavbar";
 import PrimaryNavigation from "./PrimaryNavigation/PrimaryNavigation";
 import styles from "./AppShell.module.css";
@@ -23,6 +27,10 @@ function PlanetAwareShell({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const pane = document.getElementById("page-content");
+    // The Home feed restores its own position when returning via Back/Forward.
+    const restoring = consumeFeedRestorePending();
+    endNavigationRestoreWindow();
+    if (restoring) return;
     if (pane) {
       pane.scrollTop = 0;
     }

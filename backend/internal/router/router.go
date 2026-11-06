@@ -170,6 +170,19 @@ func NewRouter(db *sql.DB, cfg config.Config) (http.Handler, error) {
 	)
 
 	apiMux.Handle(
+		"POST /posts/{id}/save",
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Posts.SavePostHandler))),
+	)
+	apiMux.Handle(
+		"DELETE /posts/{id}/save",
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Posts.UnsavePostHandler))),
+	)
+	apiMux.Handle(
+		"GET /users/me/saved-posts",
+		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Posts.ListSavedPostsHandler))),
+	)
+
+	apiMux.Handle(
 		"POST /posts/{id}/share",
 		sessionMiddleware(rateLimit(http.HandlerFunc(deps.Handlers.Share.SharePostHandler))),
 	)

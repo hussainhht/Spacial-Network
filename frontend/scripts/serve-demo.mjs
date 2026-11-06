@@ -12,6 +12,8 @@ const types = {
   ".txt": "text/plain",
   ".svg": "image/svg+xml",
   ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
   ".glb": "model/gltf-binary",
   ".ico": "image/x-icon",
 };

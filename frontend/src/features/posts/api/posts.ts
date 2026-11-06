@@ -7,6 +7,8 @@ import type {
   NewPostInput,
   Post,
   PostInput,
+  SavedPostsPage,
+  SavedStatus,
 } from "../types/post";
 
 export interface ListPostsOptions {
@@ -90,4 +92,26 @@ export function createGroupPost(
     method: "POST",
     body: formData,
   });
+}
+
+export function savePost(id: number): Promise<SavedStatus> {
+  return apiRequest<SavedStatus>(`/posts/${id}/save`, { method: "POST" });
+}
+
+export function unsavePost(id: number): Promise<SavedStatus> {
+  return apiRequest<SavedStatus>(`/posts/${id}/save`, { method: "DELETE" });
+}
+
+export function listSavedPosts(options?: {
+  limit?: number;
+  cursor?: number;
+}): Promise<SavedPostsPage> {
+  const params = new URLSearchParams();
+  if (options?.limit != null) params.set("limit", String(options.limit));
+  if (options?.cursor != null) params.set("cursor", String(options.cursor));
+
+  const query = params.toString();
+  return apiRequest<SavedPostsPage>(
+    `/users/me/saved-posts${query ? `?${query}` : ""}`,
+  );
 }

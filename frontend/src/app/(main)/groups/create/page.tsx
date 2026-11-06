@@ -1,6 +1,9 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import PageTransition from "@/components/transitions/PageTransition";
 import CreateGroupForm from "@/features/groups/components/management/CreateGroupForm";
+
+export const metadata: Metadata = { title: "Create Group" };
 
 export default function CreateGroupPage() {
   return (

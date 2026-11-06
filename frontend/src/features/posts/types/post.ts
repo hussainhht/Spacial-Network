@@ -46,6 +46,20 @@ export interface Post {
   // viewer_ids is only present when the requester owns a custom-visibility
   // post - the post's current allowed-viewer list.
   viewer_ids?: number[];
+  // saved is whether the current user has privately bookmarked this post.
+  saved?: boolean;
+}
+
+export interface SavedStatus {
+  post_id: number;
+  saved: boolean;
+}
+
+// SavedPostsPage is one page of the current user's saved posts, most
+// recently saved first. next_cursor is absent on the last page.
+export interface SavedPostsPage {
+  posts: Post[];
+  next_cursor?: number;
 }
 
 export interface PostInput {
