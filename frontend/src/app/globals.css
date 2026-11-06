@@ -3140,6 +3140,39 @@ main:not(.chat-main):has(> form) form > p {
   overflow: hidden;
 }
 
+.group-event-calendar-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 36px;
+  margin-top: 0.6rem;
+  padding: 0.35rem 0.75rem;
+  border: 1px solid var(--space-border-strong);
+  border-radius: 9px;
+  background: transparent;
+  color: var(--space-text-label);
+  font: 500 0.78rem inherit;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.group-event-calendar-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--space-text-body);
+}
+
+.group-event-calendar-btn:active {
+  transform: translateY(1px);
+}
+
+.group-event-calendar-btn:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
 .group-event-creator {
   margin: 0.25rem 0 0;
   color: var(--space-text-muted);
@@ -4578,9 +4611,8 @@ main:not(.chat-main):has(> form) form > p {
 
 .group-events-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1.9fr) minmax(300px, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   align-items: start;
-  gap: clamp(1rem, 2vw, 1.35rem);
   margin-top: 1.1rem;
 }
 
@@ -4591,6 +4623,12 @@ main:not(.chat-main):has(> form) form > p {
 .group-events-list {
   gap: 0.9rem;
   margin: 0;
+}
+
+.group-events-list > li {
+  min-width: 0;
+  container-type: inline-size;
+  container-name: event-card;
 }
 
 .group-event-card {
@@ -4613,9 +4651,9 @@ main:not(.chat-main):has(> form) form > p {
 
 .group-event-card-main {
   display: grid;
-  grid-template-columns: 56px minmax(128px, 24%) minmax(0, 1fr);
+  grid-template-columns: 56px minmax(0, clamp(160px, 28cqw, 260px)) minmax(0, 1fr);
   grid-template-areas: "date cover details";
-  align-items: stretch;
+  align-items: start;
   gap: 0.85rem;
 }
 
@@ -4653,8 +4691,10 @@ main:not(.chat-main):has(> form) form > p {
 
 .group-event-cover {
   grid-area: cover;
-  min-height: 126px;
-  aspect-ratio: 4 / 3;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  aspect-ratio: 16 / 10;
   border-radius: 13px;
 }
 
@@ -4664,8 +4704,15 @@ main:not(.chat-main):has(> form) form > p {
 
 .group-event-details {
   grid-area: details;
-  justify-content: center;
+  min-width: 0;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 0.15rem;
   padding: 0.15rem 0;
+}
+
+.group-event-details > * {
+  max-width: 100%;
 }
 
 .group-event-next-badge {
@@ -4684,6 +4731,7 @@ main:not(.chat-main):has(> form) form > p {
 .group-event-title {
   display: -webkit-box;
   overflow: hidden;
+  overflow-wrap: anywhere;
   font-size: 1.05rem;
   line-height: 1.25;
   -webkit-box-orient: vertical;
@@ -4722,13 +4770,37 @@ main:not(.chat-main):has(> form) form > p {
 
 .group-event-rsvp {
   display: grid;
-  grid-template-columns: minmax(180px, 0.55fr) minmax(220px, 1fr);
-  gap: 0.75rem 1rem;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0.75rem 1.25rem;
   align-items: center;
+  min-width: 0;
   margin-top: 0.75rem;
   padding: 0.75rem 0 0;
   border-top: 1px solid rgba(255, 255, 255, 0.07);
   border-left: 0;
+}
+
+.group-event-response-choice {
+  min-width: 0;
+  padding-left: 1.25rem;
+  border-left: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.group-event-response-choice p {
+  font-weight: 600;
+}
+
+.group-event-rsvp .group-response-btn {
+  min-height: 40px;
+  white-space: nowrap;
+}
+
+.group-event-rsvp .group-response-btn.is-selected::before {
+  content: "";
+}
+
+.group-response-stat {
+  min-width: 0;
 }
 
 .group-event-attendee-actions {
@@ -4904,9 +4976,8 @@ main:not(.chat-main):has(> form) form > p {
 }
 
 .group-event-form button[type="submit"] {
-  width: 100%;
-  align-self: stretch;
-  margin: 0.1rem 0 0;
+  width: auto;
+  margin: 0;
 }
 
 .event-cover-picker {
@@ -4925,6 +4996,7 @@ main:not(.chat-main):has(> form) form > p {
 .event-cover-preview {
   position: relative;
   margin-top: 0.6rem;
+  max-width: 280px;
   overflow: hidden;
   aspect-ratio: 2 / 1;
   border: 1px solid rgba(215, 201, 158, 0.26);
@@ -4965,8 +5037,8 @@ main:not(.chat-main):has(> form) form > p {
 
 .event-cover-template-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.45rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.4rem;
 }
 
 .event-cover-template-grid button {
@@ -4974,7 +5046,8 @@ main:not(.chat-main):has(> form) form > p {
   min-width: 0;
   padding: 0;
   overflow: hidden;
-  aspect-ratio: 2 / 1;
+  aspect-ratio: 3 / 2;
+  max-height: 72px;
   border: 1px solid rgba(148, 163, 184, 0.16);
   border-radius: 9px;
   background: #050916;
@@ -5082,14 +5155,6 @@ main:not(.chat-main):has(> form) form > p {
 }
 
 @media (max-width: 980px) {
-  .group-events-layout {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .group-create-event-panel {
-    grid-row: 1;
-  }
-
   .event-cover-template-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
@@ -5130,10 +5195,9 @@ main:not(.chat-main):has(> form) form > p {
     margin-left: 0;
   }
 
-  .event-cover-template-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+}
 
+@container event-card (max-width: 640px) {
   .group-event-card-main {
     grid-template-columns: 56px minmax(0, 1fr);
     grid-template-areas:
@@ -5142,18 +5206,265 @@ main:not(.chat-main):has(> form) form > p {
   }
 
   .group-event-cover {
-    width: 100%;
-    aspect-ratio: 2 / 1;
+    aspect-ratio: 16 / 9;
+    max-height: 200px;
   }
+}
 
+@container event-card (max-width: 520px) {
   .group-event-rsvp {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .group-event-response-choice {
+    padding-left: 0;
+    border-left: 0;
   }
 
   .group-event-rsvp .group-event-attendees,
   .group-event-rsvp > .form-error {
     grid-column: auto;
   }
+}
+
+/* Create event modal */
+.group-create-event-modal {
+  width: min(94vw, 720px);
+  max-height: min(90vh, 860px);
+}
+
+.group-create-event-modal .group-modal-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overscroll-behavior: contain;
+}
+
+.group-create-event-actions {
+  position: sticky;
+  bottom: -1.5rem;
+  z-index: 2;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  margin: 0.25rem -1.4rem -1.5rem;
+  padding: 0.85rem 1.4rem;
+  border-top: 1px solid var(--space-border);
+  background: var(--space-bg-elevated);
+}
+
+.group-create-event-actions button {
+  min-height: 40px;
+  padding: 0.5rem 1.1rem;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.group-create-event-actions .is-secondary {
+  border: 1px solid var(--space-border-strong);
+  background: transparent;
+  color: var(--space-text-label);
+}
+
+@media (max-width: 640px) {
+  .group-create-event-modal {
+    width: 100vw;
+    height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
+  }
+
+  .group-modal-overlay:has(.group-create-event-modal) {
+    padding: 0;
+  }
+
+  .group-create-event-actions {
+    margin-inline: -1.1rem;
+    padding-inline: 1.1rem;
+  }
+}
+
+.group-create-event-modal-header {
+  align-items: flex-start;
+}
+
+.group-create-event-modal .group-create-event-panel {
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.group-create-event-modal .group-event-form {
+  margin-top: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.group-create-event-modal .group-modal-close {
+  border-color: transparent;
+  border-radius: 50%;
+}
+
+.group-create-event-modal .group-modal-close svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+}
+
+/* Create event modal — light dark-glass treatment (scoped to this dialog) */
+.group-modal-overlay:has(.group-create-event-modal) {
+  background: rgba(2, 6, 18, 0.4);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.group-create-event-modal {
+  background: rgba(22, 34, 61, 0.985);
+  border: 1px solid rgba(160, 184, 225, 0.2);
+  box-shadow:
+    0 20px 48px -12px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.group-create-event-modal-header {
+  padding-block: 0.95rem;
+  border-bottom-color: rgba(160, 184, 225, 0.14);
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.group-create-event-modal .group-create-event-heading h2 {
+  color: #f1f5fb;
+  font-size: 1.15rem;
+}
+
+.group-create-event-modal .group-create-event-heading > p:last-child {
+  margin-top: 0.2rem;
+  color: #a9b6cc;
+  font-size: 0.78rem;
+}
+
+.group-create-event-modal .group-modal-close {
+  color: #c4cfe2;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.group-create-event-modal .group-modal-close:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.group-create-event-modal .group-event-form .form-field label,
+.group-create-event-modal .event-cover-picker legend {
+  color: #dbe4f3;
+}
+
+.group-create-event-modal .event-optional,
+.group-create-event-modal .event-cover-picker legend span,
+.group-create-event-modal .event-field-help,
+.group-create-event-modal .event-cover-picker-label {
+  color: #98a7bf;
+}
+
+.group-create-event-modal .group-event-form input,
+.group-create-event-modal .group-event-form textarea {
+  background: rgba(6, 12, 28, 0.55);
+  border: 1px solid rgba(160, 184, 225, 0.22);
+  color: #f1f5fb;
+}
+
+.group-create-event-modal .group-event-form input::placeholder,
+.group-create-event-modal .group-event-form textarea::placeholder {
+  color: #7f8ea8;
+}
+
+.group-create-event-modal .group-event-form input:focus-visible,
+.group-create-event-modal .group-event-form textarea:focus-visible {
+  border-color: rgba(125, 175, 255, 0.75);
+  outline: 2px solid rgba(125, 175, 255, 0.35);
+  outline-offset: 1px;
+}
+
+.group-create-event-modal .event-cover-upload {
+  background: rgba(6, 12, 28, 0.4);
+  border-color: rgba(160, 184, 225, 0.28);
+}
+
+.group-create-event-modal .event-cover-template-grid button {
+  border-color: rgba(160, 184, 225, 0.22);
+}
+
+.group-create-event-modal .event-cover-template-grid button:hover {
+  border-color: rgba(160, 184, 225, 0.5);
+}
+
+.group-create-event-modal .event-cover-divider {
+  color: #98a7bf;
+}
+
+.group-create-event-actions {
+  border-top-color: rgba(160, 184, 225, 0.14);
+  background: rgba(24, 36, 64, 0.96);
+}
+
+.group-create-event-actions .is-secondary {
+  border-color: rgba(160, 184, 225, 0.3);
+  color: #dbe4f3;
+}
+
+.group-create-event-actions .is-secondary:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.group-create-event-discard {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem 1rem;
+  margin-bottom: 1rem;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--space-error-border);
+  border-radius: 12px;
+  background: rgba(125, 76, 76, 0.14);
+  color: var(--space-text-body);
+  font-size: 0.82rem;
+}
+
+.group-create-event-discard p {
+  margin: 0;
+}
+
+.group-create-event-discard div {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.group-create-event-discard button {
+  min-height: 34px;
+  padding: 0.3rem 0.75rem;
+  border: 1px solid var(--space-border-strong);
+  border-radius: 9px;
+  background: transparent;
+  color: var(--space-text-label);
+  font: 600 0.78rem inherit;
+  cursor: pointer;
+}
+
+.group-create-event-discard button.is-danger {
+  border-color: var(--space-error-border);
+  color: var(--space-error-text);
 }
 
 @media (max-width: 430px) {

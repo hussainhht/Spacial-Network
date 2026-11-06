@@ -54,6 +54,9 @@ function NewPostComposer() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [imagesNote, setImagesNote] = useState(false);
+  const [dragFrom, setDragFrom] = useState<number | null>(null);
+  const [dragOver, setDragOver] = useState<number | null>(null);
+  const [orderNote, setOrderNote] = useState("");
   const draft = usePostDraft(user.user_id, {
     title, content, visibility, viewerIds, hadImages: media.length > 0 || imagesNote,
   });
@@ -119,6 +122,44 @@ function NewPostComposer() {
       mediaRef.current = next;
       return next;
     });
+  }
+
+  function moveMedia(from: number, to: number) {
+    if (from === to || to < 0 || from < 0) return;
+    const current = mediaRef.current;
+    if (from >= current.length || to >= current.length) return;
+    const next = [...current];
+    const [item] = next.splice(from, 1);
+    next.splice(to, 0, item);
+    mediaRef.current = next;
+    setMedia(next);
+    setOrderNote(`${item.file.name} moved to position ${to + 1} of ${next.length}.`);
+  }
+
+  function indexAtPoint(x: number, y: number) {
+    const el = document.elementFromPoint(x, y)?.closest<HTMLElement>("[data-media-index]");
+    return el ? Number(el.dataset.mediaIndex) : null;
+  }
+
+  function startDrag(event: React.PointerEvent<HTMLButtonElement>, index: number) {
+    if (event.button !== 0) return;
+    event.currentTarget.setPointerCapture(event.pointerId);
+    setDragFrom(index);
+    setDragOver(index);
+  }
+
+  function updateDrag(event: React.PointerEvent<HTMLButtonElement>) {
+    if (dragFrom === null) return;
+    const over = indexAtPoint(event.clientX, event.clientY);
+    if (over !== null) setDragOver(over);
+  }
+
+  function endDrag(event: React.PointerEvent<HTMLButtonElement>, commit: boolean) {
+    if (dragFrom === null) return;
+    const over = commit ? indexAtPoint(event.clientX, event.clientY) ?? dragOver : null;
+    if (over !== null) moveMedia(dragFrom, over);
+    setDragFrom(null);
+    setDragOver(null);
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -230,12 +271,32 @@ function NewPostComposer() {
               onChange={(event) => { if (event.target.files) void addFiles(event.target.files); event.target.value = ""; }}
             />
 
+            <span className="sr-only" role="status" aria-live="polite">{orderNote}</span>
             {media.length > 0 && <div className={styles.thumbnails} aria-label="Selected media">
-              {media.map((item, index) => <div className={styles.thumbnail} key={item.key}>
+              {media.map((item, index) => <div
+                className={`${styles.thumbnail} ${dragFrom === index ? styles.thumbDragging : ""} ${dragFrom !== null && dragOver === index && dragFrom !== index ? (dragFrom < index ? styles.dropAfter : styles.dropBefore) : ""}`}
+                key={item.key}
+                data-media-index={index}
+              >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={item.url} alt={`Selected attachment ${index + 1}`} />
-                <button type="button" onClick={() => removeMedia(item.key)} aria-label={`Remove ${item.file.name}`} title="Remove attachment"><AppIcon name="x" width={15} height={15} /></button>
+                <img src={item.url} alt={`Selected attachment ${index + 1}`} draggable={false} />
+                <button type="button" className={styles.removeBtn} onClick={() => removeMedia(item.key)} aria-label={`Remove ${item.file.name}`} title="Remove attachment"><AppIcon name="x" width={15} height={15} /></button>
+                {media.length > 1 && <button
+                  type="button"
+                  className={styles.dragHandle}
+                  aria-label={`Drag ${item.file.name} to reorder`}
+                  title="Drag to reorder"
+                  onPointerDown={(event) => startDrag(event, index)}
+                  onPointerMove={updateDrag}
+                  onPointerUp={(event) => endDrag(event, true)}
+                  onPointerCancel={(event) => endDrag(event, false)}
+                  onKeyDown={(event) => { if (event.key === "Escape") setDragFrom(null); }}
+                >⠿</button>}
                 <span>{index + 1}</span>
+                {media.length > 1 && <div className={styles.moveControls}>
+                  <button type="button" disabled={index === 0} onClick={() => moveMedia(index, index - 1)} aria-label={`Move ${item.file.name} left, currently position ${index + 1} of ${media.length}`} title="Move left"><AppIcon name="arrowLeft" width={12} height={12} /></button>
+                  <button type="button" disabled={index === media.length - 1} onClick={() => moveMedia(index, index + 1)} aria-label={`Move ${item.file.name} right, currently position ${index + 1} of ${media.length}`} title="Move right"><AppIcon name="arrowRight" width={12} height={12} /></button>
+                </div>}
               </div>)}
               {media.length < MAX_POST_MEDIA && <button className={styles.addTile} type="button" onClick={() => inputRef.current?.click()}><AppIcon name="plus" /><span>Add</span></button>}
             </div>}

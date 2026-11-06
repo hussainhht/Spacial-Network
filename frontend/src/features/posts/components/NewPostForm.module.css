@@ -31,8 +31,18 @@
 .thumbnails { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 9px; }
 .thumbnail, .addTile { position: relative; aspect-ratio: 1; overflow: hidden; border: 1px solid var(--space-border); border-radius: 12px; background: var(--space-input-bg); }
 .thumbnail img { width: 100%; height: 100%; object-fit: cover; }
-.thumbnail button { position: absolute; top: 6px; right: 6px; display: grid; place-items: center; width: 28px; height: 28px; padding: 0; border: 1px solid rgba(255,255,255,.18); border-radius: 50%; background: rgba(2,6,23,.84); color: #f8fafc; cursor: pointer; }
+.thumbnail .removeBtn { position: absolute; top: 6px; right: 6px; display: grid; place-items: center; width: 28px; height: 28px; padding: 0; border: 1px solid rgba(255,255,255,.18); border-radius: 50%; background: rgba(2,6,23,.84); color: #f8fafc; cursor: pointer; }
 .thumbnail > span { position: absolute; left: 7px; bottom: 7px; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 7px; background: rgba(2,6,23,.8); color: #e2e8f0; font-size: 11px; }
+.thumbnail { transition: transform .15s ease, opacity .15s ease, box-shadow .15s ease; }
+.thumbDragging { opacity: .6; transform: scale(.95); box-shadow: 0 0 0 2px var(--planet-focus-ring); }
+.dropBefore { box-shadow: inset 3px 0 0 var(--planet-focus-ring); }
+.dropAfter { box-shadow: inset -3px 0 0 var(--planet-focus-ring); }
+.thumbnail .dragHandle { position: absolute; top: 6px; left: 6px; width: 24px; height: 24px; padding: 0; border: 1px solid rgba(255,255,255,.18); border-radius: 7px; background: rgba(2,6,23,.84); color: #cbd5e1; font-size: 14px; line-height: 1; cursor: grab; touch-action: none; user-select: none; }
+.thumbDragging .dragHandle { cursor: grabbing; }
+.moveControls { position: absolute; right: 6px; bottom: 6px; display: flex; gap: 3px; }
+.thumbnail .moveControls button { display: grid; place-items: center; width: 22px; height: 22px; padding: 0; border: 1px solid rgba(255,255,255,.18); border-radius: 7px; background: rgba(2,6,23,.84); color: #f8fafc; cursor: pointer; }
+.thumbnail .moveControls button:disabled { opacity: .35; cursor: default; }
+@media (prefers-reduced-motion: reduce) { .thumbnail { transition: none; } .thumbDragging { transform: none; } }
 .addTile { display: grid; place-items: center; align-content: center; gap: 4px; border-style: dashed; color: var(--space-text-muted); font: inherit; font-size: 12px; cursor: pointer; }
 .privacy { min-width: 0; margin: 0; padding: 0; border: 0; }
 .privacy legend { margin-bottom: 11px; }

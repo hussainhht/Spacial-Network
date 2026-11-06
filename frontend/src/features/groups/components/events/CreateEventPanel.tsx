@@ -14,6 +14,9 @@ import EventCoverPicker from "./EventCoverPicker";
 interface CreateEventPanelProps {
   groupId: number;
   titleInputRef: RefObject<HTMLInputElement | null>;
+  onDirtyChange?: (dirty: boolean) => void;
+  onCreated?: (title: string) => void;
+  onCancel?: () => void;
 }
 
 interface FieldErrors {
@@ -43,6 +46,9 @@ function toEventTimeISOString(date: string, time: string): string | null {
 export default function CreateEventPanel({
   groupId,
   titleInputRef,
+  onDirtyChange,
+  onCreated,
+  onCancel,
 }: CreateEventPanelProps) {
   const formRef = useRef<HTMLFormElement>(null);
   const errorSummaryRef = useRef<HTMLDivElement>(null);
@@ -58,6 +64,13 @@ export default function CreateEventPanel({
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [success, setSuccess] = useState("");
+
+  const dirty = Boolean(
+    title.trim() || description.trim() || date || time || image || selectedTemplate,
+  );
+  useEffect(() => {
+    onDirtyChange?.(dirty);
+  }, [dirty, onDirtyChange]);
 
   useEffect(() => {
     if (error) errorSummaryRef.current?.focus();
@@ -117,22 +130,13 @@ export default function CreateEventPanel({
     );
     if (ok) {
       resetForm();
+      onCreated?.(trimmedTitle);
       setSuccess(`“${trimmedTitle}” was created and added to the event list.`);
     }
   }
 
   return (
-    <aside
-      id="create-event-panel"
-      className="group-create-event-panel"
-      aria-labelledby="create-event-heading"
-    >
-      <div className="group-create-event-heading">
-        <p className="group-eyebrow">New gathering</p>
-        <h3 id="create-event-heading">Create event</h3>
-        <p>Share a moment for your group to look forward to.</p>
-      </div>
-
+    <div id="create-event-panel" className="group-create-event-panel">
       <form
         ref={formRef}
         className="group-form group-event-form"
@@ -263,10 +267,17 @@ export default function CreateEventPanel({
           </p>
         )}
 
-        <button type="submit" disabled={Boolean(busy)}>
-          {busy ?? "Create event"}
-        </button>
+        <div className="group-create-event-actions">
+          {onCancel && (
+            <button type="button" className="is-secondary" onClick={onCancel}>
+              Cancel
+            </button>
+          )}
+          <button type="submit" disabled={Boolean(busy)}>
+            {busy ?? "Create event"}
+          </button>
+        </div>
       </form>
-    </aside>
+    </div>
   );
 }

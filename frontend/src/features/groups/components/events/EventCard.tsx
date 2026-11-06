@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import AppIcon from "@/components/layout/AppIcon";
+import { useActionFeedback } from "@/components/feedback/ActionFeedbackProvider";
 import { respondToGroupEvent } from "../../api/groups";
+import { downloadEventIcs } from "../../lib/calendarExport";
 import { useGroupAction } from "../../hooks/useGroupAction";
 import { updateGroupEvent } from "../../hooks/useGroupData";
 import type { EventResponseStatus, GroupEvent } from "../../types/group";
@@ -66,7 +68,18 @@ export default function EventCard({
   const currentResponse = event.currentUserResponse;
   const dateParts = eventDateParts(event.eventTime);
   const [openList, setOpenList] = useState<EventResponseStatus | null>(null);
+  const { notify } = useActionFeedback();
   const { busy, error, run } = useGroupAction(`event-response:${event.id}`, groupId);
+
+  function addToCalendar() {
+    const ok = downloadEventIcs({
+      id: event.id,
+      title: event.title,
+      description: event.description,
+      eventTime: event.eventTime,
+    });
+    notify(ok ? "Calendar event downloaded." : "Unable to export this event.", ok ? "success" : "error");
+  }
 
   async function respond(response: EventResponseStatus) {
     if (busy || currentResponse === response) return;
@@ -94,6 +107,9 @@ export default function EventCard({
             {creatorUsername && <p><AppIcon name="user" width={15} height={15} /> Created by <strong>@{creatorUsername}</strong></p>}
           </div>
           <EventCountdown eventTime={event.eventTime} />
+          <button type="button" className="group-event-calendar-btn" onClick={addToCalendar}>
+            <AppIcon name="calendar" width={14} height={14} /> Add to Calendar
+          </button>
         </div>
       </div>
 

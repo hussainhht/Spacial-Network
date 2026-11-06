@@ -1,11 +1,11 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import AppIcon from "@/components/layout/AppIcon";
 import { useGroupEvents } from "../../hooks/useGroupData";
 import type { GroupEvent, GroupMember } from "../../types/group";
 import { GroupLoadError } from "../GroupPanels";
-import CreateEventPanel from "./CreateEventPanel";
+import CreateEventModal from "./CreateEventModal";
 import EventCard from "./EventCard";
 
 interface GroupEventsProps {
@@ -41,7 +41,8 @@ function MemberGroupEvents({
   members,
 }: Omit<GroupEventsProps, "isMember">) {
   const events = useGroupEvents(groupId);
-  const titleInputRef = useRef<HTMLInputElement>(null);
+  const [createOpen, setCreateOpen] = useState(false);
+  const closeCreate = useCallback(() => setCreateOpen(false), []);
   const [period, setPeriod] = useState<"upcoming" | "past">("upcoming");
   const [search, setSearch] = useState("");
   const [now] = useState(Date.now);
@@ -86,13 +87,7 @@ function MemberGroupEvents({
   }, [eventGroups, period, search, usernameById]);
 
   function focusCreatePanel() {
-    document.getElementById("create-event-panel")?.scrollIntoView({
-      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
-        ? "auto"
-        : "smooth",
-      block: "start",
-    });
-    window.setTimeout(() => titleInputRef.current?.focus(), 250);
+    setCreateOpen(true);
   }
 
   return (
@@ -207,8 +202,8 @@ function MemberGroupEvents({
           )}
         </div>
 
-        <CreateEventPanel groupId={groupId} titleInputRef={titleInputRef} />
       </div>
+      <CreateEventModal groupId={groupId} open={createOpen} onClose={closeCreate} />
     </section>
   );
 }
