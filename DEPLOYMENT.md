@@ -9,8 +9,9 @@ until you execute them on your VM.
 
 ## 1. Proxmox host preparation
 
-Use the Proxmox web console to create a VM from an Ubuntu Server 24.04 LTS or
-Debian 13 installer ISO. Start with 4 vCPUs, 8 GiB RAM (Next builds need memory),
+The target is Proxmox VE with a Debian 13 VM. For a new installation,
+use the Proxmox web console to create a VM from a Debian 13 installer ISO.
+Start with 4 vCPUs, 8 GiB RAM (Next builds need memory),
 32+ GiB disk plus media capacity, VirtIO network/disk, and a LAN bridge. Install
 the OS and an ordinary sudo administrator with SSH keys. Choose an unused VM ID.
 On the **Proxmox host only**, after creation (replace 120 with your VM ID):
@@ -26,7 +27,7 @@ backups to separate storage and periodically test restores.
 
 ## 2. Prepare the application VM
 
-**Every command below runs inside the Ubuntu/Debian VM**, unless explicitly
+**Every command below runs inside the Debian 13 VM**, unless explicitly
 labelled as a browser step. On a fresh OS:
 
 ```sh
@@ -36,7 +37,7 @@ sudo apt-get install -y ca-certificates curl git qemu-guest-agent
 sudo systemctl enable --now qemu-guest-agent
 sudo install -m 0755 -d /etc/apt/keyrings
 . /etc/os-release
-# ID must be ubuntu or debian for this command.
+# On Debian 13, ID=debian and VERSION_CODENAME=trixie.
 curl -fsSL "https://download.docker.com/linux/$ID/gpg" | sudo tee /etc/apt/keyrings/docker.asc >/dev/null
 sudo chmod a+r /etc/apt/keyrings/docker.asc
 printf 'deb [arch=%s signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/%s %s stable\n' "$(dpkg --print-architecture)" "$ID" "$VERSION_CODENAME" | sudo tee /etc/apt/sources.list.d/docker.list
@@ -66,9 +67,9 @@ chmod 600 .env.production
 nano .env.production
 ```
 
-Set `PUBLIC_ORIGIN=https://social.example.com` to your actual Cloudflare-managed
-domain. Use an exact HTTPS origin without trailing slash, path, or port unless
-that port is genuinely public. Never put tunnel credentials in this file or Git.
+Keep `PUBLIC_ORIGIN=https://social.l3acler.com`, the existing public domain.
+Use this exact HTTPS origin without a trailing slash, path or port.
+Never put tunnel credentials in this file or Git.
 This file is ignored. Do not enable demo mode for production.
 
 ```sh
@@ -104,10 +105,12 @@ original volume. Existing production volumes from older root-running images may
 need a one-time ownership repair while all services are stopped:
 
 ```sh
-sudo docker compose --env-file .env.production -f compose.prod.yaml run --rm --no-deps --user 0 --entrypoint sh backend -c 'chown -R 10001:10001 /app/data && chmod 700 /app/data && chmod 600 /app/data/*.db'
+sudo docker compose --env-file .env.production -f compose.prod.yaml run --rm --no-deps --user 0 --cap-add CHOWN --cap-add FOWNER --cap-add DAC_OVERRIDE --entrypoint sh backend -c 'chown -R 10001:10001 /app/data && chmod 700 /app/data && chmod 600 /app/data/*.db'
 ```
 
-Run this only for the intended imported volume; it does not delete data.
+Run this only for the intended imported volume; it does not delete data. The
+extra capabilities apply only to this one-time repair container. Normal services
+continue to drop all capabilities.
 
 ## 4. Install cloudflared and create a tunnel
 
@@ -132,7 +135,7 @@ hostname must match `PUBLIC_ORIGIN` without `https://`:
 
 ```sh
 TUNNEL_ID=REPLACE_WITH_TUNNEL_UUID
-PUBLIC_HOST=social.example.com
+PUBLIC_HOST=social.l3acler.com
 sudo install -d -m 700 /etc/cloudflared
 sudo install -m 600 "$HOME/.cloudflared/$TUNNEL_ID.json" "/etc/cloudflared/$TUNNEL_ID.json"
 sudo tee /etc/cloudflared/config.yml >/dev/null <<EOF_CONFIG
@@ -140,7 +143,7 @@ tunnel: $TUNNEL_ID
 credentials-file: /etc/cloudflared/$TUNNEL_ID.json
 ingress:
   - hostname: $PUBLIC_HOST
-    service: http://localhost:8088
+    service: http://127.0.0.1:8088
   - service: http_status:404
 EOF_CONFIG
 sudo chmod 600 /etc/cloudflared/config.yml
@@ -171,16 +174,16 @@ expected. Never expose this listener to a LAN/public address.
 
 ## 5. Verify after launch
 
-Replace the hostname in these VM/workstation commands:
+Run these checks from the VM/workstation against the existing public hostname:
 
 ```sh
-curl -fsS https://social.example.com/healthz
-curl -I https://social.example.com/login
-curl -i https://social.example.com/api/users/me
+curl -fsS https://social.l3acler.com/healthz
+curl -I https://social.l3acler.com/login
+curl -i https://social.l3acler.com/api/users/me
 # Expected: 401 without a cookie.
-curl -i -X POST https://social.example.com/api/login -H 'Origin: https://evil.example.com' -H 'Content-Type: application/json' --data '{}'
+curl -i -X POST https://social.l3acler.com/api/login -H 'Origin: https://evil.example.com' -H 'Content-Type: application/json' --data '{}'
 # Expected: 403 before credential processing.
-curl -i --http1.1 https://social.example.com/api/ws -H 'Origin: https://social.example.com' -H 'Connection: Upgrade' -H 'Upgrade: websocket' -H 'Sec-WebSocket-Version: 13' -H 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ=='
+curl -i --http1.1 https://social.l3acler.com/api/ws -H 'Origin: https://social.l3acler.com' -H 'Connection: Upgrade' -H 'Upgrade: websocket' -H 'Sec-WebSocket-Version: 13' -H 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ=='
 # Expected: 401 without authentication, never an unauthenticated upgrade.
 ```
 
@@ -189,7 +192,7 @@ session cookie is HttpOnly, Secure, SameSite=Lax, Path=/ and host-only (no Domai
 Host-only cookies intentionally avoid granting sibling subdomains access. No
 cookie-domain override is necessary for this same-origin architecture.
 Verify requests use `/api/*`, images use `/uploads/*`, and the socket uses
-`wss://YOUR_HOST/api/ws` with a **101** upgrade. The HttpOnly cookie is sent by the
+`wss://social.l3acler.com/api/ws` with a **101** upgrade. The HttpOnly cookie is sent by the
 browser during the upgrade; never put a token in the URL. Check there are no
 mixed-content or localhost requests. A CLI write must send the trusted Origin;
 origin enforcement is CSRF protection and does not replace session authentication.
@@ -284,6 +287,23 @@ schema migrations: restore a matched backup to fresh volumes for rollback.
 Production image base tags float within their release lines; record image IDs
 and pin verified digests for controlled releases, and rebuild regularly for fixes.
 
+For this correction, inspect `spacial-network_frontend` with `docker network
+inspect`. If it is still internal, back up first, build the corrected images,
+then recreate the Compose networks during a maintenance window:
+
+```sh
+sudo docker compose --env-file .env.production -f compose.prod.yaml down
+sudo docker compose --env-file .env.production -f compose.prod.yaml up -d --wait
+sudo docker compose --env-file .env.production -f compose.prod.yaml exec proxy nginx -t
+curl -fsS http://127.0.0.1:8088/healthz
+```
+
+`down` here removes containers/networks and causes downtime. Omit `-v` so both
+named data volumes remain. A network's internal flag belongs to the Docker
+network object; restarting containers alone may retain the previous object.
+If the VM already uses the working non-internal frontend network, use the normal
+rebuild/recreate procedure above and verify its effective bindings.
+
 ## 8. Configuration and development
 
 `APP_ENV=production` requires trusted HTTPS origins and forces Secure cookies.
@@ -324,10 +344,63 @@ original `compose.yaml` is for development; do not combine it with the productio
 file. To develop remotely, explicitly configure build-time frontend origins and
 backend trusted origins with the actual development addresses.
 
-## 9. Troubleshooting
+## 9. Pre-deployment validation and CI
+
+Run static checks on any machine with Docker Compose, Python 3 and Bash:
+
+```sh
+bash scripts/validate-production.sh --static
+```
+
+This renders the production file alone, verifies every tmpfs option string,
+loopback publishing, backend isolation, private service ports, hardened runtime
+settings, both named volume mounts and same-origin browser build arguments.
+Regression probes explicitly reject the original split-tmpfs configuration,
+internal frontend bridge and accidental public ports.
+
+On a development machine or disposable CI runner with a working Docker daemon:
+
+```sh
+bash scripts/validate-production.sh --full
+```
+
+Full validation builds both images, starts a uniquely named test project, checks
+`nginx -t`, upstream DNS/reachability, loopback HTTP, effective Docker port and
+tmpfs bindings, actual network isolation, compiled browser assets and persistence
+across backend container replacement. It substitutes temporary bind directories
+for data/uploads and cleans up its synthetic test data and test containers. It
+never selects the production project or removes named volumes. It needs port
+8088 free; **do not run full validation alongside production on the VM**. Static
+checks are safe while production is running. Named-volume configuration is
+checked statically; actual production volumes and backups still need the manual
+restore drill described above.
+
+`.github/workflows/production-validation.yml` runs Go race tests/vet, frontend
+install/tests/lint and production dependency audit, then full validation on an
+Ubuntu runner using a Buildx `docker-container` builder. It checks out Git LFS
+assets as well. It has read-only repository permission, no production secrets,
+no image publishing, no SSH and no production deployment. Existing Pages
+workflows continue to publish only the separate static demo.
+
+For future GHCR publishing, both Dockerfiles already accept ordinary Buildx
+contexts (`frontend/` and `backend/`). Use the production public build arguments
+from Compose, never credentials. Keep runtime environment files, tunnel JSON,
+SQLite and uploads outside images. Later add explicit `packages: write`, GHCR
+login and commit-derived tags/digests; do not add automatic server access. The
+backend requires CGO; its Debian Go builder and Debian runtime deliberately
+match. Base tags float for security maintenance, so these are lockfile-based
+repeatable builds rather than bit-for-bit pinned supply chains. Record tested
+base/image digests for each release. Container builds and runtime validation must
+pass in CI before treating GHCR publication as release-ready.
+
+## 10. Troubleshooting
 
 | Symptom | Check / remedy |
 | --- | --- |
+| Docker `invalid mount path: nosuid` | Run static validation and use the corrected quoted tmpfs strings. In a YAML flow list, unquoted commas split mount options into separate elements. All `/tmp` mounts retain rw, noexec, nosuid, size=64m and mode=1777; the Next cache retains its size and UID/GID restrictions. |
+| Nginx duplicate `proxy_read_timeout` | Shared `proxy.conf` no longer sets Connection or read/send timeouts. Ordinary timeouts inherit 60s from `http`; `/api/ws` alone sets 120s plus Upgrade/Connection headers. The Go server pings every 54s. Run `exec proxy nginx -t`. |
+| Healthy containers but loopback 8088 unavailable | Frontend bridge must use `internal: false`; backend stays `internal: true`. Proxy joins both, frontend/backend publish no host ports. Inspect bindings with the commands below; do not change to 0.0.0.0. The frontend/proxy bridge can reach outbound networks; the backend is isolated. |
+| Frontend checksum `/app/node_modules` missing | Dependency-stage `npm ci --include=dev` must create `node_modules/next`; it now fails immediately if absent. Inspect plain build logs and the active builder. Try the isolated Buildx builder below; do not disable BuildKit protections or delete production volumes. |
 | Cloudflare 1033 | `systemctl status cloudflared`, credentials, outbound connectivity and tunnel UUID. |
 | Cloudflare 502 | VM `curl http://127.0.0.1:8088/healthz`, container health, Nginx logs, tunnel service URL. |
 | Nginx 502 after update | Check upstream health and restart proxy to refresh Docker DNS. |
@@ -341,7 +414,41 @@ backend trusted origins with the actual development addresses.
 | Disk full / database locked | Check `df -h`, volume capacity, one backend instance, logs; do not delete SQLite journals. |
 | Next build killed | Increase VM memory/swap and check dependency install/network; use Node 22 image. |
 
-## 10. Security review and limits
+Inspect effective bindings on the VM (only the proxy should return a binding):
+
+```sh
+sudo docker compose --env-file .env.production -f compose.prod.yaml port proxy 8080
+sudo docker inspect "$(sudo docker compose --env-file .env.production -f compose.prod.yaml ps -q proxy)" --format '{{json .HostConfig.PortBindings}}'
+sudo docker inspect "$(sudo docker compose --env-file .env.production -f compose.prod.yaml ps -q backend)" --format '{{json .HostConfig.PortBindings}}'
+sudo docker inspect "$(sudo docker compose --env-file .env.production -f compose.prod.yaml ps -q frontend)" --format '{{json .HostConfig.PortBindings}}'
+sudo docker network inspect spacial-network_frontend spacial-network_backend --format '{{.Name}} internal={{.Internal}}'
+```
+
+Expected: `127.0.0.1:8088`, proxy `8080/tcp` bound to HostIp `127.0.0.1` and
+HostPort `8088`, no backend/frontend bindings, frontend internal=false and backend
+internal=true. Keep cloudflared on the VM host targeting `http://127.0.0.1:8088`;
+`localhost` can resolve to IPv6 while this listener intentionally binds IPv4 only.
+The VM host/Docker administrators remain trusted.
+
+For the missing dependency-stage build output, inspect the active builder and
+retry with a separate `docker-container` builder. Run this on the build machine;
+these commands build images but do not start services:
+
+```sh
+sudo docker buildx ls
+sudo docker buildx create --name spacial-ci --driver docker-container
+sudo docker buildx inspect spacial-ci --bootstrap
+sudo docker compose --progress plain --env-file .env.production -f compose.prod.yaml build --builder spacial-ci --pull
+```
+
+Create that builder only if it does not already exist. If the problem persists,
+use a one-off `--no-cache` build and inspect the `deps` stage logs. A 0.2-second
+successful-looking install with no directory is insufficient evidence of npm
+success. The original multi-stage copies and standalone output paths were valid;
+we could not establish the original builder's root cause from this repository.
+No BuildKit security protection is disabled.
+
+## 11. Security review and limits
 
 Fixed: browser localhost URLs; permissive WebSocket origins; fixed localhost CORS;
 insecure production cookies; CSRF on writes (including login); GET logout;
@@ -360,10 +467,19 @@ are not accepted. Private-post **media URLs remain publicly retrievable if known
 as in the existing app; random names are not access control. If private media must
 be confidential, authenticated media authorization plus cache controls is a
 separate release requirement before inviting users who expect that guarantee.
-Existing WebSockets authenticate at connection time; logout/session expiry does
-not forcibly disconnect an already-open connection. Reload/close the logged-out
-client; immediate server-side session revocation of live sockets remains future
-hardening. Neither of these limitations is solved by Cloudflare Tunnel.
+Uploads now send `Cache-Control: private, no-store`; this reduces retention but
+does not authorize a known URL or purge already cached copies. Do not add
+Cloudflare cache overrides for `/uploads/*`. A full fix must map each upload to
+its avatar/post/comment/group/event visibility and preserve public avatar access;
+a blanket login check would still allow one logged-in user to fetch another
+user's private attachment.
+WebSockets now revalidate the database session before inbound application
+messages, before outbound application events, and every 15 seconds while idle.
+Logout, expiry, replacement by a new login, and validation failures close the
+socket without extending its session. This bounds idle revocation delay; an
+in-flight message can still race with revocation. Password changes retain the
+existing session policy and do not themselves revoke sessions. Cloudflare Tunnel
+does not provide application session revocation.
 
 No CSP is imposed without evaluating the existing inline/3D assets. No malware
 scanner, per-user media quota, full penetration test, or capacity/DoS certification
@@ -372,8 +488,7 @@ Upload storage failures return generic messages rather than filesystem paths.
 See SECURITY-REVIEW.md for the remaining audit scope. Do not describe this local preparation as a tested
 public deployment until the post-launch checks pass on your actual VM/domain.
 
-References: [Docker Ubuntu installation](https://docs.docker.com/engine/install/ubuntu/),
-[Docker Debian installation](https://docs.docker.com/engine/install/debian/),
+References: [Docker Debian installation](https://docs.docker.com/engine/install/debian/),
 [Cloudflare package repository](https://pkg.cloudflare.com/),
 [Cloudflare locally managed tunnel setup](https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/do-more-with-tunnels/local-management/create-local-tunnel/),
 [Next.js standalone output](https://nextjs.org/docs/app/api-reference/config/next-config-js/output).

@@ -1,0 +1,49 @@
+name: Validate production containers
+
+on:
+  pull_request:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          lfs: true
+      - uses: docker/setup-buildx-action@v3
+        id: buildx
+        with:
+          driver: docker-container
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+      - name: Backend tests and vet
+        working-directory: backend
+        run: |
+          go test -race ./...
+          go vet ./...
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Frontend install, tests, lint and production audit
+        working-directory: frontend
+        run: |
+          npm ci --include=dev
+          test -d node_modules/next
+          npm test
+          npm run lint
+          npm audit --omit=dev --audit-level=moderate
+      - name: Build and validate isolated production stack
+        env:
+          BUILDX_BUILDER: ${{ steps.buildx.outputs.name }}
+        run: bash scripts/validate-production.sh --full
