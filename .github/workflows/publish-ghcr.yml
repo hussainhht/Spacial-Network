@@ -28,12 +28,17 @@ jobs:
             -f compose.prod.yaml \
             config --quiet
 
+
       - name: Validate Nginx configuration
         run: |
           docker run --rm \
+            --add-host=backend:127.0.0.1 \
+            --add-host=frontend:127.0.0.1 \
             -v "$PWD/deploy/nginx/nginx.conf:/etc/nginx/nginx.conf:ro" \
             -v "$PWD/deploy/nginx/proxy.conf:/etc/nginx/proxy.conf:ro" \
-            nginx:stable-alpine nginx -t
+            --entrypoint nginx \
+            nginx:stable-alpine -t
+
 
   publish:
     name: Build and publish images
