@@ -14,7 +14,8 @@
     "typecheck": "next typegen && tsc --noEmit --incremental false",
     "test:demo": "node --import ./tests/register.mjs --test tests/demo.test.mjs tests/post-draft.test.mjs tests/notification-presentation.test.mjs tests/validate-demo-assets.test.mjs",
     "test:demo:browser": "playwright test",
-    "check:demo:assets": "node scripts/validate-demo-assets.mjs"
+    "check:demo:assets": "node scripts/validate-demo-assets.mjs",
+    "test": "node --import ./tests/register.mjs --test tests/*.test.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.8",

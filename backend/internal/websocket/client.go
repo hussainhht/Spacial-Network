@@ -3,6 +3,7 @@ package websocket
 import (
 	"log"
 	"net/http"
+	"social/internal/config"
 	"sync"
 	"time"
 
@@ -19,16 +20,25 @@ const (
 	maxMessageSize = 8192
 )
 
-var upgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
-	CheckOrigin: func(r *http.Request) bool {
-		return true
-	},
-}
+// GetUpgrader retains the development helper while using the same origin policy.
+func GetUpgrader() websocket.Upgrader { return newUpgrader(config.Load()) }
 
-func GetUpgrader() websocket.Upgrader {
-	return upgrader
+func newUpgrader(cfg config.Config) websocket.Upgrader {
+	return websocket.Upgrader{
+		ReadBufferSize: 1024, WriteBufferSize: 1024,
+		CheckOrigin: func(r *http.Request) bool {
+			origin := r.Header.Get("Origin")
+			if origin == "" {
+				return !cfg.Production
+			}
+			for _, trusted := range cfg.TrustedOrigins {
+				if origin == trusted {
+					return true
+				}
+			}
+			return false
+		},
+	}
 }
 
 type MessageHandler func(senderID int64, raw []byte)

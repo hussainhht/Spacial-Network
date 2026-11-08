@@ -378,7 +378,7 @@ func (h *Handler) saveMediaAttachments(w http.ResponseWriter, r *http.Request) (
 				status = http.StatusInternalServerError
 			}
 			w.WriteHeader(status)
-			json.NewEncoder(w).Encode(Response{Error: saveErr.Error()})
+			json.NewEncoder(w).Encode(Response{Error: "Invalid image or upload failed"})
 			return nil, false
 		}
 

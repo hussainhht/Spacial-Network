@@ -15,6 +15,9 @@ import (
 // from the configured uploads directory so the frontend can reference them
 // with a plain HTTP URL.
 func NewRouter(db *sql.DB, cfg config.Config) (http.Handler, error) {
+	if err := cfg.Validate(); err != nil {
+		return nil, err
+	}
 	deps, err := setupDependencies(db, cfg)
 	if err != nil {
 		return nil, err
@@ -326,14 +329,39 @@ func NewRouter(db *sql.DB, cfg config.Config) (http.Handler, error) {
 		sessionMiddleware(http.HandlerFunc(deps.Handlers.Search.SearchHandler)),
 	)
 
-	handler := middleware.CORS(apiMux)
+	handler := middleware.OriginSecurity(apiMux, cfg.TrustedOrigins, cfg.Production)
 
 	mux := http.NewServeMux()
+	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
+		if err := db.PingContext(r.Context()); err != nil {
+			http.Error(w, "unavailable", 503)
+			return
+		}
+		w.Write([]byte("ok\n"))
+	})
 	mux.Handle("/api/", http.StripPrefix("/api", handler))
 	mux.Handle(
 		"/uploads/",
-		http.StripPrefix("/uploads/", http.FileServer(http.Dir(cfg.UploadsDir))),
+		http.StripPrefix("/uploads/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.Method != "GET" && r.Method != "HEAD" {
+				w.WriteHeader(405)
+				return
+			}
+			f, err := http.Dir(cfg.UploadsDir).Open(r.URL.Path)
+			if err != nil {
+				http.NotFound(w, r)
+				return
+			}
+			defer f.Close()
+			info, err := f.Stat()
+			if err != nil || info.IsDir() {
+				http.NotFound(w, r)
+				return
+			}
+			w.Header().Set("X-Content-Type-Options", "nosniff")
+			http.FileServer(http.Dir(cfg.UploadsDir)).ServeHTTP(w, r)
+		})),
 	)
 
-	return mux, nil
+	return middleware.ProxyHeaders(mux, cfg.TrustProxy), nil
 }

@@ -4,6 +4,8 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"syscall"
+	"time"
 
 	"social/internal/config"
 	"social/internal/router"
@@ -11,7 +13,11 @@ import (
 )
 
 func main() {
+	syscall.Umask(0o077)
 	cfg := config.Load()
+	if err := cfg.Validate(); err != nil {
+		log.Fatal("configuration: ", err)
+	}
 
 	db, err := sqlite.Open(cfg.DBDir, cfg.DBFile)
 	if err != nil {
@@ -29,8 +35,12 @@ func main() {
 	}
 
 	server := &http.Server{
-		Addr:    ":" + cfg.ServerPort,
-		Handler: handler,
+		Addr:              ":" + cfg.ServerPort,
+		Handler:           handler,
+		ReadHeaderTimeout: 10 * time.Second,
+		ReadTimeout:       60 * time.Second,
+		IdleTimeout:       120 * time.Second,
+		MaxHeaderBytes:    1 << 20,
 	}
 
 	go func() {

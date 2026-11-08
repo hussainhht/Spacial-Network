@@ -212,7 +212,7 @@ func (h *Handler) CreateGroupHandler(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(status)
 			json.NewEncoder(w).Encode(CreateGroupResponse{
 				Success: false,
-				Message: err.Error(),
+				Message: "Invalid image or upload failed",
 			})
 			return
 		}
@@ -325,7 +325,7 @@ func (h *Handler) UpdateGroupHandler(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(status)
 			json.NewEncoder(w).Encode(GetGroupResponse{
 				Success: false,
-				Message: err.Error(),
+				Message: "Invalid image or upload failed",
 			})
 			return
 		}

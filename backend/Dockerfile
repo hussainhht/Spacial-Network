@@ -12,7 +12,7 @@ RUN go build -o /out/social-migrate ./cmd/migrate
 FROM debian:bookworm-slim
 
 RUN apt-get update \
-	&& apt-get install -y --no-install-recommends ca-certificates \
+	&& apt-get install -y --no-install-recommends ca-certificates curl \
 	&& rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -20,7 +20,9 @@ WORKDIR /app
 COPY --from=builder /out/social-server /usr/local/bin/social-server
 COPY --from=builder /out/social-migrate /usr/local/bin/social-migrate
 
-RUN mkdir -p /app/data/uploads
+RUN groupadd --gid 10001 social && useradd --uid 10001 --gid social --no-create-home social \
+ && mkdir -p /app/data/uploads && chown -R social:social /app/data && chmod 700 /app/data
+USER social
 
 ENV SERVER_PORT=8080
 

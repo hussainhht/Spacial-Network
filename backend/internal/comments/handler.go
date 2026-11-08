@@ -132,7 +132,7 @@ func (h *Handler) NewCommentHandler(w http.ResponseWriter, r *http.Request) {
 				status = http.StatusInternalServerError
 			}
 			w.WriteHeader(status)
-			json.NewEncoder(w).Encode(Response{Error: err.Error()})
+			json.NewEncoder(w).Encode(Response{Error: "Invalid image or upload failed"})
 			return
 		}
 	}

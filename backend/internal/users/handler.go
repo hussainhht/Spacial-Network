@@ -328,7 +328,7 @@ func (h *Handler) UpdateProfileAvatarHandler(w http.ResponseWriter, r *http.Requ
 			w.WriteHeader(status)
 			json.NewEncoder(w).Encode(UpdateProfileAvatarResponse{
 				Success: false,
-				Message: err.Error(),
+				Message: "Invalid image or upload failed",
 			})
 			return
 		}

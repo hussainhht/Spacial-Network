@@ -17,3 +17,12 @@ uploads/
 
 .env
 .env.*
+
+# Private credentials and local backup artifacts
+.cloudflared/
+backups/
+*.pem
+*.key
+*.sqlite
+*.sqlite3
+*.tar.gz

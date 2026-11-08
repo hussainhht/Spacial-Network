@@ -587,3 +587,7 @@ fix(groups): prevent duplicate join requests
 refactor(database): simplify migration setup
 docs(cors): explain frontend backend CORS flow
 ```
+
+## Self-hosted production deployment
+
+For Proxmox, Docker Compose, persistent SQLite/media, and Cloudflare Tunnel, follow [DEPLOYMENT.md](DEPLOYMENT.md). Review [SECURITY-REVIEW.md](SECURITY-REVIEW.md) before launch. The default `compose.yaml` remains the development setup.
