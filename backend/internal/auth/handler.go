@@ -109,7 +109,7 @@ func (h *Handler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req LoginRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 8<<10)).Decode(&req); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(Response{Error: "Invalid request"})
 		return
@@ -149,7 +149,7 @@ func (h *Handler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 // LogoutHandler revokes the current session and clears its cookie.
 func (h *Handler) LogoutHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet && r.Method != http.MethodPost {
+	if r.Method != http.MethodPost {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
@@ -290,7 +290,7 @@ func (h *Handler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(status)
 			json.NewEncoder(w).Encode(RegisterResponse{
 				Success: false,
-				Message: err.Error(),
+				Message: "Invalid image or upload failed",
 			})
 			return
 		}

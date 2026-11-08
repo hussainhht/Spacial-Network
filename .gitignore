@@ -72,3 +72,7 @@ dev/
 .agents/skills/
 .claude/skills/
 /skills/
+!.env.production.example
+# VM-only tunnel credentials and backups
+.cloudflared/
+backups/

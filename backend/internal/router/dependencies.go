@@ -72,7 +72,7 @@ func rateLimitRequestCost(r *http.Request) float64 {
 
 func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 	hub := websocket.NewHub()
-	wsHandler := websocket.NewHandler(hub)
+	wsHandler := websocket.NewHandler(hub, cfg)
 
 	// One limiter is shared across all routes: global bucket per user, endpoint bucket per (user, endpoint).
 	rateLimiter := ratelimit.NewLimiter(ratelimit.LimiterConfig{

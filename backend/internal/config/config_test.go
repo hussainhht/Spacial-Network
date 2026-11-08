@@ -33,3 +33,23 @@ func TestLoadConfigEnvOverrides(t *testing.T) {
 		t.Errorf("expected ServerPort '9090', got %q", cfg.ServerPort)
 	}
 }
+
+func TestProductionConfig(t *testing.T) {
+	t.Setenv("APP_ENV", "production")
+	t.Setenv("TRUSTED_ORIGINS", "https://social.example.com")
+	t.Setenv("DB_DIR", "/tmp/custom-db")
+	t.Setenv("UPLOADS_DIR", "/tmp/custom-uploads")
+	cfg := Load()
+	if !cfg.CookieSecure || cfg.DBDir != "/tmp/custom-db" || cfg.UploadsDir != "/tmp/custom-uploads" {
+		t.Fatal("environment not applied")
+	}
+	if err := cfg.Validate(); err != nil {
+		t.Fatal(err)
+	}
+	for _, origin := range []string{"http://social.example.com", "https://localhost", "*", "https://social.example.com/", "https://social.example.com@evil.example.com/path"} {
+		cfg.TrustedOrigins = []string{origin}
+		if cfg.Validate() == nil {
+			t.Errorf("accepted unsafe origin %s", origin)
+		}
+	}
+}

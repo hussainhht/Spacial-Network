@@ -4,17 +4,25 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/gorilla/websocket"
+	"social/internal/config"
 	"social/internal/requestctx"
 )
 
 type Handler struct {
+	upgrader       websocket.Upgrader
 	hub            *Hub
 	messageHandler MessageHandler
 }
 
-func NewHandler(hub *Hub) *Handler {
+func NewHandler(hub *Hub, configs ...config.Config) *Handler {
+	cfg := config.Load()
+	if len(configs) > 0 {
+		cfg = configs[0]
+	}
 	return &Handler{
-		hub: hub,
+		hub:      hub,
+		upgrader: newUpgrader(cfg),
 	}
 }
 
@@ -29,7 +37,7 @@ func (h *Handler) ServeWS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	conn, err := upgrader.Upgrade(w, r, nil)
+	conn, err := h.upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Printf("ws upgrade error for user %d: %v", userID, err)
 		return

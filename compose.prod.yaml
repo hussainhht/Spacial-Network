@@ -1,0 +1,89 @@
+name: spacial-network
+x-common: &common
+  restart: unless-stopped
+  security_opt:
+    - no-new-privileges:true
+  cap_drop: [ALL]
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+services:
+  backend:
+    <<: *common
+    build: ./backend
+    environment:
+      APP_ENV: production
+      SERVER_PORT: "8080"
+      TRUSTED_ORIGINS: ${PUBLIC_ORIGIN:?Set PUBLIC_ORIGIN in .env.production}
+      COOKIE_SECURE: "true"
+      TRUST_PROXY: "true"
+      DB_DIR: /app/data
+      DB_FILE: social-network.db
+      UPLOADS_DIR: /app/data/uploads
+    volumes:
+      - backend-data:/app/data
+      - uploads:/app/data/uploads
+    networks: [backend]
+    read_only: true
+    tmpfs: [/tmp:rw,noexec,nosuid,size=64m,mode=1777]
+    healthcheck:
+      test: [CMD, curl, -fsS, http://127.0.0.1:8080/healthz]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    stop_grace_period: 30s
+  frontend:
+    <<: *common
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_BACKEND_ORIGIN: ""
+        NEXT_PUBLIC_BACKEND_WS_ORIGIN: ""
+        NEXT_IMAGE_UNOPTIMIZED: "true"
+        SITE_URL: ${PUBLIC_ORIGIN:?Set PUBLIC_ORIGIN}
+    environment:
+      SITE_URL: ${PUBLIC_ORIGIN}
+    networks: [frontend]
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m,mode=1777
+      - /app/.next/cache:rw,nosuid,size=128m,uid=1000,gid=1000
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:3000/login').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+  proxy:
+    <<: *common
+    image: nginx:stable-alpine
+    user: "101:101"
+    entrypoint: [nginx, -g, "daemon off;"]
+    ports: ["127.0.0.1:8088:8080"]
+    volumes:
+      - ./deploy/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./deploy/nginx/proxy.conf:/etc/nginx/proxy.conf:ro
+    networks: [frontend, backend]
+    depends_on:
+      frontend:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    read_only: true
+    tmpfs: [/tmp:rw,noexec,nosuid,size=64m,mode=1777]
+    healthcheck:
+      test: [CMD, wget, -q, -O, /dev/null, http://127.0.0.1:8080/healthz]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+networks:
+  frontend:
+    internal: true
+  backend:
+    internal: true
+volumes:
+  backend-data:
+  uploads:
