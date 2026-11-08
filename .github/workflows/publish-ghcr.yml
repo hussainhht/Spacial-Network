@@ -1,0 +1,88 @@
+
+name: Publish Docker Images to GHCR
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  validate:
+    name: Validate production configuration
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Validate Docker Compose
+        run: |
+          cp .env.production.example .env.production
+          docker compose \
+            --env-file .env.production \
+            -f compose.prod.yaml \
+            config --quiet
+
+      - name: Validate Nginx configuration
+        run: |
+          docker run --rm \
+            -v "$PWD/deploy/nginx/nginx.conf:/etc/nginx/nginx.conf:ro" \
+            -v "$PWD/deploy/nginx/proxy.conf:/etc/nginx/proxy.conf:ro" \
+            nginx:stable-alpine nginx -t
+
+  publish:
+    name: Build and publish images
+    needs: validate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Login to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and publish frontend
+        uses: docker/build-push-action@v7
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          platforms: linux/amd64
+          push: true
+          build-args: |
+            SITE_URL=https://social.l3acler.com
+            NEXT_PUBLIC_BACKEND_ORIGIN=
+            NEXT_PUBLIC_BACKEND_WS_ORIGIN=
+            NEXT_IMAGE_UNOPTIMIZED=true
+          tags: |
+            ghcr.io/hussainhht/spacial-network-frontend:sha-${{ github.sha }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/hussainhht/Spacial-Network
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,mode=max,scope=frontend
+
+      - name: Build and publish backend
+        uses: docker/build-push-action@v7
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ghcr.io/hussainhht/spacial-network-backend:sha-${{ github.sha }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/hussainhht/Spacial-Network
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,mode=max,scope=backend
