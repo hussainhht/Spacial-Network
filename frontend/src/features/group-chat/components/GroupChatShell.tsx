@@ -58,6 +58,7 @@ export default function GroupChatShell({
             isNearLimit={controller.isNearLimit}
             disabled={!controller.isMember}
             onSendMessage={controller.sendMessage}
+            onSendGif={controller.sendGif}
           />
         </div>
 

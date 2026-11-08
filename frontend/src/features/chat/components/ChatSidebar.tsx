@@ -5,6 +5,7 @@ import UserAvatar from "@/components/UserAvatar";
 import type { ChatSidebarProps } from "../types/chat";
 import { formatConversationDate, getDisplayName } from "@/lib/utils";
 import { parseSharedPost } from "@/features/interactions/utils/sharedPost";
+import { parseGifMessage } from "@/features/chat-extras/lib/gif";
 import NewChatModal from "./NewChatModal";
 import styles from "./Chat.module.css";
 
@@ -149,7 +150,9 @@ export default function ChatSidebar({
             const sharedPost = c.last_message ? parseSharedPost(c.last_message) : null;
             const previewText = sharedPost
               ? `${c.last_message_from_me ? "You" : c.partner_username} sent a post`
-              : c.last_message || "No messages yet";
+              : parseGifMessage(c.last_message)
+                ? `${c.last_message_from_me ? "You" : c.partner_username} sent a GIF`
+                : c.last_message || "No messages yet";
             return (
               <div
                 key={c.partner_id}

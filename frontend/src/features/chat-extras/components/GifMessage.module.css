@@ -1,0 +1,29 @@
+.frame {
+  display: block;
+  max-width: 100%;
+  min-width: 96px;
+  min-height: 96px;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  background: rgba(148, 163, 184, 0.12);
+  overflow: hidden;
+  cursor: zoom-in;
+}
+.frame:focus-visible { outline: 2px solid var(--planet-focus-ring, #93c5fd); outline-offset: 2px; }
+.loading { animation: pulse 1.2s ease-in-out infinite; }
+.frame:not(.loading) { min-width: 0; min-height: 0; background: none; }
+
+.image {
+  display: block;
+  max-width: min(260px, 100%);
+  max-height: 260px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 12px;
+}
+.failed { color: var(--space-text-muted, #94a3b8); font-size: 13px; font-style: italic; }
+
+@keyframes pulse { 50% { opacity: 0.55; } }
+@media (prefers-reduced-motion: reduce) { .loading { animation: none; } }

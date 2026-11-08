@@ -83,6 +83,15 @@ export function useGroupChatController({
     return true;
   }, [chatMessages, inputText, isMember, isOverLimit]);
 
+  const sendGif = useCallback(
+    (url: string) => {
+      if (!isMember) return false;
+      chatMessages.sendGroupMessage(url);
+      return true;
+    },
+    [chatMessages, isMember],
+  );
+
   return {
     group,
     isMember,
@@ -121,6 +130,7 @@ export function useGroupChatController({
     isOverLimit,
     isNearLimit,
     sendMessage,
+    sendGif,
   };
 }
 

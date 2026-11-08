@@ -2,6 +2,8 @@
 
 import { useCallback, useRef } from "react";
 import AppIcon from "@/components/layout/AppIcon";
+import ComposerExtras from "@/features/chat-extras/components/ComposerExtras";
+import { insertAtCursor } from "@/features/chat-extras/lib/insertAtCursor";
 import { MAX_GROUP_MESSAGE_LENGTH } from "../hooks/useGroupChatController";
 import styles from "../group-chat.module.css";
 
@@ -13,6 +15,7 @@ interface GroupChatComposerProps {
   isNearLimit: boolean;
   disabled?: boolean;
   onSendMessage: () => boolean;
+  onSendGif: (url: string) => boolean;
 }
 
 export default function GroupChatComposer({
@@ -23,8 +26,22 @@ export default function GroupChatComposer({
   isNearLimit,
   disabled = false,
   onSendMessage,
+  onSendGif,
 }: GroupChatComposerProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const handleEmoji = (emoji: string) => {
+    const textarea = textareaRef.current;
+    const result = insertAtCursor(textarea, inputText, emoji, MAX_GROUP_MESSAGE_LENGTH);
+    if (!result) return;
+    setInputText(result.value);
+    requestAnimationFrame(() => {
+      textarea?.focus();
+      textarea?.setSelectionRange(result.caret, result.caret);
+      textarea!.style.height = "auto";
+      textarea!.style.height = `${Math.min(Math.max(textarea!.scrollHeight, 44), 140)}px`;
+    });
+  };
 
   const resizeTextarea = useCallback(() => {
     const textarea = textareaRef.current;
@@ -94,6 +111,8 @@ export default function GroupChatComposer({
             : `${charCount}/${MAX_GROUP_MESSAGE_LENGTH}`}
         </span>
       </div>
+
+      <ComposerExtras onEmoji={handleEmoji} onGif={onSendGif} disabled={disabled} />
 
       <button
         type="submit"

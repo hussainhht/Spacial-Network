@@ -13,6 +13,10 @@ import type { ChatWindowProps } from "../types/chat";
 import PostSharePreview from "@/features/interactions/components/PostSharePreview";
 import { parseSharedPost } from "@/features/interactions/utils/sharedPost";
 import { formatMessageTime, parseDate } from "@/lib/utils";
+import ComposerExtras from "@/features/chat-extras/components/ComposerExtras";
+import GifMessage from "@/features/chat-extras/components/GifMessage";
+import { parseGifMessage } from "@/features/chat-extras/lib/gif";
+import { insertAtCursor } from "@/features/chat-extras/lib/insertAtCursor";
 import styles from "./Chat.module.css";
 
 const MAX_MESSAGE_LENGTH = 2000;
@@ -183,6 +187,22 @@ export default function ChatWindow({
     }
   }
 
+  function handleEmoji(emoji: string) {
+    const textarea = textareaRef.current;
+    const result = insertAtCursor(textarea, inputText, emoji, MAX_MESSAGE_LENGTH);
+    if (!result) return;
+    setInputText(result.value);
+    requestAnimationFrame(() => {
+      textarea?.focus();
+      textarea?.setSelectionRange(result.caret, result.caret);
+      adjustTextareaHeight();
+    });
+  }
+
+  function handleGif(url: string) {
+    onSendMessage(url);
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!inputText.trim() || isOverLimit) return;
@@ -333,6 +353,8 @@ export default function ChatWindow({
                   className={isMine ? styles.bubbleMine : styles.bubblePartner}
                 >
                   {(() => {
+                    const gifUrl = parseGifMessage(msg.content);
+                    if (gifUrl) return <GifMessage url={gifUrl} />;
                     const shared = parseSharedPost(msg.content);
                     if (!shared) {
                       return (
@@ -450,6 +472,8 @@ export default function ChatWindow({
               Enter to send · Shift+Enter for a new line
             </span>
           </div>
+
+          <ComposerExtras onEmoji={handleEmoji} onGif={handleGif} />
 
           <button
             type="submit"

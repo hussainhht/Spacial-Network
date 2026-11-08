@@ -1,0 +1,51 @@
+.wrap { display: flex; align-items: center; gap: 6px; flex-shrink: 0; align-self: flex-start; }
+
+.trigger {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 42px; height: 42px; padding: 0;
+  border: 1px solid var(--space-border, rgba(148, 163, 184, 0.2));
+  border-radius: 12px;
+  background: rgba(10, 15, 35, 0.6);
+  color: var(--space-text-muted, #94a3b8);
+  font: inherit; font-size: 12px; font-weight: 700; letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+.trigger:hover:not(:disabled), .trigger.active { color: var(--planet-accent, #69aef0); border-color: var(--planet-border-strong, rgba(105, 174, 240, 0.5)); background: rgba(40, 95, 150, 0.25); }
+.trigger:focus-visible { outline: 2px solid var(--planet-focus-ring, #93c5fd); outline-offset: 2px; }
+.trigger:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.popover {
+  position: fixed; z-index: 1100;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--space-border-strong, rgba(148, 163, 184, 0.3));
+  border-radius: 14px;
+  background: rgba(10, 15, 35, 0.94);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.5);
+  animation: pop 120ms ease-out;
+}
+
+.gifPicker { display: flex; flex-direction: column; min-height: 0; height: min(400px, 100%); }
+.gifSearch {
+  margin: 10px; padding: 9px 12px; border: 1px solid var(--space-border, rgba(148, 163, 184, 0.25));
+  border-radius: 10px; background: rgba(5, 8, 22, 0.7); color: var(--space-text-heading, #f1f5f9); font: inherit; font-size: 14px;
+}
+.gifSearch:focus-visible { outline: 2px solid var(--planet-focus-ring, #93c5fd); outline-offset: 1px; }
+.gifScroll { flex: 1; min-height: 0; padding: 0 10px 8px; overflow-y: auto; scroll-behavior: smooth; overscroll-behavior: contain; }
+.gifHeading { margin: 0 0 6px; color: var(--space-text-muted, #94a3b8); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; }
+.gifStatus { margin: 24px 0; color: var(--space-text-muted, #94a3b8); font-size: 13px; text-align: center; }
+.gifGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.gifCell { display: block; min-height: 84px; padding: 0; border: 0; border-radius: 10px; background: rgba(148, 163, 184, 0.12); overflow: hidden; cursor: pointer; }
+.gifCell:hover { box-shadow: 0 0 0 2px var(--planet-accent, #69aef0); }
+.gifCell:focus-visible { outline: 2px solid var(--planet-focus-ring, #93c5fd); outline-offset: 1px; }
+.gifCell img { display: block; width: 100%; height: auto; max-height: 160px; object-fit: cover; }
+.gifLoading { animation: shimmer 1.2s ease-in-out infinite; }
+.gifLoading img { opacity: 0; }
+.gifAttribution { margin: 0; padding: 4px 10px 8px; color: var(--space-text-muted, #94a3b8); font-size: 10px; text-align: right; }
+
+@keyframes pop { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@keyframes shimmer { 50% { opacity: 0.55; } }
+@media (prefers-reduced-motion: reduce) { .popover, .gifLoading { animation: none; } }
+@media (max-width: 520px) { .trigger { width: 40px; height: 40px; } }

@@ -1,3 +1,5 @@
+import GifMessage from "@/features/chat-extras/components/GifMessage";
+import { parseGifMessage } from "@/features/chat-extras/lib/gif";
 import PostSharePreview from "@/features/interactions/components/PostSharePreview";
 import { parseSharedPost } from "@/features/interactions/utils/sharedPost";
 import type { GroupChatMessageItem } from "../types/groupChat";
@@ -16,6 +18,7 @@ export default function GroupChatMessageContent({
   showHoverTime = true,
 }: GroupChatMessageContentProps) {
   const sharedPost = parseSharedPost(message.content);
+  const gifUrl = parseGifMessage(message.content);
   const formattedTime = formatMessageTime(message.createdAt);
   const bubbleClass = `${styles.messageBody} ${
     isMine ? styles.messageBodyMine : styles.messageBodyOther
@@ -58,7 +61,7 @@ export default function GroupChatMessageContent({
       }`}
     >
       <div className={bubbleClass} dir="auto">
-        {message.content}
+        {gifUrl ? <GifMessage url={gifUrl} /> : message.content}
       </div>
       {showHoverTime && formattedTime && (
         <time
