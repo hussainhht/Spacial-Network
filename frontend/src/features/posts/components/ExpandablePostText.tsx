@@ -2,6 +2,7 @@
 
 import { memo, useId, useLayoutEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
+import LinkifiedText from "./LinkifiedText";
 import styles from "./ExpandablePostText.module.css";
 
 const MAX_LINES = 4;
@@ -55,7 +56,7 @@ export default memo(function ExpandablePostText({
         className={`${className} ${!expanded ? styles.collapsed : ""}`}
         dir="auto"
       >
-        {content}
+        <LinkifiedText text={content} />
       </p>
       {overflowing && (
         <button

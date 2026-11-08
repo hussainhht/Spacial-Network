@@ -1,0 +1,21 @@
+.link {
+  color: var(--planet-accent, #67b2ef);
+  text-decoration: underline;
+  text-decoration-color: rgba(103, 178, 239, 0.45);
+  text-underline-offset: 2px;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  cursor: pointer;
+  transition: color 160ms ease, text-decoration-color 160ms ease;
+}
+
+.link:hover {
+  color: var(--space-text-heading, #fff);
+  text-decoration-color: currentColor;
+}
+
+.link:focus-visible {
+  outline: 2px solid var(--planet-focus-ring, #67b2ef);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
