@@ -18,6 +18,9 @@ const (
 	pingPeriod = (pongWait * 9) / 10
 
 	maxMessageSize = 8192
+
+	// Bound idle socket lifetime after logout, expiry or token replacement.
+	sessionCheckPeriod = 15 * time.Second
 )
 
 // GetUpgrader retains the development helper while using the same origin policy.
@@ -44,13 +47,14 @@ func newUpgrader(cfg config.Config) websocket.Upgrader {
 type MessageHandler func(senderID int64, raw []byte)
 
 type Client struct {
-	Hub       *Hub
-	Conn      *websocket.Conn
-	UserID    int64
-	send      chan []byte
-	done      chan struct{}
-	closeOnce sync.Once
-	handler   MessageHandler
+	Hub          *Hub
+	Conn         *websocket.Conn
+	UserID       int64
+	send         chan []byte
+	done         chan struct{}
+	closeOnce    sync.Once
+	handler      MessageHandler
+	sessionValid func() bool
 }
 
 func NewClient(hub *Hub, conn *websocket.Conn, userID int64, handler MessageHandler) *Client {
@@ -121,16 +125,25 @@ func (c *Client) ReadPump() {
 			break
 		}
 
+		if !c.hasValidSession() {
+			return
+		}
 		if c.handler != nil {
 			c.handler(c.UserID, message)
 		}
 	}
 }
 
+func (c *Client) hasValidSession() bool {
+	return c.sessionValid == nil || c.sessionValid()
+}
+
 func (c *Client) WritePump() {
 	ticker := time.NewTicker(pingPeriod)
+	sessionTicker := time.NewTicker(sessionCheckPeriod)
 	defer func() {
 		ticker.Stop()
+		sessionTicker.Stop()
 		c.Close()
 	}()
 
@@ -143,6 +156,9 @@ func (c *Client) WritePump() {
 			return
 
 		case message := <-c.send:
+			if !c.hasValidSession() {
+				return
+			}
 			c.Conn.SetWriteDeadline(time.Now().Add(writeWait))
 			w, err := c.Conn.NextWriter(websocket.TextMessage)
 			if err != nil {
@@ -153,6 +169,11 @@ func (c *Client) WritePump() {
 			}
 
 			if err := w.Close(); err != nil {
+				return
+			}
+
+		case <-sessionTicker.C:
+			if !c.hasValidSession() {
 				return
 			}
 

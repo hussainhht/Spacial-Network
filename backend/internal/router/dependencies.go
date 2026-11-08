@@ -127,6 +127,7 @@ func setupDependencies(db *sql.DB, cfg config.Config) (*Dependencies, error) {
 
 	authRepo := auth.NewRepository(db, cfg.SessionLifetime)
 	authService := auth.NewService(authRepo, usersService)
+	wsHandler.SetSessionValidator(cfg.SessionCookieName, authService.ValidateSession)
 	authHandler := auth.NewHandler(
 		authService,
 		usersService,

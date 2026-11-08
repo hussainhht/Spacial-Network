@@ -97,6 +97,51 @@ func TestProductionAuthenticationAndWebSocket(t *testing.T) {
 	if resp.StatusCode != 404 {
 		t.Fatal("uploads directory exposed")
 	}
+	// Logout must revoke the already-open socket, not just future handshakes.
+	req, _ = http.NewRequest("POST", s.URL+"/api/logout", nil)
+	req.Header.Set("Origin", cfg.TrustedOrigins[0])
+	req.AddCookie(cookie)
+	resp, err = client.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+	if resp.StatusCode != 200 {
+		t.Fatalf("logout status %d", resp.StatusCode)
+	}
+	if err := conn.WriteMessage(websocket.TextMessage, []byte(`{}`)); err != nil {
+		t.Fatal(err)
+	}
+	conn.SetReadDeadline(time.Now().Add(3 * time.Second))
+	for {
+		_, _, err := conn.ReadMessage()
+		if err != nil {
+			if timeout, ok := err.(interface{ Timeout() bool }); ok && timeout.Timeout() {
+				t.Fatal("revoked socket remained open")
+			}
+			break
+		}
+	}
+}
+
+func TestUploadedMediaCachePolicy(t *testing.T) {
+	db := testutil.NewTestDB(t)
+	cfg := config.Load()
+	cfg.UploadsDir = t.TempDir()
+	if err := os.WriteFile(filepath.Join(cfg.UploadsDir, "known-image.png"), []byte("media"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	h, err := router.NewRouter(db, cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, method := range []string{"GET", "HEAD"} {
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, httptest.NewRequest(method, "/uploads/known-image.png", nil))
+		if rec.Code != 200 || rec.Header().Get("Cache-Control") != "private, no-store" {
+			t.Fatalf("%s: status %d headers %v", method, rec.Code, rec.Header())
+		}
+	}
 }
 
 func TestDatabasePersistsAcrossReopen(t *testing.T) {

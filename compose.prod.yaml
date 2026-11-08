@@ -27,7 +27,7 @@ services:
       - uploads:/app/data/uploads
     networks: [backend]
     read_only: true
-    tmpfs: [/tmp:rw,noexec,nosuid,size=64m,mode=1777]
+    tmpfs: ["/tmp:rw,noexec,nosuid,size=64m,mode=1777"]
     healthcheck:
       test: [CMD, curl, -fsS, http://127.0.0.1:8080/healthz]
       interval: 30s
@@ -49,8 +49,8 @@ services:
     networks: [frontend]
     read_only: true
     tmpfs:
-      - /tmp:rw,noexec,nosuid,size=64m,mode=1777
-      - /app/.next/cache:rw,nosuid,size=128m,uid=1000,gid=1000
+      - "/tmp:rw,noexec,nosuid,size=64m,mode=1777"
+      - "/app/.next/cache:rw,nosuid,size=128m,uid=1000,gid=1000"
     healthcheck:
       test: [CMD, node, -e, "fetch('http://127.0.0.1:3000/login').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
       interval: 30s
@@ -73,7 +73,7 @@ services:
       backend:
         condition: service_healthy
     read_only: true
-    tmpfs: [/tmp:rw,noexec,nosuid,size=64m,mode=1777]
+    tmpfs: ["/tmp:rw,noexec,nosuid,size=64m,mode=1777"]
     healthcheck:
       test: [CMD, wget, -q, -O, /dev/null, http://127.0.0.1:8080/healthz]
       interval: 30s
@@ -81,7 +81,8 @@ services:
       retries: 3
 networks:
   frontend:
-    internal: true
+    # The loopback-published proxy needs an ordinary bridge for host ingress.
+    internal: false
   backend:
     internal: true
 volumes:

@@ -3,7 +3,9 @@ FROM node:22-bookworm-slim AS deps
 WORKDIR /app
 
 COPY package.json package-lock.json ./
-RUN npm ci
+# Build tooling is needed even when the caller uses a production environment.
+# Fail in this stage if an unhealthy builder reports success without installing.
+RUN npm ci --include=dev && test -d /app/node_modules/next
 
 FROM node:22-bookworm-slim AS builder
 

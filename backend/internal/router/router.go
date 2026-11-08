@@ -343,6 +343,9 @@ func NewRouter(db *sql.DB, cfg config.Config) (http.Handler, error) {
 	mux.Handle(
 		"/uploads/",
 		http.StripPrefix("/uploads/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Known URLs remain public; prevent browsers/shared caches retaining
+			// private-post bytes after the application removes their reference.
+			w.Header().Set("Cache-Control", "private, no-store")
 			if r.Method != "GET" && r.Method != "HEAD" {
 				w.WriteHeader(405)
 				return
